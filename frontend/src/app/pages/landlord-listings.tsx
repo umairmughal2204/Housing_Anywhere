@@ -1,0 +1,369 @@
+import { Link, useLocation } from "react-router";
+import { LandlordPortalLayout } from "../components/landlord-portal-layout";
+import { useState } from "react";
+import { 
+  Home,
+  MessageSquare,
+  List,
+  Key,
+  BarChart3,
+  Bell,
+  Settings,
+  Plus,
+  Edit,
+  Eye,
+  Trash2,
+  Search,
+  Filter,
+  MoreVertical,
+  MapPin,
+  Bed,
+  Bath,
+  Square,
+  TrendingUp,
+} from "lucide-react";
+import { ImageWithFallback } from "../components/figma/ImageWithFallback";
+
+type ListingStatus = "active" | "draft" | "inactive";
+
+interface Listing {
+  id: string;
+  title: string;
+  address: string;
+  city: string;
+  price: number;
+  beds: number;
+  baths: number;
+  sqm: number;
+  image: string;
+  status: ListingStatus;
+  views: number;
+  inquiries: number;
+  createdAt: string;
+}
+
+const mockListings: Listing[] = [
+  {
+    id: "1",
+    title: "Modern 2BR in Kreuzberg",
+    address: "Oranienstraße 45",
+    city: "Berlin",
+    price: 1850,
+    beds: 2,
+    baths: 1,
+    sqm: 75,
+    image: "https://images.unsplash.com/photo-1662454419736-de132ff75638?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxtb2Rlcm4lMjBhcGFydG1lbnQlMjBiZWRyb29tJTIwaW50ZXJpb3J8ZW58MXx8fHwxNzczMTM3MzUxfDA&ixlib=rb-4.1.0&q=80&w=1080",
+    status: "active",
+    views: 1247,
+    inquiries: 34,
+    createdAt: "2026-02-01",
+  },
+  {
+    id: "2",
+    title: "Studio Near Alexanderplatz",
+    address: "Karl-Marx-Allee 92",
+    city: "Berlin",
+    price: 2200,
+    beds: 1,
+    baths: 1,
+    sqm: 48,
+    image: "https://images.unsplash.com/photo-1725042893312-5ec0dea9e369?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxjb250ZW1wb3JhcnklMjBsaXZpbmclMjByb29tJTIwYnJpZ2h0fGVufDF8fHx8MTc3MzE2NzI4Mnww&ixlib=rb-4.1.0&q=80&w=1080",
+    status: "active",
+    views: 982,
+    inquiries: 28,
+    createdAt: "2026-01-15",
+  },
+  {
+    id: "3",
+    title: "3BR Family Apartment",
+    address: "Prenzlauer Allee 156",
+    city: "Berlin",
+    price: 2800,
+    beds: 3,
+    baths: 2,
+    sqm: 110,
+    image: "https://images.unsplash.com/photo-1715985160053-d339e8b6eb94?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxsdXh1cnklMjBhcGFydG1lbnQlMjBraXRjaGVufGVufDF8fHx8MTc3MzA5Mzk5N3ww&ixlib=rb-4.1.0&q=80&w=1080",
+    status: "active",
+    views: 756,
+    inquiries: 19,
+    createdAt: "2026-01-28",
+  },
+  {
+    id: "4",
+    title: "Luxury Penthouse Mitte",
+    address: "Friedrichstraße 200",
+    city: "Berlin",
+    price: 3500,
+    beds: 3,
+    baths: 2,
+    sqm: 140,
+    image: "https://images.unsplash.com/photo-1662454419736-de132ff75638?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxtb2Rlcm4lMjBhcGFydG1lbnQlMjBiZWRyb29tJTIwaW50ZXJpb3J8ZW58MXx8fHwxNzczMTM3MzUxfDA&ixlib=rb-4.1.0&q=80&w=1080",
+    status: "inactive",
+    views: 423,
+    inquiries: 8,
+    createdAt: "2025-12-10",
+  },
+  {
+    id: "5",
+    title: "Cozy 1BR in Neukölln",
+    address: "Sonnenallee 67",
+    city: "Berlin",
+    price: 1200,
+    beds: 1,
+    baths: 1,
+    sqm: 42,
+    image: "https://images.unsplash.com/photo-1725042893312-5ec0dea9e369?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxjb250ZW1wb3JhcnklMjBsaXZpbmclMjByb29tJTIwYnJpZ2h0fGVufDF8fHx8MTc3MzE2NzI4Mnww&ixlib=rb-4.1.0&q=80&w=1080",
+    status: "draft",
+    views: 0,
+    inquiries: 0,
+    createdAt: "2026-03-08",
+  },
+];
+
+export function LandlordListings() {
+  const location = useLocation();
+  const [filterStatus, setFilterStatus] = useState<ListingStatus | "all">("all");
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const stats = {
+    unreadMessages: 5,
+  };
+
+  const filteredListings = mockListings.filter((listing) => {
+    const matchesStatus = filterStatus === "all" || listing.status === filterStatus;
+    const matchesSearch = listing.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         listing.address.toLowerCase().includes(searchQuery.toLowerCase());
+    return matchesStatus && matchesSearch;
+  });
+
+  const statusCounts = {
+    all: mockListings.length,
+    active: mockListings.filter((l) => l.status === "active").length,
+    draft: mockListings.filter((l) => l.status === "draft").length,
+    inactive: mockListings.filter((l) => l.status === "inactive").length,
+  };
+
+  return (
+    <LandlordPortalLayout>
+      {/* Main Content */}
+      <main className="flex-1 p-[32px]">
+        {/* Header */}
+        <div className="flex items-start justify-between mb-[32px]">
+          <div>
+            <h1 className="text-neutral-black text-[32px] font-bold tracking-[-0.02em] mb-[8px]">
+              Listings
+            </h1>
+            <p className="text-neutral-gray text-[16px]">
+              Manage your property listings
+            </p>
+          </div>
+          <Link
+            to="/landlord/listings/add"
+            className="flex items-center gap-[8px] bg-brand-primary text-white px-[24px] py-[12px] font-semibold hover:bg-brand-primary-dark transition-colors"
+          >
+            <Plus className="w-[16px] h-[16px]" />
+            Create New Listing
+          </Link>
+        </div>
+
+        {/* Filters and Search */}
+        <div className="bg-white border border-[rgba(0,0,0,0.08)] mb-[24px]">
+          <div className="px-[24px] py-[16px] border-b border-[rgba(0,0,0,0.08)] flex items-center justify-between gap-[16px]">
+            <div className="flex items-center gap-[16px] flex-1">
+              <div className="flex items-center gap-[12px] bg-neutral-light-gray px-[16px] py-[10px] flex-1 max-w-[400px]">
+                <Search className="w-[16px] h-[16px] text-neutral-gray" />
+                <input
+                  type="text"
+                  placeholder="Search by title or address..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="flex-1 bg-transparent outline-none text-neutral-black text-[14px] placeholder:text-neutral-gray"
+                />
+              </div>
+
+              <div className="flex items-center gap-[8px]">
+                <button
+                  onClick={() => setFilterStatus("all")}
+                  className={`px-[16px] py-[8px] text-[14px] font-semibold transition-colors ${
+                    filterStatus === "all"
+                      ? "bg-brand-primary text-white"
+                      : "bg-neutral-light-gray text-neutral-black hover:bg-neutral-gray/20"
+                  }`}
+                >
+                  All ({statusCounts.all})
+                </button>
+                <button
+                  onClick={() => setFilterStatus("active")}
+                  className={`px-[16px] py-[8px] text-[14px] font-semibold transition-colors ${
+                    filterStatus === "active"
+                      ? "bg-brand-primary text-white"
+                      : "bg-neutral-light-gray text-neutral-black hover:bg-neutral-gray/20"
+                  }`}
+                >
+                  Active ({statusCounts.active})
+                </button>
+                <button
+                  onClick={() => setFilterStatus("draft")}
+                  className={`px-[16px] py-[8px] text-[14px] font-semibold transition-colors ${
+                    filterStatus === "draft"
+                      ? "bg-brand-primary text-white"
+                      : "bg-neutral-light-gray text-neutral-black hover:bg-neutral-gray/20"
+                  }`}
+                >
+                  Draft ({statusCounts.draft})
+                </button>
+                <button
+                  onClick={() => setFilterStatus("inactive")}
+                  className={`px-[16px] py-[8px] text-[14px] font-semibold transition-colors ${
+                    filterStatus === "inactive"
+                      ? "bg-brand-primary text-white"
+                      : "bg-neutral-light-gray text-neutral-black hover:bg-neutral-gray/20"
+                  }`}
+                >
+                  Inactive ({statusCounts.inactive})
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Listings Grid */}
+        <div className="grid grid-cols-1 gap-[24px]">
+          {filteredListings.map((listing) => (
+            <div key={listing.id} className="bg-white border border-[rgba(0,0,0,0.08)] hover:border-[rgba(0,0,0,0.16)] transition-colors">
+              <div className="flex gap-[24px] p-[24px]">
+                {/* Image */}
+                <div className="w-[240px] h-[180px] flex-shrink-0 overflow-hidden bg-neutral-light-gray">
+                  <ImageWithFallback
+                    src={listing.image}
+                    alt={listing.title}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+
+                {/* Content */}
+                <div className="flex-1 flex flex-col">
+                  <div className="flex items-start justify-between mb-[12px]">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-[12px] mb-[8px]">
+                        <h3 className="text-neutral-black text-[20px] font-bold">
+                          {listing.title}
+                        </h3>
+                        <span className={`px-[12px] py-[4px] text-[12px] font-bold uppercase tracking-[0.05em] ${
+                          listing.status === "active"
+                            ? "bg-accent-blue/10 text-accent-blue"
+                            : listing.status === "draft"
+                            ? "bg-neutral-gray/10 text-neutral-gray"
+                            : "bg-neutral-gray/10 text-neutral-gray"
+                        }`}>
+                          {listing.status}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-[6px] text-neutral-gray text-[14px] mb-[16px]">
+                        <MapPin className="w-[14px] h-[14px]" />
+                        <span>{listing.address}, {listing.city}</span>
+                      </div>
+                    </div>
+
+                    <button className="p-[8px] hover:bg-neutral-light-gray">
+                      <MoreVertical className="w-[20px] h-[20px] text-neutral-gray" />
+                    </button>
+                  </div>
+
+                  {/* Property Details */}
+                  <div className="flex items-center gap-[24px] mb-[16px]">
+                    <div className="flex items-center gap-[8px]">
+                      <Bed className="w-[16px] h-[16px] text-neutral-gray" />
+                      <span className="text-neutral-black text-[14px] font-semibold">
+                        {listing.beds} {listing.beds === 1 ? "Bedroom" : "Bedrooms"}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-[8px]">
+                      <Bath className="w-[16px] h-[16px] text-neutral-gray" />
+                      <span className="text-neutral-black text-[14px] font-semibold">
+                        {listing.baths} {listing.baths === 1 ? "Bathroom" : "Bathrooms"}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-[8px]">
+                      <Square className="w-[16px] h-[16px] text-neutral-gray" />
+                      <span className="text-neutral-black text-[14px] font-semibold">
+                        {listing.sqm}m²
+                      </span>
+                    </div>
+                    <div className="ml-auto">
+                      <div className="text-brand-primary text-[24px] font-bold">
+                        €{listing.price.toLocaleString()}
+                      </div>
+                      <div className="text-neutral-gray text-[12px] text-right">per month</div>
+                    </div>
+                  </div>
+
+                  {/* Stats */}
+                  <div className="flex items-center gap-[32px] pt-[16px] border-t border-[rgba(0,0,0,0.08)]">
+                    <div className="flex items-center gap-[8px]">
+                      <Eye className="w-[16px] h-[16px] text-neutral-gray" />
+                      <span className="text-neutral-gray text-[14px]">
+                        {listing.views.toLocaleString()} views
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-[8px]">
+                      <MessageSquare className="w-[16px] h-[16px] text-neutral-gray" />
+                      <span className="text-neutral-gray text-[14px]">
+                        {listing.inquiries} inquiries
+                      </span>
+                    </div>
+                    <div className="text-neutral-gray text-[14px]">
+                      Created: {new Date(listing.createdAt).toLocaleDateString("en-GB", { 
+                        day: "numeric", 
+                        month: "short", 
+                        year: "numeric" 
+                      })}
+                    </div>
+
+                    <div className="ml-auto flex items-center gap-[8px]">
+                      <Link
+                        to={`/property/${listing.id}`}
+                        className="flex items-center gap-[8px] px-[16px] py-[8px] border border-[rgba(0,0,0,0.16)] text-neutral-black text-[14px] font-semibold hover:bg-neutral-light-gray transition-colors"
+                      >
+                        <Eye className="w-[14px] h-[14px]" />
+                        View
+                      </Link>
+                      <Link
+                        to={`/landlord/listings/${listing.id}/edit`}
+                        className="flex items-center gap-[8px] px-[16px] py-[8px] border border-[rgba(0,0,0,0.16)] text-neutral-black text-[14px] font-semibold hover:bg-neutral-light-gray transition-colors"
+                      >
+                        <Edit className="w-[14px] h-[14px]" />
+                        Edit
+                      </Link>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
+
+          {filteredListings.length === 0 && (
+            <div className="bg-white border border-[rgba(0,0,0,0.08)] p-[64px] text-center">
+              <Home className="w-[48px] h-[48px] text-neutral-gray mx-auto mb-[16px]" />
+              <h3 className="text-neutral-black text-[18px] font-bold mb-[8px]">
+                No listings found
+              </h3>
+              <p className="text-neutral-gray text-[14px] mb-[24px]">
+                {searchQuery ? "Try adjusting your search or filters" : "Create your first listing to get started"}
+              </p>
+              {!searchQuery && (
+                <Link
+                  to="/landlord/listings/add"
+                  className="inline-flex items-center gap-[8px] bg-brand-primary text-white px-[24px] py-[12px] font-semibold hover:bg-brand-primary-dark transition-colors"
+                >
+                  <Plus className="w-[16px] h-[16px]" />
+                  Create New Listing
+                </Link>
+              )}
+            </div>
+          )}
+        </div>
+      </main>
+    </LandlordPortalLayout>
+  );
+}

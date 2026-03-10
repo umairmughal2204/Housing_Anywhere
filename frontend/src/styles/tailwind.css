@@ -1,0 +1,44 @@
+@import 'tailwindcss' source(none);
+@source '../**/*.{js,ts,jsx,tsx}';
+
+@import 'tw-animate-css';
+
+/* EasyRent Custom Color Utilities */
+@layer utilities {
+  /* Brand Teal Colors */
+  .bg-brand-primary { background-color: var(--brand-primary); }
+  .bg-brand-primary-dark { background-color: var(--brand-primary-dark); }
+  .bg-brand-primary-light { background-color: var(--brand-primary-light); }
+  .text-brand-primary { color: var(--brand-primary); }
+  .text-brand-primary-dark { color: var(--brand-primary-dark); }
+  .border-brand-primary { border-color: var(--brand-primary); }
+  
+  /* Accent Blue Colors */
+  .bg-accent-blue { background-color: var(--accent-blue); }
+  .bg-accent-blue-dark { background-color: var(--accent-blue-dark); }
+  .bg-accent-blue-light { background-color: var(--accent-blue-light); }
+  .text-accent-blue { color: var(--accent-blue); }
+  .border-accent-blue { border-color: var(--accent-blue); }
+  
+  /* Neutral Colors */
+  .bg-neutral-black { background-color: var(--neutral-black); }
+  .bg-neutral-gray { background-color: var(--neutral-gray); }
+  .bg-neutral-light-gray { background-color: var(--neutral-light-gray); }
+  .bg-neutral-white { background-color: var(--neutral-white); }
+  .text-neutral-black { color: var(--neutral-black); }
+  .text-neutral-gray { color: var(--neutral-gray); }
+  .border-neutral { border-color: var(--neutral-border); }
+  
+  /* Hover States */
+  .hover\:bg-brand-primary-dark:hover { background-color: var(--brand-primary-dark); }
+  .hover\:bg-brand-primary:hover { background-color: var(--brand-primary); }
+  .hover\:text-brand-primary:hover { color: var(--brand-primary); }
+  .hover\:border-neutral-hover:hover { border-color: var(--neutral-border-hover); }
+  
+  /* Gradient Utilities */
+  .from-brand-primary { --tw-gradient-from: var(--brand-primary); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to, transparent); }
+  .from-brand-primary-dark { --tw-gradient-from: var(--brand-primary-dark); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to, transparent); }
+  .to-brand-primary { --tw-gradient-to: var(--brand-primary); }
+  .to-brand-primary-dark { --tw-gradient-to: var(--brand-primary-dark); }
+  .via-brand-primary { --tw-gradient-stops: var(--tw-gradient-from), var(--brand-primary), var(--tw-gradient-to, transparent); }
+}

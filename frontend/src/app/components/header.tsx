@@ -1,0 +1,339 @@
+import { Link } from "react-router";
+import { Globe, MessageCircle, Heart, Bell, User, CreditCard, HelpCircle, Settings, LogOut, TrendingUp, LayoutDashboard } from "lucide-react";
+import { useState, useRef, useEffect } from "react";
+import { useAuth } from "../contexts/auth-context";
+
+export function Header() {
+  const { user, isAuthenticated, logout } = useAuth();
+  const [showDropdown, setShowDropdown] = useState(false);
+  const [selectedLanguage, setSelectedLanguage] = useState("English");
+  const [showLanguageDropdown, setShowLanguageDropdown] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const languageDropdownRef = useRef<HTMLDivElement>(null);
+
+  const languages = [
+    "English",
+    "Español",
+    "Français",
+    "Deutsch",
+    "Italiano",
+    "Nederlands",
+    "Português",
+    "Polski",
+    "Türkçe",
+    "中文",
+    "日本語",
+    "한국어"
+  ];
+
+  // Get user initials
+  const getUserInitials = () => {
+    if (!user) return "U";
+    const nameParts = user.name.split(" ");
+    if (nameParts.length >= 2) {
+      return `${nameParts[0].charAt(0)}${nameParts[1].charAt(0)}`.toUpperCase();
+    }
+    return user.name.charAt(0).toUpperCase();
+  };
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setShowDropdown(false);
+      }
+      if (languageDropdownRef.current && !languageDropdownRef.current.contains(event.target as Node)) {
+        setShowLanguageDropdown(false);
+      }
+    }
+    
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  return (
+    <header className="border-b border-neutral bg-white sticky top-0 z-50">
+      <div className="max-w-[1440px] mx-auto px-[32px] py-[16px] flex items-center justify-between">
+        {/* Logo */}
+        <Link to="/" className="flex items-center gap-[8px]">
+          <div className="w-[32px] h-[32px] bg-brand-primary flex items-center justify-center">
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+              <path
+                d="M10 2L3 7V17H8V12H12V17H17V7L10 2Z"
+                fill="white"
+                stroke="white"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </div>
+          <span className="text-neutral-black text-[18px] font-bold">
+            Easy<span className="text-brand-primary">Rent</span>
+          </span>
+        </Link>
+
+        {/* Center Navigation - Only show when NOT logged in */}
+        {!isAuthenticated && (
+          <nav className="flex items-center gap-[32px]">
+            <Link
+              to="/how-it-works"
+              className="text-neutral-black text-[14px] font-medium hover:text-brand-primary transition-colors"
+            >
+              How it works
+            </Link>
+            <Link
+              to="/pricing"
+              className="text-neutral-black text-[14px] font-medium hover:text-brand-primary transition-colors"
+            >
+              Pricing
+            </Link>
+            <Link
+              to="/help"
+              className="text-neutral-black text-[14px] font-medium hover:text-brand-primary transition-colors"
+            >
+              Help
+            </Link>
+          </nav>
+        )}
+
+        {/* Right Actions - Logged Out */}
+        {!isAuthenticated && (
+          <div className="flex items-center gap-[24px]">
+            <Link 
+              to="/login"
+              className="text-neutral-black text-[14px] font-medium hover:text-brand-primary transition-colors"
+            >
+              Log in
+            </Link>
+            <Link to="/signup" className="text-neutral-black text-[14px] font-medium hover:text-brand-primary transition-colors">
+              Sign up
+            </Link>
+            <Link to="/landlord" className="px-[16px] py-[8px] border border-neutral-hover text-neutral-black text-[14px] font-semibold hover:bg-neutral-light-gray transition-colors">
+              I'm a landlord
+            </Link>
+            <div className="relative" ref={languageDropdownRef}>
+              <button
+                onClick={() => setShowLanguageDropdown(!showLanguageDropdown)}
+                className="p-[8px] hover:bg-neutral-light-gray transition-colors"
+              >
+                <Globe className="w-[20px] h-[20px] text-neutral-gray" />
+              </button>
+
+              {/* Language Dropdown Menu */}
+              {showLanguageDropdown && (
+                <div className="absolute top-[calc(100%+8px)] right-0 w-[160px] bg-white border border-neutral shadow-lg">
+                  {languages.map((language) => (
+                    <button
+                      key={language}
+                      onClick={() => {
+                        setSelectedLanguage(language);
+                        setShowLanguageDropdown(false);
+                      }}
+                      className="w-full flex items-center px-[16px] py-[12px] text-neutral-black text-[14px] hover:bg-neutral-light-gray transition-colors"
+                    >
+                      {language}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Right Actions - Logged In */}
+        {isAuthenticated && (
+          <div className="flex items-center gap-[16px]">
+            {/* Show appropriate landlord button based on status */}
+            {user?.isLandlord ? (
+              <Link 
+                to="/landlord/dashboard" 
+                className="flex items-center gap-[8px] px-[16px] py-[8px] bg-brand-primary text-white text-[14px] font-semibold hover:bg-brand-primary-dark transition-colors"
+              >
+                <LayoutDashboard className="w-[16px] h-[16px]" />
+                Go to Dashboard
+              </Link>
+            ) : (
+              <Link 
+                to="/landlord" 
+                className="px-[16px] py-[8px] border border-neutral-hover text-neutral-black text-[14px] font-semibold hover:bg-neutral-light-gray transition-colors"
+              >
+                I'm a landlord
+              </Link>
+            )}
+
+            {/* Messages Icon with Badge */}
+            <Link to="/tenant/inbox" className="relative p-[8px] hover:bg-neutral-light-gray transition-colors">
+              <MessageCircle className="w-[20px] h-[20px] text-neutral-gray" />
+              <span className="absolute top-[4px] right-[4px] w-[16px] h-[16px] bg-brand-primary text-white text-[10px] font-bold flex items-center justify-center rounded-full">
+                2
+              </span>
+            </Link>
+
+            {/* Favorites Icon */}
+            <Link to="/favorites" className="p-[8px] hover:bg-neutral-light-gray transition-colors">
+              <Heart className="w-[20px] h-[20px] text-neutral-gray" />
+            </Link>
+
+            {/* User Avatar with Dropdown */}
+            <div className="relative" ref={dropdownRef}>
+              <button
+                onClick={() => setShowDropdown(!showDropdown)}
+                className="w-[40px] h-[40px] bg-neutral-gray rounded-full flex items-center justify-center text-white text-[16px] font-semibold hover:bg-neutral-black transition-colors"
+              >
+                {getUserInitials()}
+              </button>
+
+              {/* Dropdown Menu */}
+              {showDropdown && (
+                <div className="absolute top-[calc(100%+8px)] right-0 w-[280px] bg-white border border-neutral shadow-lg">
+                  {/* User Info */}
+                  <div className="p-[16px] border-b border-neutral">
+                    <div className="flex items-center gap-[12px]">
+                      <div className="w-[48px] h-[48px] bg-neutral-gray rounded-full flex items-center justify-center text-white text-[20px] font-semibold">
+                        {getUserInitials()}
+                      </div>
+                      <div>
+                        <div className="text-neutral-black text-[14px] font-bold">{user.name}</div>
+                        <div className="text-neutral-gray text-[12px]">{user.email}</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Menu Items */}
+                  <div className="py-[8px]">
+                    {user?.isLandlord && (
+                      <Link
+                        to="/landlord/dashboard"
+                        className="flex items-center gap-[12px] px-[16px] py-[12px] text-neutral-black text-[14px] hover:bg-neutral-light-gray transition-colors"
+                        onClick={() => setShowDropdown(false)}
+                      >
+                        <LayoutDashboard className="w-[16px] h-[16px] text-neutral-gray" />
+                        Landlord Dashboard
+                      </Link>
+                    )}
+                    <Link
+                      to="/tenant/inbox"
+                      className="flex items-center gap-[12px] px-[16px] py-[12px] text-neutral-black text-[14px] hover:bg-neutral-light-gray transition-colors"
+                      onClick={() => setShowDropdown(false)}
+                    >
+                      <MessageCircle className="w-[16px] h-[16px] text-neutral-gray" />
+                      Messages
+                    </Link>
+                    <Link
+                      to="/favorites"
+                      className="flex items-center gap-[12px] px-[16px] py-[12px] text-neutral-black text-[14px] hover:bg-neutral-light-gray transition-colors"
+                      onClick={() => setShowDropdown(false)}
+                    >
+                      <Heart className="w-[16px] h-[16px] text-neutral-gray" />
+                      Favorites
+                    </Link>
+                    <Link
+                      to="/alerts"
+                      className="flex items-center gap-[12px] px-[16px] py-[12px] text-neutral-black text-[14px] hover:bg-neutral-light-gray transition-colors"
+                      onClick={() => setShowDropdown(false)}
+                    >
+                      <Bell className="w-[16px] h-[16px] text-neutral-gray" />
+                      Alerts
+                    </Link>
+                    <Link
+                      to="/payments"
+                      className="flex items-center gap-[12px] px-[16px] py-[12px] text-neutral-black text-[14px] hover:bg-neutral-light-gray transition-colors"
+                      onClick={() => setShowDropdown(false)}
+                    >
+                      <CreditCard className="w-[16px] h-[16px] text-neutral-gray" />
+                      Payments
+                    </Link>
+                    <Link
+                      to="/account"
+                      className="flex items-center gap-[12px] px-[16px] py-[12px] text-neutral-black text-[14px] hover:bg-neutral-light-gray transition-colors"
+                      onClick={() => setShowDropdown(false)}
+                    >
+                      <Settings className="w-[16px] h-[16px] text-neutral-gray" />
+                      Account
+                    </Link>
+                  </div>
+
+                  {/* Divider */}
+                  <div className="border-t border-neutral"></div>
+
+                  <div className="py-[8px]">
+                    <Link
+                      to="/how-it-works"
+                      className="flex items-center gap-[12px] px-[16px] py-[12px] text-neutral-black text-[14px] hover:bg-neutral-light-gray transition-colors"
+                      onClick={() => setShowDropdown(false)}
+                    >
+                      <TrendingUp className="w-[16px] h-[16px] text-neutral-gray" />
+                      How it works
+                    </Link>
+                    <Link
+                      to="/pricing"
+                      className="flex items-center gap-[12px] px-[16px] py-[12px] text-neutral-black text-[14px] hover:bg-neutral-light-gray transition-colors"
+                      onClick={() => setShowDropdown(false)}
+                    >
+                      <CreditCard className="w-[16px] h-[16px] text-neutral-gray" />
+                      Pricing
+                    </Link>
+                    <Link
+                      to="/help"
+                      className="flex items-center gap-[12px] px-[16px] py-[12px] text-neutral-black text-[14px] hover:bg-neutral-light-gray transition-colors"
+                      onClick={() => setShowDropdown(false)}
+                    >
+                      <HelpCircle className="w-[16px] h-[16px] text-neutral-gray" />
+                      Help
+                    </Link>
+                  </div>
+
+                  {/* Divider */}
+                  <div className="border-t border-neutral"></div>
+
+                  {/* Log Out */}
+                  <div className="py-[8px]">
+                    <button
+                      onClick={() => {
+                        logout();
+                        setShowDropdown(false);
+                      }}
+                      className="w-full flex items-center gap-[12px] px-[16px] py-[12px] text-neutral-black text-[14px] hover:bg-neutral-light-gray transition-colors"
+                    >
+                      <LogOut className="w-[16px] h-[16px] text-neutral-gray" />
+                      Log out
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Language Icon with Dropdown */}
+            <div className="relative" ref={languageDropdownRef}>
+              <button
+                onClick={() => setShowLanguageDropdown(!showLanguageDropdown)}
+                className="p-[8px] hover:bg-neutral-light-gray transition-colors"
+              >
+                <Globe className="w-[20px] h-[20px] text-neutral-gray" />
+              </button>
+
+              {/* Language Dropdown Menu */}
+              {showLanguageDropdown && (
+                <div className="absolute top-[calc(100%+8px)] right-0 w-[160px] bg-white border border-neutral shadow-lg">
+                  {languages.map((language) => (
+                    <button
+                      key={language}
+                      onClick={() => {
+                        setSelectedLanguage(language);
+                        setShowLanguageDropdown(false);
+                      }}
+                      className="w-full flex items-center px-[16px] py-[12px] text-neutral-black text-[14px] hover:bg-neutral-light-gray transition-colors"
+                    >
+                      {language}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+    </header>
+  );
+}
