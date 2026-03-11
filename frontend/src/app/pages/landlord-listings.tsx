@@ -74,7 +74,7 @@ export function LandlordListings() {
       setError("");
 
       try {
-        const response = await fetch(`${apiBase}/api/listings`, {
+        const response = await fetch(`${apiBase}/api/listings/mine`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -243,7 +243,7 @@ export function LandlordListings() {
                   <ImageWithFallback
                     src={listing.images[0] ?? "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800&q=80"}
                     alt={listing.title}
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-contain object-center bg-[#F3F4F6]"
                   />
                 </div>
 

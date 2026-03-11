@@ -140,7 +140,7 @@ export function LandlordAddListing() {
       setError("");
 
       try {
-        const response = await fetch(`${apiBase}/api/listings/${id}`, {
+        const response = await fetch(`${apiBase}/api/listings/mine/${id}`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -700,7 +700,7 @@ export function LandlordAddListing() {
                   <div className="grid grid-cols-3 gap-[16px]">
                     {uploadedImages.map((img, index) => (
                       <div key={index} className="relative aspect-[4/3] rounded-[10px] overflow-hidden group">
-                        <img src={img} alt={`Upload ${index + 1}`} className="w-full h-full object-cover" />
+                        <img src={img} alt={`Upload ${index + 1}`} className="w-full h-full object-contain object-center bg-[#F3F4F6]" />
                         <button
                           onClick={() => removeImage(index)}
                           className="absolute top-[8px] right-[8px] w-[32px] h-[32px] bg-neutral-black/70 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"

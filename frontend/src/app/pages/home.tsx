@@ -21,6 +21,17 @@ import {
 } from "lucide-react";
 import { useAuth } from "../contexts/auth-context";
 
+interface HomeListing {
+  id: string;
+  title: string;
+  area: number;
+  bedrooms: number;
+  monthlyRent: number;
+  images: string[];
+  availableFrom: string;
+  createdAt: string;
+}
+
 const cities = [
   {
     name: "Berlin",
@@ -103,6 +114,7 @@ function Counter({ value, suffix = "", prefix = "", duration = 2 }: { value: num
 }
 
 export function Home() {
+  const apiBase = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:4000";
   const [searchCity, setSearchCity] = useState("");
   const [startDate, setStartDate] = useState<Date | null>(new Date(2026, 2, 1)); // March 1, 2026
   const [endDate, setEndDate] = useState<Date | null>(new Date(2026, 5, 1)); // June 1, 2026
@@ -112,40 +124,34 @@ export function Home() {
   const cityDropdownRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
+  const [recentlyViewed, setRecentlyViewed] = useState<HomeListing[]>([]);
+  const [isLoadingListings, setIsLoadingListings] = useState(false);
 
-  // Mock property data
-  const recentlyViewed = [
-    {
-      id: 1,
-      title: "Private room in Rue Clément Ader, Rosny-sou...",
-      size: 13,
-      housemates: 6,
-      price: 600,
-      image: "https://images.unsplash.com/photo-1639751907353-3629fc00d2b2?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxtb2Rlcm4lMjBiZWRyb29tJTIwaW50ZXJpb3IlMjBjb3p5fGVufDF8fHx8MTc3MzE0NzkzOHww&ixlib=rb-4.1.0&q=80&w=1080",
-      isNew: false,
-      available: true,
-    },
-    {
-      id: 2,
-      title: "Private room in Rue Louis Lebrun, Sarcelles",
-      size: 10,
-      housemates: 4,
-      price: 580,
-      image: "https://images.unsplash.com/photo-1721738857280-f4e7c1c43f2f?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxtaW5pbWFsaXN0JTIwYmVkcm9vbSUyMGdyYXklMjB3aGl0ZXxlbnwxfHx8fDE3NzMxNDc5Mzh8MA&ixlib=rb-4.1.0&q=80&w=1080",
-      isNew: false,
-      available: true,
-    },
-    {
-      id: 3,
-      title: "Private room in Boulevard Michelet, Noisy-le-Sec",
-      size: 11,
-      housemates: 11,
-      price: 425,
-      image: "https://images.unsplash.com/photo-1771039621891-bc8be5144895?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxicmlnaHQlMjBiZWRyb29tJTIwd2luZG93JTIwbmF0dXJhbCUyMGxpZ2h0fGVufDF8fHx8MTc3MzE0NzkzOXww&ixlib=rb-4.1.0&q=80&w=1080",
-      isNew: true,
-      available: true,
-    },
-  ];
+  useEffect(() => {
+    const loadHomeListings = async () => {
+      if (!isAuthenticated) {
+        setRecentlyViewed([]);
+        return;
+      }
+
+      setIsLoadingListings(true);
+      try {
+        const response = await fetch(`${apiBase}/api/listings`);
+        if (!response.ok) {
+          throw new Error("Failed to load home listings");
+        }
+
+        const payload = (await response.json()) as { listings: HomeListing[] };
+        setRecentlyViewed(payload.listings.slice(0, 3));
+      } catch {
+        setRecentlyViewed([]);
+      } finally {
+        setIsLoadingListings(false);
+      }
+    };
+
+    void loadHomeListings();
+  }, [apiBase, isAuthenticated]);
 
   // Close city dropdown when clicking outside
   useEffect(() => {
@@ -342,6 +348,9 @@ export function Home() {
             </div>
 
             {/* Property Cards */}
+            {isLoadingListings && (
+              <div className="text-[#6B6B6B] text-[14px] py-[8px]">Loading properties...</div>
+            )}
             <div className="grid grid-cols-3 gap-[24px]">
               {recentlyViewed.map((property) => (
                 <Link
@@ -352,11 +361,11 @@ export function Home() {
                   {/* Property Image */}
                   <div className="relative aspect-[4/3] overflow-hidden bg-[#F7F7F9]">
                     <img
-                      src={property.image}
+                      src={property.images[0] ?? "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800&q=80"}
                       alt={property.title}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      className="w-full h-full object-contain object-center bg-[#F3F4F6]"
                     />
-                    {property.isNew && (
+                    {Date.now() - new Date(property.createdAt).getTime() < 1000 * 60 * 60 * 24 * 7 && (
                       <div className="absolute top-[12px] left-[12px] bg-[#FFD93D] text-[#1A1A1A] px-[8px] py-[4px] text-[11px] font-bold uppercase tracking-[0.05em] flex items-center gap-[4px]">
                         <Star className="w-[10px] h-[10px] fill-current" />
                         New
@@ -383,29 +392,30 @@ export function Home() {
                     <div className="flex items-center gap-[12px] mb-[12px] text-[13px] text-[#6B6B6B]">
                       <div className="flex items-center gap-[4px]">
                         <MapPin className="w-[12px] h-[12px]" />
-                        <span>{property.size} m²</span>
+                        <span>{property.area} m²</span>
                       </div>
                       <div className="flex items-center gap-[4px]">
                         <UserIcon className="w-[12px] h-[12px]" />
-                        <span>{property.housemates} housemates</span>
+                        <span>{property.bedrooms} bedrooms</span>
                       </div>
                     </div>
                     <div className="flex items-baseline gap-[4px] mb-[8px]">
                       <span className="text-[#1A1A1A] text-[18px] font-bold">
-                        €{property.price}
+                        €{property.monthlyRent}
                       </span>
                       <span className="text-[#6B6B6B] text-[13px]">/month, excl. utilities</span>
                     </div>
-                    {property.available && (
-                      <div className="flex items-center gap-[6px] text-accent-blue text-[12px] font-semibold">
-                        <div className="w-[6px] h-[6px] rounded-full bg-accent-blue" />
-                        Available now
-                      </div>
-                    )}
+                    <div className="flex items-center gap-[6px] text-accent-blue text-[12px] font-semibold">
+                      <div className="w-[6px] h-[6px] rounded-full bg-accent-blue" />
+                      Available from {new Date(property.availableFrom).toLocaleDateString("en-GB")}
+                    </div>
                   </div>
                 </Link>
               ))}
             </div>
+            {!isLoadingListings && recentlyViewed.length === 0 && (
+              <div className="text-[#6B6B6B] text-[14px] py-[8px]">No live listings available yet.</div>
+            )}
           </div>
         </section>
       )}

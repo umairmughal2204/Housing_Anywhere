@@ -1,5 +1,5 @@
 import { Link, useParams, useNavigate } from "react-router";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Header } from "../components/header";
 import { Footer } from "../components/footer";
 import { useAuth } from "../contexts/auth-context";
@@ -24,7 +24,7 @@ import {
   Utensils,
 } from "lucide-react";
 
-const propertyImages = [
+const fallbackPropertyImages = [
   "https://images.unsplash.com/photo-1649740718655-3c70b0e3d431?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxwYXJpcyUyMGFwYXJ0bWVudCUyMGJlZHJvb20lMjB3aW5kb3d8ZW58MXx8fHwxNzczMDg5ODczfDA&ixlib=rb-4.1.0&q=80&w=1080",
   "https://images.unsplash.com/photo-1758548157747-285c7012db5b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxyZW50YWwlMjByb29tJTIwaW50ZXJpb3IlMjBicmlnaHR8ZW58MXx8fHwxNzczMDg5ODczfDA&ixlib=rb-4.1.0&q=80&w=1080",
   "https://images.unsplash.com/photo-1767800766429-7179fd80948f?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxhcGFydG1lbnQlMjBiZWRyb29tJTIwZGVzayUyMHN0dWR5fGVufDF8fHx8MTc3MzA4OTg3NHww&ixlib=rb-4.1.0&q=80&w=1080",
@@ -32,12 +32,70 @@ const propertyImages = [
   "https://images.unsplash.com/photo-1730789442056-76dbcaab7dd7?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxmdXJuaXNoZWQlMjBhcGFydG1lbnQlMjBsaXZpbmclMjBzcGFjZXxlbnwxfHx8fDE3NzMwODk1NjR8MA&ixlib=rb-4.1.0&q=80&w=1080",
 ];
 
+interface ListingDetails {
+  id: string;
+  propertyType: "apartment" | "studio" | "house" | "room";
+  title: string;
+  description: string;
+  address: string;
+  city: string;
+  postalCode: string;
+  bedrooms: number;
+  bathrooms: number;
+  area: number;
+  monthlyRent: number;
+  deposit: number;
+  availableFrom: string;
+  minStay: number;
+  utilitiesIncluded: boolean;
+  registrationPossible: boolean;
+  amenities: string[];
+  houseRules: string[];
+  images: string[];
+}
+
 export function PropertyListing() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const apiBase = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:4000";
   const { isAuthenticated } = useAuth();
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isFavorited, setIsFavorited] = useState(false);
+  const [listing, setListing] = useState<ListingDetails | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const loadListing = async () => {
+      if (!id) {
+        setIsLoading(false);
+        return;
+      }
+
+      setIsLoading(true);
+      try {
+        const response = await fetch(`${apiBase}/api/listings/${id}`);
+        if (!response.ok) {
+          throw new Error("Listing not found");
+        }
+
+        const payload = (await response.json()) as { listing: ListingDetails };
+        setListing(payload.listing);
+      } catch {
+        setListing(null);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    void loadListing();
+  }, [apiBase, id]);
+
+  const propertyImages = useMemo(() => {
+    if (listing && listing.images.length > 0) {
+      return listing.images;
+    }
+    return fallbackPropertyImages;
+  }, [listing]);
 
   const previousImage = () => {
     setCurrentImageIndex((prev) => (prev === 0 ? propertyImages.length - 1 : prev - 1));
@@ -87,15 +145,15 @@ export function PropertyListing() {
               EasyRent
             </Link>
             <span className="text-neutral-gray">&gt;</span>
-            <Link to="/s/rosny-sous-bois" className="text-brand-primary hover:underline font-semibold">
-              Rosny-sous-Bois
+            <Link to={`/s/${(listing?.city ?? "city").toLowerCase()}`} className="text-brand-primary hover:underline font-semibold">
+              {listing?.city ?? "City"}
             </Link>
             <span className="text-neutral-gray">&gt;</span>
-            <Link to="/s/rosny-sous-bois" className="text-brand-primary hover:underline font-semibold">
+            <Link to={`/s/${(listing?.city ?? "city").toLowerCase()}`} className="text-brand-primary hover:underline font-semibold">
               Rooms
             </Link>
             <span className="text-neutral-gray">&gt;</span>
-            <span className="text-neutral-black font-semibold">Rue Clément Ader</span>
+            <span className="text-neutral-black font-semibold">{listing?.title ?? "Listing"}</span>
           </div>
         </div>
       </div>
@@ -112,7 +170,7 @@ export function PropertyListing() {
                 <img
                   src={propertyImages[currentImageIndex]}
                   alt="Property"
-                  className="w-full h-[480px] object-cover"
+                  className="w-full h-[480px] object-contain object-center bg-[#F3F4F6]"
                 />
 
                 {/* Navigation Arrows */}
@@ -163,7 +221,7 @@ export function PropertyListing() {
                       currentImageIndex === index ? "ring-2 ring-brand-primary" : ""
                     }`}
                   >
-                    <img src={image} alt={`Thumbnail ${index + 1}`} className="w-full h-full object-cover" />
+                    <img src={image} alt={`Thumbnail ${index + 1}`} className="w-full h-full object-contain object-center bg-[#F3F4F6]" />
                   </button>
                 ))}
 
@@ -184,10 +242,10 @@ export function PropertyListing() {
             {/* Property Title & Price */}
             <div className="mb-[24px]">
               <h1 className="text-[#1A1A1A] text-[32px] font-bold tracking-[-0.02em] mb-[8px]">
-                Rue Clément Ader
+                {isLoading ? "Loading..." : listing?.title ?? "Listing unavailable"}
               </h1>
               <div className="flex items-baseline gap-[8px] mb-[16px]">
-                <span className="text-[#1A1A1A] text-[28px] font-bold">€600</span>
+                <span className="text-[#1A1A1A] text-[28px] font-bold">€{listing?.monthlyRent ?? 0}</span>
                 <span className="text-[#6B6B6B] text-[16px]">per month,</span>
                 <span className="text-[#6B6B6B] text-[14px] underline cursor-pointer">
                   excludes bills, deposit required
@@ -200,7 +258,7 @@ export function PropertyListing() {
               <div className="flex items-center gap-[8px] text-[#1A1A1A]">
                 <HomeIcon className="w-[18px] h-[18px] text-[#6B6B6B]" />
                 <span className="text-[14px]">
-                  <span className="font-semibold">Room</span> 13 m²
+                  <span className="font-semibold">{listing?.propertyType ?? "Room"}</span> {listing?.area ?? 0} m²
                 </span>
               </div>
               <div className="flex items-center gap-[8px] text-[#1A1A1A]">
@@ -218,25 +276,25 @@ export function PropertyListing() {
               <div className="flex items-center gap-[8px] text-[#1A1A1A]">
                 <Sofa className="w-[18px] h-[18px] text-[#6B6B6B]" />
                 <span className="text-[14px]">
-                  <span className="font-semibold">Furnished</span>
+                  <span className="font-semibold">{listing?.amenities.includes("tv") ? "Furnished" : "Standard"}</span>
                 </span>
               </div>
               <div className="flex items-center gap-[8px] text-[#1A1A1A]">
                 <Users className="w-[18px] h-[18px] text-[#6B6B6B]" />
                 <span className="text-[14px]">
-                  <span className="font-semibold">Space for 6 people</span>
+                  <span className="font-semibold">Space for {listing?.bedrooms ?? 0} bedroom(s)</span>
                 </span>
               </div>
               <div className="flex items-center gap-[8px] text-[#1A1A1A]">
                 <HomeIcon className="w-[18px] h-[18px] text-[#6B6B6B]" />
                 <span className="text-[14px]">
-                  <span className="font-semibold">2 bathrooms</span>
+                  <span className="font-semibold">{listing?.bathrooms ?? 0} bathrooms</span>
                 </span>
               </div>
               <div className="flex items-center gap-[8px] text-[#1A1A1A]">
                 <Users className="w-[18px] h-[18px] text-[#6B6B6B]" />
                 <span className="text-[14px]">
-                  <span className="font-semibold">6 housemates (male)</span>
+                  <span className="font-semibold">Located in {listing?.city ?? "city"}</span>
                 </span>
               </div>
             </div>
@@ -246,19 +304,7 @@ export function PropertyListing() {
               <h2 className="text-[#1A1A1A] text-[24px] font-bold mb-[16px]">About this property</h2>
               <div className="text-[#1A1A1A] text-[15px] leading-[1.6] space-y-[16px]">
                 <p>
-                  This comfortable private room is located in a fully furnished shared apartment in Rosny-sous-Bois, 
-                  perfect for students and young professionals. The 13m² room comes with a comfortable bed, desk, 
-                  wardrobe, and natural light from large windows.
-                </p>
-                <p>
-                  The property is a spacious 92m² apartment shared with 5 other housemates. You'll have access to 
-                  a modern kitchen, 2 bathrooms, and a cozy common area. The location is excellent with quick access 
-                  to public transportation - just 10 minutes walk to RER E station connecting you directly to central Paris.
-                </p>
-                <p>
-                  The neighborhood is safe, quiet, and well-connected with supermarkets, cafes, and parks nearby. 
-                  Perfect for those looking for an affordable option close to Paris while enjoying more space and a 
-                  community living experience.
+                  {listing?.description ?? "No listing description available."}
                 </p>
               </div>
             </div>
@@ -268,14 +314,12 @@ export function PropertyListing() {
               <h2 className="text-[#1A1A1A] text-[24px] font-bold mb-[16px]">What this place offers</h2>
               <div className="grid grid-cols-2 gap-[16px]">
                 {[
-                  { icon: Wifi, label: "High-speed WiFi" },
-                  { icon: AirVent, label: "Central heating" },
-                  { icon: Utensils, label: "Fully equipped kitchen" },
-                  { icon: Tv, label: "Smart TV in common area" },
-                  { icon: Check, label: "Washing machine" },
-                  { icon: Check, label: "Dishwasher" },
-                  { icon: Check, label: "Bed linens included" },
-                  { icon: Check, label: "Registration possible" },
+                  ...(listing?.amenities.includes("wifi") ? [{ icon: Wifi, label: "High-speed WiFi" }] : []),
+                  ...(listing?.amenities.includes("ac") ? [{ icon: AirVent, label: "Air conditioning" }] : []),
+                  ...(listing?.amenities.includes("kitchen") ? [{ icon: Utensils, label: "Kitchen" }] : []),
+                  ...(listing?.amenities.includes("tv") ? [{ icon: Tv, label: "TV" }] : []),
+                  ...(listing?.amenities.includes("washer") ? [{ icon: Check, label: "Washing machine" }] : []),
+                  ...(listing?.registrationPossible ? [{ icon: Check, label: "Registration possible" }] : []),
                 ].map((item, idx) => (
                   <div key={idx} className="flex items-center gap-[12px]">
                     <item.icon className="w-[18px] h-[18px] text-[#6B6B6B]" />
@@ -293,28 +337,17 @@ export function PropertyListing() {
                   <Check className="w-[16px] h-[16px] text-accent-blue mt-[2px]" />
                   <div>
                     <span className="text-neutral-black text-[14px] font-semibold">Minimum stay: </span>
-                    <span className="text-neutral-gray text-[14px]">3 months</span>
+                    <span className="text-neutral-gray text-[14px]">{listing?.minStay ?? 1} months</span>
                   </div>
                 </div>
-                <div className="flex items-start gap-[12px]">
-                  <Check className="w-[16px] h-[16px] text-accent-blue mt-[2px]" />
-                  <div>
-                    <span className="text-neutral-black text-[14px] font-semibold">No smoking indoors</span>
+                {listing?.houseRules.map((rule) => (
+                  <div key={rule} className="flex items-start gap-[12px]">
+                    <Check className="w-[16px] h-[16px] text-accent-blue mt-[2px]" />
+                    <div>
+                      <span className="text-neutral-black text-[14px] font-semibold">{rule}</span>
+                    </div>
                   </div>
-                </div>
-                <div className="flex items-start gap-[12px]">
-                  <Check className="w-[16px] h-[16px] text-accent-blue mt-[2px]" />
-                  <div>
-                    <span className="text-neutral-black text-[14px] font-semibold">No pets allowed</span>
-                  </div>
-                </div>
-                <div className="flex items-start gap-[12px]">
-                  <Check className="w-[16px] h-[16px] text-accent-blue mt-[2px]" />
-                  <div>
-                    <span className="text-neutral-black text-[14px] font-semibold">Quiet hours: </span>
-                    <span className="text-neutral-gray text-[14px]">10 PM - 8 AM</span>
-                  </div>
-                </div>
+                ))}
               </div>
             </div>
           </div>
@@ -344,7 +377,7 @@ export function PropertyListing() {
                   <Calendar className="w-[20px] h-[20px] text-neutral-black" />
                   <div className="flex-1 text-left">
                     <span className="text-neutral-black text-[14px] font-semibold">
-                      9 Mar 2026 - 1 Jun 2026
+                      {listing ? `Available from ${new Date(listing.availableFrom).toLocaleDateString("en-GB")}` : "Select dates"}
                     </span>
                   </div>
                 </button>
@@ -357,21 +390,21 @@ export function PropertyListing() {
                     <span className="text-neutral-black text-[14px]">First month's rent</span>
                     <Info className="w-[14px] h-[14px] text-neutral-gray" />
                   </div>
-                  <span className="text-neutral-black text-[14px] font-semibold">€600</span>
+                    <span className="text-neutral-black text-[14px] font-semibold">€{listing?.monthlyRent ?? 0}</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-[6px]">
                     <span className="text-neutral-black text-[14px]">Tenant Protection</span>
                     <Info className="w-[14px] h-[14px] text-neutral-gray" />
                   </div>
-                  <span className="text-neutral-black text-[14px] font-semibold">€210</span>
+                  <span className="text-neutral-black text-[14px] font-semibold">€{listing?.deposit ?? 0}</span>
                 </div>
               </div>
 
               {/* Total */}
               <div className="flex items-center justify-between pt-[16px] border-t border-[rgba(0,0,0,0.08)] mb-[16px]">
                 <span className="text-neutral-black text-[16px] font-bold">To confirm stay</span>
-                <span className="text-neutral-black text-[20px] font-bold">€810</span>
+                <span className="text-neutral-black text-[20px] font-bold">€{(listing?.monthlyRent ?? 0) + (listing?.deposit ?? 0)}</span>
               </div>
 
               {/* View All Payments */}

@@ -40,6 +40,9 @@ const listingWriteSchema = z.object({
 });
 
 const listingUpdateSchema = listingWriteSchema.partial();
+const listingQuerySchema = z.object({
+  city: z.string().optional(),
+});
 
 function toListingResponse(listing: {
   _id: unknown;
@@ -95,6 +98,34 @@ function toListingResponse(listing: {
   };
 }
 
+router.get("/", async (req, res) => {
+  const queryParsed = listingQuerySchema.safeParse(req.query);
+  if (!queryParsed.success) {
+    res.status(400).json({ message: "Invalid query parameters" });
+    return;
+  }
+
+  const { city } = queryParsed.data;
+  const filter: Record<string, unknown> = { status: "active" };
+
+  if (city && city.trim().length > 0) {
+    filter.city = new RegExp(`^${city.trim()}$`, "i");
+  }
+
+  const listings = await ListingModel.find(filter).sort({ createdAt: -1 }).lean();
+  res.json({ listings: listings.map(toListingResponse) });
+});
+
+router.get("/:id([0-9a-fA-F]{24})", async (req, res) => {
+  const listing = await ListingModel.findOne({ _id: req.params.id, status: "active" }).lean();
+  if (!listing) {
+    res.status(404).json({ message: "Listing not found" });
+    return;
+  }
+
+  res.json({ listing: toListingResponse(listing) });
+});
+
 router.use(requireAuth, requireRole("landlord"));
 
 router.post("/upload-images", upload.array("images", 10), async (req, res) => {
@@ -130,12 +161,12 @@ router.post("/upload-images", upload.array("images", 10), async (req, res) => {
   res.status(201).json({ urls: savedUrls });
 });
 
-router.get("/", async (req, res) => {
+router.get("/mine", async (req, res) => {
   const listings = await ListingModel.find({ landlordId: req.user!.sub }).sort({ createdAt: -1 }).lean();
   res.json({ listings: listings.map(toListingResponse) });
 });
 
-router.get("/:id", async (req, res) => {
+router.get("/mine/:id([0-9a-fA-F]{24})", async (req, res) => {
   const listing = await ListingModel.findOne({ _id: req.params.id, landlordId: req.user!.sub }).lean();
   if (!listing) {
     res.status(404).json({ message: "Listing not found" });
@@ -179,7 +210,7 @@ router.post("/", async (req, res) => {
   res.status(201).json({ listing: toListingResponse(listing.toObject()) });
 });
 
-router.patch("/:id", async (req, res) => {
+router.patch("/:id([0-9a-fA-F]{24})", async (req, res) => {
   const parsed = listingUpdateSchema.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ message: "Invalid input", errors: parsed.error.flatten() });
@@ -219,7 +250,7 @@ router.patch("/:id", async (req, res) => {
   res.json({ listing: toListingResponse(listing.toObject()) });
 });
 
-router.delete("/:id", async (req, res) => {
+router.delete("/:id([0-9a-fA-F]{24})", async (req, res) => {
   const deleted = await ListingModel.findOneAndDelete({ _id: req.params.id, landlordId: req.user!.sub });
   if (!deleted) {
     res.status(404).json({ message: "Listing not found" });
