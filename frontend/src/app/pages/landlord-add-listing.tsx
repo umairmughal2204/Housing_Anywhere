@@ -797,18 +797,6 @@ export function LandlordAddListing() {
             </button>
 
             <div className="flex items-center gap-[12px]">
-              <button
-                onClick={() => {
-                    if (!isSaving && !isUploadingImages) {
-                    void saveListing("draft");
-                  }
-                }}
-                  disabled={isSaving || isLoading || isUploadingImages}
-                className="px-[24px] py-[12px] text-neutral-gray font-semibold hover:text-neutral-black transition-colors"
-              >
-                {isSaving ? "Saving..." : "Save as Draft"}
-              </button>
-              
               {currentStep < 4 ? (
                 <button
                   onClick={() => canProceed() && setCurrentStep(currentStep + 1)}

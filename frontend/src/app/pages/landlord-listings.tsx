@@ -4,27 +4,20 @@ import { useEffect, useState } from "react";
 import { 
   Home,
   MessageSquare,
-  List,
-  Key,
-  BarChart3,
-  Bell,
-  Settings,
   Plus,
   Edit,
   Eye,
   Trash2,
   Search,
-  Filter,
-  MoreVertical,
   MapPin,
   Bed,
   Bath,
   Square,
-  TrendingUp,
 } from "lucide-react";
 import { ImageWithFallback } from "../components/figma/ImageWithFallback";
 
 type ListingStatus = "active" | "draft" | "inactive";
+type ActiveInactiveStatus = "active" | "inactive";
 
 interface Listing {
   id: string;
@@ -97,6 +90,35 @@ export function LandlordListings() {
     void loadListings();
   }, [apiBase]);
 
+  const handleStatusToggle = async (listingId: string, currentStatus: ListingStatus) => {
+    const token = localStorage.getItem("authToken");
+    if (!token) return;
+
+    const newStatus: ActiveInactiveStatus = currentStatus === "active" ? "inactive" : "active";
+
+    try {
+      const response = await fetch(`${apiBase}/api/listings/${listingId}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ status: newStatus }),
+      });
+
+      if (!response.ok) {
+        const payload = (await response.json()) as { message?: string };
+        throw new Error(payload.message ?? "Failed to update status");
+      }
+
+      setListings((prev) =>
+        prev.map((l) => (l.id === listingId ? { ...l, status: newStatus } : l))
+      );
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to update status");
+    }
+  };
+
   const handleDelete = async (listingId: string) => {
     const token = localStorage.getItem("authToken");
     if (!token) {
@@ -138,7 +160,6 @@ export function LandlordListings() {
   const statusCounts = {
     all: listings.length,
     active: listings.filter((l) => l.status === "active").length,
-    draft: listings.filter((l) => l.status === "draft").length,
     inactive: listings.filter((l) => l.status === "inactive").length,
   };
 
@@ -209,16 +230,6 @@ export function LandlordListings() {
                   Active ({statusCounts.active})
                 </button>
                 <button
-                  onClick={() => setFilterStatus("draft")}
-                  className={`px-[16px] py-[8px] text-[14px] font-semibold transition-colors ${
-                    filterStatus === "draft"
-                      ? "bg-brand-primary text-white"
-                      : "bg-neutral-light-gray text-neutral-black hover:bg-neutral-gray/20"
-                  }`}
-                >
-                  Draft ({statusCounts.draft})
-                </button>
-                <button
                   onClick={() => setFilterStatus("inactive")}
                   className={`px-[16px] py-[8px] text-[14px] font-semibold transition-colors ${
                     filterStatus === "inactive"
@@ -258,8 +269,6 @@ export function LandlordListings() {
                         <span className={`px-[12px] py-[4px] text-[12px] font-bold uppercase tracking-[0.05em] ${
                           listing.status === "active"
                             ? "bg-accent-blue/10 text-accent-blue"
-                            : listing.status === "draft"
-                            ? "bg-neutral-gray/10 text-neutral-gray"
                             : "bg-neutral-gray/10 text-neutral-gray"
                         }`}>
                           {listing.status}
@@ -271,8 +280,23 @@ export function LandlordListings() {
                       </div>
                     </div>
 
-                    <button className="p-[8px] hover:bg-neutral-light-gray">
-                      <MoreVertical className="w-[20px] h-[20px] text-neutral-gray" />
+                    <button
+                      onClick={() => { void handleStatusToggle(listing.id, listing.status); }}
+                      title={listing.status === "active" ? "Set Inactive" : "Set Active"}
+                      className={`inline-flex items-center gap-[6px] px-[12px] py-[6px] text-[13px] font-semibold border transition-colors ${
+                        listing.status === "active"
+                          ? "border-[rgba(0,180,100,0.35)] text-[#008A52] hover:bg-green-50"
+                          : "border-[rgba(0,0,0,0.16)] text-neutral-gray hover:bg-neutral-light-gray"
+                      }`}
+                    >
+                      <span className={`w-[28px] h-[16px] rounded-full flex items-center transition-colors ${
+                        listing.status === "active" ? "bg-[#008A52]" : "bg-neutral-gray/40"
+                      }`}>
+                        <span className={`block w-[12px] h-[12px] rounded-full bg-white shadow transition-transform mx-[2px] ${
+                          listing.status === "active" ? "translate-x-[12px]" : "translate-x-0"
+                        }`} />
+                      </span>
+                      {listing.status === "active" ? "Active" : "Inactive"}
                     </button>
                   </div>
 
