@@ -1,6 +1,6 @@
-import { Link, useLocation } from "react-router";
+import { Link } from "react-router";
 import { LandlordPortalLayout } from "../components/landlord-portal-layout";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { 
   Home,
   MessageSquare,
@@ -28,108 +28,107 @@ type ListingStatus = "active" | "draft" | "inactive";
 
 interface Listing {
   id: string;
+  propertyType: "apartment" | "studio" | "house" | "room";
   title: string;
+  description: string;
   address: string;
   city: string;
-  price: number;
-  beds: number;
-  baths: number;
-  sqm: number;
-  image: string;
+  postalCode: string;
+  monthlyRent: number;
+  deposit: number;
+  bedrooms: number;
+  bathrooms: number;
+  area: number;
+  images: string[];
+  availableFrom: string;
+  minStay: number;
+  utilitiesIncluded: boolean;
+  registrationPossible: boolean;
+  amenities: string[];
+  houseRules: string[];
   status: ListingStatus;
   views: number;
   inquiries: number;
   createdAt: string;
+  updatedAt: string;
 }
 
-const mockListings: Listing[] = [
-  {
-    id: "1",
-    title: "Modern 2BR in Kreuzberg",
-    address: "Oranienstraße 45",
-    city: "Berlin",
-    price: 1850,
-    beds: 2,
-    baths: 1,
-    sqm: 75,
-    image: "https://images.unsplash.com/photo-1662454419736-de132ff75638?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxtb2Rlcm4lMjBhcGFydG1lbnQlMjBiZWRyb29tJTIwaW50ZXJpb3J8ZW58MXx8fHwxNzczMTM3MzUxfDA&ixlib=rb-4.1.0&q=80&w=1080",
-    status: "active",
-    views: 1247,
-    inquiries: 34,
-    createdAt: "2026-02-01",
-  },
-  {
-    id: "2",
-    title: "Studio Near Alexanderplatz",
-    address: "Karl-Marx-Allee 92",
-    city: "Berlin",
-    price: 2200,
-    beds: 1,
-    baths: 1,
-    sqm: 48,
-    image: "https://images.unsplash.com/photo-1725042893312-5ec0dea9e369?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxjb250ZW1wb3JhcnklMjBsaXZpbmclMjByb29tJTIwYnJpZ2h0fGVufDF8fHx8MTc3MzE2NzI4Mnww&ixlib=rb-4.1.0&q=80&w=1080",
-    status: "active",
-    views: 982,
-    inquiries: 28,
-    createdAt: "2026-01-15",
-  },
-  {
-    id: "3",
-    title: "3BR Family Apartment",
-    address: "Prenzlauer Allee 156",
-    city: "Berlin",
-    price: 2800,
-    beds: 3,
-    baths: 2,
-    sqm: 110,
-    image: "https://images.unsplash.com/photo-1715985160053-d339e8b6eb94?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxsdXh1cnklMjBhcGFydG1lbnQlMjBraXRjaGVufGVufDF8fHx8MTc3MzA5Mzk5N3ww&ixlib=rb-4.1.0&q=80&w=1080",
-    status: "active",
-    views: 756,
-    inquiries: 19,
-    createdAt: "2026-01-28",
-  },
-  {
-    id: "4",
-    title: "Luxury Penthouse Mitte",
-    address: "Friedrichstraße 200",
-    city: "Berlin",
-    price: 3500,
-    beds: 3,
-    baths: 2,
-    sqm: 140,
-    image: "https://images.unsplash.com/photo-1662454419736-de132ff75638?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxtb2Rlcm4lMjBhcGFydG1lbnQlMjBiZWRyb29tJTIwaW50ZXJpb3J8ZW58MXx8fHwxNzczMTM3MzUxfDA&ixlib=rb-4.1.0&q=80&w=1080",
-    status: "inactive",
-    views: 423,
-    inquiries: 8,
-    createdAt: "2025-12-10",
-  },
-  {
-    id: "5",
-    title: "Cozy 1BR in Neukölln",
-    address: "Sonnenallee 67",
-    city: "Berlin",
-    price: 1200,
-    beds: 1,
-    baths: 1,
-    sqm: 42,
-    image: "https://images.unsplash.com/photo-1725042893312-5ec0dea9e369?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxjb250ZW1wb3JhcnklMjBsaXZpbmclMjByb29tJTIwYnJpZ2h0fGVufDF8fHx8MTc3MzE2NzI4Mnww&ixlib=rb-4.1.0&q=80&w=1080",
-    status: "draft",
-    views: 0,
-    inquiries: 0,
-    createdAt: "2026-03-08",
-  },
-];
-
 export function LandlordListings() {
-  const location = useLocation();
+  const apiBase = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:4000";
   const [filterStatus, setFilterStatus] = useState<ListingStatus | "all">("all");
   const [searchQuery, setSearchQuery] = useState("");
+  const [listings, setListings] = useState<Listing[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState("");
 
-  const stats = {
-    unreadMessages: 5,
+  useEffect(() => {
+    const loadListings = async () => {
+      const token = localStorage.getItem("authToken");
+      if (!token) {
+        setError("Please log in to view listings");
+        setIsLoading(false);
+        return;
+      }
+
+      setIsLoading(true);
+      setError("");
+
+      try {
+        const response = await fetch(`${apiBase}/api/listings`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (!response.ok) {
+          const payload = (await response.json()) as { message?: string };
+          throw new Error(payload.message ?? "Failed to load listings");
+        }
+
+        const payload = (await response.json()) as { listings: Listing[] };
+        setListings(payload.listings);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Failed to load listings");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    void loadListings();
+  }, [apiBase]);
+
+  const handleDelete = async (listingId: string) => {
+    const token = localStorage.getItem("authToken");
+    if (!token) {
+      setError("Please log in to delete listings");
+      return;
+    }
+
+    const confirmed = window.confirm("Delete this listing permanently?");
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`${apiBase}/api/listings/${listingId}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        const payload = (await response.json()) as { message?: string };
+        throw new Error(payload.message ?? "Failed to delete listing");
+      }
+
+      setListings((prev) => prev.filter((listing) => listing.id !== listingId));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to delete listing");
+    }
   };
 
-  const filteredListings = mockListings.filter((listing) => {
+  const filteredListings = listings.filter((listing) => {
     const matchesStatus = filterStatus === "all" || listing.status === filterStatus;
     const matchesSearch = listing.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          listing.address.toLowerCase().includes(searchQuery.toLowerCase());
@@ -137,10 +136,10 @@ export function LandlordListings() {
   });
 
   const statusCounts = {
-    all: mockListings.length,
-    active: mockListings.filter((l) => l.status === "active").length,
-    draft: mockListings.filter((l) => l.status === "draft").length,
-    inactive: mockListings.filter((l) => l.status === "inactive").length,
+    all: listings.length,
+    active: listings.filter((l) => l.status === "active").length,
+    draft: listings.filter((l) => l.status === "draft").length,
+    inactive: listings.filter((l) => l.status === "inactive").length,
   };
 
   return (
@@ -165,6 +164,13 @@ export function LandlordListings() {
             Create New Listing
           </Link>
         </div>
+
+        {isLoading && (
+          <div className="mb-[16px] text-[14px] text-neutral-gray">Loading listings...</div>
+        )}
+        {!isLoading && error && (
+          <div className="mb-[16px] text-[14px] text-brand-primary font-semibold">{error}</div>
+        )}
 
         {/* Filters and Search */}
         <div className="bg-white border border-[rgba(0,0,0,0.08)] mb-[24px]">
@@ -235,7 +241,7 @@ export function LandlordListings() {
                 {/* Image */}
                 <div className="w-[240px] h-[180px] flex-shrink-0 overflow-hidden bg-neutral-light-gray">
                   <ImageWithFallback
-                    src={listing.image}
+                    src={listing.images[0] ?? "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800&q=80"}
                     alt={listing.title}
                     className="w-full h-full object-cover"
                   />
@@ -275,24 +281,24 @@ export function LandlordListings() {
                     <div className="flex items-center gap-[8px]">
                       <Bed className="w-[16px] h-[16px] text-neutral-gray" />
                       <span className="text-neutral-black text-[14px] font-semibold">
-                        {listing.beds} {listing.beds === 1 ? "Bedroom" : "Bedrooms"}
+                        {listing.bedrooms} {listing.bedrooms === 1 ? "Bedroom" : "Bedrooms"}
                       </span>
                     </div>
                     <div className="flex items-center gap-[8px]">
                       <Bath className="w-[16px] h-[16px] text-neutral-gray" />
                       <span className="text-neutral-black text-[14px] font-semibold">
-                        {listing.baths} {listing.baths === 1 ? "Bathroom" : "Bathrooms"}
+                        {listing.bathrooms} {listing.bathrooms === 1 ? "Bathroom" : "Bathrooms"}
                       </span>
                     </div>
                     <div className="flex items-center gap-[8px]">
                       <Square className="w-[16px] h-[16px] text-neutral-gray" />
                       <span className="text-neutral-black text-[14px] font-semibold">
-                        {listing.sqm}m²
+                        {listing.area}m²
                       </span>
                     </div>
                     <div className="ml-auto">
                       <div className="text-brand-primary text-[24px] font-bold">
-                        €{listing.price.toLocaleString()}
+                        €{listing.monthlyRent.toLocaleString()}
                       </div>
                       <div className="text-neutral-gray text-[12px] text-right">per month</div>
                     </div>
@@ -335,6 +341,15 @@ export function LandlordListings() {
                         <Edit className="w-[14px] h-[14px]" />
                         Edit
                       </Link>
+                      <button
+                        onClick={() => {
+                          void handleDelete(listing.id);
+                        }}
+                        className="flex items-center gap-[8px] px-[16px] py-[8px] border border-[rgba(255,75,39,0.35)] text-brand-primary text-[14px] font-semibold hover:bg-brand-light transition-colors"
+                      >
+                        <Trash2 className="w-[14px] h-[14px]" />
+                        Delete
+                      </button>
                     </div>
                   </div>
                 </div>

@@ -68,6 +68,11 @@ export const router = createBrowserRouter([
     ErrorBoundary,
   },
   {
+    path: "/landlord/listings/:id/edit",
+    Component: LandlordAddListing,
+    ErrorBoundary,
+  },
+  {
     path: "/landlord/rentals",
     Component: LandlordRentals,
     ErrorBoundary,

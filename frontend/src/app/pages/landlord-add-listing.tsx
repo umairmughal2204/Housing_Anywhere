@@ -21,10 +21,56 @@ import {
   Users,
   Check,
 } from "lucide-react";
-import { useState } from "react";
-import { useNavigate } from "react-router";
+import { useEffect, useState } from "react";
+import { useNavigate, useParams } from "react-router";
 
 type PropertyType = "apartment" | "studio" | "house" | "room";
+type ListingStatus = "active" | "draft" | "inactive";
+
+interface ListingPayload {
+  propertyType: PropertyType;
+  title: string;
+  description: string;
+  address: string;
+  city: string;
+  postalCode: string;
+  bedrooms: number;
+  bathrooms: number;
+  area: number;
+  monthlyRent: number;
+  deposit: number;
+  availableFrom: string;
+  minStay: number;
+  utilitiesIncluded: boolean;
+  registrationPossible: boolean;
+  amenities: string[];
+  houseRules: string[];
+  images: string[];
+  status: ListingStatus;
+}
+
+interface ListingResponse {
+  id: string;
+  propertyType: PropertyType;
+  title: string;
+  description: string;
+  address: string;
+  city: string;
+  postalCode: string;
+  bedrooms: number;
+  bathrooms: number;
+  area: number;
+  monthlyRent: number;
+  deposit: number;
+  availableFrom: string;
+  minStay: number;
+  utilitiesIncluded: boolean;
+  registrationPossible: boolean;
+  amenities: string[];
+  houseRules: string[];
+  images: string[];
+  status: ListingStatus;
+}
 
 interface Amenity {
   id: string;
@@ -49,7 +95,14 @@ const houseRules: Amenity[] = [
 
 export function LandlordAddListing() {
   const navigate = useNavigate();
+  const { id } = useParams();
+  const isEditMode = Boolean(id);
+  const apiBase = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:4000";
   const [currentStep, setCurrentStep] = useState(1);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isUploadingImages, setIsUploadingImages] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
   
   // Form state
   const [propertyType, setPropertyType] = useState<PropertyType>("apartment");
@@ -65,9 +118,69 @@ export function LandlordAddListing() {
   const [deposit, setDeposit] = useState("");
   const [availableFrom, setAvailableFrom] = useState("");
   const [minStay, setMinStay] = useState(3);
+  const [utilitiesIncluded, setUtilitiesIncluded] = useState(false);
+  const [registrationPossible, setRegistrationPossible] = useState(false);
   const [selectedAmenities, setSelectedAmenities] = useState<string[]>([]);
   const [selectedRules, setSelectedRules] = useState<string[]>([]);
   const [uploadedImages, setUploadedImages] = useState<string[]>([]);
+
+  useEffect(() => {
+    const loadListing = async () => {
+      if (!isEditMode || !id) {
+        return;
+      }
+
+      const token = localStorage.getItem("authToken");
+      if (!token) {
+        setError("Please log in to edit listings");
+        return;
+      }
+
+      setIsLoading(true);
+      setError("");
+
+      try {
+        const response = await fetch(`${apiBase}/api/listings/${id}`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (!response.ok) {
+          const payload = (await response.json()) as { message?: string };
+          throw new Error(payload.message ?? "Failed to load listing");
+        }
+
+        const payload = (await response.json()) as { listing: ListingResponse };
+        const listing = payload.listing;
+
+        setPropertyType(listing.propertyType);
+        setTitle(listing.title);
+        setDescription(listing.description);
+        setAddress(listing.address);
+        setCity(listing.city);
+        setPostalCode(listing.postalCode);
+        setBedrooms(listing.bedrooms);
+        setBathrooms(listing.bathrooms);
+        setArea(String(listing.area));
+        setMonthlyRent(String(listing.monthlyRent));
+        setDeposit(String(listing.deposit));
+        setAvailableFrom(String(listing.availableFrom).slice(0, 10));
+        setMinStay(listing.minStay);
+        setUtilitiesIncluded(listing.utilitiesIncluded);
+        setRegistrationPossible(listing.registrationPossible);
+        setSelectedAmenities(listing.amenities);
+        setSelectedRules(listing.houseRules);
+        setUploadedImages(listing.images);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Failed to load listing");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    void loadListing();
+  }, [apiBase, id, isEditMode]);
 
   const toggleAmenity = (id: string) => {
     setSelectedAmenities(prev => 
@@ -81,24 +194,139 @@ export function LandlordAddListing() {
     );
   };
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    // Mock image upload - in real app, would handle file upload
-    const mockImages = [
-      "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800&q=80",
-      "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800&q=80",
-      "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=800&q=80",
-    ];
-    setUploadedImages(prev => [...prev, ...mockImages.slice(0, 3 - prev.length)]);
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) {
+      return;
+    }
+
+    const token = localStorage.getItem("authToken");
+    if (!token) {
+      setError("Please log in to upload images");
+      return;
+    }
+
+    const remainingSlots = Math.max(0, 10 - uploadedImages.length);
+    const selectedFiles = Array.from(files).slice(0, remainingSlots);
+
+    if (selectedFiles.length === 0) {
+      setError("Maximum 10 images allowed");
+      return;
+    }
+
+    const formData = new FormData();
+    selectedFiles.forEach((file) => {
+      formData.append("images", file);
+    });
+
+    setIsUploadingImages(true);
+    setError("");
+
+    try {
+      const response = await fetch(`${apiBase}/api/listings/upload-images`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const payload = (await response.json()) as { message?: string };
+        throw new Error(payload.message ?? "Failed to upload images");
+      }
+
+      const payload = (await response.json()) as { urls: string[] };
+      setUploadedImages((prev) => [...prev, ...payload.urls].slice(0, 10));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to upload images");
+    } finally {
+      setIsUploadingImages(false);
+      e.target.value = "";
+    }
   };
 
   const removeImage = (index: number) => {
     setUploadedImages(prev => prev.filter((_, i) => i !== index));
   };
 
-  const handleSubmit = () => {
-    // In real app, would submit to backend
-    console.log("Submitting listing...");
-    navigate("/landlord/listings");
+  const hasRequiredPublishFields = () => {
+    return (
+      title.trim().length > 0 &&
+      description.trim().length > 0 &&
+      address.trim().length > 0 &&
+      city.trim().length > 0 &&
+      postalCode.trim().length > 0 &&
+      Number(area) > 0 &&
+      Number(monthlyRent) >= 0 &&
+      Number(deposit) >= 0 &&
+      availableFrom.trim().length > 0 &&
+      minStay >= 1 &&
+      uploadedImages.length > 0
+    );
+  };
+
+  const saveListing = async (status: ListingStatus) => {
+    const token = localStorage.getItem("authToken");
+    if (!token) {
+      setError("Please log in to manage listings");
+      return;
+    }
+
+    if (status === "active" && !hasRequiredPublishFields()) {
+      setError("Please complete all required fields and upload at least 1 image before publishing");
+      return;
+    }
+
+    const payload: ListingPayload = {
+      propertyType,
+      title: title.trim(),
+      description: description.trim(),
+      address: address.trim(),
+      city: city.trim(),
+      postalCode: postalCode.trim(),
+      bedrooms,
+      bathrooms,
+      area: Number(area),
+      monthlyRent: Number(monthlyRent),
+      deposit: Number(deposit),
+      availableFrom,
+      minStay,
+      utilitiesIncluded,
+      registrationPossible,
+      amenities: selectedAmenities,
+      houseRules: selectedRules,
+      images: uploadedImages,
+      status,
+    };
+
+    setIsSaving(true);
+    setError("");
+
+    try {
+      const endpoint = isEditMode && id ? `${apiBase}/api/listings/${id}` : `${apiBase}/api/listings`;
+      const method = isEditMode && id ? "PATCH" : "POST";
+
+      const response = await fetch(endpoint, {
+        method,
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        const errorPayload = (await response.json()) as { message?: string };
+        throw new Error(errorPayload.message ?? "Failed to save listing");
+      }
+
+      navigate("/landlord/listings");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to save listing");
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const canProceed = () => {
@@ -121,10 +349,10 @@ export function LandlordAddListing() {
         <div className="bg-white border-b border-[rgba(0,0,0,0.08)]">
           <div className="max-w-[1000px] mx-auto px-[32px] py-[24px]">
             <h1 className="text-[28px] font-bold text-neutral-black mb-[4px]">
-              Add New Listing
+              {isEditMode ? "Edit Listing" : "Add New Listing"}
             </h1>
             <p className="text-[14px] text-neutral-gray">
-              Create a new property listing to attract quality tenants
+              {isEditMode ? "Update your property details" : "Create a new property listing to attract quality tenants"}
             </p>
           </div>
         </div>
@@ -169,6 +397,16 @@ export function LandlordAddListing() {
 
         {/* Form Content */}
         <div className="max-w-[1000px] mx-auto px-[32px] py-[32px]">
+          {error && (
+            <div className="mb-[16px] p-[12px] rounded-[10px] bg-red-50 text-red-700 text-[14px] font-semibold">
+              {error}
+            </div>
+          )}
+          {isLoading && (
+            <div className="mb-[16px] p-[12px] rounded-[10px] bg-neutral-light-gray text-neutral-gray text-[14px] font-semibold">
+              Loading listing...
+            </div>
+          )}
           <div className="bg-white rounded-[12px] border border-[rgba(0,0,0,0.08)] p-[32px]">
             {/* Step 1: Basic Info */}
             {currentStep === 1 && (
@@ -428,11 +666,21 @@ export function LandlordAddListing() {
                       </p>
                       <div className="flex items-center gap-[12px]">
                         <label className="flex items-center gap-[8px] cursor-pointer">
-                          <input type="checkbox" className="w-[18px] h-[18px] accent-brand-primary" />
+                          <input
+                            type="checkbox"
+                            checked={utilitiesIncluded}
+                            onChange={(e) => setUtilitiesIncluded(e.target.checked)}
+                            className="w-[18px] h-[18px] accent-brand-primary"
+                          />
                           <span className="text-[13px] text-neutral-black">Utilities Included</span>
                         </label>
                         <label className="flex items-center gap-[8px] cursor-pointer">
-                          <input type="checkbox" className="w-[18px] h-[18px] accent-brand-primary" />
+                          <input
+                            type="checkbox"
+                            checked={registrationPossible}
+                            onChange={(e) => setRegistrationPossible(e.target.checked)}
+                            className="w-[18px] h-[18px] accent-brand-primary"
+                          />
                           <span className="text-[13px] text-neutral-black">Registration Possible</span>
                         </label>
                       </div>
@@ -467,7 +715,9 @@ export function LandlordAddListing() {
                         <span className="text-[13px] font-medium text-neutral-gray">Upload Photo</span>
                         <input
                           type="file"
-                          onChange={handleImageUpload}
+                          onChange={(event) => {
+                            void handleImageUpload(event);
+                          }}
                           className="hidden"
                           accept="image/*"
                           multiple
@@ -478,6 +728,9 @@ export function LandlordAddListing() {
                   <p className="text-[12px] text-neutral-gray mt-[8px]">
                     Upload up to 10 photos. First photo will be the cover image.
                   </p>
+                  {isUploadingImages && (
+                    <p className="text-[12px] text-neutral-gray mt-[4px]">Uploading images...</p>
+                  )}
                 </div>
 
                 <div>
@@ -545,10 +798,15 @@ export function LandlordAddListing() {
 
             <div className="flex items-center gap-[12px]">
               <button
-                onClick={() => navigate("/landlord/listings")}
+                onClick={() => {
+                    if (!isSaving && !isUploadingImages) {
+                    void saveListing("draft");
+                  }
+                }}
+                  disabled={isSaving || isLoading || isUploadingImages}
                 className="px-[24px] py-[12px] text-neutral-gray font-semibold hover:text-neutral-black transition-colors"
               >
-                Save as Draft
+                {isSaving ? "Saving..." : "Save as Draft"}
               </button>
               
               {currentStep < 4 ? (
@@ -561,10 +819,15 @@ export function LandlordAddListing() {
                 </button>
               ) : (
                 <button
-                  onClick={handleSubmit}
-                  className="px-[32px] py-[12px] bg-accent-blue text-white font-semibold rounded-[10px] hover:bg-accent-blue-dark transition-colors"
+                  onClick={() => {
+                    if (!isSaving && !isUploadingImages) {
+                      void saveListing("active");
+                    }
+                  }}
+                  disabled={isSaving || isLoading || isUploadingImages || !hasRequiredPublishFields()}
+                  className="px-[32px] py-[12px] bg-accent-blue text-white font-semibold rounded-[10px] hover:bg-accent-blue-dark disabled:bg-neutral-gray disabled:cursor-not-allowed transition-colors"
                 >
-                  Publish Listing
+                  {isSaving ? "Saving..." : isEditMode ? "Update Listing" : "Publish Listing"}
                 </button>
               )}
             </div>
