@@ -181,7 +181,11 @@ export function Header() {
                 onClick={() => setShowDropdown(!showDropdown)}
                 className="w-[40px] h-[40px] bg-neutral-gray rounded-full flex items-center justify-center text-white text-[16px] font-semibold hover:bg-neutral-black transition-colors"
               >
-                {getUserInitials()}
+                {user?.profilePictureUrl ? (
+                  <img src={user.profilePictureUrl} alt="User" className="w-full h-full rounded-full object-cover" />
+                ) : (
+                  getUserInitials()
+                )}
               </button>
 
               {/* Dropdown Menu */}
@@ -191,7 +195,11 @@ export function Header() {
                   <div className="p-[16px] border-b border-neutral">
                     <div className="flex items-center gap-[12px]">
                       <div className="w-[48px] h-[48px] bg-neutral-gray rounded-full flex items-center justify-center text-white text-[20px] font-semibold">
-                        {getUserInitials()}
+                        {user?.profilePictureUrl ? (
+                          <img src={user.profilePictureUrl} alt="User" className="w-full h-full rounded-full object-cover" />
+                        ) : (
+                          getUserInitials()
+                        )}
                       </div>
                       <div>
                         <div className="text-neutral-black text-[14px] font-bold">{user.name}</div>

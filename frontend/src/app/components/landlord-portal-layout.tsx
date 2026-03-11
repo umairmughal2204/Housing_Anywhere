@@ -113,7 +113,11 @@ export function LandlordPortalLayout({ children }: LandlordPortalLayoutProps) {
                 className="flex items-center gap-[12px] p-[8px] hover:bg-neutral-light-gray transition-colors"
               >
                 <div className="w-[32px] h-[32px] bg-brand-primary rounded-full flex items-center justify-center text-white text-[14px] font-bold">
-                  {getUserInitials()}
+                  {user?.profilePictureUrl ? (
+                    <img src={user.profilePictureUrl} alt="User" className="w-full h-full rounded-full object-cover" />
+                  ) : (
+                    getUserInitials()
+                  )}
                 </div>
                 <div className="hidden md:block text-left">
                   <div className="text-neutral-black text-[14px] font-bold">{user?.name}</div>

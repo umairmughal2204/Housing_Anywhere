@@ -17,9 +17,41 @@ interface User {
   firstName: string;
   lastName: string;
   name: string;
+  profilePictureUrl?: string;
   role: "tenant" | "landlord";
   isLandlord: boolean;
+  dateOfBirth?: string;
+  gender?: "male" | "female" | "other";
+  cityOfResidence?: string;
+  nationality?: string;
+  occupation?: "student" | "working" | "other";
+  organization?: string;
+  aboutMe?: string;
+  languages?: string[];
+  phoneCountryCode?: string;
+  phoneNumber?: string;
+  emailVerified?: boolean;
+  phoneVerified?: boolean;
   landlordProfile?: LandlordProfile;
+}
+
+interface ProfileUpdateData {
+  firstName: string;
+  lastName: string;
+  dateOfBirth?: string;
+  gender?: "male" | "female" | "other";
+  cityOfResidence?: string;
+  nationality?: string;
+  occupation?: "student" | "working" | "other";
+  organization?: string;
+  aboutMe?: string;
+  languages?: string[];
+}
+
+interface ContactUpdateData {
+  email: string;
+  phoneCountryCode: string;
+  phoneNumber: string;
 }
 
 interface AuthContextType {
@@ -30,6 +62,11 @@ interface AuthContextType {
   signup: (data: SignupData) => Promise<void>;
   logout: () => void;
   registerAsLandlord: (profileData: LandlordProfile) => Promise<void>;
+  updateProfile: (data: ProfileUpdateData) => Promise<void>;
+  updateContactDetails: (data: ContactUpdateData) => Promise<void>;
+  changePassword: (currentPassword: string, newPassword: string) => Promise<void>;
+  uploadProfilePicture: (file: File) => Promise<void>;
+  deleteAccount: () => Promise<void>;
 }
 
 interface SignupData {
@@ -48,9 +85,18 @@ interface AuthResponse {
   user: User;
 }
 
+interface UserResponse {
+  user: User;
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+
+  const saveUser = (nextUser: User) => {
+    localStorage.setItem("user", JSON.stringify(nextUser));
+    setUser(nextUser);
+  };
 
   useEffect(() => {
     const bootstrapAuth = async () => {
@@ -74,8 +120,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
 
         const data = (await response.json()) as { user: User };
-        localStorage.setItem("user", JSON.stringify(data.user));
-        setUser(data.user);
+        saveUser(data.user);
       } catch {
         localStorage.removeItem("user");
         localStorage.removeItem("authToken");
@@ -103,9 +148,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     const data = (await response.json()) as AuthResponse;
-    localStorage.setItem("user", JSON.stringify(data.user));
+    saveUser(data.user);
     localStorage.setItem("authToken", data.token);
-    setUser(data.user);
   };
 
   const signup = async (data: SignupData) => {
@@ -123,9 +167,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     const payload = (await response.json()) as AuthResponse;
-    localStorage.setItem("user", JSON.stringify(payload.user));
+    saveUser(payload.user);
     localStorage.setItem("authToken", payload.token);
-    setUser(payload.user);
   };
 
   const logout = () => {
@@ -155,9 +198,127 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     const payload = (await response.json()) as AuthResponse;
-    localStorage.setItem("user", JSON.stringify(payload.user));
+    saveUser(payload.user);
     localStorage.setItem("authToken", payload.token);
-    setUser(payload.user);
+  };
+
+  const updateProfile = async (data: ProfileUpdateData) => {
+    const token = localStorage.getItem("authToken");
+    if (!token) {
+      throw new Error("You must be logged in");
+    }
+
+    const response = await fetch(`${API_BASE}/api/auth/me/profile`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(data),
+    });
+
+    if (!response.ok) {
+      const error = (await response.json()) as { message?: string };
+      throw new Error(error.message ?? "Failed to update profile");
+    }
+
+    const payload = (await response.json()) as UserResponse;
+    saveUser(payload.user);
+  };
+
+  const updateContactDetails = async (data: ContactUpdateData) => {
+    const token = localStorage.getItem("authToken");
+    if (!token) {
+      throw new Error("You must be logged in");
+    }
+
+    const response = await fetch(`${API_BASE}/api/auth/me/contact`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(data),
+    });
+
+    if (!response.ok) {
+      const error = (await response.json()) as { message?: string };
+      throw new Error(error.message ?? "Failed to update contact details");
+    }
+
+    const payload = (await response.json()) as AuthResponse;
+    localStorage.setItem("authToken", payload.token);
+    saveUser(payload.user);
+  };
+
+  const changePassword = async (currentPassword: string, newPassword: string) => {
+    const token = localStorage.getItem("authToken");
+    if (!token) {
+      throw new Error("You must be logged in");
+    }
+
+    const response = await fetch(`${API_BASE}/api/auth/me/password`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ currentPassword, newPassword }),
+    });
+
+    if (!response.ok) {
+      const error = (await response.json()) as { message?: string };
+      throw new Error(error.message ?? "Failed to update password");
+    }
+  };
+
+  const uploadProfilePicture = async (file: File) => {
+    const token = localStorage.getItem("authToken");
+    if (!token) {
+      throw new Error("You must be logged in");
+    }
+
+    const formData = new FormData();
+    formData.append("image", file);
+
+    const response = await fetch(`${API_BASE}/api/auth/me/profile-picture`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const error = (await response.json()) as { message?: string };
+      throw new Error(error.message ?? "Failed to upload profile picture");
+    }
+
+    const payload = (await response.json()) as UserResponse;
+    saveUser(payload.user);
+  };
+
+  const deleteAccount = async () => {
+    const token = localStorage.getItem("authToken");
+    if (!token) {
+      throw new Error("You must be logged in");
+    }
+
+    const response = await fetch(`${API_BASE}/api/auth/me`, {
+      method: "DELETE",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) {
+      const error = (await response.json()) as { message?: string };
+      throw new Error(error.message ?? "Failed to delete account");
+    }
+
+    localStorage.removeItem("user");
+    localStorage.removeItem("authToken");
+    setUser(null);
   };
 
   return (
@@ -170,6 +331,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         signup,
         logout,
         registerAsLandlord,
+        updateProfile,
+        updateContactDetails,
+        changePassword,
+        uploadProfilePicture,
+        deleteAccount,
       }}
     >
       {children}
