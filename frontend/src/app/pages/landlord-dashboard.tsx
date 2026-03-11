@@ -1,54 +1,118 @@
-import { Link, useLocation } from "react-router";
+import { Link } from "react-router";
 import { LandlordPortalLayout } from "../components/landlord-portal-layout";
+import { useEffect, useState } from "react";
 import { 
   Home,
   MessageSquare,
-  List,
-  Key,
-  BarChart3,
-  Bell,
-  Settings,
   TrendingUp,
-  TrendingDown,
   Users,
   Euro,
   Calendar,
   Eye,
 } from "lucide-react";
+import { useAuth } from "../contexts/auth-context";
+
+interface DashboardStats {
+  totalProperties: number;
+  activeListings: number;
+  occupancyRate: number;
+  monthlyRevenue: number;
+  revenueChange: number;
+  unreadMessages: number;
+  pendingApplications: number;
+  upcomingCheckouts: number;
+}
+
+interface ActivityItem {
+  id: number;
+  type: "message" | "application" | "booking" | "viewing";
+  text: string;
+  time: string;
+}
+
+interface UpcomingEvent {
+  id: number;
+  type: "checkout" | "checkin" | "inspection";
+  property: string;
+  tenant: string;
+  date: string;
+}
+
+interface TopProperty {
+  id: number;
+  title: string;
+  views: number;
+  inquiries: number;
+  bookingRate: number;
+}
+
+interface DashboardResponse {
+  stats: DashboardStats;
+  recentActivity: ActivityItem[];
+  upcomingEvents: UpcomingEvent[];
+  topProperties: TopProperty[];
+}
 
 export function LandlordDashboard() {
-  const location = useLocation();
+  const { isAuthenticated, user } = useAuth();
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [stats, setStats] = useState<DashboardStats>({
+    totalProperties: 0,
+    activeListings: 0,
+    occupancyRate: 0,
+    monthlyRevenue: 0,
+    revenueChange: 0,
+    unreadMessages: 0,
+    pendingApplications: 0,
+    upcomingCheckouts: 0,
+  });
+  const [recentActivity, setRecentActivity] = useState<ActivityItem[]>([]);
+  const [upcomingEvents, setUpcomingEvents] = useState<UpcomingEvent[]>([]);
+  const [topProperties, setTopProperties] = useState<TopProperty[]>([]);
 
-  // Mock data
-  const stats = {
-    totalProperties: 12,
-    activeListings: 8,
-    occupancyRate: 92,
-    monthlyRevenue: 18650,
-    revenueChange: 12,
-    unreadMessages: 5,
-    pendingApplications: 3,
-    upcomingCheckouts: 2,
-  };
+  useEffect(() => {
+    const loadDashboard = async () => {
+      if (!isAuthenticated || user?.role !== "landlord") {
+        setIsLoading(false);
+        return;
+      }
 
-  const recentActivity = [
-    { id: 1, type: "message", text: "New message from Sophie Anderson", time: "2 hours ago" },
-    { id: 2, type: "application", text: "New application for Modern 2BR", time: "4 hours ago" },
-    { id: 3, type: "booking", text: "Booking confirmed for Studio Apartment", time: "Yesterday" },
-    { id: 4, type: "viewing", text: "Viewing scheduled for 3BR Family Home", time: "Yesterday" },
-  ];
+      const token = localStorage.getItem("authToken");
+      const apiBase = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:4000";
 
-  const upcomingEvents = [
-    { id: 1, type: "checkout", property: "Modern 2BR in Kreuzberg", tenant: "James Wilson", date: "Mar 15, 2026" },
-    { id: 2, type: "checkin", property: "Studio Near Alexanderplatz", tenant: "Nina Kowalski", date: "Mar 18, 2026" },
-    { id: 3, type: "inspection", property: "3BR Family Apartment", tenant: "-", date: "Mar 22, 2026" },
-  ];
+      if (!token) {
+        setError("Missing auth token");
+        setIsLoading(false);
+        return;
+      }
 
-  const topProperties = [
-    { id: 1, title: "Modern 2BR in Kreuzberg", views: 1247, inquiries: 34, bookingRate: 89 },
-    { id: 2, title: "Studio Near Alexanderplatz", views: 982, inquiries: 28, bookingRate: 75 },
-    { id: 3, title: "3BR Family Apartment", views: 756, inquiries: 19, bookingRate: 68 },
-  ];
+      try {
+        const response = await fetch(`${apiBase}/api/landlord/dashboard`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (!response.ok) {
+          const payload = (await response.json()) as { message?: string };
+          throw new Error(payload.message ?? "Failed to load landlord dashboard");
+        }
+
+        const payload = (await response.json()) as DashboardResponse;
+        setStats(payload.stats);
+        setRecentActivity(payload.recentActivity);
+        setUpcomingEvents(payload.upcomingEvents);
+        setTopProperties(payload.topProperties);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Failed to load landlord dashboard");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    void loadDashboard();
+  }, [isAuthenticated, user?.role]);
 
   return (
     <LandlordPortalLayout>
@@ -61,6 +125,8 @@ export function LandlordDashboard() {
           <p className="text-neutral-gray text-[16px]">
             Overview of your rental business
           </p>
+          {isLoading && <p className="text-neutral-gray text-[14px] mt-[8px]">Loading dashboard...</p>}
+          {!isLoading && error && <p className="text-brand-primary text-[14px] mt-[8px]">{error}</p>}
         </div>
 
         {/* Key Metrics */}
@@ -183,6 +249,13 @@ export function LandlordDashboard() {
                       </td>
                     </tr>
                   ))}
+                  {topProperties.length === 0 && (
+                    <tr>
+                      <td className="py-[16px] text-neutral-gray text-[14px]" colSpan={4}>
+                        No property analytics available yet.
+                      </td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
             </div>
@@ -220,6 +293,9 @@ export function LandlordDashboard() {
                   </div>
                 </div>
               ))}
+              {upcomingEvents.length === 0 && (
+                <p className="text-neutral-gray text-[14px]">No upcoming events.</p>
+              )}
             </div>
           </div>
 
@@ -244,6 +320,9 @@ export function LandlordDashboard() {
                   </div>
                 </div>
               ))}
+              {recentActivity.length === 0 && (
+                <p className="text-neutral-gray text-[14px]">No recent activity yet.</p>
+              )}
             </div>
           </div>
 

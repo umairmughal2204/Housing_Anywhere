@@ -27,29 +27,37 @@ export function LandlordRegister() {
   });
 
   const [step, setStep] = useState(1);
+  const [error, setError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError("");
+    setIsSubmitting(true);
     
-    // Register as landlord
-    registerAsLandlord({
-      businessType: formData.businessType,
-      numberOfProperties: parseInt(formData.numberOfProperties) || 0,
-      phoneNumber: formData.phoneNumber,
-      businessName: formData.businessName || undefined,
-      licenseNumber: formData.licenseNumber || undefined,
-      address: formData.address,
-      city: formData.city,
-      postalCode: formData.postalCode,
-    });
+    try {
+      await registerAsLandlord({
+        businessType: formData.businessType,
+        numberOfProperties: parseInt(formData.numberOfProperties, 10) || 0,
+        phoneNumber: formData.phoneNumber,
+        businessName: formData.businessName || undefined,
+        licenseNumber: formData.licenseNumber || undefined,
+        address: formData.address,
+        city: formData.city,
+        postalCode: formData.postalCode,
+      });
 
-    // Redirect to dashboard
-    navigate("/landlord/dashboard");
+      navigate("/landlord/dashboard");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to complete landlord registration");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -391,6 +399,12 @@ export function LandlordRegister() {
                   </p>
                 </div>
 
+                {error && (
+                  <div className="text-brand-primary text-[14px] font-semibold">
+                    {error}
+                  </div>
+                )}
+
                 <div className="flex gap-[16px] pt-[24px]">
                   <button
                     type="button"
@@ -401,10 +415,10 @@ export function LandlordRegister() {
                   </button>
                   <button
                     type="submit"
-                    disabled={!formData.address || !formData.city || !formData.postalCode}
+                    disabled={!formData.address || !formData.city || !formData.postalCode || isSubmitting}
                     className="flex-1 px-[32px] py-[12px] bg-brand-primary text-white font-semibold hover:bg-brand-primary-dark disabled:bg-neutral-gray disabled:cursor-not-allowed transition-colors"
                   >
-                    Complete Registration
+                    {isSubmitting ? "Saving..." : "Complete Registration"}
                   </button>
                 </div>
               </div>

@@ -21,11 +21,12 @@ export function Login() {
     setIsLoading(true);
 
     try {
-      login(email, password);
+      await login(email, password);
       // Redirect to specified page or home after successful login
       navigate(redirect || "/");
     } catch (err) {
-      setError("Invalid email or password. Please try again.");
+      const message = err instanceof Error ? err.message : "Invalid email or password. Please try again.";
+      setError(message);
     } finally {
       setIsLoading(false);
     }
