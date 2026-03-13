@@ -149,8 +149,7 @@ export function TenantConversation() {
     else grouped.push({ date: label, msgs: [msg] });
   }
 
-  const myId = user?.id;
-  const myRole = user?.role;
+  const myRole: "tenant" = "tenant";
 
   return (
     <div className="min-h-screen bg-white flex flex-col">
@@ -251,7 +250,7 @@ export function TenantConversation() {
                   </div>
 
                   {group.msgs.map((msg, i) => {
-                    const isMe = (Boolean(myId) && msg.senderId === myId) || (Boolean(myRole) && msg.senderRole === myRole);
+                    const isMe = msg.senderRole === myRole;
                     const prevMsg = i > 0 ? group.msgs[i - 1] : null;
                     const showAvatar = !isMe && (!prevMsg || prevMsg.senderId !== msg.senderId);
 

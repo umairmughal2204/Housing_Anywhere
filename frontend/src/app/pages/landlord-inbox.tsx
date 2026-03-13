@@ -92,8 +92,7 @@ function ChatPanel({ conversation, onClose }: ChatPanelProps) {
     else grouped.push({ date: label, msgs: [msg] });
   }
 
-  const myId = user?.id;
-  const myRole = user?.role;
+  const myRole: "landlord" = "landlord";
 
   return (
     <div className="flex-1 flex flex-col h-full overflow-hidden">
@@ -147,7 +146,7 @@ function ChatPanel({ conversation, onClose }: ChatPanelProps) {
               <div className="flex-1 h-px bg-[rgba(0,0,0,0.08)]" />
             </div>
             {group.msgs.map((msg, i) => {
-              const isMe = (Boolean(myId) && msg.senderId === myId) || (Boolean(myRole) && msg.senderRole === myRole);
+              const isMe = msg.senderRole === myRole;
               const prevMsg = i > 0 ? group.msgs[i - 1] : null;
               const showAvatar = !isMe && (!prevMsg || prevMsg.senderId !== msg.senderId);
               return (
