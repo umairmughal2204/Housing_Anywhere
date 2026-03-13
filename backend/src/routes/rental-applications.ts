@@ -1,0 +1,299 @@
+import { Router } from "express";
+import multer from "multer";
+import fs from "fs/promises";
+import path from "path";
+import { z } from "zod";
+import { Types } from "mongoose";
+import { requireAuth, requireRole } from "../middleware/auth.js";
+import { ListingModel } from "../models/Listing.js";
+import { RentalApplicationModel } from "../models/RentalApplication.js";
+import { UserModel } from "../models/User.js";
+
+const router = Router();
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: 7 * 1024 * 1024,
+    files: 3,
+  },
+});
+
+const rentalApplicationSchema = z.object({
+  listingId: z.string().regex(/^[0-9a-fA-F]{24}$/),
+  dateOfBirth: z
+    .object({
+      day: z.string().optional().default(""),
+      month: z.string().optional().default(""),
+      year: z.string().optional().default(""),
+    })
+    .optional(),
+  gender: z.enum(["male", "female", "other"]).nullable().optional(),
+  countryCode: z.string().optional().default(""),
+  mobileNumber: z.string().optional().default(""),
+  moveInCount: z.number().int().min(1).max(10).default(1),
+  withPets: z.boolean().default(false),
+  occupation: z.enum(["student", "professional", "other"]).nullable().optional(),
+  universityName: z.string().optional().default(""),
+  visaStatus: z.string().nullable().optional(),
+  paymentMethods: z.array(z.string()).default([]),
+  monthlyBudget: z.string().optional().default(""),
+  employerName: z.string().optional().default(""),
+  income: z.string().optional().default(""),
+  supportingMessage: z.string().min(1).max(2000),
+  idVerified: z.boolean().default(false),
+  shareDocuments: z.boolean().default(false),
+});
+
+const updateStatusSchema = z.object({
+  status: z.enum(["approved", "rejected"]),
+});
+
+function mapDocumentType(fieldname: string): "enrollment" | "employment" | "income" | null {
+  if (fieldname === "enrollmentProof") return "enrollment";
+  if (fieldname === "employmentProof") return "employment";
+  if (fieldname === "incomeProof") return "income";
+  return null;
+}
+
+router.post(
+  "/",
+  requireAuth,
+  upload.fields([
+    { name: "enrollmentProof", maxCount: 1 },
+    { name: "employmentProof", maxCount: 1 },
+    { name: "incomeProof", maxCount: 1 },
+  ]),
+  async (req, res) => {
+    const rawApplication = req.body.application;
+    if (typeof rawApplication !== "string") {
+      res.status(400).json({ message: "Invalid application payload" });
+      return;
+    }
+
+    let parsedBody: unknown;
+    try {
+      parsedBody = JSON.parse(rawApplication);
+    } catch {
+      res.status(400).json({ message: "Application payload is not valid JSON" });
+      return;
+    }
+
+    const parsed = rentalApplicationSchema.safeParse(parsedBody);
+    if (!parsed.success) {
+      res.status(400).json({ message: "Invalid application data", errors: parsed.error.flatten() });
+      return;
+    }
+
+    const tenantId = req.user!.sub;
+    const input = parsed.data;
+
+    const listing = await ListingModel.findOne({ _id: input.listingId, status: "active" }).lean();
+    if (!listing) {
+      res.status(404).json({ message: "Listing not found" });
+      return;
+    }
+
+    const existingPending = await RentalApplicationModel.findOne({
+      listingId: listing._id,
+      tenantId,
+      status: "pending",
+    }).lean();
+
+    if (existingPending) {
+      res.status(409).json({ message: "You already have a pending request for this property" });
+      return;
+    }
+
+    const uploadsDir = path.resolve(process.cwd(), "uploads", "rental-applications");
+    await fs.mkdir(uploadsDir, { recursive: true });
+
+    const filesByField = req.files as Record<string, Express.Multer.File[]> | undefined;
+    const allFiles = filesByField ? Object.values(filesByField).flat() : [];
+
+    const documents: Array<{
+      type: "enrollment" | "employment" | "income";
+      name: string;
+      url: string;
+      mimeType: string;
+      size: number;
+    }> = [];
+
+    for (const file of allFiles) {
+      const mappedType = mapDocumentType(file.fieldname);
+      if (!mappedType) {
+        continue;
+      }
+
+      const extension = (file.originalname.split(".").pop() || "bin").toLowerCase();
+      const filename = `${Date.now()}-${Math.random().toString(36).slice(2, 10)}.${extension}`;
+      const fullPath = path.join(uploadsDir, filename);
+
+      await fs.writeFile(fullPath, file.buffer);
+
+      documents.push({
+        type: mappedType,
+        name: file.originalname,
+        url: `${req.protocol}://${req.get("host")}/uploads/rental-applications/${filename}`,
+        mimeType: file.mimetype,
+        size: file.size,
+      });
+    }
+
+    const formattedDateOfBirth = input.dateOfBirth
+      ? [input.dateOfBirth.day, input.dateOfBirth.month, input.dateOfBirth.year].filter(Boolean).join("/")
+      : "";
+
+    const created = await RentalApplicationModel.create({
+      listingId: listing._id,
+      landlordId: listing.landlordId,
+      tenantId,
+      dateOfBirth: formattedDateOfBirth,
+      gender: input.gender ?? undefined,
+      countryCode: input.countryCode,
+      mobileNumber: input.mobileNumber,
+      moveInCount: input.moveInCount,
+      withPets: input.withPets,
+      occupation: input.occupation ?? undefined,
+      universityName: input.universityName,
+      visaStatus: input.visaStatus ?? undefined,
+      paymentMethods: input.paymentMethods,
+      monthlyBudget: input.monthlyBudget,
+      employerName: input.employerName,
+      income: input.income,
+      supportingMessage: input.supportingMessage,
+      idVerified: input.idVerified,
+      shareDocuments: input.shareDocuments,
+      documents,
+    });
+
+    await ListingModel.updateOne({ _id: listing._id }, { $inc: { inquiries: 1 } });
+
+    res.status(201).json({
+      application: {
+        id: String(created._id),
+        status: created.status,
+      },
+    });
+  }
+);
+
+router.get("/landlord", requireAuth, requireRole("landlord"), async (req, res) => {
+  const landlordId = req.user!.sub;
+
+  const applications = await RentalApplicationModel.find({ landlordId }).sort({ createdAt: -1 }).lean();
+
+  const listingIds = Array.from(new Set(applications.map((item) => String(item.listingId))));
+  const tenantIds = Array.from(new Set(applications.map((item) => String(item.tenantId))));
+
+  const [listings, tenants] = await Promise.all([
+    ListingModel.find({ _id: { $in: listingIds } }).lean(),
+    UserModel.find({ _id: { $in: tenantIds } }).lean(),
+  ]);
+
+  const listingMap = new Map(listings.map((item) => [String(item._id), item]));
+  const tenantMap = new Map(tenants.map((item) => [String(item._id), item]));
+
+  res.json({
+    applications: applications.map((item) => {
+      const listing = listingMap.get(String(item.listingId));
+      const tenant = tenantMap.get(String(item.tenantId));
+
+      return {
+        id: String(item._id),
+        status: item.status,
+        createdAt: item.createdAt,
+        supportingMessage: item.supportingMessage,
+        moveInCount: item.moveInCount,
+        withPets: item.withPets,
+        occupation: item.occupation,
+        visaStatus: item.visaStatus,
+        idVerified: item.idVerified,
+        documents: (item.documents || []).map((doc) => ({
+          id: `${String(item._id)}-${doc.type}-${doc.name}`,
+          type: doc.type,
+          name: doc.name,
+          url: doc.url,
+          mimeType: doc.mimeType,
+          size: doc.size,
+        })),
+        listing: {
+          id: listing ? String(listing._id) : "",
+          title: listing?.title ?? "Listing unavailable",
+          address: listing?.address ?? "",
+          city: listing?.city ?? "",
+          monthlyRent: listing?.price ?? 0,
+          deposit: listing?.deposit ?? 0,
+          image: listing?.images?.[0] ?? "",
+        },
+        tenant: {
+          id: tenant ? String(tenant._id) : "",
+          name: tenant ? `${tenant.firstName} ${tenant.lastName}` : "Unknown tenant",
+          email: tenant?.email ?? "",
+          phone: `${item.countryCode ?? ""} ${item.mobileNumber ?? ""}`.trim(),
+          dateOfBirth: item.dateOfBirth,
+          gender: item.gender,
+          universityName: item.universityName,
+          monthlyBudget: item.monthlyBudget,
+          employerName: item.employerName,
+          income: item.income,
+          paymentMethods: item.paymentMethods,
+        },
+      };
+    }),
+  });
+});
+
+router.patch("/:id([0-9a-fA-F]{24})/status", requireAuth, requireRole("landlord"), async (req, res) => {
+  const parsed = updateStatusSchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ message: "Invalid status", errors: parsed.error.flatten() });
+    return;
+  }
+
+  const application = await RentalApplicationModel.findOne({
+    _id: req.params.id,
+    landlordId: req.user!.sub,
+  });
+
+  if (!application) {
+    res.status(404).json({ message: "Rental request not found" });
+    return;
+  }
+
+  application.status = parsed.data.status;
+  await application.save();
+
+  res.json({
+    application: {
+      id: String(application._id),
+      status: application.status,
+    },
+  });
+});
+
+router.get("/tenant", requireAuth, async (req, res) => {
+  const tenantId = new Types.ObjectId(req.user!.sub);
+  const applications = await RentalApplicationModel.find({ tenantId }).sort({ createdAt: -1 }).lean();
+
+  const listingIds = Array.from(new Set(applications.map((item) => String(item.listingId))));
+  const listings = await ListingModel.find({ _id: { $in: listingIds } }).lean();
+  const listingMap = new Map(listings.map((item) => [String(item._id), item]));
+
+  res.json({
+    applications: applications.map((item) => ({
+      id: String(item._id),
+      listingId: String(item.listingId),
+      status: item.status,
+      createdAt: item.createdAt,
+      listing: {
+        title: listingMap.get(String(item.listingId))?.title ?? "Listing unavailable",
+        city: listingMap.get(String(item.listingId))?.city ?? "",
+        address: listingMap.get(String(item.listingId))?.address ?? "",
+        monthlyRent: listingMap.get(String(item.listingId))?.price ?? 0,
+        image: listingMap.get(String(item.listingId))?.images?.[0] ?? "",
+      },
+    })),
+  });
+});
+
+export default router;

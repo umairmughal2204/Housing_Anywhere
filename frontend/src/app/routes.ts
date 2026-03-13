@@ -7,6 +7,7 @@ import { ApplicationSuccess } from "./pages/application-success";
 import { Payment } from "./pages/payment";
 import { TenantConversation } from "./pages/tenant-conversation";
 import { TenantInbox } from "./pages/tenant-inbox";
+import { TenantApplications } from "./pages/tenant-applications";
 import { LandlordInbox } from "./pages/landlord-inbox";
 import { LandlordDashboard } from "./pages/landlord-dashboard";
 import { LandlordListings } from "./pages/landlord-listings";
@@ -135,6 +136,11 @@ export const router = createBrowserRouter([
   {
     path: "/tenant/inbox",
     Component: TenantInbox,
+    ErrorBoundary,
+  },
+  {
+    path: "/tenant/applications",
+    Component: TenantApplications,
     ErrorBoundary,
   },
   {

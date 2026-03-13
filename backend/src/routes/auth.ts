@@ -6,6 +6,7 @@ import path from "path";
 import { z } from "zod";
 import { UserModel } from "../models/User.js";
 import { ListingModel } from "../models/Listing.js";
+import { RentalApplicationModel } from "../models/RentalApplication.js";
 import { signAccessToken } from "../utils/jwt.js";
 import { requireAuth } from "../middleware/auth.js";
 
@@ -338,6 +339,7 @@ router.delete("/me", requireAuth, async (req, res) => {
   }
 
   await ListingModel.deleteMany({ landlordId: userId });
+  await RentalApplicationModel.deleteMany({ $or: [{ landlordId: userId }, { tenantId: userId }] });
   const deletedUser = await UserModel.findByIdAndDelete(userId);
 
   if (!deletedUser) {

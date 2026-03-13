@@ -1,203 +1,225 @@
-import { Link, useLocation } from "react-router";
+﻿import { Link } from "react-router";
+import { useEffect, useMemo, useState } from "react";
 import { LandlordPortalLayout } from "../components/landlord-portal-layout";
-import { useState } from "react";
-import { 
-  Home,
-  MessageSquare,
-  List,
-  Key,
-  BarChart3,
-  Bell,
-  Settings,
+import {
   Calendar,
-  User,
-  MapPin,
-  Euro,
-  Clock,
-  FileText,
   Download,
+  FileText,
   Mail,
+  MapPin,
+  MessageSquare,
   Phone,
+  User,
 } from "lucide-react";
 import { ImageWithFallback } from "../components/figma/ImageWithFallback";
 
-type RentalStatus = "current" | "upcoming" | "past";
+type RequestStatus = "pending" | "approved" | "rejected";
 
-interface Rental {
+interface ApplicationDocument {
   id: string;
-  propertyTitle: string;
-  propertyAddress: string;
-  propertyImage: string;
-  tenantName: string;
-  tenantEmail: string;
-  tenantPhone: string;
-  tenantAvatar: string;
-  startDate: string;
-  endDate: string;
-  monthlyRent: number;
-  deposit: number;
-  status: RentalStatus;
-  daysRemaining?: number;
-  totalEarned?: number;
+  type: "enrollment" | "employment" | "income";
+  name: string;
+  url: string;
+  mimeType: string;
+  size: number;
 }
 
-const mockRentals: Rental[] = [
-  {
-    id: "1",
-    propertyTitle: "Modern 2BR in Kreuzberg",
-    propertyAddress: "Oranienstraße 45, Berlin",
-    propertyImage: "https://images.unsplash.com/photo-1662454419736-de132ff75638?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxtb2Rlcm4lMjBhcGFydG1lbnQlMjBiZWRyb29tJTIwaW50ZXJpb3J8ZW58MXx8fHwxNzczMTM3MzUxfDA&ixlib=rb-4.1.0&q=80&w=1080",
-    tenantName: "James Wilson",
-    tenantEmail: "james.wilson@email.com",
-    tenantPhone: "+49 157 1234 5678",
-    tenantAvatar: "JW",
-    startDate: "2025-12-01",
-    endDate: "2026-06-01",
-    monthlyRent: 1850,
-    deposit: 3700,
-    status: "current",
-    daysRemaining: 83,
-    totalEarned: 7400,
-  },
-  {
-    id: "2",
-    propertyTitle: "Studio Near Alexanderplatz",
-    propertyAddress: "Karl-Marx-Allee 92, Berlin",
-    propertyImage: "https://images.unsplash.com/photo-1725042893312-5ec0dea9e369?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxjb250ZW1wb3JhcnklMjBsaXZpbmclMjByb29tJTIwYnJpZ2h0fGVufDF8fHx8MTc3MzE2NzI4Mnww&ixlib=rb-4.1.0&q=80&w=1080",
-    tenantName: "Nina Kowalski",
-    tenantEmail: "nina.k@email.com",
-    tenantPhone: "+49 176 9876 5432",
-    tenantAvatar: "NK",
-    startDate: "2026-01-15",
-    endDate: "2027-01-15",
-    monthlyRent: 2200,
-    deposit: 4400,
-    status: "current",
-    daysRemaining: 311,
-    totalEarned: 4400,
-  },
-  {
-    id: "3",
-    propertyTitle: "3BR Family Apartment",
-    propertyAddress: "Prenzlauer Allee 156, Berlin",
-    propertyImage: "https://images.unsplash.com/photo-1715985160053-d339e8b6eb94?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxsdXh1cnklMjBhcGFydG1lbnQlMjBraXRjaGVufGVufDF8fHx8MTc3MzA5Mzk5N3ww&ixlib=rb-4.1.0&q=80&w=1080",
-    tenantName: "Elena Rodriguez",
-    tenantEmail: "elena.r@email.com",
-    tenantPhone: "+49 162 4567 8901",
-    tenantAvatar: "ER",
-    startDate: "2026-03-18",
-    endDate: "2027-03-18",
-    monthlyRent: 2800,
-    deposit: 5600,
-    status: "upcoming",
-  },
-  {
-    id: "4",
-    propertyTitle: "Cozy 1BR in Neukölln",
-    propertyAddress: "Sonnenallee 67, Berlin",
-    propertyImage: "https://images.unsplash.com/photo-1662454419736-de132ff75638?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxtb2Rlcm4lMjBhcGFydG1lbnQlMjBiZWRyb29tJTIwaW50ZXJpb3J8ZW58MXx8fHwxNzczMTM3MzUxfDA&ixlib=rb-4.1.0&q=80&w=1080",
-    tenantName: "Marcus Chen",
-    tenantEmail: "m.chen@email.com",
-    tenantPhone: "+49 151 2345 6789",
-    tenantAvatar: "MC",
-    startDate: "2025-06-01",
-    endDate: "2025-12-01",
-    monthlyRent: 1200,
-    deposit: 2400,
-    status: "past",
-    totalEarned: 7200,
-  },
-  {
-    id: "5",
-    propertyTitle: "Luxury Penthouse Mitte",
-    propertyAddress: "Friedrichstraße 200, Berlin",
-    propertyImage: "https://images.unsplash.com/photo-1725042893312-5ec0dea9e369?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxjb250ZW1wb3JhcnklMjBsaXZpbmclMjByb29tJTIwYnJpZ2h0fGVufDF8fHx8MTc3MzE2NzI4Mnww&ixlib=rb-4.1.0&q=80&w=1080",
-    tenantName: "Sophie Anderson",
-    tenantEmail: "sophie.a@email.com",
-    tenantPhone: "+49 170 8765 4321",
-    tenantAvatar: "SA",
-    startDate: "2025-03-01",
-    endDate: "2025-09-01",
-    monthlyRent: 3500,
-    deposit: 7000,
-    status: "past",
-    totalEarned: 21000,
-  },
-];
+interface ApplicationRecord {
+  id: string;
+  status: RequestStatus;
+  createdAt: string;
+  supportingMessage: string;
+  moveInCount: number;
+  withPets: boolean;
+  occupation?: "student" | "professional" | "other";
+  visaStatus?: string;
+  idVerified: boolean;
+  documents: ApplicationDocument[];
+  listing: {
+    id: string;
+    title: string;
+    address: string;
+    city: string;
+    monthlyRent: number;
+    deposit: number;
+    image: string;
+  };
+  tenant: {
+    id: string;
+    name: string;
+    email: string;
+    phone: string;
+    dateOfBirth?: string;
+    gender?: "male" | "female" | "other";
+    universityName?: string;
+    monthlyBudget?: string;
+    employerName?: string;
+    income?: string;
+    paymentMethods?: string[];
+  };
+}
+
+interface RentalApplicationsResponse {
+  applications: ApplicationRecord[];
+}
+
+const statusLabel: Record<RequestStatus, string> = {
+  pending: "Pending",
+  approved: "Approved",
+  rejected: "Rejected",
+};
+
+const statusStyle: Record<RequestStatus, string> = {
+  pending: "bg-brand-light text-brand-primary",
+  approved: "bg-accent-blue/10 text-accent-blue",
+  rejected: "bg-red-50 text-red-600",
+};
+
+const documentTypeLabel: Record<ApplicationDocument["type"], string> = {
+  enrollment: "Government ID",
+  employment: "Enrollment/Employment proof",
+  income: "Income proof",
+};
+
+function formatDate(dateValue: string) {
+  return new Date(dateValue).toLocaleDateString("en-GB", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+}
 
 export function LandlordRentals() {
-  const location = useLocation();
-  const [filterStatus, setFilterStatus] = useState<RentalStatus | "all">("current");
+  const apiBase = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:4000";
+  const [filterStatus, setFilterStatus] = useState<RequestStatus | "all">("pending");
+  const [applications, setApplications] = useState<ApplicationRecord[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [updatingApplicationId, setUpdatingApplicationId] = useState<string | null>(null);
 
-  const stats = {
-    unreadMessages: 5,
-  };
+  useEffect(() => {
+    const loadApplications = async () => {
+      const token = localStorage.getItem("authToken");
+      if (!token) {
+        setError("Missing auth token");
+        setIsLoading(false);
+        return;
+      }
 
-  const filteredRentals = mockRentals.filter((rental) => {
-    return filterStatus === "all" || rental.status === filterStatus;
-  });
+      try {
+        const response = await fetch(`${apiBase}/api/rental-applications/landlord`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
 
-  const statusCounts = {
-    all: mockRentals.length,
-    current: mockRentals.filter((r) => r.status === "current").length,
-    upcoming: mockRentals.filter((r) => r.status === "upcoming").length,
-    past: mockRentals.filter((r) => r.status === "past").length,
-  };
+        if (!response.ok) {
+          const payload = (await response.json()) as { message?: string };
+          throw new Error(payload.message ?? "Failed to load rental requests");
+        }
 
-  const formatDate = (dateStr: string) => {
-    return new Date(dateStr).toLocaleDateString("en-GB", {
-      day: "numeric",
-      month: "short",
-      year: "numeric",
-    });
+        const payload = (await response.json()) as RentalApplicationsResponse;
+        setApplications(payload.applications);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Failed to load rental requests");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    void loadApplications();
+  }, [apiBase]);
+
+  const filteredApplications = useMemo(() => {
+    return applications.filter((application) => filterStatus === "all" || application.status === filterStatus);
+  }, [applications, filterStatus]);
+
+  const statusCounts = useMemo(
+    () => ({
+      all: applications.length,
+      pending: applications.filter((item) => item.status === "pending").length,
+      approved: applications.filter((item) => item.status === "approved").length,
+      rejected: applications.filter((item) => item.status === "rejected").length,
+    }),
+    [applications]
+  );
+
+  const updateStatus = async (applicationId: string, status: "approved" | "rejected") => {
+    const token = localStorage.getItem("authToken");
+    if (!token) {
+      setError("Missing auth token");
+      return;
+    }
+
+    setUpdatingApplicationId(applicationId);
+    setError("");
+
+    try {
+      const response = await fetch(`${apiBase}/api/rental-applications/${applicationId}/status`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ status }),
+      });
+
+      if (!response.ok) {
+        const payload = (await response.json()) as { message?: string };
+        throw new Error(payload.message ?? "Failed to update request status");
+      }
+
+      setApplications((prev) =>
+        prev.map((item) => (item.id === applicationId ? { ...item, status } : item))
+      );
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to update request status");
+    } finally {
+      setUpdatingApplicationId(null);
+    }
   };
 
   return (
     <LandlordPortalLayout>
-      {/* Main Content */}
       <main className="flex-1 p-[32px]">
-        {/* Header */}
         <div className="mb-[32px]">
-          <h1 className="text-neutral-black text-[32px] font-bold tracking-[-0.02em] mb-[8px]">
-            Rentals
-          </h1>
-          <p className="text-neutral-gray text-[16px]">
-            Track current, upcoming, and past rentals
-          </p>
+          <h1 className="text-neutral-black text-[32px] font-bold tracking-[-0.02em] mb-[8px]">Rentals</h1>
+          <p className="text-neutral-gray text-[16px]">Tenant rental requests received for your listings</p>
+          {isLoading && <p className="text-neutral-gray text-[14px] mt-[8px]">Loading rental requests...</p>}
+          {!isLoading && error && <p className="text-brand-primary text-[14px] mt-[8px]">{error}</p>}
         </div>
 
-        {/* Status Filter Tabs */}
         <div className="bg-white border border-[rgba(0,0,0,0.08)] mb-[24px]">
           <div className="flex items-center gap-[8px] px-[24px] py-[16px]">
             <button
-              onClick={() => setFilterStatus("current")}
+              onClick={() => setFilterStatus("pending")}
               className={`px-[24px] py-[10px] text-[14px] font-semibold transition-colors ${
-                filterStatus === "current"
+                filterStatus === "pending"
                   ? "bg-brand-primary text-white"
                   : "bg-neutral-light-gray text-neutral-black hover:bg-neutral-gray/20"
               }`}
             >
-              Current ({statusCounts.current})
+              Pending ({statusCounts.pending})
             </button>
             <button
-              onClick={() => setFilterStatus("upcoming")}
+              onClick={() => setFilterStatus("approved")}
               className={`px-[24px] py-[10px] text-[14px] font-semibold transition-colors ${
-                filterStatus === "upcoming"
+                filterStatus === "approved"
                   ? "bg-brand-primary text-white"
                   : "bg-neutral-light-gray text-neutral-black hover:bg-neutral-gray/20"
               }`}
             >
-              Upcoming ({statusCounts.upcoming})
+              Approved ({statusCounts.approved})
             </button>
             <button
-              onClick={() => setFilterStatus("past")}
+              onClick={() => setFilterStatus("rejected")}
               className={`px-[24px] py-[10px] text-[14px] font-semibold transition-colors ${
-                filterStatus === "past"
+                filterStatus === "rejected"
                   ? "bg-brand-primary text-white"
                   : "bg-neutral-light-gray text-neutral-black hover:bg-neutral-gray/20"
               }`}
             >
-              Past ({statusCounts.past})
+              Rejected ({statusCounts.rejected})
             </button>
             <button
               onClick={() => setFilterStatus("all")}
@@ -212,130 +234,125 @@ export function LandlordRentals() {
           </div>
         </div>
 
-        {/* Rentals List */}
         <div className="space-y-[24px]">
-          {filteredRentals.map((rental) => (
-            <div key={rental.id} className="bg-white border border-[rgba(0,0,0,0.08)]">
-              <div className="p-[24px]">
-                <div className="flex gap-[24px]">
-                  {/* Property Image */}
-                  <div className="w-[200px] h-[150px] flex-shrink-0 overflow-hidden bg-neutral-light-gray">
-                    <ImageWithFallback
-                      src={rental.propertyImage}
-                      alt={rental.propertyTitle}
-                      className="w-full h-full object-cover"
-                    />
+          {filteredApplications.map((application) => (
+            <div key={application.id} className="bg-white border border-[rgba(0,0,0,0.08)] p-[24px]">
+              <div className="flex gap-[20px]">
+                <div className="w-[200px] h-[150px] overflow-hidden bg-neutral-light-gray flex-shrink-0">
+                  <ImageWithFallback
+                    src={application.listing.image}
+                    alt={application.listing.title}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-start justify-between mb-[12px]">
+                    <div>
+                      <h3 className="text-neutral-black text-[20px] font-bold mb-[4px]">{application.listing.title}</h3>
+                      <div className="flex items-center gap-[6px] text-neutral-gray text-[14px]">
+                        <MapPin className="w-[14px] h-[14px]" />
+                        <span>{application.listing.address}, {application.listing.city}</span>
+                      </div>
+                    </div>
+                    <span className={`px-[16px] py-[6px] text-[13px] font-bold uppercase tracking-[0.05em] ${statusStyle[application.status]}`}>
+                      {statusLabel[application.status]}
+                    </span>
                   </div>
 
-                  {/* Property Info */}
-                  <div className="flex-1">
-                    <div className="flex items-start justify-between mb-[12px]">
-                      <div>
-                        <h3 className="text-neutral-black text-[20px] font-bold mb-[4px]">
-                          {rental.propertyTitle}
-                        </h3>
-                        <div className="flex items-center gap-[6px] text-neutral-gray text-[14px]">
-                          <MapPin className="w-[14px] h-[14px]" />
-                          <span>{rental.propertyAddress}</span>
-                        </div>
+                  <div className="grid grid-cols-2 gap-[24px] mb-[16px]">
+                    <div>
+                      <div className="text-neutral-black text-[14px] font-bold mb-[8px] flex items-center gap-[8px]">
+                        <User className="w-[14px] h-[14px]" /> Tenant details
                       </div>
-                      <span
-                        className={`px-[16px] py-[6px] text-[13px] font-bold uppercase tracking-[0.05em] ${
-                          rental.status === "current"
-                            ? "bg-accent-blue/10 text-accent-blue"
-                            : rental.status === "upcoming"
-                            ? "bg-brand-light text-brand-primary"
-                            : "bg-neutral-gray/10 text-neutral-gray"
-                        }`}
-                      >
-                        {rental.status}
-                      </span>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-[24px] mb-[16px]">
-                      {/* Tenant Info */}
-                      <div className="flex items-start gap-[12px]">
-                        <div className="w-[48px] h-[48px] bg-gradient-to-br from-brand-primary to-brand-primary-dark rounded-full flex items-center justify-center flex-shrink-0">
-                          <span className="text-white text-[16px] font-bold">
-                            {rental.tenantAvatar}
-                          </span>
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="text-neutral-black text-[14px] font-bold mb-[4px]">
-                            {rental.tenantName}
-                          </div>
-                          <div className="flex items-center gap-[4px] text-neutral-gray text-[12px] mb-[2px]">
-                            <Mail className="w-[12px] h-[12px]" />
-                            <span className="truncate">{rental.tenantEmail}</span>
-                          </div>
-                          <div className="flex items-center gap-[4px] text-neutral-gray text-[12px]">
-                            <Phone className="w-[12px] h-[12px]" />
-                            <span>{rental.tenantPhone}</span>
-                          </div>
-                        </div>
+                      <div className="text-neutral-black text-[14px] font-semibold">{application.tenant.name}</div>
+                      <div className="flex items-center gap-[4px] text-neutral-gray text-[12px] mt-[4px]">
+                        <Mail className="w-[12px] h-[12px]" />
+                        <span className="truncate">{application.tenant.email || "No email"}</span>
                       </div>
-
-                      {/* Rental Details */}
-                      <div className="space-y-[8px]">
-                        <div className="flex items-center justify-between text-[14px]">
-                          <span className="text-neutral-gray">Monthly Rent:</span>
-                          <span className="text-neutral-black font-bold">
-                            €{rental.monthlyRent.toLocaleString()}
-                          </span>
-                        </div>
-                        <div className="flex items-center justify-between text-[14px]">
-                          <span className="text-neutral-gray">Deposit:</span>
-                          <span className="text-neutral-black font-bold">
-                            €{rental.deposit.toLocaleString()}
-                          </span>
-                        </div>
-                        {rental.totalEarned && (
-                          <div className="flex items-center justify-between text-[14px]">
-                            <span className="text-neutral-gray">Total Earned:</span>
-                            <span className="text-accent-blue font-bold">
-                              €{rental.totalEarned.toLocaleString()}
-                            </span>
-                          </div>
-                        )}
+                      <div className="flex items-center gap-[4px] text-neutral-gray text-[12px] mt-[2px]">
+                        <Phone className="w-[12px] h-[12px]" />
+                        <span>{application.tenant.phone || "No phone"}</span>
+                      </div>
+                      <div className="text-neutral-gray text-[12px] mt-[6px]">
+                        Occupation: {application.occupation ?? "Not specified"}
+                      </div>
+                      <div className="text-neutral-gray text-[12px] mt-[2px]">
+                        Move-in people: {application.moveInCount} | Pets: {application.withPets ? "Yes" : "No"}
                       </div>
                     </div>
 
-                    {/* Dates and Actions */}
-                    <div className="flex items-center justify-between pt-[16px] border-t border-[rgba(0,0,0,0.08)]">
-                      <div className="flex items-center gap-[24px]">
-                        <div className="flex items-center gap-[8px]">
-                          <Calendar className="w-[16px] h-[16px] text-neutral-gray" />
-                          <span className="text-neutral-gray text-[14px]">
-                            {formatDate(rental.startDate)} - {formatDate(rental.endDate)}
-                          </span>
-                        </div>
-                        {rental.daysRemaining !== undefined && (
-                          <div className="flex items-center gap-[8px]">
-                            <Clock className="w-[16px] h-[16px] text-brand-primary" />
-                            <span className="text-brand-primary text-[14px] font-semibold">
-                              {rental.daysRemaining} days remaining
-                            </span>
-                          </div>
-                        )}
+                    <div>
+                      <div className="text-neutral-black text-[14px] font-bold mb-[8px]">Request details</div>
+                      <div className="flex items-center justify-between text-[14px]">
+                        <span className="text-neutral-gray">Rent:</span>
+                        <span className="text-neutral-black font-bold">€{application.listing.monthlyRent.toLocaleString()}</span>
+                      </div>
+                      <div className="flex items-center justify-between text-[14px] mt-[4px]">
+                        <span className="text-neutral-gray">Deposit:</span>
+                        <span className="text-neutral-black font-bold">€{application.listing.deposit.toLocaleString()}</span>
+                      </div>
+                      <div className="text-neutral-gray text-[12px] mt-[6px]">ID Verified: {application.idVerified ? "Yes" : "No"}</div>
+                      {application.supportingMessage && (
+                        <p className="text-neutral-gray text-[12px] mt-[6px] line-clamp-3">"{application.supportingMessage}"</p>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="pt-[16px] border-t border-[rgba(0,0,0,0.08)]">
+                    <div className="flex items-center justify-between gap-[16px] mb-[12px]">
+                      <div className="flex items-center gap-[8px] text-neutral-gray text-[14px]">
+                        <Calendar className="w-[16px] h-[16px]" />
+                        <span>Applied on {formatDate(application.createdAt)}</span>
                       </div>
 
                       <div className="flex items-center gap-[8px]">
+                        {application.status === "pending" && (
+                          <>
+                            <button
+                              onClick={() => updateStatus(application.id, "approved")}
+                              disabled={updatingApplicationId === application.id}
+                              className="px-[14px] py-[8px] bg-accent-blue text-white text-[13px] font-semibold hover:opacity-90 transition-opacity disabled:opacity-60"
+                            >
+                              Approve
+                            </button>
+                            <button
+                              onClick={() => updateStatus(application.id, "rejected")}
+                              disabled={updatingApplicationId === application.id}
+                              className="px-[14px] py-[8px] bg-red-600 text-white text-[13px] font-semibold hover:bg-red-700 transition-colors disabled:opacity-60"
+                            >
+                              Reject
+                            </button>
+                          </>
+                        )}
+
                         <Link
-                          to={`/landlord/inbox`}
+                          to="/landlord/inbox"
                           className="flex items-center gap-[8px] px-[16px] py-[8px] border border-[rgba(0,0,0,0.16)] text-neutral-black text-[14px] font-semibold hover:bg-neutral-light-gray transition-colors"
                         >
                           <MessageSquare className="w-[14px] h-[14px]" />
-                          Message
+                          Message tenant
                         </Link>
-                        <button className="flex items-center gap-[8px] px-[16px] py-[8px] border border-[rgba(0,0,0,0.16)] text-neutral-black text-[14px] font-semibold hover:bg-neutral-light-gray transition-colors">
-                          <FileText className="w-[14px] h-[14px]" />
-                          View Contract
-                        </button>
-                        <button className="flex items-center gap-[8px] px-[16px] py-[8px] bg-brand-primary text-white text-[14px] font-semibold hover:bg-brand-primary-dark transition-colors">
-                          <Download className="w-[14px] h-[14px]" />
-                          Download
-                        </button>
                       </div>
+                    </div>
+
+                    <div className="flex flex-wrap gap-[10px]">
+                      {application.documents.length === 0 && (
+                        <span className="text-neutral-gray text-[13px]">No documents uploaded</span>
+                      )}
+                      {application.documents.map((doc) => (
+                        <a
+                          key={doc.id}
+                          href={doc.url}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="inline-flex items-center gap-[8px] px-[14px] py-[8px] border border-[rgba(0,0,0,0.16)] text-neutral-black text-[13px] font-semibold hover:bg-neutral-light-gray transition-colors"
+                        >
+                          <FileText className="w-[14px] h-[14px]" />
+                          {documentTypeLabel[doc.type]}
+                          <Download className="w-[13px] h-[13px]" />
+                        </a>
+                      ))}
                     </div>
                   </div>
                 </div>
@@ -343,17 +360,14 @@ export function LandlordRentals() {
             </div>
           ))}
 
-          {filteredRentals.length === 0 && (
+          {!isLoading && filteredApplications.length === 0 && (
             <div className="bg-white border border-[rgba(0,0,0,0.08)] p-[64px] text-center">
-              <Key className="w-[48px] h-[48px] text-neutral-gray mx-auto mb-[16px]" />
-              <h3 className="text-neutral-black text-[18px] font-bold mb-[8px]">
-                No {filterStatus !== "all" ? filterStatus : ""} rentals
-              </h3>
+              <FileText className="w-[48px] h-[48px] text-neutral-gray mx-auto mb-[16px]" />
+              <h3 className="text-neutral-black text-[18px] font-bold mb-[8px]">No rental requests found</h3>
               <p className="text-neutral-gray text-[14px]">
-                {filterStatus === "current" && "You don't have any active rentals at the moment"}
-                {filterStatus === "upcoming" && "You don't have any upcoming rentals scheduled"}
-                {filterStatus === "past" && "You don't have any past rental records"}
-                {filterStatus === "all" && "You don't have any rental records yet"}
+                {filterStatus === "all"
+                  ? "No tenants have submitted a request yet."
+                  : `No ${filterStatus} requests right now.`}
               </p>
             </div>
           )}

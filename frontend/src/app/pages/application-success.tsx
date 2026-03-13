@@ -43,6 +43,12 @@ export function ApplicationSuccess() {
                 View conversation
               </button>
               <button
+                onClick={() => navigate(`/tenant/applications`)}
+                className="border-[2px] border-[rgba(0,0,0,0.16)] text-neutral-black px-[24px] py-[14px] font-bold hover:bg-neutral-light-gray transition-colors text-[16px]"
+              >
+                My applications
+              </button>
+              <button
                 onClick={() => navigate(`/property/${id}/payment`)}
                 className="border-[2px] border-neutral-black text-neutral-black px-[32px] py-[14px] font-bold hover:bg-neutral-black hover:text-white transition-colors text-[16px]"
               >

@@ -1,14 +1,29 @@
 import { Link, useParams, useNavigate } from "react-router";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { ChevronLeft, Info, ChevronDown, Shield, Check, Plus, Upload, FileText, User, LogOut } from "lucide-react";
 import { useAuth } from "../contexts/auth-context";
 import propertyImage from "../../assets/2db5a7303bce6c3d85b53a7866c4838e88cb5e61.png";
+
+interface ListingSummary {
+  id: string;
+  title: string;
+  city: string;
+  address: string;
+  monthlyRent: number;
+  deposit: number;
+  availableFrom: string;
+  images: string[];
+}
 
 export function RentalApplication() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user, logout } = useAuth();
+  const apiBase = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:4000";
   const [currentStep, setCurrentStep] = useState(1);
+  const [listing, setListing] = useState<ListingSummary | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState("");
   
   // Dropdown states
   const [isLanguageOpen, setIsLanguageOpen] = useState(false);
@@ -52,9 +67,76 @@ export function RentalApplication() {
     }
   };
   
-  const handleSubmit = () => {
-    // Navigate to success page
-    navigate(`/property/${id}/success`);
+  const handleSubmit = async () => {
+    if (!id) {
+      return;
+    }
+
+    const token = localStorage.getItem("authToken");
+    if (!token) {
+      navigate(`/login?returnTo=/property/${id}/apply`);
+      return;
+    }
+
+    setIsSubmitting(true);
+    setSubmitError("");
+
+    try {
+      const formData = new FormData();
+      formData.append(
+        "application",
+        JSON.stringify({
+          listingId: id,
+          dateOfBirth,
+          gender,
+          countryCode,
+          mobileNumber,
+          moveInCount,
+          withPets,
+          occupation,
+          universityName,
+          visaStatus,
+          paymentMethods,
+          monthlyBudget,
+          employerName,
+          income,
+          supportingMessage,
+          idVerified,
+          shareDocuments,
+        })
+      );
+
+      if (enrollmentProof) {
+        formData.append("enrollmentProof", enrollmentProof);
+      }
+
+      if (employmentProof) {
+        formData.append("employmentProof", employmentProof);
+      }
+
+      if (incomeProof) {
+        formData.append("incomeProof", incomeProof);
+      }
+
+      const response = await fetch(`${apiBase}/api/rental-applications`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const payload = (await response.json()) as { message?: string };
+        throw new Error(payload.message ?? "Failed to submit rental application");
+      }
+
+      navigate(`/property/${id}/success`);
+    } catch (error) {
+      setSubmitError(error instanceof Error ? error.message : "Failed to submit rental application");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleFileUpload = (file: File, type: string) => {
@@ -80,6 +162,28 @@ export function RentalApplication() {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  useEffect(() => {
+    const loadListing = async () => {
+      if (!id) {
+        return;
+      }
+
+      try {
+        const response = await fetch(`${apiBase}/api/listings/${id}`);
+        if (!response.ok) {
+          return;
+        }
+
+        const payload = (await response.json()) as { listing: ListingSummary };
+        setListing(payload.listing);
+      } catch {
+        setListing(null);
+      }
+    };
+
+    void loadListing();
+  }, [apiBase, id]);
 
   return (
     <div className="min-h-screen bg-white">
@@ -650,191 +754,109 @@ export function RentalApplication() {
             {currentStep === 2 && (
               <>
                 <h1 className="text-[#1A1A1A] text-[32px] font-bold tracking-[-0.02em] mb-[16px]">
-                  Confirm your ID to stand out
+                  Upload required documents
                 </h1>
                 <p className="text-[#6B6B6B] text-[15px] leading-[1.6] mb-[32px]">
-                  Get a verified ID badge and build trust. People who confirm their ID are 5x more likely to rent.{" "}
-                  <button className="text-[#0066CC] underline hover:no-underline">About document security</button>
+                  Upload all required documents below. These files will be shown to the landlord in the dashboard rental requests section.
                 </p>
 
-                {/* ID Verification */}
-                <div className="bg-[#F7F7F9] border border-[rgba(0,0,0,0.08)] p-[24px] mb-[32px]">
-                  <div className="flex items-start gap-[16px] mb-[16px]">
-                    <div className="flex-shrink-0">
-                      <svg className="w-[32px] h-[32px]" viewBox="0 0 32 32" fill="none">
-                        <rect width="32" height="32" rx="4" fill="#635BFF"/>
-                        <path d="M8 16C8 11.5817 11.5817 8 16 8C20.4183 8 24 11.5817 24 16C24 20.4183 20.4183 24 16 24C11.5817 24 8 20.4183 8 16Z" fill="white"/>
-                      </svg>
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="text-[#1A1A1A] text-[16px] font-bold mb-[4px]">
-                        ID verification <span className="text-[#635BFF] text-[14px] font-normal">Powered by Stripe</span>
-                      </h3>
-                      <div className="bg-brand-light border border-brand-primary px-[12px] py-[6px] inline-block mb-[12px]">
-                        <span className="text-brand-primary text-[12px] font-semibold">To Do</span>
+                <div className="bg-[#F7F7F9] border border-[rgba(0,0,0,0.08)] p-[20px] mb-[24px]">
+                  <h2 className="text-[#1A1A1A] text-[20px] font-bold mb-[10px]">Required documents</h2>
+                  <ul className="space-y-[6px] text-[#1A1A1A] text-[14px]">
+                    <li>1. Government ID (passport/national ID)</li>
+                    <li>2. Proof of income (salary slip or bank statement)</li>
+                    <li>3. Enrollment or employment proof</li>
+                  </ul>
+                </div>
+
+                <div className="mb-[20px]">
+                  <h2 className="text-[#1A1A1A] text-[22px] font-bold mb-[12px]">1. Government ID (required)</h2>
+                  <div className="border-[2px] border-dashed border-[rgba(0,0,0,0.16)] p-[24px] text-center">
+                    {enrollmentProof ? (
+                      <div className="flex items-center gap-[12px] justify-center">
+                        <FileText className="w-[24px] h-[24px] text-accent-blue" />
+                        <span className="text-neutral-black text-[14px] font-semibold">{enrollmentProof.name}</span>
+                        <button onClick={() => setEnrollmentProof(null)} className="text-brand-primary hover:underline text-[14px]">
+                          Remove
+                        </button>
                       </div>
-                      <div className="space-y-[8px] mb-[16px]">
-                        <div className="flex items-center gap-[8px]">
-                          <Check className="w-[16px] h-[16px] text-accent-blue" />
-                          <span className="text-neutral-black text-[14px]">
-                            <strong>We'll check:</strong> Your government-issued photo ID against a selfie.
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-[8px]">
-                          <Check className="w-[16px] h-[16px] text-accent-blue" />
-                          <span className="text-neutral-black text-[14px]">
-                            <strong>You'll receive:</strong> A verified ID badge to boost your chances of renting.
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-[8px]">
-                          <Check className="w-[16px] h-[16px] text-accent-blue" />
-                          <span className="text-neutral-black text-[14px]">
-                            <strong>Landlords will see:</strong> Your new badge. And your ID, only once you choose to share it with them.
-                          </span>
-                        </div>
-                      </div>
-                      <button
-                        onClick={() => setIdVerified(true)}
-                        className="bg-neutral-black text-white px-[24px] py-[12px] font-semibold hover:bg-brand-primary transition-colors"
-                      >
-                        Confirm my identity
-                      </button>
-                    </div>
+                    ) : (
+                      <>
+                        <Upload className="w-[42px] h-[42px] text-neutral-gray mx-auto mb-[12px]" />
+                        <p className="text-neutral-black text-[14px] font-semibold mb-[8px]">Upload passport or national ID</p>
+                        <label className="bg-brand-primary text-white px-[20px] py-[10px] font-semibold inline-block cursor-pointer hover:bg-brand-primary-dark transition-colors">
+                          Upload ID document
+                          <input
+                            type="file"
+                            accept=".pdf,.png,.jpg,.jpeg"
+                            onChange={(e) => e.target.files && handleFileUpload(e.target.files[0], "enrollment")}
+                            className="hidden"
+                          />
+                        </label>
+                      </>
+                    )}
                   </div>
                 </div>
 
-                {/* Conditional Document Upload */}
-                {occupation === "student" && (
-                  <div className="mb-[32px]">
-                    <h2 className="text-[#1A1A1A] text-[24px] font-bold mb-[16px]">Student verification</h2>
-                    <p className="text-[#6B6B6B] text-[14px] mb-[24px]">
-                      Upload your enrollment card or proof of enrollment to verify your student status.
-                    </p>
-                    
-                    <div className="border-[2px] border-dashed border-[rgba(0,0,0,0.16)] p-[32px] text-center">
-                      {enrollmentProof ? (
-                        <div className="flex items-center gap-[12px] justify-center">
-                          <FileText className="w-[24px] h-[24px] text-accent-blue" />
-                          <span className="text-neutral-black text-[14px] font-semibold">{enrollmentProof.name}</span>
-                          <button
-                            onClick={() => setEnrollmentProof(null)}
-                            className="text-brand-primary hover:underline text-[14px]"
-                          >
-                            Remove
-                          </button>
-                        </div>
-                      ) : (
-                        <>
-                          <Upload className="w-[48px] h-[48px] text-neutral-gray mx-auto mb-[16px]" />
-                          <p className="text-neutral-black text-[14px] font-semibold mb-[8px]">
-                            Drag and drop or click to upload
-                          </p>
-                          <p className="text-neutral-gray text-[13px] mb-[16px]">
-                            Max file size: 7MB | Accepted formats: pdf, png, jpg, jpeg | Multiple uploads possible
-                          </p>
-                          <label className="bg-brand-primary text-white px-[24px] py-[12px] font-semibold inline-block cursor-pointer hover:bg-brand-primary-dark transition-colors">
-                            Upload document
-                            <input
-                              type="file"
-                              accept=".pdf,.png,.jpg,.jpeg"
-                              onChange={(e) => e.target.files && handleFileUpload(e.target.files[0], "enrollment")}
-                              className="hidden"
-                            />
-                          </label>
-                        </>
-                      )}
-                    </div>
+                <div className="mb-[20px]">
+                  <h2 className="text-[#1A1A1A] text-[22px] font-bold mb-[12px]">2. Proof of income (required)</h2>
+                  <div className="border-[2px] border-dashed border-[rgba(0,0,0,0.16)] p-[24px] text-center">
+                    {incomeProof ? (
+                      <div className="flex items-center gap-[12px] justify-center">
+                        <FileText className="w-[24px] h-[24px] text-accent-blue" />
+                        <span className="text-neutral-black text-[14px] font-semibold">{incomeProof.name}</span>
+                        <button onClick={() => setIncomeProof(null)} className="text-brand-primary hover:underline text-[14px]">
+                          Remove
+                        </button>
+                      </div>
+                    ) : (
+                      <>
+                        <Upload className="w-[42px] h-[42px] text-neutral-gray mx-auto mb-[12px]" />
+                        <p className="text-neutral-black text-[14px] font-semibold mb-[8px]">Upload salary slip or bank statement</p>
+                        <label className="bg-brand-primary text-white px-[20px] py-[10px] font-semibold inline-block cursor-pointer hover:bg-brand-primary-dark transition-colors">
+                          Upload income proof
+                          <input
+                            type="file"
+                            accept=".pdf,.png,.jpg,.jpeg"
+                            onChange={(e) => e.target.files && handleFileUpload(e.target.files[0], "income")}
+                            className="hidden"
+                          />
+                        </label>
+                      </>
+                    )}
                   </div>
-                )}
+                </div>
 
-                {occupation === "professional" && (
-                  <>
-                    <div className="mb-[32px]">
-                      <h2 className="text-[#1A1A1A] text-[24px] font-bold mb-[16px]">Employment verification</h2>
-                      <p className="text-[#6B6B6B] text-[14px] mb-[24px]">
-                        Upload your employment contract or letter to verify your employment status.
-                      </p>
-                      
-                      <div className="border-[2px] border-dashed border-[rgba(0,0,0,0.16)] p-[32px] text-center">
-                        {employmentProof ? (
-                          <div className="flex items-center gap-[12px] justify-center">
-                            <FileText className="w-[24px] h-[24px] text-accent-blue" />
-                            <span className="text-neutral-black text-[14px] font-semibold">{employmentProof.name}</span>
-                            <button
-                              onClick={() => setEmploymentProof(null)}
-                              className="text-brand-primary hover:underline text-[14px]"
-                            >
-                              Remove
-                            </button>
-                          </div>
-                        ) : (
-                          <>
-                            <Upload className="w-[48px] h-[48px] text-neutral-gray mx-auto mb-[16px]" />
-                            <p className="text-neutral-black text-[14px] font-semibold mb-[8px]">
-                              Drag and drop or click to upload
-                            </p>
-                            <p className="text-neutral-gray text-[13px] mb-[16px]">
-                              Max file size: 7MB | Accepted formats: pdf, png, jpg, jpeg | Multiple uploads possible
-                            </p>
-                            <label className="bg-brand-primary text-white px-[24px] py-[12px] font-semibold inline-block cursor-pointer hover:bg-brand-primary-dark transition-colors">
-                              Upload document
-                              <input
-                                type="file"
-                                accept=".pdf,.png,.jpg,.jpeg"
-                                onChange={(e) => e.target.files && handleFileUpload(e.target.files[0], "employment")}
-                                className="hidden"
-                              />
-                            </label>
-                          </>
-                        )}
+                <div className="mb-[28px]">
+                  <h2 className="text-[#1A1A1A] text-[22px] font-bold mb-[12px]">3. Enrollment or employment proof (required)</h2>
+                  <div className="border-[2px] border-dashed border-[rgba(0,0,0,0.16)] p-[24px] text-center">
+                    {employmentProof ? (
+                      <div className="flex items-center gap-[12px] justify-center">
+                        <FileText className="w-[24px] h-[24px] text-accent-blue" />
+                        <span className="text-neutral-black text-[14px] font-semibold">{employmentProof.name}</span>
+                        <button onClick={() => setEmploymentProof(null)} className="text-brand-primary hover:underline text-[14px]">
+                          Remove
+                        </button>
                       </div>
-                    </div>
+                    ) : (
+                      <>
+                        <Upload className="w-[42px] h-[42px] text-neutral-gray mx-auto mb-[12px]" />
+                        <p className="text-neutral-black text-[14px] font-semibold mb-[8px]">Upload enrollment card or employment letter</p>
+                        <label className="bg-brand-primary text-white px-[20px] py-[10px] font-semibold inline-block cursor-pointer hover:bg-brand-primary-dark transition-colors">
+                          Upload supporting proof
+                          <input
+                            type="file"
+                            accept=".pdf,.png,.jpg,.jpeg"
+                            onChange={(e) => e.target.files && handleFileUpload(e.target.files[0], "employment")}
+                            className="hidden"
+                          />
+                        </label>
+                      </>
+                    )}
+                  </div>
+                </div>
 
-                    <div className="mb-[32px]">
-                      <h2 className="text-[#1A1A1A] text-[24px] font-bold mb-[16px]">Income verification</h2>
-                      <p className="text-[#6B6B6B] text-[14px] mb-[24px]">
-                        Upload your recent pay slip or bank statement to verify your income.
-                      </p>
-                      
-                      <div className="border-[2px] border-dashed border-[rgba(0,0,0,0.16)] p-[32px] text-center">
-                        {incomeProof ? (
-                          <div className="flex items-center gap-[12px] justify-center">
-                            <FileText className="w-[24px] h-[24px] text-accent-blue" />
-                            <span className="text-neutral-black text-[14px] font-semibold">{incomeProof.name}</span>
-                            <button
-                              onClick={() => setIncomeProof(null)}
-                              className="text-brand-primary hover:underline text-[14px]"
-                            >
-                              Remove
-                            </button>
-                          </div>
-                        ) : (
-                          <>
-                            <Upload className="w-[48px] h-[48px] text-neutral-gray mx-auto mb-[16px]" />
-                            <p className="text-neutral-black text-[14px] font-semibold mb-[8px]">
-                              Drag and drop or click to upload
-                            </p>
-                            <p className="text-neutral-gray text-[13px] mb-[16px]">
-                              Max file size: 7MB | Accepted formats: pdf, png, jpg, jpeg | Multiple uploads possible
-                            </p>
-                            <label className="bg-brand-primary text-white px-[24px] py-[12px] font-semibold inline-block cursor-pointer hover:bg-brand-primary-dark transition-colors">
-                              Upload document
-                              <input
-                                type="file"
-                                accept=".pdf,.png,.jpg,.jpeg"
-                                onChange={(e) => e.target.files && handleFileUpload(e.target.files[0], "income")}
-                                className="hidden"
-                              />
-                            </label>
-                          </>
-                        )}
-                      </div>
-                    </div>
-                  </>
-                )}
-
-                {/* Share Documents Checkbox */}
-                <div className="mb-[32px]">
+                <div className="mb-[32px] bg-[#F7F7F9] p-[14px]">
                   <label className="flex items-start gap-[12px] cursor-pointer">
                     <input
                       type="checkbox"
@@ -843,32 +865,25 @@ export function RentalApplication() {
                       className="w-[20px] h-[20px] border-[2px] border-[rgba(0,0,0,0.16)] rounded-none mt-[2px]"
                     />
                     <span className="text-[#1A1A1A] text-[14px] leading-[1.6]">
-                      I agree to share these documents <strong>only</strong> with Sental, in accordance with
-                      HousingAnywhere's <button className="text-[#0066CC] underline hover:no-underline">Terms & Conditions</button> and{" "}
-                      <button className="text-[#0066CC] underline hover:no-underline">Privacy Policy</button>.
+                      I confirm these uploaded documents can be shared with the landlord for rental request review.
                     </span>
                   </label>
                 </div>
 
-                <div className="flex items-center gap-[16px]">
-                  <button
-                    onClick={handleContinue}
-                    disabled={!shareDocuments}
-                    className={`flex-1 font-bold py-[16px] transition-colors text-[16px] ${
-                      shareDocuments
-                        ? "bg-brand-primary text-white hover:bg-brand-primary-dark"
-                        : "bg-[#EDEDED] text-neutral-gray cursor-not-allowed"
-                    }`}
-                  >
-                    Share and continue
-                  </button>
-                  <button
-                    onClick={handleContinue}
-                    className="px-[24px] py-[16px] text-neutral-black font-semibold hover:underline"
-                  >
-                    I'll do it later
-                  </button>
-                </div>
+                <button
+                  onClick={() => {
+                    setIdVerified(Boolean(enrollmentProof));
+                    handleContinue();
+                  }}
+                  disabled={!shareDocuments || !enrollmentProof || !employmentProof || !incomeProof}
+                  className={`w-full font-bold py-[16px] transition-colors text-[16px] ${
+                    shareDocuments && enrollmentProof && employmentProof && incomeProof
+                      ? "bg-brand-primary text-white hover:bg-brand-primary-dark"
+                      : "bg-[#EDEDED] text-neutral-gray cursor-not-allowed"
+                  }`}
+                >
+                  Continue to review
+                </button>
               </>
             )}
 
@@ -977,32 +992,28 @@ export function RentalApplication() {
                   <h2 className="text-neutral-black text-[20px] font-bold mb-[16px]">Documents</h2>
                   <div className="space-y-[12px]">
                     <div className="flex items-center justify-between">
-                      <span className="text-neutral-gray text-[14px]">ID verified</span>
+                      <span className="text-neutral-gray text-[14px]">Government ID</span>
                       <span className={`text-[14px] font-semibold ${idVerified ? "text-accent-blue" : "text-neutral-gray"}`}>
-                        {idVerified ? "✓ Verified" : "Not verified"}
+                        {idVerified ? "✓ Uploaded" : "Missing"}
                       </span>
                     </div>
-                    {occupation === "student" && enrollmentProof && (
+                    {enrollmentProof && (
                       <div className="flex items-center justify-between">
-                        <span className="text-neutral-gray text-[14px]">Enrollment proof</span>
+                        <span className="text-neutral-gray text-[14px]">Government ID file</span>
                         <span className="text-accent-blue text-[14px] font-semibold">✓ Uploaded</span>
                       </div>
                     )}
-                    {occupation === "professional" && (
-                      <>
-                        {employmentProof && (
-                          <div className="flex items-center justify-between">
-                            <span className="text-neutral-gray text-[14px]">Employment proof</span>
-                            <span className="text-accent-blue text-[14px] font-semibold">✓ Uploaded</span>
-                          </div>
-                        )}
-                        {incomeProof && (
-                          <div className="flex items-center justify-between">
-                            <span className="text-neutral-gray text-[14px]">Income proof</span>
-                            <span className="text-accent-blue text-[14px] font-semibold">✓ Uploaded</span>
-                          </div>
-                        )}
-                      </>
+                    {employmentProof && (
+                      <div className="flex items-center justify-between">
+                        <span className="text-neutral-gray text-[14px]">Enrollment or employment proof</span>
+                        <span className="text-accent-blue text-[14px] font-semibold">✓ Uploaded</span>
+                      </div>
+                    )}
+                    {incomeProof && (
+                      <div className="flex items-center justify-between">
+                        <span className="text-neutral-gray text-[14px]">Income proof</span>
+                        <span className="text-accent-blue text-[14px] font-semibold">✓ Uploaded</span>
+                      </div>
                     )}
                   </div>
                 </div>
@@ -1015,10 +1026,12 @@ export function RentalApplication() {
 
                 <button
                   onClick={handleSubmit}
+                  disabled={isSubmitting}
                   className="w-full bg-brand-primary text-white font-bold py-[16px] hover:bg-brand-primary-dark transition-colors text-[16px]"
                 >
-                  Submit application
+                  {isSubmitting ? "Submitting..." : "Submit application"}
                 </button>
+                {submitError && <p className="text-brand-primary text-[14px] mt-[12px]">{submitError}</p>}
               </>
             )}
           </div>
@@ -1029,20 +1042,22 @@ export function RentalApplication() {
               {/* Property Card */}
               <div className="border border-[rgba(0,0,0,0.08)] p-[16px] mb-[24px]">
                 <div className="relative mb-[12px]">
-                  <img src={propertyImage} alt="Property" className="w-full h-[120px] object-cover" />
+                  <img src={listing?.images?.[0] || propertyImage} alt="Property" className="w-full h-[120px] object-cover" />
                   <div className="absolute bottom-[8px] right-[8px] w-[32px] h-[32px] bg-brand-primary rounded-full flex items-center justify-center">
                     <span className="text-white text-[12px] font-bold">S</span>
                   </div>
                 </div>
 
-                <h3 className="text-neutral-black text-[18px] font-bold mb-[4px]">Rue Clément Ader</h3>
-                <p className="text-neutral-gray text-[13px] mb-[8px]">Rosny-sous-Bois, France</p>
+                <h3 className="text-neutral-black text-[18px] font-bold mb-[4px]">{listing?.title ?? "Listing"}</h3>
+                <p className="text-neutral-gray text-[13px] mb-[8px]">{listing ? `${listing.address}, ${listing.city}` : ""}</p>
                 <p className="text-neutral-gray text-[13px] mb-[8px]">Published by Sental</p>
 
                 <div className="bg-neutral-light-gray px-[12px] py-[8px]">
                   <p className="text-neutral-black text-[13px] font-semibold mb-[2px]">Rental period</p>
                   <div className="flex items-center gap-[4px]">
-                    <p className="text-neutral-black text-[13px]">10 Mar – 1 Jun 2026</p>
+                    <p className="text-neutral-black text-[13px]">
+                      {listing?.availableFrom ? new Date(listing.availableFrom).toLocaleDateString("en-GB") : "Date pending"}
+                    </p>
                   </div>
                 </div>
               </div>
@@ -1071,20 +1086,22 @@ export function RentalApplication() {
                 <div className="space-y-[12px] mb-[16px]">
                   <div className="flex items-center justify-between">
                     <span className="text-neutral-gray text-[14px]">First month's rent</span>
-                    <span className="text-neutral-black text-[14px] font-semibold">€600.00</span>
+                    <span className="text-neutral-black text-[14px] font-semibold">€{(listing?.monthlyRent ?? 0).toFixed(2)}</span>
                   </div>
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-[4px]">
                       <span className="text-neutral-gray text-[14px]">Tenant Protection fee</span>
                       <Info className="w-[12px] h-[12px] text-neutral-gray" />
                     </div>
-                    <span className="text-neutral-black text-[14px] font-semibold">€210.00</span>
+                    <span className="text-neutral-black text-[14px] font-semibold">€{(listing ? Math.round(listing.monthlyRent * 0.1 * 100) / 100 : 0).toFixed(2)}</span>
                   </div>
                 </div>
 
                 <div className="flex items-center justify-between pt-[16px] border-t border-[rgba(0,0,0,0.08)] mb-[12px]">
                   <span className="text-[#1A1A1A] text-[16px] font-bold">Total</span>
-                  <span className="text-[#1A1A1A] text-[20px] font-bold">€810.00</span>
+                  <span className="text-[#1A1A1A] text-[20px] font-bold">
+                    €{(listing ? listing.monthlyRent + Math.round(listing.monthlyRent * 0.1 * 100) / 100 : 0).toFixed(2)}
+                  </span>
                 </div>
 
                 <div className="flex items-center gap-[6px] bg-[#F7F7F9] px-[12px] py-[8px]">
@@ -1122,7 +1139,7 @@ export function RentalApplication() {
                       <span className="text-neutral-gray text-[12px]">before move-in</span>
                       <Info className="w-[12px] h-[12px] text-neutral-gray" />
                     </div>
-                    <span className="text-neutral-black text-[14px] font-semibold">€900.00</span>
+                    <span className="text-neutral-black text-[14px] font-semibold">€{(listing?.deposit ?? 0).toFixed(2)}</span>
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-neutral-gray text-[14px]">Utilities</span>
@@ -1132,7 +1149,7 @@ export function RentalApplication() {
                   {showMorePayments && (
                     <div className="flex items-center justify-between">
                       <span className="text-neutral-gray text-[14px]">Monthly rent (from month 2)</span>
-                      <span className="text-neutral-black text-[14px] font-semibold">€600.00</span>
+                      <span className="text-neutral-black text-[14px] font-semibold">€{(listing?.monthlyRent ?? 0).toFixed(2)}</span>
                     </div>
                   )}
                 </div>
