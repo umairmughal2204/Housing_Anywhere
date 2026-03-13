@@ -4,6 +4,7 @@ import multer from "multer";
 import fs from "fs/promises";
 import path from "path";
 import { z } from "zod";
+import { Types } from "mongoose";
 import { UserModel } from "../models/User.js";
 import { ListingModel } from "../models/Listing.js";
 import { RentalApplicationModel } from "../models/RentalApplication.js";
@@ -65,6 +66,10 @@ const contactUpdateSchema = z.object({
 const passwordUpdateSchema = z.object({
   currentPassword: z.string().min(1),
   newPassword: z.string().min(8),
+});
+
+const favoriteListingSchema = z.object({
+  listingId: z.string().regex(/^[0-9a-fA-F]{24}$/),
 });
 
 function toAuthUser(user: {
@@ -329,6 +334,70 @@ router.patch("/me/password", requireAuth, async (req, res) => {
   await user.save();
 
   res.json({ message: "Password updated successfully" });
+});
+
+router.get("/me/favorites", requireAuth, async (req, res) => {
+  const user = await UserModel.findById(req.user?.sub).lean();
+  if (!user) {
+    res.status(404).json({ message: "User not found" });
+    return;
+  }
+
+  const favoriteIds = (user.favoriteListingIds ?? []).map((id) => String(id));
+  if (favoriteIds.length === 0) {
+    res.json({ listingIds: [], favorites: [] });
+    return;
+  }
+
+  const listings = await ListingModel.find({ _id: { $in: favoriteIds } }).lean();
+  const byId = new Map(listings.map((l) => [String(l._id), l]));
+  const orderedListings = favoriteIds.map((id) => byId.get(id)).filter(Boolean);
+
+  res.json({
+    listingIds: favoriteIds,
+    favorites: orderedListings.map((listing) => ({
+      id: String(listing!._id),
+      title: listing!.title,
+      city: listing!.city,
+      address: listing!.address,
+      monthlyRent: listing!.price,
+      bedrooms: listing!.bedrooms,
+      area: listing!.area,
+      availableFrom: listing!.availableFrom,
+      image: listing!.images?.[0] ?? "",
+      status: listing!.status,
+    })),
+  });
+});
+
+router.post("/me/favorites", requireAuth, async (req, res) => {
+  const parsed = favoriteListingSchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ message: "Invalid listingId" });
+    return;
+  }
+
+  const listing = await ListingModel.findById(parsed.data.listingId).lean();
+  if (!listing) {
+    res.status(404).json({ message: "Listing not found" });
+    return;
+  }
+
+  await UserModel.updateOne(
+    { _id: req.user!.sub },
+    { $addToSet: { favoriteListingIds: new Types.ObjectId(parsed.data.listingId) } }
+  );
+
+  res.status(201).json({ ok: true });
+});
+
+router.delete("/me/favorites/:listingId([0-9a-fA-F]{24})", requireAuth, async (req, res) => {
+  await UserModel.updateOne(
+    { _id: req.user!.sub },
+    { $pull: { favoriteListingIds: new Types.ObjectId(req.params.listingId) } }
+  );
+
+  res.json({ ok: true });
 });
 
 router.delete("/me", requireAuth, async (req, res) => {

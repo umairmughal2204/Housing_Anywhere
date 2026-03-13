@@ -39,6 +39,7 @@ const userSchema = new Schema(
     passwordHash: { type: String, required: true },
     role: { type: String, enum: ["tenant", "landlord"], required: true, default: "tenant" },
     isLandlord: { type: Boolean, default: false },
+    favoriteListingIds: { type: [Schema.Types.ObjectId], ref: "Listing", default: [] },
     landlordProfile: { type: landlordProfileSchema, required: false },
   },
   { timestamps: true }

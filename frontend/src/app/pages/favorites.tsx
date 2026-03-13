@@ -1,41 +1,108 @@
 import { Header } from "../components/header";
 import { Footer } from "../components/footer";
 import { Heart, MapPin, Euro, Home, Calendar, X } from "lucide-react";
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router";
 import { Link } from "react-router";
 
 export function Favorites() {
-  const favorites = [
-    {
-      id: 1,
-      image: "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=800",
-      title: "Modern Loft in Kreuzberg",
-      location: "Berlin, Germany",
-      price: "€1,200",
-      bedrooms: 2,
-      size: "75m²",
-      available: "Available Now",
-    },
-    {
-      id: 2,
-      image: "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800",
-      title: "Sunny Studio near Tiergarten",
-      location: "Berlin, Germany",
-      price: "€950",
-      bedrooms: 1,
-      size: "45m²",
-      available: "Available from Mar 15",
-    },
-    {
-      id: 3,
-      image: "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800",
-      title: "Cozy Apartment in Eixample",
-      location: "Barcelona, Spain",
-      price: "€850",
-      bedrooms: 1,
-      size: "55m²",
-      available: "Available Now",
-    },
-  ];
+  const apiBase = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:4000";
+  const navigate = useNavigate();
+  const [favorites, setFavorites] = useState<Array<{
+    id: string;
+    title: string;
+    city: string;
+    address: string;
+    monthlyRent: number;
+    bedrooms: number;
+    area: number;
+    availableFrom: string;
+    image: string;
+  }>>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const loadFavorites = async () => {
+      const token = localStorage.getItem("authToken");
+      if (!token) {
+        setIsLoading(false);
+        return;
+      }
+
+      try {
+        const response = await fetch(`${apiBase}/api/auth/me/favorites`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!response.ok) {
+          throw new Error("Failed to load favorites");
+        }
+
+        const payload = (await response.json()) as {
+          favorites: Array<{
+            id: string;
+            title: string;
+            city: string;
+            address: string;
+            monthlyRent: number;
+            bedrooms: number;
+            area: number;
+            availableFrom: string;
+            image: string;
+          }>;
+        };
+        setFavorites(payload.favorites);
+      } catch {
+        setFavorites([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    void loadFavorites();
+  }, [apiBase]);
+
+  const removeFavorite = async (listingId: string) => {
+    const token = localStorage.getItem("authToken");
+    if (!token) {
+      navigate("/login");
+      return;
+    }
+
+    setFavorites((prev) => prev.filter((item) => item.id !== listingId));
+
+    const response = await fetch(`${apiBase}/api/auth/me/favorites/${listingId}`, {
+      method: "DELETE",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    if (!response.ok) {
+      // Restore on failure.
+      setIsLoading(true);
+      try {
+        const refresh = await fetch(`${apiBase}/api/auth/me/favorites`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (refresh.ok) {
+          const payload = (await refresh.json()) as {
+            favorites: Array<{
+              id: string;
+              title: string;
+              city: string;
+              address: string;
+              monthlyRent: number;
+              bedrooms: number;
+              area: number;
+              availableFrom: string;
+              image: string;
+            }>;
+          };
+          setFavorites(payload.favorites);
+        }
+      } finally {
+        setIsLoading(false);
+      }
+    }
+  };
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -49,7 +116,7 @@ export function Favorites() {
               Favorites
             </h1>
             <p className="text-[#6B6B6B] text-[16px]">
-              {favorites.length} saved properties
+              {isLoading ? "Loading..." : `${favorites.length} saved properties`}
             </p>
           </div>
 
@@ -65,7 +132,10 @@ export function Favorites() {
                       alt={property.title}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                     />
-                    <button className="absolute top-[16px] right-[16px] w-[40px] h-[40px] bg-white/90 backdrop-blur flex items-center justify-center hover:bg-white transition-colors">
+                    <button
+                      onClick={() => void removeFavorite(property.id)}
+                      className="absolute top-[16px] right-[16px] w-[40px] h-[40px] bg-white/90 backdrop-blur flex items-center justify-center hover:bg-white transition-colors"
+                    >
                       <Heart className="w-[20px] h-[20px] text-[#FF4B27] fill-[#FF4B27]" />
                     </button>
                   </div>

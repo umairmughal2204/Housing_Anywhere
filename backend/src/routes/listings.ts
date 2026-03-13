@@ -5,6 +5,7 @@ import fs from "fs/promises";
 import path from "path";
 import { requireAuth, requireRole } from "../middleware/auth.js";
 import { ListingModel } from "../models/Listing.js";
+import { UserModel } from "../models/User.js";
 
 const router = Router();
 const upload = multer({
@@ -69,7 +70,7 @@ function toListingResponse(listing: {
   inquiries: number;
   createdAt: Date;
   updatedAt: Date;
-}) {
+}, options?: { landlord?: { id: string; name: string; initials: string } }) {
   return {
     id: String(listing._id),
     propertyType: listing.propertyType,
@@ -93,6 +94,7 @@ function toListingResponse(listing: {
     status: listing.status,
     views: listing.views,
     inquiries: listing.inquiries,
+    landlord: options?.landlord,
     createdAt: listing.createdAt,
     updatedAt: listing.updatedAt,
   };
@@ -123,7 +125,19 @@ router.get("/:id([0-9a-fA-F]{24})", async (req, res) => {
     return;
   }
 
-  res.json({ listing: toListingResponse(listing) });
+  const landlord = await UserModel.findById(listing.landlordId).lean();
+
+  res.json({
+    listing: toListingResponse(listing, {
+      landlord: landlord
+        ? {
+            id: String(landlord._id),
+            name: `${landlord.firstName} ${landlord.lastName}`,
+            initials: `${landlord.firstName[0] ?? ""}${landlord.lastName[0] ?? ""}`.toUpperCase(),
+          }
+        : undefined,
+    }),
+  });
 });
 
 router.use(requireAuth, requireRole("landlord"));

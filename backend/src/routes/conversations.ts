@@ -28,6 +28,13 @@ router.post("/", requireAuth, async (req, res) => {
 
   const callerId = req.user!.sub;
   const callerRole = req.user!.role;
+
+  // Landlords must provide application context so the tenant can be resolved correctly.
+  if (callerRole === "landlord" && !parsed.data.applicationId) {
+    res.status(400).json({ message: "Landlords must open conversations from a rental application" });
+    return;
+  }
+
   let listingId = parsed.data.listingId;
   let resolvedTenantId: string | null = null;
   let resolvedLandlordId: string | null = null;

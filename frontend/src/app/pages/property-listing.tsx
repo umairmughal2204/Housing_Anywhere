@@ -52,6 +52,11 @@ interface ListingDetails {
   amenities: string[];
   houseRules: string[];
   images: string[];
+  landlord?: {
+    id: string;
+    name: string;
+    initials: string;
+  };
 }
 
 export function PropertyListing() {
@@ -63,6 +68,7 @@ export function PropertyListing() {
   const [isFavorited, setIsFavorited] = useState(false);
   const [listing, setListing] = useState<ListingDetails | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isFavoriteBusy, setIsFavoriteBusy] = useState(false);
 
   useEffect(() => {
     const loadListing = async () => {
@@ -90,6 +96,34 @@ export function PropertyListing() {
     void loadListing();
   }, [apiBase, id]);
 
+  useEffect(() => {
+    const loadFavoriteState = async () => {
+      if (!id || !isAuthenticated) {
+        setIsFavorited(false);
+        return;
+      }
+
+      const token = localStorage.getItem("authToken");
+      if (!token) {
+        setIsFavorited(false);
+        return;
+      }
+
+      try {
+        const response = await fetch(`${apiBase}/api/auth/me/favorites`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!response.ok) return;
+        const payload = (await response.json()) as { listingIds: string[] };
+        setIsFavorited(payload.listingIds.includes(id));
+      } catch {
+        // Ignore; favorite button remains usable.
+      }
+    };
+
+    void loadFavoriteState();
+  }, [apiBase, id, isAuthenticated]);
+
   const propertyImages = useMemo(() => {
     if (listing && listing.images.length > 0) {
       return listing.images;
@@ -114,22 +148,83 @@ export function PropertyListing() {
     }
   };
 
-  const handleMessageLandlord = () => {
+  const handleMessageLandlord = async () => {
     if (!isAuthenticated) {
       // Redirect to login with return URL
       navigate(`/login?returnTo=/property/${id}`);
     } else {
-      // Open message interface or navigate to inbox
-      navigate(`/tenant/inbox`);
+      if (!id) {
+        navigate("/tenant/inbox");
+        return;
+      }
+
+      const token = localStorage.getItem("authToken");
+      if (!token) {
+        navigate(`/login?returnTo=/property/${id}`);
+        return;
+      }
+
+      try {
+        const response = await fetch(`${apiBase}/api/conversations`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ listingId: id }),
+        });
+
+        if (!response.ok) {
+          navigate("/tenant/inbox");
+          return;
+        }
+
+        const payload = (await response.json()) as { conversationId: string };
+        navigate(`/tenant/inbox/conversation/${payload.conversationId}`);
+      } catch {
+        navigate("/tenant/inbox");
+      }
     }
   };
 
-  const handleToggleFavorite = () => {
+  const handleToggleFavorite = async () => {
     if (!isAuthenticated) {
       // Redirect to login with return URL
       navigate(`/login?returnTo=/property/${id}`);
     } else {
-      setIsFavorited(!isFavorited);
+      if (!id || isFavoriteBusy) return;
+
+      const token = localStorage.getItem("authToken");
+      if (!token) {
+        navigate(`/login?returnTo=/property/${id}`);
+        return;
+      }
+
+      const next = !isFavorited;
+      setIsFavorited(next);
+      setIsFavoriteBusy(true);
+
+      try {
+        const response = await fetch(
+          next ? `${apiBase}/api/auth/me/favorites` : `${apiBase}/api/auth/me/favorites/${id}`,
+          {
+            method: next ? "POST" : "DELETE",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            body: next ? JSON.stringify({ listingId: id }) : undefined,
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error("Failed to update favorites");
+        }
+      } catch {
+        setIsFavorited(!next);
+      } finally {
+        setIsFavoriteBusy(false);
+      }
     }
   };
 
@@ -358,11 +453,11 @@ export function PropertyListing() {
               {/* Landlord Info */}
               <div className="flex items-center gap-[12px] mb-[24px] pb-[24px] border-b border-[rgba(0,0,0,0.08)]">
                 <div className="w-[48px] h-[48px] bg-brand-primary rounded-full flex items-center justify-center text-white font-bold text-[18px]">
-                  S
+                  {listing?.landlord?.initials ?? "L"}
                 </div>
                 <div className="flex-1">
                   <div className="flex items-center gap-[8px] mb-[2px]">
-                    <span className="text-neutral-black text-[16px] font-bold">Sental</span>
+                    <span className="text-neutral-black text-[16px] font-bold">{listing?.landlord?.name ?? "Landlord"}</span>
                   </div>
                   <div className="flex items-center gap-[6px]">
                     <Check className="w-[12px] h-[12px] text-accent-blue" />

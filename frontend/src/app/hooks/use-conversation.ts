@@ -143,6 +143,17 @@ export function useConversation({
     };
   }, [conversationId, token]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Keep messages reasonably fresh when realtime connection is unavailable.
+  useEffect(() => {
+    if (!conversationId || !token || isConnected) return;
+
+    const interval = setInterval(() => {
+      void loadHistory();
+    }, 5000);
+
+    return () => clearInterval(interval);
+  }, [conversationId, token, isConnected, loadHistory]);
+
   // ── Send message ───────────────────────────────────────────────
   const sendMessage = useCallback(
     async (body: string): Promise<void> => {
