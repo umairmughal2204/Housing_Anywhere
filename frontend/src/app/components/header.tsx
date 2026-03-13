@@ -1,5 +1,5 @@
 import { Link } from "react-router";
-import { Globe, MessageCircle, Heart, Bell, User, CreditCard, HelpCircle, Settings, LogOut, TrendingUp, LayoutDashboard, FileText } from "lucide-react";
+import { Globe, MessageCircle, Heart, User, CreditCard, HelpCircle, Settings, LogOut, TrendingUp, LayoutDashboard, FileText } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { useAuth } from "../contexts/auth-context";
 
@@ -243,14 +243,6 @@ export function Header() {
                     >
                       <Heart className="w-[16px] h-[16px] text-neutral-gray" />
                       Favorites
-                    </Link>
-                    <Link
-                      to="/alerts"
-                      className="flex items-center gap-[12px] px-[16px] py-[12px] text-neutral-black text-[14px] hover:bg-neutral-light-gray transition-colors"
-                      onClick={() => setShowDropdown(false)}
-                    >
-                      <Bell className="w-[16px] h-[16px] text-neutral-gray" />
-                      Alerts
                     </Link>
                     <Link
                       to="/payments"
