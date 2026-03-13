@@ -1,6 +1,18 @@
 ﻿import { Header } from "../components/header";
 import { Footer } from "../components/footer";
-import { Search, Mail, MapPin, MessageSquare, X as XIcon } from "lucide-react";
+import {
+  Search,
+  Mail,
+  MapPin,
+  MessageSquare,
+  X as XIcon,
+  Briefcase,
+  Clock3,
+  CheckSquare,
+  Star,
+  Archive,
+  AlignJustify,
+} from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link } from "react-router";
 import { API_BASE } from "../config";
@@ -25,6 +37,17 @@ interface ConversationItem {
   unread: number;
 }
 
+type TenantMessageFilter =
+  | "active"
+  | "unread"
+  | "read"
+  | "pending"
+  | "rented"
+  | "shortlisted"
+  | "expired"
+  | "archived"
+  | "all";
+
 const AVATAR_COLORS = ["#E91E63", "#9C27B0", "#3F51B5", "#2196F3", "#009688", "#FF9800"];
 
 function avatarColor(initials: string) {
@@ -48,6 +71,7 @@ export function TenantInbox() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
+  const [activeFilter, setActiveFilter] = useState<TenantMessageFilter>("active");
 
   useEffect(() => {
     const load = async () => {
@@ -76,7 +100,29 @@ export function TenantInbox() {
     void load();
   }, []);
 
-  const filtered = conversations.filter((c) => {
+  const sortedConversations = [...conversations].sort((a, b) => {
+    if (a.unread > 0 && b.unread === 0) return -1;
+    if (a.unread === 0 && b.unread > 0) return 1;
+    return new Date(b.lastMessageAt).getTime() - new Date(a.lastMessageAt).getTime();
+  });
+
+  const filterBySection = (items: ConversationItem[], filter: TenantMessageFilter) => {
+    switch (filter) {
+      case "active":
+      case "all":
+        return items;
+      case "unread":
+        return items.filter((c) => c.unread > 0);
+      case "read":
+        return items.filter((c) => c.unread === 0);
+      default:
+        return [];
+    }
+  };
+
+  const sectionFiltered = filterBySection(sortedConversations, activeFilter);
+
+  const filtered = sectionFiltered.filter((c) => {
     if (!searchQuery) return true;
     const q = searchQuery.toLowerCase();
     return (
@@ -87,11 +133,31 @@ export function TenantInbox() {
     );
   });
 
+  const unreadCount = conversations.reduce((sum, c) => sum + c.unread, 0);
+  const unreadThreads = conversations.filter((c) => c.unread > 0).length;
+
+  const sidebarSections: {
+    key: TenantMessageFilter;
+    label: string;
+    icon: typeof Mail;
+    count?: number;
+  }[] = [
+    { key: "active", label: "Active", icon: Briefcase, count: conversations.length },
+    { key: "unread", label: "Unread", icon: Mail, count: unreadThreads },
+    { key: "read", label: "Read", icon: CheckSquare, count: conversations.length - unreadThreads },
+    { key: "pending", label: "Pending", icon: Clock3 },
+    { key: "rented", label: "Rented", icon: CheckSquare },
+    { key: "shortlisted", label: "Shortlisted", icon: Star },
+    { key: "expired", label: "Expired", icon: XIcon },
+    { key: "archived", label: "Archived", icon: Archive },
+    { key: "all", label: "All messages", icon: AlignJustify, count: conversations.length },
+  ];
+
   return (
     <div className="min-h-screen bg-white flex flex-col">
       <Header />
 
-      <div className="flex-1 max-w-[1100px] mx-auto w-full px-[32px] py-[40px]">
+      <div className="flex-1 max-w-[1240px] mx-auto w-full px-[32px] py-[40px]">
         {/* Header row */}
         <div className="flex items-center justify-between mb-[28px]">
           <h1 className="text-[#1A1A1A] text-[32px] font-bold tracking-[-0.02em]">Messages</h1>
@@ -100,7 +166,7 @@ export function TenantInbox() {
             <Search className="absolute left-[12px] top-1/2 -translate-y-1/2 w-[16px] h-[16px] text-[#6B6B6B]" />
             <input
               type="text"
-              placeholder="Search conversations..."
+              placeholder="Search by keywords"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-[36px] pr-[34px] py-[9px] border border-[rgba(0,0,0,0.12)] outline-none text-[14px] text-[#1A1A1A] placeholder:text-[#6B6B6B] focus:border-[rgba(0,0,0,0.28)]"
@@ -120,71 +186,147 @@ export function TenantInbox() {
         {!isLoading && error && <p className="text-brand-primary text-[14px]">{error}</p>}
 
         {!isLoading && !error && (
-          <div className="space-y-[10px]">
-            {filtered.map((c) => (
-              <Link
-                key={c.id}
-                to={`/tenant/inbox/conversation/${c.id}`}
-                className="flex items-start gap-[16px] bg-[#F5F3FF] hover:bg-[#EDE9FE] transition-colors p-[20px] border border-[rgba(0,0,0,0.04)]"
-              >
-                <div
-                  className="w-[44px] h-[44px] rounded-full flex-shrink-0 flex items-center justify-center text-white text-[15px] font-bold"
-                  style={{ backgroundColor: avatarColor(c.otherUser.initials) }}
-                >
-                  {c.otherUser.initials}
-                </div>
+          <div className="grid grid-cols-1 lg:grid-cols-[260px_1fr] gap-[20px] items-start">
+            <aside className="bg-[#F7F7F8] p-[12px] rounded-[8px] border border-[rgba(0,0,0,0.05)] lg:sticky lg:top-[96px]">
+              <nav className="space-y-[4px]">
+                {sidebarSections.map((section) => {
+                  const Icon = section.icon;
+                  const isActive = section.key === activeFilter;
 
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-start justify-between gap-[8px] mb-[4px]">
-                    <span className="text-[#1A1A1A] text-[15px] font-bold truncate">{c.otherUser.name}</span>
-                    <div className="flex items-center gap-[8px] flex-shrink-0">
-                      {c.unread > 0 && (
-                        <span className="px-[7px] py-[2px] text-[11px] font-bold bg-brand-primary text-white rounded-full">
-                          {c.unread}
+                  return (
+                    <button
+                      key={section.key}
+                      type="button"
+                      onClick={() => setActiveFilter(section.key)}
+                      className={`w-full flex items-center justify-between px-[12px] py-[10px] rounded-[8px] text-left transition-colors ${
+                        isActive ? "bg-[#E9E9EF] text-[#111827]" : "text-[#4B5563] hover:bg-[#EFEFF2]"
+                      }`}
+                    >
+                      <span className="flex items-center gap-[10px] text-[18px]">
+                        <Icon className="w-[18px] h-[18px]" />
+                        <span>{section.label}</span>
+                      </span>
+
+                      {typeof section.count === "number" && (
+                        <span
+                          className={`text-[14px] min-w-[24px] h-[24px] rounded-full px-[7px] flex items-center justify-center ${
+                            isActive ? "bg-[#111827] text-white" : "bg-[#D9D9D9] text-[#444444]"
+                          }`}
+                        >
+                          {section.count}
                         </span>
                       )}
-                      <span className="text-[12px] text-[#6B6B6B]">{timeAgo(c.lastMessageAt)}</span>
+                    </button>
+                  );
+                })}
+              </nav>
+            </aside>
+
+            <div className="space-y-[12px]">
+              {filtered.map((c) => (
+                <Link
+                  key={c.id}
+                  to={`/tenant/inbox/conversation/${c.id}`}
+                  className="block bg-[#F0EEFB] hover:bg-[#E8E3FA] transition-colors p-[20px] rounded-[6px] border border-[rgba(0,0,0,0.04)]"
+                >
+                  <div className="flex items-start gap-[16px]">
+                    <div
+                      className="w-[44px] h-[44px] rounded-full flex-shrink-0 flex items-center justify-center text-white text-[15px] font-bold"
+                      style={{ backgroundColor: avatarColor(c.otherUser.initials) }}
+                    >
+                      {c.otherUser.initials}
+                    </div>
+
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between gap-[10px] mb-[4px]">
+                        <span className="text-[#111827] text-[15px] font-bold truncate">{c.otherUser.name}</span>
+
+                        <span className="text-[12px] text-[#6B7280] flex-shrink-0">{timeAgo(c.lastMessageAt)}</span>
+                      </div>
+
+                      <div className="flex items-center gap-[5px] text-[#556070] text-[13px] mb-[8px]">
+                        <MapPin className="w-[12px] h-[12px] flex-shrink-0" />
+                        <span className="truncate">
+                          {c.listing.address}, {c.listing.city}
+                        </span>
+                      </div>
+
+                      <p className={`text-[17px] leading-[1.5] truncate ${c.unread > 0 ? "text-[#101827] font-semibold" : "text-[#4B5563]"}`}>
+                        {c.lastMessage || "No messages yet - start the conversation"}
+                      </p>
+
+                      <div className="mt-[10px] flex items-center justify-between">
+                        <span className="text-[13px] text-[#6B7280] truncate max-w-[70%]">{c.listing.title}</span>
+
+                        {c.unread > 0 ? (
+                          <span className="inline-flex items-center gap-[6px] text-[12px] font-semibold text-[#111827]">
+                            <span className="w-[7px] h-[7px] rounded-full bg-brand-primary" />
+                            {c.unread} unread
+                          </span>
+                        ) : (
+                          <span className="text-[12px] text-[#6B7280]">Read</span>
+                        )}
+                      </div>
                     </div>
                   </div>
+                </Link>
+              ))}
 
-                  <div className="flex items-center gap-[5px] text-[#6B6B6B] text-[13px] mb-[6px]">
-                    <MapPin className="w-[12px] h-[12px] flex-shrink-0" />
-                    <span className="truncate">
-                      {c.listing.title} | {c.listing.address}, {c.listing.city}
-                    </span>
-                  </div>
+              {filtered.length === 0 && !searchQuery && activeFilter === "unread" && (
+                <div className="text-center py-[60px] bg-[#F7F7F8] rounded-[8px] border border-[rgba(0,0,0,0.06)]">
+                  <Mail className="w-[48px] h-[48px] text-[#C5C5CC] mx-auto mb-[12px]" />
+                  <h3 className="text-[#1A1A1A] text-[18px] font-bold mb-[6px]">No unread messages</h3>
+                  <p className="text-[#6B6B6B] text-[14px]">You are all caught up.</p>
+                </div>
+              )}
 
-                  <p className={`text-[13px] truncate ${c.unread > 0 ? "text-[#1A1A1A] font-semibold" : "text-[#6B6B6B]"}`}>
-                    {c.lastMessage || "No messages yet - start the conversation"}
+              {filtered.length === 0 && !searchQuery && activeFilter === "read" && (
+                <div className="text-center py-[60px] bg-[#F7F7F8] rounded-[8px] border border-[rgba(0,0,0,0.06)]">
+                  <CheckSquare className="w-[48px] h-[48px] text-[#C5C5CC] mx-auto mb-[12px]" />
+                  <h3 className="text-[#1A1A1A] text-[18px] font-bold mb-[6px]">No read conversations</h3>
+                  <p className="text-[#6B6B6B] text-[14px]">Read conversations will appear here.</p>
+                </div>
+              )}
+
+              {filtered.length === 0 && !searchQuery && !["unread", "read"].includes(activeFilter) && conversations.length > 0 && (
+                <div className="text-center py-[60px] bg-[#F7F7F8] rounded-[8px] border border-[rgba(0,0,0,0.06)]">
+                  <MessageSquare className="w-[48px] h-[48px] text-[#C5C5CC] mx-auto mb-[12px]" />
+                  <h3 className="text-[#1A1A1A] text-[18px] font-bold mb-[6px]">No messages in this section</h3>
+                  <p className="text-[#6B6B6B] text-[14px]">Try another filter from the left menu.</p>
+                </div>
+              )}
+
+              {filtered.length === 0 && !searchQuery && conversations.length === 0 && (
+                <div className="text-center py-[80px]">
+                  <Mail className="w-[56px] h-[56px] text-[#D0D0D0] mx-auto mb-[14px]" />
+                  <h3 className="text-[#1A1A1A] text-[18px] font-bold mb-[8px]">No messages yet</h3>
+                  <p className="text-[#6B6B6B] text-[14px] mb-[24px]">
+                    Apply for a property and start chatting with landlords.
+                  </p>
+                  <Link
+                    to="/"
+                    className="inline-block px-[24px] py-[11px] bg-brand-primary text-white font-semibold hover:bg-brand-primary-dark transition-colors"
+                  >
+                    Browse properties
+                  </Link>
+                </div>
+              )}
+
+              {filtered.length === 0 && searchQuery && (
+                <div className="text-center py-[60px] bg-[#F7F7F8] rounded-[8px] border border-[rgba(0,0,0,0.06)]">
+                  <MessageSquare className="w-[48px] h-[48px] text-[#D0D0D0] mx-auto mb-[12px]" />
+                  <p className="text-[#6B6B6B] text-[14px]">
+                    No conversations match &ldquo;{searchQuery}&rdquo;
                   </p>
                 </div>
-              </Link>
-            ))}
+              )}
 
-            {filtered.length === 0 && !searchQuery && (
-              <div className="text-center py-[80px]">
-                <Mail className="w-[56px] h-[56px] text-[#D0D0D0] mx-auto mb-[14px]" />
-                <h3 className="text-[#1A1A1A] text-[18px] font-bold mb-[8px]">No messages yet</h3>
-                <p className="text-[#6B6B6B] text-[14px] mb-[24px]">
-                  Apply for a property and start chatting with landlords.
+              {unreadCount > 0 && (
+                <p className="text-[13px] text-[#4B5563] px-[4px]">
+                  You have <span className="font-semibold text-[#111827]">{unreadCount}</span> unread message{unreadCount > 1 ? "s" : ""}.
                 </p>
-                <Link
-                  to="/"
-                  className="inline-block px-[24px] py-[11px] bg-brand-primary text-white font-semibold hover:bg-brand-primary-dark transition-colors"
-                >
-                  Browse properties
-                </Link>
-              </div>
-            )}
-
-            {filtered.length === 0 && searchQuery && (
-              <div className="text-center py-[60px]">
-                <MessageSquare className="w-[48px] h-[48px] text-[#D0D0D0] mx-auto mb-[12px]" />
-                <p className="text-[#6B6B6B] text-[14px]">
-                  No conversations match &ldquo;{searchQuery}&rdquo;
-                </p>
-              </div>
-            )}
+              )}
+            </div>
           </div>
         )}
       </div>
