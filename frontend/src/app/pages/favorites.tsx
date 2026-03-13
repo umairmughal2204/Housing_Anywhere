@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import { Link } from "react-router";
 import { API_BASE } from "../config";
+import { toast } from "sonner";
 
 interface FavoriteListing {
   id: string;
@@ -70,6 +71,7 @@ export function Favorites() {
 
     if (!response.ok) {
       // Restore on failure.
+      toast.error("Could not remove favorite. Please try again.");
       setIsLoading(true);
       try {
         const refresh = await fetch(`${API_BASE}/api/auth/me/favorites`, {
@@ -82,6 +84,8 @@ export function Favorites() {
       } finally {
         setIsLoading(false);
       }
+    } else {
+      toast.success("Removed from favorites");
     }
   };
 
@@ -104,13 +108,16 @@ export function Favorites() {
       });
 
       if (!response.ok) {
+        toast.error("Could not open chat right now");
         navigate("/tenant/inbox");
         return;
       }
 
       const payload = (await response.json()) as { conversationId: string };
+      toast.success("Opening chat");
       navigate(`/tenant/inbox/conversation/${payload.conversationId}`);
     } catch {
+      toast.error("Could not open chat right now");
       navigate("/tenant/inbox");
     } finally {
       setOpeningConversationFor(null);

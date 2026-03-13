@@ -23,6 +23,7 @@ import {
   AirVent,
   Utensils,
 } from "lucide-react";
+import { toast } from "sonner";
 
 const fallbackPropertyImages = [
   "https://images.unsplash.com/photo-1649740718655-3c70b0e3d431?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxwYXJpcyUyMGFwYXJ0bWVudCUyMGJlZHJvb20lMjB3aW5kb3d8ZW58MXx8fHwxNzczMDg5ODczfDA&ixlib=rb-4.1.0&q=80&w=1080",
@@ -220,8 +221,11 @@ export function PropertyListing() {
         if (!response.ok) {
           throw new Error("Failed to update favorites");
         }
+
+        toast.success(next ? "Added to favorites" : "Removed from favorites");
       } catch {
         setIsFavorited(!next);
+        toast.error("Could not update favorites. Please try again.");
       } finally {
         setIsFavoriteBusy(false);
       }
