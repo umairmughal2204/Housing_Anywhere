@@ -131,7 +131,12 @@ export function RentalApplication() {
         throw new Error(payload.message ?? "Failed to submit rental application");
       }
 
-      navigate(`/property/${id}/success`);
+      const payload = (await response.json()) as { conversationId?: string };
+      if (payload.conversationId) {
+        navigate(`/property/${id}/success?conversationId=${encodeURIComponent(payload.conversationId)}`);
+      } else {
+        navigate(`/property/${id}/success`);
+      }
     } catch (error) {
       setSubmitError(error instanceof Error ? error.message : "Failed to submit rental application");
     } finally {
@@ -735,15 +740,22 @@ export function RentalApplication() {
                     <textarea
                       value={supportingMessage}
                       onChange={(e) => setSupportingMessage(e.target.value)}
+                      placeholder="Introduce yourself and mention why you are a good tenant"
                       rows={4}
                       className="w-full px-[16px] py-[12px] border border-[rgba(0,0,0,0.16)] text-[#1A1A1A] text-[14px] leading-[1.6] resize-none"
                     />
+                    <p className="text-[#6B6B6B] text-[12px] mt-[6px]">{supportingMessage.trim().length}/2000</p>
                   </div>
                 </div>
 
                 <button
                   onClick={handleContinue}
-                  className="w-full bg-brand-primary text-white font-bold py-[16px] hover:bg-brand-primary-dark transition-colors text-[16px]"
+                  disabled={!supportingMessage.trim()}
+                  className={`w-full font-bold py-[16px] transition-colors text-[16px] ${
+                    supportingMessage.trim()
+                      ? "bg-brand-primary text-white hover:bg-brand-primary-dark"
+                      : "bg-[#EDEDED] text-neutral-gray cursor-not-allowed"
+                  }`}
                 >
                   Continue
                 </button>

@@ -7,6 +7,8 @@ import { Types } from "mongoose";
 import { requireAuth, requireRole } from "../middleware/auth.js";
 import { ListingModel } from "../models/Listing.js";
 import { RentalApplicationModel } from "../models/RentalApplication.js";
+import { ConversationModel } from "../models/Conversation.js";
+import { MessageModel } from "../models/Message.js";
 import { UserModel } from "../models/User.js";
 
 const router = Router();
@@ -166,6 +168,41 @@ router.post(
       documents,
     });
 
+    // Create or reuse a conversation for this tenant/landlord/listing and send the supporting message into chat.
+    const conversation = await ConversationModel.findOneAndUpdate(
+      {
+        tenantId: new Types.ObjectId(tenantId),
+        landlordId: new Types.ObjectId(String(listing.landlordId)),
+        listingId: new Types.ObjectId(String(listing._id)),
+      },
+      {
+        $setOnInsert: {
+          tenantId: new Types.ObjectId(tenantId),
+          landlordId: new Types.ObjectId(String(listing.landlordId)),
+          listingId: new Types.ObjectId(String(listing._id)),
+        },
+      },
+      { upsert: true, new: true }
+    );
+
+    const chatBody = input.supportingMessage.trim();
+    if (chatBody.length > 0) {
+      await MessageModel.create({
+        conversationId: conversation._id,
+        senderId: new Types.ObjectId(tenantId),
+        senderRole: "tenant",
+        body: chatBody,
+      });
+
+      await ConversationModel.updateOne(
+        { _id: conversation._id },
+        {
+          $set: { lastMessage: chatBody, lastMessageAt: new Date() },
+          $inc: { unreadByLandlord: 1 },
+        }
+      );
+    }
+
     await ListingModel.updateOne({ _id: listing._id }, { $inc: { inquiries: 1 } });
 
     res.status(201).json({
@@ -173,6 +210,7 @@ router.post(
         id: String(created._id),
         status: created.status,
       },
+      conversationId: String(conversation._id),
     });
   }
 );

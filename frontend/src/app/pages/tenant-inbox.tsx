@@ -1,269 +1,196 @@
-import { Header } from "../components/header";
+﻿import { Header } from "../components/header";
 import { Footer } from "../components/footer";
-import { Search, Star, Archive, Inbox, Mail, Clock, CheckSquare, X as XIcon, Menu } from "lucide-react";
-import { useState } from "react";
+import { Search, Mail, MapPin, MessageSquare, X as XIcon } from "lucide-react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router";
+import { API_BASE } from "../config";
 
-interface Conversation {
+interface ConversationItem {
   id: string;
-  landlordName: string;
-  landlordAvatar?: string;
-  propertyAddress: string;
-  dateRange: string;
+  listingId: string;
+  listing: {
+    title: string;
+    address: string;
+    city: string;
+    image: string;
+    monthlyRent: number;
+  };
+  otherUser: {
+    id: string;
+    name: string;
+    initials: string;
+  };
   lastMessage: string;
-  timestamp: string;
-  isNew: boolean;
-  isSystemMessage?: boolean;
-  systemTitle?: string;
-  systemAction?: string;
+  lastMessageAt: string;
+  unread: number;
 }
 
-const mockConversations: Conversation[] = [
-  {
-    id: "1",
-    landlordName: "Sendal",
-    landlordAvatar: "S",
-    propertyAddress: "Rue Clément Ader, Rosny-sous-Bois",
-    dateRange: "16 Mar 2026 - 1 Jun 2026",
-    lastMessage: "Hi, I have another room is available minimum 5 month stay.",
-    timestamp: "today",
-    isNew: false,
-  },
-  {
-    id: "2",
-    landlordName: "Shou Yi (Emma)",
-    propertyAddress: "Rue Louis Lebrun, Sarcelles",
-    dateRange: "16 Mar 2026 - 1 Jun 2026",
-    lastMessage: "Build trust and show Shou Yi (Emma) you're ready to rent. Getting a Verified ID badge increases your ch...",
-    timestamp: "today",
-    isNew: false,
-    isSystemMessage: true,
-    systemTitle: "Verify your ID to stand out",
-    systemAction: "Confirm my identity",
-  },
-];
+const AVATAR_COLORS = ["#E91E63", "#9C27B0", "#3F51B5", "#2196F3", "#009688", "#FF9800"];
 
-type FilterType = "active" | "unread" | "pending" | "rented" | "shortlisted" | "expired" | "archived" | "all";
+function avatarColor(initials: string) {
+  return AVATAR_COLORS[initials.charCodeAt(0) % AVATAR_COLORS.length];
+}
+
+function timeAgo(iso: string) {
+  const diff = Date.now() - new Date(iso).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return "just now";
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  const days = Math.floor(hrs / 24);
+  if (days < 7) return `${days}d ago`;
+  return new Date(iso).toLocaleDateString("en-GB", { day: "numeric", month: "short" });
+}
 
 export function TenantInbox() {
+  const [conversations, setConversations] = useState<ConversationItem[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedFilter, setSelectedFilter] = useState<FilterType>("active");
 
-  const filterCounts = {
-    active: 6,
-    unread: 1,
-    pending: 0,
-    rented: 0,
-    shortlisted: 0,
-    expired: 0,
-    archived: 0,
-    all: 3,
-  };
+  useEffect(() => {
+    const load = async () => {
+      const token = localStorage.getItem("authToken");
+      if (!token) {
+        setError("Please log in to view your messages.");
+        setIsLoading(false);
+        return;
+      }
+      try {
+        const res = await fetch(`${API_BASE}/api/conversations`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!res.ok) {
+          const d = (await res.json()) as { message?: string };
+          throw new Error(d.message ?? "Failed to load conversations");
+        }
+        const data = (await res.json()) as { conversations: ConversationItem[] };
+        setConversations(data.conversations);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Failed to load conversations");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    void load();
+  }, []);
 
-  const filters: { id: FilterType; label: string; icon: any }[] = [
-    { id: "active", label: "Active", icon: Inbox },
-    { id: "unread", label: "Unread", icon: Mail },
-    { id: "pending", label: "Pending", icon: Clock },
-    { id: "rented", label: "Rented", icon: CheckSquare },
-    { id: "shortlisted", label: "Shortlisted", icon: Star },
-    { id: "expired", label: "Expired", icon: XIcon },
-    { id: "archived", label: "Archived", icon: Archive },
-    { id: "all", label: "All messages", icon: Menu },
-  ];
-
-  const getAvatarColor = (name: string) => {
-    const colors = [
-      "#E91E63", // Pink
-      "#9C27B0", // Purple
-      "#3F51B5", // Indigo
-      "#2196F3", // Blue
-      "#009688", // Teal
-      "#FF9800", // Orange
-    ];
-    const index = name.charCodeAt(0) % colors.length;
-    return colors[index];
-  };
+  const filtered = conversations.filter((c) => {
+    if (!searchQuery) return true;
+    const q = searchQuery.toLowerCase();
+    return (
+      c.otherUser.name.toLowerCase().includes(q) ||
+      c.listing.title.toLowerCase().includes(q) ||
+      c.listing.address.toLowerCase().includes(q) ||
+      c.lastMessage.toLowerCase().includes(q)
+    );
+  });
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-white flex flex-col">
       <Header />
 
-      <div className="max-w-[1200px] mx-auto px-[32px] py-[40px]">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-[32px]">
-          <h1 className="text-[#1A1A1A] text-[32px] font-bold tracking-[-0.02em]">
-            Messages
-          </h1>
-          
-          {/* Search Bar */}
-          <div className="relative w-[360px]">
+      <div className="flex-1 max-w-[1100px] mx-auto w-full px-[32px] py-[40px]">
+        {/* Header row */}
+        <div className="flex items-center justify-between mb-[28px]">
+          <h1 className="text-[#1A1A1A] text-[32px] font-bold tracking-[-0.02em]">Messages</h1>
+
+          <div className="relative w-[320px]">
             <Search className="absolute left-[12px] top-1/2 -translate-y-1/2 w-[16px] h-[16px] text-[#6B6B6B]" />
             <input
               type="text"
-              placeholder="Search by keywords"
+              placeholder="Search conversations..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-[36px] pr-[36px] py-[10px] border border-[rgba(0,0,0,0.12)] rounded-[4px] outline-none text-[14px] text-[#1A1A1A] placeholder:text-[#6B6B6B] focus:border-[rgba(0,0,0,0.24)]"
+              className="w-full pl-[36px] pr-[34px] py-[9px] border border-[rgba(0,0,0,0.12)] outline-none text-[14px] text-[#1A1A1A] placeholder:text-[#6B6B6B] focus:border-[rgba(0,0,0,0.28)]"
             />
             {searchQuery && (
               <button
                 onClick={() => setSearchQuery("")}
-                className="absolute right-[12px] top-1/2 -translate-y-1/2 text-[#6B6B6B] hover:text-[#1A1A1A]"
+                className="absolute right-[10px] top-1/2 -translate-y-1/2 text-[#6B6B6B] hover:text-[#1A1A1A]"
               >
-                <XIcon className="w-[16px] h-[16px]" />
+                <XIcon className="w-[15px] h-[15px]" />
               </button>
             )}
           </div>
         </div>
 
-        <div className="flex gap-[32px]">
-          {/* Left Sidebar - Filters */}
-          <div className="w-[240px] flex-shrink-0">
-            <div className="space-y-[4px]">
-              {filters.map((filter) => {
-                const Icon = filter.icon;
-                const count = filterCounts[filter.id];
-                const isActive = selectedFilter === filter.id;
+        {isLoading && <p className="text-[#6B6B6B] text-[14px]">Loading your conversations...</p>}
+        {!isLoading && error && <p className="text-brand-primary text-[14px]">{error}</p>}
 
-                return (
-                  <button
-                    key={filter.id}
-                    onClick={() => setSelectedFilter(filter.id)}
-                    className={`w-full flex items-center justify-between px-[12px] py-[10px] text-left rounded-[4px] transition-colors ${
-                      isActive
-                        ? "bg-[#F7F7F9] text-[#1A1A1A]"
-                        : "text-[#6B6B6B] hover:bg-[#F7F7F9] hover:text-[#1A1A1A]"
-                    }`}
-                  >
-                    <div className="flex items-center gap-[12px]">
-                      <Icon className="w-[16px] h-[16px]" />
-                      <span className="text-[15px] font-medium">{filter.label}</span>
-                    </div>
-                    {count > 0 && (
-                      <span
-                        className={`min-w-[20px] h-[20px] px-[6px] flex items-center justify-center text-[12px] font-bold rounded-full ${
-                          isActive
-                            ? "bg-[#1A1A1A] text-white"
-                            : "bg-[#E0E0E0] text-[#6B6B6B]"
-                        }`}
-                      >
-                        {count}
-                      </span>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Right Content - Conversations */}
-          <div className="flex-1">
-            <div className="space-y-[16px]">
-              {mockConversations.map((conversation) => (
-                <Link
-                  key={conversation.id}
-                  to={`/tenant/inbox/conversation/${conversation.id}`}
-                  className="block bg-[#F5F3FF] hover:bg-[#EDE9FE] transition-colors p-[24px] rounded-[4px] border border-[rgba(0,0,0,0.04)]"
+        {!isLoading && !error && (
+          <div className="space-y-[10px]">
+            {filtered.map((c) => (
+              <Link
+                key={c.id}
+                to={`/tenant/inbox/conversation/${c.id}`}
+                className="flex items-start gap-[16px] bg-[#F5F3FF] hover:bg-[#EDE9FE] transition-colors p-[20px] border border-[rgba(0,0,0,0.04)]"
+              >
+                <div
+                  className="w-[44px] h-[44px] rounded-full flex-shrink-0 flex items-center justify-center text-white text-[15px] font-bold"
+                  style={{ backgroundColor: avatarColor(c.otherUser.initials) }}
                 >
-                  <div className="flex items-start justify-between mb-[12px]">
-                    <div className="flex items-center gap-[12px]">
-                      {/* Avatar */}
-                      {conversation.landlordAvatar ? (
-                        <div
-                          className="w-[40px] h-[40px] rounded-full flex items-center justify-center text-white text-[16px] font-bold"
-                          style={{ backgroundColor: getAvatarColor(conversation.landlordName) }}
-                        >
-                          {conversation.landlordAvatar}
-                        </div>
-                      ) : (
-                        <div className="w-[40px] h-[40px] rounded-full bg-[#6B6B6B] flex items-center justify-center">
-                          <span className="text-white text-[14px] font-bold">
-                            {conversation.landlordName.charAt(0)}
-                          </span>
-                        </div>
+                  {c.otherUser.initials}
+                </div>
+
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-start justify-between gap-[8px] mb-[4px]">
+                    <span className="text-[#1A1A1A] text-[15px] font-bold truncate">{c.otherUser.name}</span>
+                    <div className="flex items-center gap-[8px] flex-shrink-0">
+                      {c.unread > 0 && (
+                        <span className="px-[7px] py-[2px] text-[11px] font-bold bg-brand-primary text-white rounded-full">
+                          {c.unread}
+                        </span>
                       )}
-
-                      {/* Name and Property */}
-                      <div>
-                        <h3 className="text-[#1A1A1A] text-[15px] font-bold mb-[2px]">
-                          {conversation.landlordName}
-                        </h3>
-                        <p className="text-[#6B6B6B] text-[13px]">
-                          {conversation.propertyAddress} • {conversation.dateRange}
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* Actions */}
-                    <div className="flex items-center gap-[12px]">
-                      <button className="flex items-center gap-[6px] text-[#6B6B6B] text-[13px] hover:text-[#1A1A1A] transition-colors">
-                        <Star className="w-[14px] h-[14px]" />
-                        Shortlist
-                      </button>
-                      <button className="flex items-center gap-[6px] text-[#6B6B6B] text-[13px] hover:text-[#1A1A1A] transition-colors">
-                        <Archive className="w-[14px] h-[14px]" />
-                        Archive
-                      </button>
+                      <span className="text-[12px] text-[#6B6B6B]">{timeAgo(c.lastMessageAt)}</span>
                     </div>
                   </div>
 
-                  {/* Message Content */}
-                  {conversation.isSystemMessage ? (
-                    <div className="ml-[52px]">
-                      <div className="mb-[8px]">
-                        <p className="text-[#1A1A1A] text-[13px] font-semibold mb-[4px]">
-                          EasyRent:
-                        </p>
-                        <p className="text-[#1A1A1A] text-[14px] font-bold mb-[8px]">
-                          {conversation.systemTitle}
-                        </p>
-                        <p className="text-[#6B6B6B] text-[14px] leading-[1.6] mb-[12px]">
-                          {conversation.lastMessage}
-                        </p>
-                        <button className="text-[#FF4B27] text-[13px] font-semibold hover:underline">
-                          {conversation.systemAction}
-                        </button>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="ml-[52px]">
-                      <p className="text-[#1A1A1A] text-[14px] leading-[1.6]">
-                        {conversation.lastMessage}
-                      </p>
-                    </div>
-                  )}
-
-                  {/* Timestamp */}
-                  <div className="flex items-center justify-end mt-[12px]">
-                    <span className="text-[#6B6B6B] text-[12px]">{conversation.timestamp}</span>
+                  <div className="flex items-center gap-[5px] text-[#6B6B6B] text-[13px] mb-[6px]">
+                    <MapPin className="w-[12px] h-[12px] flex-shrink-0" />
+                    <span className="truncate">
+                      {c.listing.title} | {c.listing.address}, {c.listing.city}
+                    </span>
                   </div>
-                </Link>
-              ))}
-            </div>
 
-            {/* Empty State */}
-            {mockConversations.length === 0 && (
+                  <p className={`text-[13px] truncate ${c.unread > 0 ? "text-[#1A1A1A] font-semibold" : "text-[#6B6B6B]"}`}>
+                    {c.lastMessage || "No messages yet - start the conversation"}
+                  </p>
+                </div>
+              </Link>
+            ))}
+
+            {filtered.length === 0 && !searchQuery && (
               <div className="text-center py-[80px]">
-                <Mail className="w-[64px] h-[64px] text-[#E0E0E0] mx-auto mb-[16px]" />
-                <h3 className="text-[#1A1A1A] text-[18px] font-bold mb-[8px]">
-                  No messages yet
-                </h3>
+                <Mail className="w-[56px] h-[56px] text-[#D0D0D0] mx-auto mb-[14px]" />
+                <h3 className="text-[#1A1A1A] text-[18px] font-bold mb-[8px]">No messages yet</h3>
                 <p className="text-[#6B6B6B] text-[14px] mb-[24px]">
-                  Start conversations with landlords to find your perfect home
+                  Apply for a property and start chatting with landlords.
                 </p>
                 <Link
-                  to="/s/berlin"
-                  className="inline-block px-[24px] py-[12px] bg-[#FF4B27] text-white font-semibold hover:bg-[#E63E1C] transition-colors"
+                  to="/"
+                  className="inline-block px-[24px] py-[11px] bg-brand-primary text-white font-semibold hover:bg-brand-primary-dark transition-colors"
                 >
-                  Browse Properties
+                  Browse properties
                 </Link>
               </div>
             )}
+
+            {filtered.length === 0 && searchQuery && (
+              <div className="text-center py-[60px]">
+                <MessageSquare className="w-[48px] h-[48px] text-[#D0D0D0] mx-auto mb-[12px]" />
+                <p className="text-[#6B6B6B] text-[14px]">
+                  No conversations match &ldquo;{searchQuery}&rdquo;
+                </p>
+              </div>
+            )}
           </div>
-        </div>
+        )}
       </div>
 
       <Footer />
     </div>
   );
 }
+

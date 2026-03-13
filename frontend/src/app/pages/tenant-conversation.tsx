@@ -1,598 +1,404 @@
-import { Link, useParams, useNavigate } from "react-router";
-import { useState, useEffect } from "react";
-import { ChevronLeft, Send, Paperclip, Info, Shield, Check, User, LogOut } from "lucide-react";
+﻿import { Link, useParams, useNavigate } from "react-router";
+import { useState, useEffect, useRef, useCallback } from "react";
+import { ChevronLeft, Send, MapPin, Home, Wifi } from "lucide-react";
 import { useAuth } from "../contexts/auth-context";
-import propertyImage from "../../assets/2db5a7303bce6c3d85b53a7866c4838e88cb5e61.png";
-import { DatePicker } from "../components/date-picker";
+import { ImageWithFallback } from "../components/figma/ImageWithFallback";
+import { useConversation } from "../hooks/use-conversation";
+import { API_BASE } from "../config";
+
+interface ConversationMeta {
+  id: string;
+  listingId: string;
+  tenantId: string;
+  landlordId: string;
+  listing: {
+    title: string;
+    address: string;
+    city: string;
+    image: string;
+    monthlyRent: number;
+  };
+  otherUser: {
+    id: string;
+    name: string;
+    initials: string;
+  };
+}
+
+const AVATAR_COLORS = ["#E91E63", "#9C27B0", "#3F51B5", "#2196F3", "#009688", "#FF9800"];
+function avatarColor(s: string) {
+  return AVATAR_COLORS[s.charCodeAt(0) % AVATAR_COLORS.length];
+}
+
+function formatMsgTime(iso: string) {
+  const d = new Date(iso);
+  return d.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
+}
+function formatMsgDate(iso: string) {
+  const d = new Date(iso);
+  const today = new Date();
+  const yesterday = new Date(today);
+  yesterday.setDate(yesterday.getDate() - 1);
+  if (d.toDateString() === today.toDateString()) return "Today";
+  if (d.toDateString() === yesterday.toDateString()) return "Yesterday";
+  return d.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
+}
 
 export function TenantConversation() {
-  const { id } = useParams();
+  const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { user, logout } = useAuth();
-  const [message, setMessage] = useState("");
-  const [messages, setMessages] = useState([
-    {
-      id: 1,
-      sender: "landlord",
-      text: "Hi! Thanks for your interest in my property. I'd be happy to answer any questions you have.",
-      timestamp: "10 minutes ago",
-      senderName: "Serdal"
-    },
-    {
-      id: 2,
-      sender: "tenant",
-      text: "Hi, I'm interested in renting your place. I'd love to connect, and hope to hear from you soon.",
-      timestamp: "5 minutes ago",
-      senderName: "You"
-    }
-  ]);
+  const { user } = useAuth();
 
-  // Dropdown states
-  const [isLanguageOpen, setIsLanguageOpen] = useState(false);
-  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
-  const [selectedLanguage, setSelectedLanguage] = useState("English");
+  const token = localStorage.getItem("authToken");
+  const [meta, setMeta] = useState<ConversationMeta | null>(null);
+  const [metaError, setMetaError] = useState("");
+  const [inputText, setInputText] = useState("");
+  const [isSending, setIsSending] = useState(false);
+  const [sendError, setSendError] = useState("");
 
-  // Date picker state
-  const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
-  const [moveInDate, setMoveInDate] = useState<Date | null>(new Date(2026, 2, 14)); // March 14, 2026
-  const [moveOutDate, setMoveOutDate] = useState<Date | null>(new Date(2026, 5, 1)); // June 1, 2026
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
+  const isFirstLoad = useRef(true);
 
-  const handleSendMessage = () => {
-    if (message.trim()) {
-      setMessages([
-        ...messages,
-        {
-          id: messages.length + 1,
-          sender: "tenant",
-          text: message,
-          timestamp: "Just now",
-          senderName: "You"
-        }
-      ]);
-      setMessage("");
-    }
-  };
+  const {
+    messages,
+    isConnected,
+    isLoadingHistory,
+    hasMoreMessages,
+    sendMessage,
+    loadMoreMessages,
+    otherUserTyping,
+    emitTyping,
+    emitStopTyping,
+  } = useConversation({ conversationId: id, token });
 
-  const handleDateChange = (start: Date | null, end: Date | null) => {
-    setMoveInDate(start);
-    setMoveOutDate(end);
-  };
-
-  const formatDate = (date: Date | null) => {
-    if (!date) return "N/A";
-    return date.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
-  };
-
-  const calculateRentalPeriod = (start: Date | null, end: Date | null) => {
-    if (!start || !end) return "N/A";
-    const diffTime = Math.abs(end.getTime() - start.getTime());
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    const months = Math.floor(diffDays / 30);
-    const days = diffDays % 30;
-    return `${months} month${months !== 1 ? 's' : ''} ${days} day${days !== 1 ? 's' : ''}`;
-  };
-
-  // Close dropdowns when clicking outside
+  // Load conversation metadata
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      const target = event.target as HTMLElement;
-      if (!target.closest('.language-dropdown') && !target.closest('.user-menu-dropdown')) {
-        setIsLanguageOpen(false);
-        setIsUserMenuOpen(false);
+    if (!id || !token) return;
+    const load = async () => {
+      try {
+        const res = await fetch(`${API_BASE}/api/conversations/${id}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!res.ok) {
+          const d = (await res.json()) as { message?: string };
+          setMetaError(d.message ?? "Conversation not found");
+          return;
+        }
+        const data = (await res.json()) as { conversation: ConversationMeta };
+        setMeta(data.conversation);
+      } catch {
+        setMetaError("Failed to load conversation");
       }
     };
+    void load();
+  }, [id, token]);
 
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+  // Scroll to bottom when messages first load or new message arrives
+  useEffect(() => {
+    if (messages.length === 0) return;
+    if (isFirstLoad.current) {
+      messagesEndRef.current?.scrollIntoView();
+      isFirstLoad.current = false;
+    } else {
+      // Only auto-scroll if near bottom
+      const container = messagesContainerRef.current;
+      if (container) {
+        const distFromBottom = container.scrollHeight - container.scrollTop - container.clientHeight;
+        if (distFromBottom < 120) {
+          messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+        }
+      }
+    }
+  }, [messages]);
+
+  const handleSend = useCallback(async () => {
+    const body = inputText.trim();
+    if (!body || isSending) return;
+    setIsSending(true);
+    setSendError("");
+    try {
+      await sendMessage(body);
+      setInputText("");
+      emitStopTyping();
+    } catch (err) {
+      setSendError(err instanceof Error ? err.message : "Failed to send message");
+    } finally {
+      setIsSending(false);
+    }
+  }, [inputText, isSending, sendMessage, emitStopTyping]);
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      void handleSend();
+    }
+  };
+
+  const handleInput = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setInputText(e.target.value);
+    emitTyping();
+  };
+
+  // Group messages by date
+  const grouped: { date: string; msgs: typeof messages }[] = [];
+  for (const msg of messages) {
+    const label = formatMsgDate(msg.createdAt);
+    const last = grouped[grouped.length - 1];
+    if (last && last.date === label) last.msgs.push(msg);
+    else grouped.push({ date: label, msgs: [msg] });
+  }
+
+  const myId = user?.id;
+  const myRole = user?.role;
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-white flex flex-col">
       {/* Header */}
       <header className="border-b border-[rgba(0,0,0,0.08)] bg-white sticky top-0 z-50">
-        <div className="max-w-[1440px] mx-auto px-[32px] py-[16px] flex items-center justify-between">
+        <div className="max-w-[1440px] mx-auto px-[32px] py-[14px] flex items-center gap-[16px]">
           <button
             onClick={() => navigate("/tenant/inbox")}
-            className="flex items-center gap-[8px] text-neutral-black hover:text-brand-primary transition-colors"
+            className="flex items-center gap-[8px] text-[#1A1A1A] hover:text-brand-primary transition-colors"
           >
-            <ChevronLeft className="w-[16px] h-[16px]" />
-            <span className="text-[14px] font-semibold">Back</span>
+            <ChevronLeft className="w-[18px] h-[18px]" />
+            <span className="text-[14px] font-semibold">Inbox</span>
           </button>
 
+          <div className="flex-1" />
+
           <Link to="/" className="flex items-center gap-[8px]">
-            <div className="w-[32px] h-[32px] bg-brand-primary flex items-center justify-center">
-              <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                <path
-                  d="M10 2L3 7V17H8V12H12V17H17V7L10 2Z"
-                  fill="white"
-                  stroke="white"
-                  strokeWidth="1.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
+            <div className="w-[30px] h-[30px] bg-brand-primary flex items-center justify-center">
+              <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
+                <path d="M10 2L3 7V17H8V12H12V17H17V7L10 2Z" fill="white" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
             </div>
-            <span className="text-neutral-black text-[18px] font-bold">
+            <span className="text-[#1A1A1A] text-[18px] font-bold">
               Easy<span className="text-brand-primary">Rent</span>
             </span>
           </Link>
 
-          <div className="flex items-center gap-[16px]">
-            {/* Language Dropdown */}
-            <div className="relative language-dropdown">
-              <button
-                onClick={() => {
-                  setIsLanguageOpen(!isLanguageOpen);
-                  setIsUserMenuOpen(false);
-                }}
-                className="w-[40px] h-[40px] bg-neutral-light-gray rounded-full flex items-center justify-center hover:bg-neutral transition-colors"
-              >
-                <span className="text-neutral-black text-[14px] font-bold">
-                  {selectedLanguage === "English" ? "EN" : 
-                   selectedLanguage === "Español" ? "ES" :
-                   selectedLanguage === "Français" ? "FR" :
-                   selectedLanguage === "Deutsch" ? "DE" :
-                   selectedLanguage === "Italiano" ? "IT" :
-                   selectedLanguage === "Nederlands" ? "NL" :
-                   selectedLanguage === "Português" ? "PT" :
-                   selectedLanguage === "Polski" ? "PL" :
-                   selectedLanguage === "Türkçe" ? "TR" :
-                   selectedLanguage === "中文" ? "ZH" :
-                   selectedLanguage === "日本語" ? "JA" :
-                   selectedLanguage === "한국어" ? "KO" : "EN"}
-                </span>
-              </button>
-              
-              {isLanguageOpen && (
-                <div className="absolute right-0 top-[48px] bg-white border border-neutral shadow-lg min-w-[160px] z-50">
-                  {["English", "Español", "Français", "Deutsch", "Italiano", "Nederlands", "Português", "Polski", "Türkçe", "中文", "日本語", "한국어"].map((lang) => (
-                    <button
-                      key={lang}
-                      onClick={() => {
-                        setSelectedLanguage(lang);
-                        setIsLanguageOpen(false);
-                      }}
-                      className={`w-full px-[16px] py-[12px] text-left text-[14px] hover:bg-neutral-light-gray transition-colors ${
-                        selectedLanguage === lang ? "bg-neutral-light-gray font-semibold text-brand-primary" : "text-neutral-black"
-                      }`}
-                    >
-                      {lang}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* User Profile Dropdown */}
-            <div className="relative user-menu-dropdown">
-              <button
-                onClick={() => {
-                  setIsUserMenuOpen(!isUserMenuOpen);
-                  setIsLanguageOpen(false);
-                }}
-                className="w-[40px] h-[40px] bg-brand-primary rounded-full flex items-center justify-center hover:bg-brand-primary-dark transition-colors"
-              >
-                <span className="text-white text-[14px] font-bold">
-                  {user?.name ? user.name.charAt(0).toUpperCase() : "U"}
-                </span>
-              </button>
-
-              {isUserMenuOpen && (
-                <div className="absolute right-0 top-[48px] bg-white border border-neutral shadow-lg min-w-[200px] z-50">
-                  <div className="px-[16px] py-[12px] border-b border-neutral">
-                    <p className="text-neutral-black text-[14px] font-bold">{user?.name || "User"}</p>
-                    <p className="text-neutral-gray text-[12px]">{user?.email || "user@example.com"}</p>
-                  </div>
-                  <button
-                    onClick={() => {
-                      navigate("/account");
-                      setIsUserMenuOpen(false);
-                    }}
-                    className="w-full px-[16px] py-[12px] text-left text-[14px] text-neutral-black hover:bg-neutral-light-gray transition-colors flex items-center gap-[8px]"
-                  >
-                    <User className="w-[16px] h-[16px]" />
-                    My Account
-                  </button>
-                  <button
-                    onClick={() => {
-                      navigate("/favorites");
-                      setIsUserMenuOpen(false);
-                    }}
-                    className="w-full px-[16px] py-[12px] text-left text-[14px] text-neutral-black hover:bg-neutral-light-gray transition-colors flex items-center gap-[8px]"
-                  >
-                    <Check className="w-[16px] h-[16px]" />
-                    My Favorites
-                  </button>
-                  <button
-                    onClick={() => {
-                      navigate("/tenant/inbox");
-                      setIsUserMenuOpen(false);
-                    }}
-                    className="w-full px-[16px] py-[12px] text-left text-[14px] text-neutral-black hover:bg-neutral-light-gray transition-colors flex items-center gap-[8px]"
-                  >
-                    <Info className="w-[16px] h-[16px]" />
-                    My Messages
-                  </button>
-                  <div className="border-t border-neutral">
-                    <button
-                      onClick={() => {
-                        logout();
-                        navigate("/login");
-                      }}
-                      className="w-full px-[16px] py-[12px] text-left text-[14px] text-neutral-black hover:bg-neutral-light-gray transition-colors flex items-center gap-[8px]"
-                    >
-                      <LogOut className="w-[16px] h-[16px]" />
-                      Log out
-                    </button>
-                  </div>
-                </div>
-              )}
+          <div className="flex-1 flex justify-end">
+            <div className={`flex items-center gap-[6px] text-[12px] font-medium px-[10px] py-[4px] rounded-full ${isConnected ? "bg-green-50 text-green-700" : "bg-[#F7F7F9] text-[#6B6B6B]"}`}>
+              <Wifi className="w-[12px] h-[12px]" />
+              {isConnected ? "Live" : "Connecting"}
             </div>
           </div>
         </div>
       </header>
 
-      {/* Progress Indicator */}
-      <div className="bg-neutral-light-gray border-b border-[rgba(0,0,0,0.08)]">
-        <div className="max-w-[1440px] mx-auto px-[32px] py-[24px]">
-          <div className="flex items-center justify-between max-w-[600px]">
-            {/* Step 1 */}
-            <div className="flex flex-col items-center">
-              <div className="w-[40px] h-[40px] bg-brand-primary rounded-full flex items-center justify-center mb-[8px]">
-                <Check className="w-[20px] h-[20px] text-white" />
-              </div>
-              <span className="text-neutral-black text-[13px] font-semibold">Send message</span>
-            </div>
-
-            <div className="flex-1 h-[2px] bg-[rgba(0,0,0,0.08)] mx-[16px]"></div>
-
-            {/* Step 2 */}
-            <div className="flex flex-col items-center">
-              <div className="w-[40px] h-[40px] bg-brand-primary rounded-full flex items-center justify-center mb-[8px]">
-                <span className="text-white text-[16px] font-bold">2</span>
-              </div>
-              <span className="text-neutral-black text-[13px] font-semibold">Apply to rent</span>
-            </div>
-
-            <div className="flex-1 h-[2px] bg-[rgba(0,0,0,0.08)] mx-[16px]"></div>
-
-            {/* Step 3 */}
-            <div className="flex flex-col items-center">
-              <div className="w-[40px] h-[40px] bg-white border-[2px] border-[rgba(0,0,0,0.08)] rounded-full flex items-center justify-center mb-[8px]">
-                <span className="text-neutral-gray text-[16px] font-bold">3</span>
-              </div>
-              <span className="text-neutral-gray text-[13px] font-semibold">Receive confirmation</span>
-            </div>
-          </div>
+      {metaError && (
+        <div className="max-w-[900px] mx-auto px-[32px] py-[40px] text-center">
+          <p className="text-brand-primary text-[15px]">{metaError}</p>
+          <button onClick={() => navigate("/tenant/inbox")} className="mt-[16px] text-[14px] font-semibold text-brand-primary hover:underline">
+            Back to inbox
+          </button>
         </div>
-      </div>
+      )}
 
-      {/* Main Content */}
-      <div className="max-w-[1440px] mx-auto px-[32px] py-[32px]">
-        <div className="flex gap-[32px]">
-          {/* Left Column - Chat */}
-          <div className="flex-[2]">
-            {/* Call to Action Banner */}
-            <div className="bg-neutral-light-gray border border-[rgba(0,0,0,0.08)] p-[24px] mb-[24px]">
-              <h2 className="text-neutral-black text-[20px] font-bold mb-[12px]">
-                Want to call this place home?
-              </h2>
-              <p className="text-neutral-gray text-[14px] leading-[1.6] mb-[16px]">
-                When you've completed your due diligence and you're ready to rent, complete an application. You'll be the
-                first to know if you're approved and you can book this place.
-              </p>
-              <div className="flex items-center gap-[16px]">
-                <button
-                  onClick={() => setIsDatePickerOpen(true)}
-                  className="border-[2px] border-neutral-black text-neutral-black px-[32px] py-[12px] font-bold hover:bg-neutral-black hover:text-white transition-colors"
-                >Edit Stay Days</button>
-                <button
-                  onClick={() => navigate(`/property/${id}/payment`)}
-                  className="bg-brand-primary text-white px-[32px] py-[12px] font-bold hover:bg-brand-primary-dark transition-colors"
+      {!metaError && (
+        <div className="flex-1 max-w-[1200px] mx-auto w-full px-[32px] py-[28px] flex gap-[28px]">
+          {/*  Chat column  */}
+          <div className="flex-[2] flex flex-col min-h-0">
+            {/* Other user header */}
+            {meta && (
+              <div className="flex items-center gap-[12px] mb-[16px] p-[16px] bg-[#F7F7F9] border border-[rgba(0,0,0,0.08)]">
+                <div
+                  className="w-[40px] h-[40px] rounded-full flex-shrink-0 flex items-center justify-center text-white text-[15px] font-bold"
+                  style={{ backgroundColor: avatarColor(meta.otherUser.initials) }}
                 >
-                  Proceed to payment
+                  {meta.otherUser.initials}
+                </div>
+                <div>
+                  <p className="text-[#1A1A1A] text-[15px] font-bold">{meta.otherUser.name}</p>
+                  <p className="text-[#6B6B6B] text-[12px]">Landlord</p>
+                </div>
+              </div>
+            )}
+
+            {/* Load more */}
+            {hasMoreMessages && (
+              <button
+                onClick={() => void loadMoreMessages()}
+                disabled={isLoadingHistory}
+                className="text-[13px] text-brand-primary font-semibold hover:underline mb-[12px] self-center"
+              >
+                {isLoadingHistory ? "Loading..." : "Load earlier messages"}
+              </button>
+            )}
+            {isLoadingHistory && messages.length === 0 && (
+              <p className="text-[#6B6B6B] text-[13px] text-center mb-[12px]">Loading messages...</p>
+            )}
+
+            {/* Messages area */}
+            <div
+              ref={messagesContainerRef}
+              className="flex-1 overflow-y-auto bg-white border border-[rgba(0,0,0,0.08)] p-[20px] min-h-[400px] max-h-[560px] space-y-[4px]"
+            >
+              {grouped.length === 0 && !isLoadingHistory && (
+                <div className="h-full flex items-center justify-center">
+                  <p className="text-[#6B6B6B] text-[14px]">No messages yet. Say hello!</p>
+                </div>
+              )}
+
+              {grouped.map((group) => (
+                <div key={group.date}>
+                  {/* Date divider */}
+                  <div className="flex items-center gap-[10px] my-[16px]">
+                    <div className="flex-1 h-px bg-[rgba(0,0,0,0.08)]" />
+                    <span className="text-[11px] text-[#6B6B6B] font-medium px-[6px]">{group.date}</span>
+                    <div className="flex-1 h-px bg-[rgba(0,0,0,0.08)]" />
+                  </div>
+
+                  {group.msgs.map((msg, i) => {
+                    const isMe = (Boolean(myId) && msg.senderId === myId) || (Boolean(myRole) && msg.senderRole === myRole);
+                    const prevMsg = i > 0 ? group.msgs[i - 1] : null;
+                    const showAvatar = !isMe && (!prevMsg || prevMsg.senderId !== msg.senderId);
+
+                    return (
+                      <div key={msg.id} className={`flex items-end gap-[8px] mb-[6px] ${isMe ? "justify-end" : "justify-start"}`}>
+                        {/* Other user avatar placeholder */}
+                        {!isMe && (
+                          <div className="w-[28px] flex-shrink-0">
+                            {showAvatar && meta && (
+                              <div
+                                className="w-[28px] h-[28px] rounded-full flex items-center justify-center text-white text-[10px] font-bold"
+                                style={{ backgroundColor: avatarColor(meta.otherUser.initials) }}
+                              >
+                                {meta.otherUser.initials}
+                              </div>
+                            )}
+                          </div>
+                        )}
+
+                        <div className={`max-w-[65%] flex flex-col ${isMe ? "items-end" : "items-start"}`}>
+                          <div
+                            className={`px-[14px] py-[10px] text-[14px] leading-[1.6] ${
+                              isMe
+                                ? "bg-brand-primary text-white rounded-[14px_14px_4px_14px]"
+                                : "bg-[#F1F1F1] text-[#1A1A1A] rounded-[14px_14px_14px_4px]"
+                            }`}
+                          >
+                            {msg.body}
+                          </div>
+                          <span className="text-[10px] text-[#9B9B9B] mt-[3px] px-[2px]">
+                            {formatMsgTime(msg.createdAt)}
+                            {isMe && msg.readAt && (
+                              <span className="ml-[4px] text-brand-primary">Read</span>
+                            )}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ))}
+
+              {/* Typing indicator */}
+              {otherUserTyping && (
+                <div className="flex items-end gap-[8px] mb-[6px]">
+                  <div className="w-[28px] flex-shrink-0" />
+                  <div className="bg-[#F1F1F1] rounded-[14px_14px_14px_4px] px-[14px] py-[10px]">
+                    <div className="flex gap-[3px] items-center h-[14px]">
+                      <div className="w-[6px] h-[6px] rounded-full bg-[#9B9B9B] animate-bounce" style={{ animationDelay: "0ms" }} />
+                      <div className="w-[6px] h-[6px] rounded-full bg-[#9B9B9B] animate-bounce" style={{ animationDelay: "150ms" }} />
+                      <div className="w-[6px] h-[6px] rounded-full bg-[#9B9B9B] animate-bounce" style={{ animationDelay: "300ms" }} />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <div ref={messagesEndRef} />
+            </div>
+
+            {/* Input area */}
+            <div className="mt-[12px] border border-[rgba(0,0,0,0.12)] bg-white">
+              <textarea
+                value={inputText}
+                onChange={handleInput}
+                onKeyDown={handleKeyDown}
+                onBlur={emitStopTyping}
+                placeholder="Write a message (Enter to send, Shift+Enter for new line)"
+                rows={3}
+                className="w-full px-[16px] pt-[14px] pb-[8px] text-[14px] text-[#1A1A1A] placeholder:text-[#9B9B9B] resize-none outline-none leading-[1.6]"
+              />
+              <div className="flex items-center justify-between px-[12px] pb-[12px]">
+                {sendError && <p className="text-brand-primary text-[12px]">{sendError}</p>}
+                {!sendError && <span className="text-[11px] text-[#9B9B9B]">{inputText.length}/4000</span>}
+                <button
+                  onClick={() => void handleSend()}
+                  disabled={!inputText.trim() || isSending}
+                  className={`flex items-center gap-[8px] px-[20px] py-[9px] text-[13px] font-semibold transition-colors ${
+                    inputText.trim() && !isSending
+                      ? "bg-brand-primary text-white hover:bg-brand-primary-dark"
+                      : "bg-[#EDEDED] text-[#9B9B9B] cursor-not-allowed"
+                  }`}
+                >
+                  <Send className="w-[14px] h-[14px]" />
+                  {isSending ? "Sending..." : "Send"}
                 </button>
               </div>
             </div>
+          </div>
 
-            {/* Messages Container */}
-            <div className="border border-[rgba(0,0,0,0.08)] rounded-[4px] overflow-hidden">
-              {/* Message Header */}
-              <div className="bg-neutral-light-gray border-b border-[rgba(0,0,0,0.08)] px-[24px] py-[16px]">
-                <div className="flex items-center gap-[12px]">
-                  <div className="w-[40px] h-[40px] bg-gradient-to-br from-brand-primary to-brand-primary-dark rounded-full flex items-center justify-center">
-                    <span className="text-white text-[16px] font-bold">S</span>
-                  </div>
-                  <div>
-                    <h3 className="text-neutral-black text-[16px] font-bold">Serdal</h3>
-                    <div className="flex items-center gap-[6px]">
-                      <div className="w-[8px] h-[8px] bg-accent-blue rounded-full"></div>
-                      <span className="text-accent-blue text-[13px] font-semibold">Usually replies fast</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Messages Area */}
-              <div className="p-[24px] bg-white min-h-[400px] max-h-[500px] overflow-y-auto">
-                {messages.map((msg) => (
-                  <div
-                    key={msg.id}
-                    className={`mb-[24px] flex ${msg.sender === "tenant" ? "justify-end" : "justify-start"}`}
-                  >
-                    <div className={`max-w-[70%] ${msg.sender === "tenant" ? "items-end" : "items-start"} flex flex-col`}>
-                      <div className="flex items-center gap-[8px] mb-[4px]">
-                        <span className="text-[#6B6B6B] text-[12px] font-semibold">{msg.senderName}</span>
-                        <span className="text-[#6B6B6B] text-[12px]">•</span>
-                        <span className="text-[#6B6B6B] text-[12px]">{msg.timestamp}</span>
-                      </div>
-                      <div
-                        className={`px-[16px] py-[12px] rounded-[8px] ${
-                          msg.sender === "tenant"
-                            ? "bg-[#0066CC] text-white"
-                            : "bg-[#F7F7F9] text-[#1A1A1A]"
-                        }`}
-                      >
-                        <p className="text-[14px] leading-[1.6]">{msg.text}</p>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              {/* Message Input */}
-              <div className="border-t border-[rgba(0,0,0,0.08)] p-[16px] bg-[#FAFAFA]">
-                <div className="flex items-center gap-[12px] mb-[8px]">
-                  <button className="text-[#6B6B6B] hover:text-[#1A1A1A] transition-colors">
-                    <Paperclip className="w-[20px] h-[20px]" />
-                  </button>
-                  <span className="text-[#6B6B6B] text-[13px]">Documents</span>
-                </div>
-                <div className="flex items-end gap-[12px]">
-                  <div className="flex-1">
-                    <textarea
-                      value={message}
-                      onChange={(e) => setMessage(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter" && !e.shiftKey) {
-                          e.preventDefault();
-                          handleSendMessage();
-                        }
-                      }}
-                      placeholder="Write a reply"
-                      rows={3}
-                      className="w-full px-[16px] py-[12px] border border-[rgba(0,0,0,0.16)] rounded-[4px] text-[#1A1A1A] text-[14px] leading-[1.6] resize-none bg-white"
+          {/*  Right sidebar  */}
+          <div className="w-[280px] flex-shrink-0 space-y-[16px]">
+            {meta && (
+              <>
+                {/* Listing card */}
+                <div className="border border-[rgba(0,0,0,0.08)]">
+                  <div className="h-[140px] overflow-hidden bg-[#F1F1F1]">
+                    <ImageWithFallback
+                      src={meta.listing.image}
+                      alt={meta.listing.title}
+                      className="w-full h-full object-cover"
                     />
-                    <div className="flex items-center justify-between mt-[8px]">
-                      <button className="text-[#0066CC] text-[13px] font-semibold hover:underline flex items-center gap-[4px]">
-                        <svg className="w-[16px] h-[16px]" viewBox="0 0 16 16" fill="none">
-                          <path d="M2 8C2 4.68629 4.68629 2 8 2C11.3137 2 14 4.68629 14 8C14 11.3137 11.3137 14 8 14C4.68629 14 2 11.3137 2 8Z" stroke="currentColor" strokeWidth="1.5"/>
-                          <path d="M8 6V10M8 10L6 8M8 10L10 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                        </svg>
-                        Translate message to: English
-                      </button>
-                      <button
-                        onClick={handleSendMessage}
-                        disabled={!message.trim()}
-                        className={`flex items-center gap-[8px] px-[24px] py-[10px] font-semibold transition-colors ${
-                          message.trim()
-                            ? "bg-brand-primary text-white hover:bg-brand-primary-dark"
-                            : "bg-[#EDEDED] text-neutral-gray cursor-not-allowed"
-                        }`}
-                      >
-                        <Send className="w-[16px] h-[16px]" />
-                        Send
-                      </button>
+                  </div>
+                  <div className="p-[14px]">
+                    <h3 className="text-[#1A1A1A] text-[14px] font-bold mb-[6px] leading-[1.4]">
+                      {meta.listing.title}
+                    </h3>
+                    <div className="flex items-center gap-[4px] text-[#6B6B6B] text-[12px] mb-[4px]">
+                      <MapPin className="w-[11px] h-[11px]" />
+                      <span>{meta.listing.address}, {meta.listing.city}</span>
                     </div>
+                    <div className="flex items-center gap-[4px] text-[#6B6B6B] text-[12px] mb-[12px]">
+                      <Home className="w-[11px] h-[11px]" />
+                      <span className="font-semibold text-[#1A1A1A]">{meta.listing.monthlyRent.toLocaleString()}</span>
+                      <span>/ month</span>
+                    </div>
+                    <Link
+                      to={`/property/${meta.listingId}`}
+                      className="block text-center py-[8px] border border-[rgba(0,0,0,0.16)] text-[#1A1A1A] text-[12px] font-semibold hover:bg-[#F7F7F9] transition-colors"
+                    >
+                      View listing
+                    </Link>
                   </div>
                 </div>
-              </div>
-            </div>
 
-            {/* Rental Help */}
-            <div className="mt-[24px] bg-[#F7F7F9] border border-[rgba(0,0,0,0.08)] p-[24px]">
-              <h3 className="text-[#1A1A1A] text-[18px] font-bold mb-[12px]">Rental help</h3>
-              <div className="space-y-[12px]">
-                <details className="cursor-pointer">
-                  <summary className="text-[#1A1A1A] text-[14px] font-semibold flex items-center justify-between">
-                    Can I rent without a guarantor?
-                    <svg className="w-[16px] h-[16px]" viewBox="0 0 16 16" fill="none">
-                      <path d="M4 6L8 10L12 6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                    </svg>
-                  </summary>
-                  <p className="text-[#6B6B6B] text-[13px] mt-[8px] leading-[1.6]">
-                    Yes! If you're an EU citizen, you can rent in most cases without a guarantor.
+                {/* Apply CTA */}
+                <div className="bg-brand-light border border-brand-primary/20 p-[14px]">
+                  <p className="text-[13px] text-[#1A1A1A] font-semibold mb-[6px]">Ready to apply?</p>
+                  <p className="text-[12px] text-[#6B6B6B] mb-[10px] leading-[1.5]">
+                    Submit an application to secure this place.
                   </p>
-                </details>
-
-                <details className="cursor-pointer">
-                  <summary className="text-[#1A1A1A] text-[14px] font-semibold flex items-center justify-between">
-                    How much does HousingAnywhere cost?
-                    <svg className="w-[16px] h-[16px]" viewBox="0 0 16 16" fill="none">
-                      <path d="M4 6L8 10L12 6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                    </svg>
-                  </summary>
-                </details>
-
-                <details className="cursor-pointer">
-                  <summary className="text-[#1A1A1A] text-[14px] font-semibold flex items-center justify-between">
-                    Why can't I following contact details?
-                    <svg className="w-[16px] h-[16px]" viewBox="0 0 16 16" fill="none">
-                      <path d="M4 6L8 10L12 6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                    </svg>
-                  </summary>
-                </details>
-
-                <details className="cursor-pointer">
-                  <summary className="text-[#1A1A1A] text-[14px] font-semibold flex items-center justify-between">
-                    Why are landlords not replying?
-                    <svg className="w-[16px] h-[16px]" viewBox="0 0 16 16" fill="none">
-                      <path d="M4 6L8 10L12 6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                    </svg>
-                  </summary>
-                </details>
-              </div>
-            </div>
-          </div>
-
-          {/* Right Column - Landlord & Property Info */}
-          <div className="flex-[1]">
-            <div className="sticky top-[100px]">
-              {/* Landlord Profile */}
-              <div className="border border-[rgba(0,0,0,0.08)] p-[16px] mb-[24px]">
-                <div className="flex items-center gap-[12px] mb-[16px]">
-                  <div className="w-[64px] h-[64px] bg-gradient-to-br from-brand-primary to-brand-primary-dark rounded-full flex items-center justify-center">
-                    <span className="text-white text-[24px] font-bold">S</span>
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="text-neutral-black text-[16px] font-bold mb-[4px]">Serdal</h3>
-                    <div className="flex items-center gap-[4px] mb-[4px]">
-                      <Check className="w-[12px] h-[12px] text-accent-blue" />
-                      <span className="text-accent-blue text-[12px] font-semibold">Verified ID badge</span>
-                    </div>
-                    <span className="text-neutral-gray text-[12px]">Last seen a few ago</span>
-                  </div>
+                  <Link
+                    to={`/property/${meta.listingId}/apply`}
+                    className="block text-center py-[8px] bg-brand-primary text-white text-[12px] font-semibold hover:bg-brand-primary-dark transition-colors"
+                  >
+                    Apply to rent
+                  </Link>
                 </div>
 
-                <div className="space-y-[8px] text-[13px]">
-                  <div className="flex items-center justify-between">
-                    <span className="text-neutral-gray">Response rate:</span>
-                    <span className="text-neutral-black font-semibold">98%</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-neutral-gray">Response time:</span>
-                    <span className="text-neutral-black font-semibold">within 2 hours</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-neutral-gray">Email verified:</span>
-                    <Check className="w-[14px] h-[14px] text-accent-blue" />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-neutral-gray">Phone verified:</span>
-                    <Check className="w-[14px] h-[14px] text-accent-blue" />
-                  </div>
-                </div>
-
-                <div className="mt-[16px] pt-[16px] border-t border-[rgba(0,0,0,0.08)]">
-                  <button className="text-[#0066CC] text-[13px] font-semibold hover:underline">
-                    Report this user
-                  </button>
-                  <br />
-                  <button className="text-[#0066CC] text-[13px] font-semibold hover:underline mt-[4px]">
-                    Contact customer care
-                  </button>
-                </div>
-              </div>
-
-              {/* Property Card */}
-              <div className="border border-[rgba(0,0,0,0.08)] p-[16px]">
-                <img src={propertyImage} alt="Property" className="w-full h-[160px] object-cover mb-[12px] rounded-[4px]" />
-                
-                <h3 className="text-[#1A1A1A] text-[16px] font-bold mb-[8px]">
-                  Rue Clément Ader, Rosny-sous-Bois
-                </h3>
-
-                <div className="space-y-[8px] text-[13px] mb-[16px]">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[#6B6B6B]">Move-in date:</span>
-                    <span className="text-[#1A1A1A] font-semibold">{formatDate(moveInDate)}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-[#6B6B6B]">Move-out date:</span>
-                    <span className="text-[#1A1A1A] font-semibold">{formatDate(moveOutDate)}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-[#6B6B6B]">Rental period:</span>
-                    <span className="text-[#1A1A1A] font-semibold">{calculateRentalPeriod(moveInDate, moveOutDate)}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-[#6B6B6B]">Rent total:</span>
-                    <span className="text-[#1A1A1A] font-semibold">€2,154.00</span>
-                  </div>
-                </div>
-
-                <div className="border-t border-[rgba(0,0,0,0.08)] pt-[16px] mb-[16px]">
-                  <h4 className="text-[#1A1A1A] text-[14px] font-bold mb-[12px]">Payments</h4>
-                  <div className="space-y-[8px] text-[13px]">
-                    <div className="flex items-center justify-between">
-                      <span className="text-[#6B6B6B]">First month's rent</span>
-                      <span className="text-[#1A1A1A] font-semibold">€600.00</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-[4px]">
-                        <span className="text-[#6B6B6B]">Tenant Protection</span>
-                        <Info className="w-[12px] h-[12px] text-[#6B6B6B]" />
-                      </div>
-                      <span className="text-[#1A1A1A] font-semibold">€210.00</span>
-                    </div>
-                    <div className="flex items-center justify-between pt-[8px] border-t border-[rgba(0,0,0,0.08)]">
-                      <span className="text-[#1A1A1A] font-bold">Total payment</span>
-                      <span className="text-[#1A1A1A] text-[16px] font-bold">€810.00</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="bg-[#F7F9FC] border border-[#0066CC] p-[12px]">
-                  <div className="flex items-start gap-[8px]">
-                    <Shield className="w-[16px] h-[16px] text-[#0066CC] flex-shrink-0 mt-[2px]" />
-                    <div>
-                      <h4 className="text-[#1A1A1A] text-[13px] font-bold mb-[4px]">Covered by Tenant Protection</h4>
-                      <p className="text-[#1A1A1A] text-[12px] leading-[1.5] mb-[8px]">
-                        You're guaranteed a stress-free move-in or your money back.
-                      </p>
-                      <button className="text-[#0066CC] text-[12px] font-semibold hover:underline">
-                        How you're protected →
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Footer Notice */}
-      <div className="bg-neutral-light-gray border-t border-[rgba(0,0,0,0.08)] py-[24px]">
-        <div className="max-w-[1440px] mx-auto px-[32px]">
-          <div className="flex items-start gap-[12px] max-w-[800px]">
-            <Info className="w-[20px] h-[20px] text-brand-primary flex-shrink-0 mt-[2px]" />
-            <div>
-              <p className="text-neutral-black text-[14px] leading-[1.6]">
-                <strong>Rent safely with EasyRent!</strong> Messages are safe protected by our platform and third-
-                party payments. When you use EasyRent to message and pay, you're protected by our secure payments system.{" "}
-                <button className="text-[#0066CC] underline hover:no-underline font-semibold">Read more here</button>
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Date Picker Modal */}
-      {isDatePickerOpen && (
-        <div className="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center p-[32px]">
-          <div className="bg-white max-w-[1100px] w-full relative shadow-2xl">
-            <div className="bg-white border-b border-[rgba(0,0,0,0.08)] px-[32px] py-[20px] flex items-center justify-between">
-              <h2 className="text-[#1A1A1A] text-[24px] font-bold">Select Your Stay Dates</h2>
-              <button
-                onClick={() => setIsDatePickerOpen(false)}
-                className="w-[40px] h-[40px] flex items-center justify-center hover:bg-[#F7F7F9] rounded-full transition-colors"
-              >
-                <svg className="w-[20px] h-[20px]" viewBox="0 0 20 20" fill="none">
-                  <path d="M15 5L5 15M5 5L15 15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-                </svg>
-              </button>
-            </div>
-            <div className="p-[32px]">
-              <DatePicker
-                isOpen={true}
-                onClose={() => setIsDatePickerOpen(false)}
-                startDate={moveInDate}
-                endDate={moveOutDate}
-                onDateChange={handleDateChange}
-                isModal={true}
-              />
-            </div>
+                {/* My applications */}
+                <Link
+                  to="/tenant/applications"
+                  className="block text-center py-[9px] border border-[rgba(0,0,0,0.16)] text-[#1A1A1A] text-[12px] font-semibold hover:bg-[#F7F7F9] transition-colors"
+                >
+                  View my applications
+                </Link>
+              </>
+            )}
           </div>
         </div>
       )}

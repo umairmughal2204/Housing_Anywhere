@@ -1,9 +1,10 @@
-import { Link } from "react-router";
+import { Link, useNavigate } from "react-router";
 import { Calendar, CheckCircle2, Clock, CreditCard, FileText, Home, MapPin, MessageCircle, Search, XCircle } from "lucide-react";
 import { Header } from "../components/header";
 import { Footer } from "../components/footer";
 import { useEffect, useState } from "react";
 import { ImageWithFallback } from "../components/figma/ImageWithFallback";
+import { API_BASE } from "../config";
 
 type ApplicationStatus = "pending" | "approved" | "rejected";
 
@@ -32,10 +33,11 @@ const statusStyle: Record<ApplicationStatus, string> = {
 };
 
 export function TenantApplications() {
-  const apiBase = "http://localhost:4000";
   const [applications, setApplications] = useState<TenantApplication[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
+  const [startingConversationId, setStartingConversationId] = useState<string | null>(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const loadApplications = async () => {
@@ -47,7 +49,7 @@ export function TenantApplications() {
       }
 
       try {
-        const response = await fetch(`${apiBase}/api/rental-applications/tenant`, {
+        const response = await fetch(`${API_BASE}/api/rental-applications/tenant`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -68,7 +70,41 @@ export function TenantApplications() {
     };
 
     void loadApplications();
-  }, [apiBase]);
+  }, []);
+
+  const handleMessageLandlord = async (applicationId: string, listingId: string) => {
+    const token = localStorage.getItem("authToken");
+    if (!token) {
+      setError("Please log in to message the landlord.");
+      return;
+    }
+
+    setStartingConversationId(listingId);
+    setError("");
+
+    try {
+      const response = await fetch(`${API_BASE}/api/conversations`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ listingId, applicationId }),
+      });
+
+      if (!response.ok) {
+        const payload = (await response.json()) as { message?: string };
+        throw new Error(payload.message ?? "Failed to open the conversation");
+      }
+
+      const payload = (await response.json()) as { conversationId: string };
+      navigate(`/tenant/inbox/conversation/${payload.conversationId}`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to open the conversation");
+    } finally {
+      setStartingConversationId(null);
+    }
+  };
 
   return (
     <div className="min-h-screen flex flex-col bg-white">
@@ -154,13 +190,15 @@ export function TenantApplications() {
                         </Link>
                       )}
                       {application.status === "pending" && (
-                        <Link
-                          to="/tenant/inbox"
+                        <button
+                          type="button"
+                          onClick={() => void handleMessageLandlord(application.id, application.listingId)}
+                          disabled={startingConversationId === application.listingId}
                           className="inline-flex items-center gap-[8px] px-[16px] py-[9px] bg-brand-primary text-white text-[13px] font-semibold hover:bg-brand-primary-dark transition-colors"
                         >
                           <MessageCircle className="w-[13px] h-[13px]" />
-                          Message landlord
-                        </Link>
+                          {startingConversationId === application.listingId ? "Opening chat..." : "Message landlord"}
+                        </button>
                       )}
                       {application.status === "rejected" && (
                         <Link

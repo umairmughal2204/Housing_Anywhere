@@ -6,6 +6,7 @@ import authRoutes from "./routes/auth.js";
 import landlordRoutes from "./routes/landlord.js";
 import listingsRoutes from "./routes/listings.js";
 import rentalApplicationsRoutes from "./routes/rental-applications.js";
+import conversationsRoutes from "./routes/conversations.js";
 
 export function createApp() {
   const app = express();
@@ -27,6 +28,7 @@ export function createApp() {
   app.use("/api/landlord", landlordRoutes);
   app.use("/api/listings", listingsRoutes);
   app.use("/api/rental-applications", rentalApplicationsRoutes);
+  app.use("/api/conversations", conversationsRoutes);
 
   app.use((err: unknown, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
     console.error(err);

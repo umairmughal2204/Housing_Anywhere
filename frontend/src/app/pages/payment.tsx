@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { ChevronLeft, Lock, Info, Shield, Check, CreditCard, User, LogOut } from "lucide-react";
 import { useAuth } from "../contexts/auth-context";
 import propertyImage from "../../assets/2db5a7303bce6c3d85b53a7866c4838e88cb5e61.png";
+import { API_BASE } from "../config";
 
 export function Payment() {
   const { id } = useParams();
@@ -20,11 +21,39 @@ export function Payment() {
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [selectedLanguage, setSelectedLanguage] = useState("English");
 
-  const handlePayment = () => {
-    if (paymentMethod && agreedToTerms) {
-      // Process payment
-      alert("Payment successful!");
-      navigate(`/tenant/inbox/conversation/${id}`);
+  const handlePayment = async () => {
+    if (!paymentMethod || !agreedToTerms || !id) {
+      return;
+    }
+
+    const token = localStorage.getItem("authToken");
+    if (!token) {
+      navigate("/login");
+      return;
+    }
+
+    // Process payment
+    alert("Payment successful!");
+
+    try {
+      const response = await fetch(`${API_BASE}/api/conversations`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ listingId: id }),
+      });
+
+      if (!response.ok) {
+        navigate("/tenant/inbox");
+        return;
+      }
+
+      const payload = (await response.json()) as { conversationId: string };
+      navigate(`/tenant/inbox/conversation/${payload.conversationId}`);
+    } catch {
+      navigate("/tenant/inbox");
     }
   };
 

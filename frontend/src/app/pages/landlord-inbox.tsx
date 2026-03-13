@@ -1,483 +1,334 @@
-import { LandlordPortalLayout } from "../components/landlord-portal-layout";
-import { 
-  Send, 
-  Search,
-  Filter,
-  Star,
-  Archive,
-  Trash2,
-  MoreHorizontal,
-  ChevronDown,
-  Paperclip,
-  Image as ImageIcon,
-  MapPin,
-  Calendar,
-  DollarSign,
-} from "lucide-react";
-import { useState } from "react";
+﻿import { LandlordPortalLayout } from "../components/landlord-portal-layout";
+import { Send, Search, MapPin, Wifi, X as XIcon } from "lucide-react";
+import { useState, useEffect, useRef, useCallback } from "react";
+import { Link } from "react-router";
+import { useAuth } from "../contexts/auth-context";
+import { useConversation } from "../hooks/use-conversation";
+import { API_BASE } from "../config";
 
-type MessageStatus = "new" | "active" | "archived";
-type MessagePriority = "high" | "normal" | "low";
-
-interface Message {
+interface ConversationItem {
   id: string;
-  senderName: string;
-  senderInitials: string;
-  subject: string;
-  preview: string;
-  timestamp: string;
-  status: MessageStatus;
-  priority: MessagePriority;
-  isRead: boolean;
-  propertyTitle: string;
-  propertyLocation: string;
-  propertyPrice: number;
-  propertyImage: string;
-  messages: Array<{
-    id: string;
-    from: "tenant" | "landlord";
-    content: string;
-    time: string;
-    date: string;
-  }>;
+  listingId: string;
+  listing: { title: string; address: string; city: string; image: string; monthlyRent: number };
+  otherUser: { id: string; name: string; initials: string };
+  lastMessage: string;
+  lastMessageAt: string;
+  unread: number;
 }
 
-const mockMessages: Message[] = [
-  {
-    id: "msg-1",
-    senderName: "Emma Richardson",
-    senderInitials: "ER",
-    subject: "Inquiry about Modern Studio",
-    preview: "Hello, I'm interested in your studio apartment. I'm moving to Berlin next month for work...",
-    timestamp: "10 min ago",
-    status: "new",
-    priority: "high",
-    isRead: false,
-    propertyTitle: "Modern Studio in Mitte",
-    propertyLocation: "Mitte, Berlin",
-    propertyPrice: 1650,
-    propertyImage: "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=400&q=80",
-    messages: [
-      {
-        id: "1",
-        from: "tenant",
-        content: "Hello, I'm interested in your studio apartment. I'm moving to Berlin next month for work and need accommodation for at least 6 months. Is the property still available? Also, is registration (Anmeldung) possible?",
-        time: "2:45 PM",
-        date: "Today"
-      }
-    ]
-  },
-  {
-    id: "msg-2",
-    senderName: "Michael Torres",
-    senderInitials: "MT",
-    subject: "Re: 2-Bedroom Apartment Viewing",
-    preview: "Thank you for the quick response! Wednesday at 3 PM works perfectly for me...",
-    timestamp: "2 hours ago",
-    status: "active",
-    priority: "normal",
-    isRead: false,
-    propertyTitle: "Spacious 2BR in Kreuzberg",
-    propertyLocation: "Kreuzberg, Berlin",
-    propertyPrice: 2100,
-    propertyImage: "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=400&q=80",
-    messages: [
-      {
-        id: "1",
-        from: "tenant",
-        content: "Hi, I'd like to schedule a viewing for the 2-bedroom apartment. Are you available this week?",
-        time: "11:30 AM",
-        date: "Today"
-      },
-      {
-        id: "2",
-        from: "landlord",
-        content: "Hello Michael! Yes, I'm available. How about Wednesday at 3 PM or Thursday at 5 PM?",
-        time: "12:15 PM",
-        date: "Today"
-      },
-      {
-        id: "3",
-        from: "tenant",
-        content: "Thank you for the quick response! Wednesday at 3 PM works perfectly for me. See you then!",
-        time: "1:20 PM",
-        date: "Today"
-      }
-    ]
-  },
-  {
-    id: "msg-3",
-    senderName: "Sophie Anderson",
-    senderInitials: "SA",
-    subject: "Question about utilities",
-    preview: "I noticed the listing mentions utilities included. Does this cover internet as well?",
-    timestamp: "Yesterday",
-    status: "active",
-    priority: "normal",
-    isRead: true,
-    propertyTitle: "Cozy 1BR Apartment",
-    propertyLocation: "Prenzlauer Berg, Berlin",
-    propertyPrice: 1450,
-    propertyImage: "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=400&q=80",
-    messages: [
-      {
-        id: "1",
-        from: "tenant",
-        content: "I noticed the listing mentions utilities included. Does this cover internet as well? Also, what's the internet speed?",
-        time: "4:30 PM",
-        date: "Yesterday"
-      }
-    ]
-  },
-  {
-    id: "msg-4",
-    senderName: "David Kim",
-    senderInitials: "DK",
-    subject: "Interested international student",
-    preview: "I'm an international student starting my masters program in September. Looking for long-term...",
-    timestamp: "2 days ago",
-    status: "new",
-    priority: "high",
-    isRead: false,
-    propertyTitle: "Student-Friendly Studio",
-    propertyLocation: "Charlottenburg, Berlin",
-    propertyPrice: 950,
-    propertyImage: "https://images.unsplash.com/photo-1554995207-c18c203602cb?w=400&q=80",
-    messages: [
-      {
-        id: "1",
-        from: "tenant",
-        content: "I'm an international student starting my masters program in September. Looking for long-term accommodation. Is your studio still available? What documents do you need?",
-        time: "9:15 AM",
-        date: "Mar 8"
-      }
-    ]
-  },
-];
+const AVATAR_COLORS = ["#E91E63", "#9C27B0", "#3F51B5", "#2196F3", "#009688", "#FF9800"];
+function avatarColor(s: string) { return AVATAR_COLORS[s.charCodeAt(0) % AVATAR_COLORS.length]; }
 
+function timeAgo(iso: string) {
+  const diff = Date.now() - new Date(iso).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return "just now";
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  const days = Math.floor(hrs / 24);
+  if (days < 7) return `${days}d ago`;
+  return new Date(iso).toLocaleDateString("en-GB", { day: "numeric", month: "short" });
+}
+
+function formatMsgTime(iso: string) {
+  return new Date(iso).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
+}
+
+function formatMsgDate(iso: string) {
+  const d = new Date(iso);
+  const today = new Date();
+  const yesterday = new Date(today); yesterday.setDate(yesterday.getDate() - 1);
+  if (d.toDateString() === today.toDateString()) return "Today";
+  if (d.toDateString() === yesterday.toDateString()) return "Yesterday";
+  return d.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
+}
+
+//  Conversation Chat Panel 
+interface ChatPanelProps {
+  conversation: ConversationItem;
+  onClose: () => void;
+}
+
+function ChatPanel({ conversation, onClose }: ChatPanelProps) {
+  const { user } = useAuth();
+  const token = localStorage.getItem("authToken");
+  const [inputText, setInputText] = useState("");
+  const [isSending, setIsSending] = useState(false);
+  const [sendError, setSendError] = useState("");
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
+  const isFirstLoad = useRef(true);
+
+  const { messages, isConnected, isLoadingHistory, hasMoreMessages, sendMessage, loadMoreMessages, otherUserTyping, emitTyping, emitStopTyping } =
+    useConversation({ conversationId: conversation.id, token });
+
+  useEffect(() => {
+    if (messages.length === 0) return;
+    if (isFirstLoad.current) { messagesEndRef.current?.scrollIntoView(); isFirstLoad.current = false; }
+    else {
+      const c = messagesContainerRef.current;
+      if (c && c.scrollHeight - c.scrollTop - c.clientHeight < 120) {
+        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+      }
+    }
+  }, [messages]);
+
+  const handleSend = useCallback(async () => {
+    const body = inputText.trim();
+    if (!body || isSending) return;
+    setIsSending(true); setSendError("");
+    try { await sendMessage(body); setInputText(""); emitStopTyping(); }
+    catch (err) { setSendError(err instanceof Error ? err.message : "Failed to send"); }
+    finally { setIsSending(false); }
+  }, [inputText, isSending, sendMessage, emitStopTyping]);
+
+  // Group messages by date
+  const grouped: { date: string; msgs: typeof messages }[] = [];
+  for (const msg of messages) {
+    const label = formatMsgDate(msg.createdAt);
+    const last = grouped[grouped.length - 1];
+    if (last && last.date === label) last.msgs.push(msg);
+    else grouped.push({ date: label, msgs: [msg] });
+  }
+
+  const myId = user?.id;
+  const myRole = user?.role;
+
+  return (
+    <div className="flex-1 flex flex-col h-full overflow-hidden">
+      {/* Panel header */}
+      <div className="p-[16px] border-b border-[rgba(0,0,0,0.08)] bg-white flex items-center gap-[12px]">
+        <div className="w-[40px] h-[40px] rounded-full flex-shrink-0 flex items-center justify-center text-white text-[14px] font-bold"
+          style={{ backgroundColor: avatarColor(conversation.otherUser.initials) }}>
+          {conversation.otherUser.initials}
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-[#1A1A1A] text-[15px] font-bold truncate">{conversation.otherUser.name}</p>
+          <div className="flex items-center gap-[4px] text-[12px] text-[#6B6B6B]">
+            <MapPin className="w-[11px] h-[11px]" />
+            <span className="truncate">{conversation.listing.title}</span>
+          </div>
+        </div>
+        <div className={`flex items-center gap-[5px] text-[11px] font-medium px-[8px] py-[3px] rounded-full ${isConnected ? "bg-green-50 text-green-700" : "bg-[#F7F7F9] text-[#6B6B6B]"}`}>
+          <Wifi className="w-[10px] h-[10px]" />
+          {isConnected ? "Live" : "Connecting"}
+        </div>
+        <Link to={`/property/${conversation.listingId}`} className="text-[12px] font-semibold text-brand-primary hover:underline hidden sm:block">
+          View listing
+        </Link>
+        <button onClick={onClose} className="p-[4px] text-[#6B6B6B] hover:text-[#1A1A1A] transition-colors">
+          <XIcon className="w-[18px] h-[18px]" />
+        </button>
+      </div>
+
+      {/* Messages */}
+      <div ref={messagesContainerRef} className="flex-1 overflow-y-auto p-[20px] bg-neutral-light-gray">
+        {hasMoreMessages && (
+          <button onClick={() => void loadMoreMessages()} disabled={isLoadingHistory}
+            className="block mx-auto mb-[12px] text-[12px] text-brand-primary font-semibold hover:underline">
+            {isLoadingHistory ? "Loading..." : "Load earlier messages"}
+          </button>
+        )}
+        {isLoadingHistory && messages.length === 0 && (
+          <p className="text-[#6B6B6B] text-[13px] text-center">Loading messages...</p>
+        )}
+        {grouped.length === 0 && !isLoadingHistory && (
+          <div className="h-full flex items-center justify-center">
+            <p className="text-[#6B6B6B] text-[13px]">No messages yet. Start the conversation!</p>
+          </div>
+        )}
+
+        {grouped.map((group) => (
+          <div key={group.date}>
+            <div className="flex items-center gap-[10px] my-[14px]">
+              <div className="flex-1 h-px bg-[rgba(0,0,0,0.08)]" />
+              <span className="text-[11px] text-[#6B6B6B] font-medium px-[6px]">{group.date}</span>
+              <div className="flex-1 h-px bg-[rgba(0,0,0,0.08)]" />
+            </div>
+            {group.msgs.map((msg, i) => {
+              const isMe = (Boolean(myId) && msg.senderId === myId) || (Boolean(myRole) && msg.senderRole === myRole);
+              const prevMsg = i > 0 ? group.msgs[i - 1] : null;
+              const showAvatar = !isMe && (!prevMsg || prevMsg.senderId !== msg.senderId);
+              return (
+                <div key={msg.id} className={`flex items-end gap-[8px] mb-[6px] ${isMe ? "justify-end" : "justify-start"}`}>
+                  {!isMe && (
+                    <div className="w-[28px] flex-shrink-0">
+                      {showAvatar && (
+                        <div className="w-[28px] h-[28px] rounded-full flex items-center justify-center text-white text-[10px] font-bold"
+                          style={{ backgroundColor: avatarColor(conversation.otherUser.initials) }}>
+                          {conversation.otherUser.initials}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                  <div className={`max-w-[65%] flex flex-col ${isMe ? "items-end" : "items-start"}`}>
+                    <div className={`px-[14px] py-[10px] text-[14px] leading-[1.6] ${
+                      isMe ? "bg-brand-primary text-white rounded-[14px_14px_4px_14px]" : "bg-white text-[#1A1A1A] rounded-[14px_14px_14px_4px] border border-[rgba(0,0,0,0.06)]"
+                    }`}>
+                      {msg.body}
+                    </div>
+                    <span className="text-[10px] text-[#9B9B9B] mt-[3px] px-[2px]">
+                      {formatMsgTime(msg.createdAt)}
+                      {isMe && msg.readAt && <span className="ml-[4px] text-brand-primary">Read</span>}
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        ))}
+
+        {otherUserTyping && (
+          <div className="flex items-end gap-[8px]">
+            <div className="w-[28px]" />
+            <div className="bg-white rounded-[14px_14px_14px_4px] px-[14px] py-[10px] border border-[rgba(0,0,0,0.06)]">
+              <div className="flex gap-[3px] items-center h-[14px]">
+                <div className="w-[6px] h-[6px] rounded-full bg-[#9B9B9B] animate-bounce" style={{ animationDelay: "0ms" }} />
+                <div className="w-[6px] h-[6px] rounded-full bg-[#9B9B9B] animate-bounce" style={{ animationDelay: "150ms" }} />
+                <div className="w-[6px] h-[6px] rounded-full bg-[#9B9B9B] animate-bounce" style={{ animationDelay: "300ms" }} />
+              </div>
+            </div>
+          </div>
+        )}
+        <div ref={messagesEndRef} />
+      </div>
+
+      {/* Input */}
+      <div className="p-[16px] bg-white border-t border-[rgba(0,0,0,0.08)]">
+        <div className="flex items-end gap-[10px] bg-neutral-light-gray px-[14px] py-[10px] border-2 border-transparent focus-within:border-brand-primary transition-colors">
+          <textarea
+            value={inputText}
+            onChange={(e) => { setInputText(e.target.value); emitTyping(); }}
+            onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); void handleSend(); } }}
+            onBlur={emitStopTyping}
+            placeholder="Type a reply (Enter to send)"
+            rows={2}
+            className="flex-1 bg-transparent text-[14px] text-[#1A1A1A] placeholder:text-[#9B9B9B] resize-none outline-none leading-[1.6]"
+          />
+          <button
+            onClick={() => void handleSend()}
+            disabled={!inputText.trim() || isSending}
+            className={`flex items-center gap-[6px] px-[16px] py-[9px] text-[13px] font-semibold rounded-[8px] transition-colors flex-shrink-0 ${
+              inputText.trim() && !isSending ? "bg-brand-primary text-white hover:bg-brand-primary-dark" : "bg-[#EDEDED] text-[#9B9B9B] cursor-not-allowed"
+            }`}
+          >
+            <Send className="w-[14px] h-[14px]" />
+            {isSending ? "Sending..." : "Send"}
+          </button>
+        </div>
+        {sendError && <p className="text-brand-primary text-[12px] mt-[6px]">{sendError}</p>}
+      </div>
+    </div>
+  );
+}
+
+//  Main page 
 export function LandlordInbox() {
-  const [selectedMessage, setSelectedMessage] = useState<Message | null>(null);
+  const [conversations, setConversations] = useState<ConversationItem[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
-  const [filterStatus, setFilterStatus] = useState<MessageStatus | "all">("all");
-  const [replyText, setReplyText] = useState("");
-  const [showFilters, setShowFilters] = useState(false);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
 
-  const filteredMessages = mockMessages.filter(msg => {
-    const matchesSearch = searchQuery === "" || 
-      msg.senderName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      msg.subject.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesFilter = filterStatus === "all" || msg.status === filterStatus;
-    return matchesSearch && matchesFilter;
+  const token = localStorage.getItem("authToken");
+
+  useEffect(() => {
+    const load = async () => {
+      if (!token) { setError("Please log in."); setIsLoading(false); return; }
+      try {
+        const res = await fetch(`${API_BASE}/api/conversations`, { headers: { Authorization: `Bearer ${token}` } });
+        if (!res.ok) { const d = (await res.json()) as { message?: string }; throw new Error(d.message ?? "Failed"); }
+        const data = (await res.json()) as { conversations: ConversationItem[] };
+        setConversations(data.conversations);
+        if (data.conversations.length > 0) setSelectedId(data.conversations[0].id);
+      } catch (err) { setError(err instanceof Error ? err.message : "Failed to load"); }
+      finally { setIsLoading(false); }
+    };
+    void load();
+  }, [token]);
+
+  const filtered = conversations.filter((c) => {
+    if (!searchQuery) return true;
+    const q = searchQuery.toLowerCase();
+    return c.otherUser.name.toLowerCase().includes(q) || c.listing.title.toLowerCase().includes(q) || c.lastMessage.toLowerCase().includes(q);
   });
 
-  const handleSendReply = () => {
-    if (replyText.trim()) {
-      console.log("Sending:", replyText);
-      setReplyText("");
-    }
-  };
+  const selectedConversation = conversations.find((c) => c.id === selectedId) ?? null;
 
   return (
     <LandlordPortalLayout>
       <div className="h-[calc(100vh-73px)] flex bg-white">
-        {/* Sidebar - Message List */}
-        <div className="w-[420px] border-r border-[rgba(0,0,0,0.08)] flex flex-col bg-neutral-light-gray">
-          {/* Sidebar Header */}
-          <div className="p-[24px] bg-white border-b border-[rgba(0,0,0,0.08)]">
-            <div className="flex items-center justify-between mb-[16px]">
-              <h1 className="text-[24px] font-bold text-neutral-black">Inbox</h1>
-              <div className="flex items-center gap-[8px]">
-                <button 
-                  onClick={() => setShowFilters(!showFilters)}
-                  className="p-[8px] hover:bg-neutral-light-gray rounded-[8px] transition-colors"
-                >
-                  <Filter className="w-[20px] h-[20px] text-neutral-gray" />
-                </button>
-              </div>
-            </div>
-
-            {/* Search */}
+        {/* Sidebar */}
+        <div className="w-[380px] border-r border-[rgba(0,0,0,0.08)] flex flex-col flex-shrink-0">
+          <div className="p-[20px] border-b border-[rgba(0,0,0,0.08)] bg-white">
+            <h1 className="text-[22px] font-bold text-[#1A1A1A] mb-[14px]">Inbox</h1>
             <div className="relative">
-              <Search className="absolute left-[14px] top-[50%] -translate-y-1/2 w-[18px] h-[18px] text-neutral-gray" />
+              <Search className="absolute left-[12px] top-1/2 -translate-y-1/2 w-[15px] h-[15px] text-[#6B6B6B]" />
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search messages..."
-                className="w-full pl-[42px] pr-[14px] py-[10px] bg-neutral-light-gray rounded-[10px] text-[14px] text-neutral-black placeholder:text-neutral-gray border-2 border-transparent focus:border-brand-primary focus:outline-none transition-colors"
+                placeholder="Search"
+                className="w-full pl-[34px] pr-[12px] py-[9px] bg-[#F7F7F9] text-[13px] text-[#1A1A1A] placeholder:text-[#9B9B9B] border-2 border-transparent focus:border-brand-primary outline-none transition-colors"
               />
             </div>
-
-            {/* Filter Tabs */}
-            {showFilters && (
-              <div className="mt-[16px] flex gap-[8px]">
-                <button
-                  onClick={() => setFilterStatus("all")}
-                  className={`px-[12px] py-[6px] rounded-[6px] text-[13px] font-medium transition-colors ${
-                    filterStatus === "all" 
-                      ? "bg-brand-primary text-white" 
-                      : "bg-white text-neutral-gray hover:bg-neutral-light-gray"
-                  }`}
-                >
-                  All
-                </button>
-                <button
-                  onClick={() => setFilterStatus("new")}
-                  className={`px-[12px] py-[6px] rounded-[6px] text-[13px] font-medium transition-colors ${
-                    filterStatus === "new" 
-                      ? "bg-brand-primary text-white" 
-                      : "bg-white text-neutral-gray hover:bg-neutral-light-gray"
-                  }`}
-                >
-                  New
-                </button>
-                <button
-                  onClick={() => setFilterStatus("active")}
-                  className={`px-[12px] py-[6px] rounded-[6px] text-[13px] font-medium transition-colors ${
-                    filterStatus === "active" 
-                      ? "bg-brand-primary text-white" 
-                      : "bg-white text-neutral-gray hover:bg-neutral-light-gray"
-                  }`}
-                >
-                  Active
-                </button>
-                <button
-                  onClick={() => setFilterStatus("archived")}
-                  className={`px-[12px] py-[6px] rounded-[6px] text-[13px] font-medium transition-colors ${
-                    filterStatus === "archived" 
-                      ? "bg-brand-primary text-white" 
-                      : "bg-white text-neutral-gray hover:bg-neutral-light-gray"
-                  }`}
-                >
-                  Archived
-                </button>
-              </div>
-            )}
           </div>
 
-          {/* Message List */}
           <div className="flex-1 overflow-y-auto">
-            {filteredMessages.length === 0 ? (
-              <div className="p-[48px] text-center">
-                <div className="w-[72px] h-[72px] rounded-full bg-white mx-auto mb-[16px] flex items-center justify-center">
-                  <Search className="w-[32px] h-[32px] text-neutral-gray opacity-40" />
-                </div>
-                <p className="text-neutral-gray text-[14px]">No messages found</p>
+            {isLoading && <p className="text-[#6B6B6B] text-[13px] p-[20px]">Loading...</p>}
+            {!isLoading && error && <p className="text-brand-primary text-[13px] p-[20px]">{error}</p>}
+            {!isLoading && !error && filtered.length === 0 && (
+              <div className="p-[40px] text-center">
+                <p className="text-[#6B6B6B] text-[13px]">{searchQuery ? "No conversations match your search." : "No conversations yet."}</p>
               </div>
-            ) : (
-              filteredMessages.map((message) => (
-                <button
-                  key={message.id}
-                  onClick={() => setSelectedMessage(message)}
-                  className={`w-full p-[20px] border-b border-[rgba(0,0,0,0.06)] text-left transition-all ${
-                    selectedMessage?.id === message.id
-                      ? "bg-white shadow-[inset_4px_0_0_0_#0891B2]"
-                      : "bg-neutral-light-gray hover:bg-white"
-                  } ${!message.isRead ? "font-medium" : ""}`}
-                >
-                  <div className="flex items-start gap-[12px]">
-                    {/* Avatar */}
-                    <div className={`w-[44px] h-[44px] rounded-full flex items-center justify-center text-white text-[15px] font-bold flex-shrink-0 ${
-                      message.priority === "high" ? "bg-accent-blue" : "bg-brand-primary"
-                    }`}>
-                      {message.senderInitials}
-                    </div>
-
-                    <div className="flex-1 min-w-0">
-                      {/* Header */}
-                      <div className="flex items-center justify-between mb-[4px]">
-                        <span className="text-[15px] font-bold text-neutral-black truncate">
-                          {message.senderName}
-                        </span>
-                        <span className="text-[12px] text-neutral-gray ml-[8px] flex-shrink-0">
-                          {message.timestamp}
-                        </span>
-                      </div>
-
-                      {/* Subject */}
-                      <div className="text-[14px] text-neutral-black mb-[4px] truncate">
-                        {message.subject}
-                      </div>
-
-                      {/* Preview */}
-                      <p className="text-[13px] text-neutral-gray line-clamp-2 mb-[8px]">
-                        {message.preview}
-                      </p>
-
-                      {/* Property Tag */}
-                      <div className="inline-flex items-center gap-[6px] px-[8px] py-[4px] bg-white rounded-[6px] text-[12px] text-neutral-gray border border-[rgba(0,0,0,0.06)]">
-                        <MapPin className="w-[12px] h-[12px]" />
-                        <span className="truncate max-w-[200px]">{message.propertyTitle}</span>
-                      </div>
-
-                      {/* Unread Badge */}
-                      {!message.isRead && (
-                        <div className="mt-[8px]">
-                          <span className="inline-block w-[8px] h-[8px] rounded-full bg-brand-primary" />
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </button>
-              ))
             )}
+            {filtered.map((c) => (
+              <button
+                key={c.id}
+                onClick={() => setSelectedId(c.id)}
+                className={`w-full p-[16px] border-b border-[rgba(0,0,0,0.06)] text-left transition-all ${
+                  selectedId === c.id ? "bg-white shadow-[inset_4px_0_0_0_var(--color-brand-primary)]" : "bg-[#F7F7F9] hover:bg-white"
+                }`}
+              >
+                <div className="flex items-start gap-[10px]">
+                  <div className="w-[38px] h-[38px] rounded-full flex-shrink-0 flex items-center justify-center text-white text-[13px] font-bold"
+                    style={{ backgroundColor: avatarColor(c.otherUser.initials) }}>
+                    {c.otherUser.initials}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between mb-[2px]">
+                      <span className="text-[14px] font-bold text-[#1A1A1A] truncate">{c.otherUser.name}</span>
+                      <div className="flex items-center gap-[6px] flex-shrink-0 ml-[6px]">
+                        {c.unread > 0 && (
+                          <span className="px-[6px] py-[1px] text-[10px] font-bold bg-brand-primary text-white rounded-full">{c.unread}</span>
+                        )}
+                        <span className="text-[11px] text-[#9B9B9B]">{timeAgo(c.lastMessageAt)}</span>
+                      </div>
+                    </div>
+                    <p className="text-[12px] text-[#6B6B6B] truncate mb-[2px]">{c.listing.title}</p>
+                    <p className={`text-[12px] truncate ${c.unread > 0 ? "text-[#1A1A1A] font-semibold" : "text-[#9B9B9B]"}`}>
+                      {c.lastMessage || "No messages yet"}
+                    </p>
+                  </div>
+                </div>
+              </button>
+            ))}
           </div>
         </div>
 
-        {/* Main Content - Conversation */}
-        {selectedMessage ? (
-          <div className="flex-1 flex flex-col">
-            {/* Conversation Header */}
-            <div className="p-[16px] border-b border-[rgba(0,0,0,0.08)] bg-white">
-              <div className="max-w-[900px] mx-auto">
-                {/* Top Bar */}
-                <div className="flex items-center justify-between mb-[12px]">
-                  <div className="flex items-center gap-[12px]">
-                    <div className={`w-[40px] h-[40px] rounded-full flex items-center justify-center text-white text-[16px] font-bold ${
-                      selectedMessage.priority === "high" ? "bg-accent-blue" : "bg-brand-primary"
-                    }`}>
-                      {selectedMessage.senderInitials}
-                    </div>
-                    <div>
-                      <h2 className="text-[16px] font-bold text-neutral-black mb-[2px]">
-                        {selectedMessage.senderName}
-                      </h2>
-                      <p className="text-[13px] text-neutral-gray">
-                        {selectedMessage.subject}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-[4px]">
-                    <button className="p-[8px] hover:bg-neutral-light-gray rounded-[8px] transition-colors">
-                      <Star className="w-[18px] h-[18px] text-neutral-gray" />
-                    </button>
-                    <button className="p-[8px] hover:bg-neutral-light-gray rounded-[8px] transition-colors">
-                      <Archive className="w-[18px] h-[18px] text-neutral-gray" />
-                    </button>
-                    <button className="p-[8px] hover:bg-neutral-light-gray rounded-[8px] transition-colors">
-                      <Trash2 className="w-[18px] h-[18px] text-neutral-gray" />
-                    </button>
-                    <button className="p-[8px] hover:bg-neutral-light-gray rounded-[8px] transition-colors">
-                      <MoreHorizontal className="w-[18px] h-[18px] text-neutral-gray" />
-                    </button>
-                  </div>
-                </div>
-
-                {/* Property Card */}
-                <div className="bg-neutral-light-gray rounded-[8px] p-[12px] border border-[rgba(0,0,0,0.06)]">
-                  <div className="flex gap-[12px]">
-                    <img
-                      src={selectedMessage.propertyImage}
-                      alt={selectedMessage.propertyTitle}
-                      className="w-[72px] h-[72px] rounded-[8px] object-cover flex-shrink-0"
-                    />
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1 min-w-0 mr-[12px]">
-                          <h3 className="text-[15px] font-bold text-neutral-black mb-[2px] truncate">
-                            {selectedMessage.propertyTitle}
-                          </h3>
-                          <div className="flex items-center gap-[4px] text-[13px] text-neutral-gray">
-                            <MapPin className="w-[14px] h-[14px]" />
-                            {selectedMessage.propertyLocation}
-                          </div>
-                        </div>
-                        <div className="text-right flex-shrink-0">
-                          <div className="text-[20px] font-bold text-brand-primary leading-[1]">
-                            €{selectedMessage.propertyPrice}
-                          </div>
-                          <div className="text-[11px] text-neutral-gray">per month</div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Messages */}
-            <div className="flex-1 overflow-y-auto p-[24px] bg-neutral-light-gray">
-              <div className="max-w-[900px] mx-auto space-y-[24px]">
-                {selectedMessage.messages.map((msg) => (
-                  <div key={msg.id}>
-                    {/* Date Divider */}
-                    <div className="flex items-center justify-center mb-[16px]">
-                      <div className="px-[16px] py-[6px] bg-white rounded-full text-[12px] font-medium text-neutral-gray border border-[rgba(0,0,0,0.06)]">
-                        {msg.date}
-                      </div>
-                    </div>
-
-                    {/* Message Bubble */}
-                    <div className={`flex ${msg.from === "landlord" ? "justify-end" : "justify-start"}`}>
-                      <div className={`max-w-[65%] ${
-                        msg.from === "landlord"
-                          ? "bg-brand-primary text-white"
-                          : "bg-white text-neutral-black border border-[rgba(0,0,0,0.06)]"
-                      } rounded-[16px] px-[20px] py-[16px] shadow-sm`}>
-                        <p className="text-[15px] leading-[1.6] mb-[8px]">
-                          {msg.content}
-                        </p>
-                        <div className={`text-[12px] ${
-                          msg.from === "landlord" ? "text-white/80" : "text-neutral-gray"
-                        }`}>
-                          {msg.time}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Reply Box */}
-            <div className="p-[24px] bg-white border-t border-[rgba(0,0,0,0.08)]">
-              <div className="max-w-[900px] mx-auto">
-                <div className="flex items-center gap-[12px] bg-neutral-light-gray rounded-[10px] px-[16px] py-[10px] border-2 border-transparent focus-within:border-brand-primary transition-colors">
-                  <div className="flex items-center gap-[8px]">
-                    <button className="p-[6px] hover:bg-white rounded-[6px] transition-colors">
-                      <Paperclip className="w-[18px] h-[18px] text-neutral-gray" />
-                    </button>
-                    <button className="p-[6px] hover:bg-white rounded-[6px] transition-colors">
-                      <ImageIcon className="w-[18px] h-[18px] text-neutral-gray" />
-                    </button>
-                  </div>
-                  <input
-                    type="text"
-                    value={replyText}
-                    onChange={(e) => setReplyText(e.target.value)}
-                    placeholder="Type your reply..."
-                    className="flex-1 bg-transparent text-[14px] text-neutral-black placeholder:text-neutral-gray focus:outline-none"
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' && !e.shiftKey && replyText.trim()) {
-                        e.preventDefault();
-                        handleSendReply();
-                      }
-                    }}
-                  />
-                  <button
-                    onClick={handleSendReply}
-                    disabled={!replyText.trim()}
-                    className="px-[20px] py-[8px] bg-brand-primary text-white text-[14px] font-semibold rounded-[8px] hover:bg-brand-primary-dark disabled:bg-neutral-gray disabled:cursor-not-allowed transition-colors flex items-center gap-[6px] flex-shrink-0"
-                  >
-                    <Send className="w-[16px] h-[16px]" />
-                    Send
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
+        {/* Main panel */}
+        {selectedConversation ? (
+          <ChatPanel key={selectedConversation.id} conversation={selectedConversation} onClose={() => setSelectedId(null)} />
         ) : (
-          <div className="flex-1 flex items-center justify-center bg-neutral-light-gray">
-            <div className="text-center max-w-[400px] px-[24px]">
-              <div className="w-[140px] h-[140px] rounded-full bg-white mx-auto mb-[24px] flex items-center justify-center border border-[rgba(0,0,0,0.06)]">
-                <Send className="w-[64px] h-[64px] text-neutral-gray opacity-30" />
+          <div className="flex-1 flex items-center justify-center bg-[#F7F7F9]">
+            <div className="text-center max-w-[320px]">
+              <div className="w-[80px] h-[80px] rounded-full bg-white mx-auto mb-[16px] flex items-center justify-center border border-[rgba(0,0,0,0.08)]">
+                <Send className="w-[36px] h-[36px] text-[#D0D0D0]" />
               </div>
-              <h3 className="text-[24px] font-bold text-neutral-black mb-[12px]">
-                Select a Message
-              </h3>
-              <p className="text-[15px] text-neutral-gray leading-[1.6]">
-                Choose a conversation from your inbox to view messages and respond to tenant inquiries
+              <h3 className="text-[20px] font-bold text-[#1A1A1A] mb-[8px]">Select a conversation</h3>
+              <p className="text-[14px] text-[#6B6B6B] leading-[1.6]">
+                Choose a tenant message from the list to start chatting.
               </p>
             </div>
           </div>

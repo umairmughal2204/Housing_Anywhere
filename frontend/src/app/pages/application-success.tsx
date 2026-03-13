@@ -1,10 +1,59 @@
-import { Link, useParams, useNavigate } from "react-router";
+import { Link, useParams, useNavigate, useSearchParams } from "react-router";
+import { useState } from "react";
 import { Check } from "lucide-react";
 import { Header } from "../components/header";
+import { API_BASE } from "../config";
 
 export function ApplicationSuccess() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const [isOpeningConversation, setIsOpeningConversation] = useState(false);
+
+  const openConversation = async () => {
+    if (isOpeningConversation) {
+      return;
+    }
+
+    const directConversationId = searchParams.get("conversationId");
+    if (directConversationId) {
+      navigate(`/tenant/inbox/conversation/${directConversationId}`);
+      return;
+    }
+
+    if (!id) {
+      navigate("/tenant/inbox");
+      return;
+    }
+
+    const token = localStorage.getItem("authToken");
+    if (!token) {
+      navigate("/login");
+      return;
+    }
+
+    setIsOpeningConversation(true);
+    try {
+      const response = await fetch(`${API_BASE}/api/conversations`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ listingId: id }),
+      });
+
+      if (!response.ok) {
+        navigate("/tenant/inbox");
+        return;
+      }
+
+      const payload = (await response.json()) as { conversationId: string };
+      navigate(`/tenant/inbox/conversation/${payload.conversationId}`);
+    } finally {
+      setIsOpeningConversation(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-white">
@@ -37,10 +86,11 @@ export function ApplicationSuccess() {
 
             <div className="flex items-center gap-[16px]">
               <button
-                onClick={() => navigate(`/tenant/inbox/conversation/${id}`)}
+                onClick={() => void openConversation()}
+                disabled={isOpeningConversation}
                 className="bg-brand-primary text-white px-[32px] py-[14px] font-bold hover:bg-brand-primary-dark transition-colors text-[16px]"
               >
-                View conversation
+                {isOpeningConversation ? "Opening..." : "View conversation"}
               </button>
               <button
                 onClick={() => navigate(`/tenant/applications`)}
