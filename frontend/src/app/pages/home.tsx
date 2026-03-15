@@ -247,6 +247,7 @@ export function Home() {
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
   const [isCityDropdownOpen, setIsCityDropdownOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<"recommendations" | "recently" | "favorites">("recently");
+  const [hasAutoShiftedEmptyRecent, setHasAutoShiftedEmptyRecent] = useState(false);
   const cityDropdownRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
@@ -369,6 +370,33 @@ export function Home() {
     void loadFavorites();
   }, [apiBase, isAuthenticated]);
 
+  useEffect(() => {
+    if (!isAuthenticated) {
+      setHasAutoShiftedEmptyRecent(false);
+      return;
+    }
+
+    if (
+      !hasAutoShiftedEmptyRecent &&
+      activeTab === "recently" &&
+      !isLoadingListings &&
+      !isLoadingRecommendations &&
+      recentlyViewed.length === 0 &&
+      recommendations.length > 0
+    ) {
+      setActiveTab("recommendations");
+      setHasAutoShiftedEmptyRecent(true);
+    }
+  }, [
+    activeTab,
+    hasAutoShiftedEmptyRecent,
+    isAuthenticated,
+    isLoadingListings,
+    isLoadingRecommendations,
+    recommendations.length,
+    recentlyViewed.length,
+  ]);
+
   // Close city dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -421,6 +449,13 @@ export function Home() {
   };
 
   const filteredCities = getFilteredCities(citySuggestions, searchCity);
+  const displayedListings = activeTab === "recommendations" ? recommendations : recentlyViewed;
+  const isRecommendationsTab = activeTab === "recommendations";
+  const isRecentlyViewedTab = activeTab === "recently";
+  const isListingsTabLoading =
+    (isRecommendationsTab && isLoadingRecommendations) ||
+    (isRecentlyViewedTab && isLoadingListings);
+  const isListingsTabEmpty = displayedListings.length === 0;
 
   return (
     <div className="min-h-screen bg-white">
@@ -587,58 +622,94 @@ export function Home() {
             {/* Property Cards */}
             {(activeTab === "recently" || activeTab === "recommendations") && (
               <>
-                {((activeTab === "recommendations" && isLoadingRecommendations) ||
-                  (activeTab === "recently" && isLoadingListings)) && (
+                {isListingsTabLoading && (
                   <div className="text-[#6B6B6B] text-[14px] py-[8px]">Loading properties...</div>
                 )}
-                <div className="grid grid-cols-3 gap-[24px]">
-                  {(activeTab === "recommendations" ? recommendations : recentlyViewed).map((property) => (
-                    <Link
-                      key={property.id}
-                      to={`/listing/${property.id}`}
-                      className="group bg-white hover:shadow-lg transition-all duration-300"
-                    >
-                      <div className="relative aspect-[4/3] overflow-hidden bg-[#F7F7F9]">
-                        <img
-                          src={property.images[0] ?? "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800&q=80"}
-                          alt={property.title}
-                          className="w-full h-full object-contain object-center bg-[#F3F4F6]"
-                        />
-                        {Date.now() - new Date(property.createdAt).getTime() < 1000 * 60 * 60 * 24 * 7 && (
-                          <div className="absolute top-[12px] left-[12px] bg-[#FFD93D] text-[#1A1A1A] px-[8px] py-[4px] text-[11px] font-bold uppercase tracking-[0.05em] flex items-center gap-[4px]">
-                            <Star className="w-[10px] h-[10px] fill-current" />
-                            New
+                {!isListingsTabEmpty && (
+                  <div className="grid grid-cols-3 gap-[24px]">
+                    {displayedListings.map((property) => (
+                      <Link
+                        key={property.id}
+                        to={`/listing/${property.id}`}
+                        className="group bg-white hover:shadow-lg transition-all duration-300"
+                      >
+                        <div className="relative aspect-[4/3] overflow-hidden bg-[#F7F7F9]">
+                          <img
+                            src={property.images[0] ?? "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800&q=80"}
+                            alt={property.title}
+                            className="w-full h-full object-contain object-center bg-[#F3F4F6]"
+                          />
+                          {Date.now() - new Date(property.createdAt).getTime() < 1000 * 60 * 60 * 24 * 7 && (
+                            <div className="absolute top-[12px] left-[12px] bg-[#FFD93D] text-[#1A1A1A] px-[8px] py-[4px] text-[11px] font-bold uppercase tracking-[0.05em] flex items-center gap-[4px]">
+                              <Star className="w-[10px] h-[10px] fill-current" />
+                              New
+                            </div>
+                          )}
+                          <div className="absolute bottom-[12px] left-0 right-0 flex items-center justify-center gap-[4px]">
+                            {[1, 2, 3, 4, 5].map((dot) => (
+                              <div key={dot} className={`w-[6px] h-[6px] rounded-full ${dot === 1 ? "bg-white" : "bg-white/40"}`} />
+                            ))}
                           </div>
-                        )}
-                        <div className="absolute bottom-[12px] left-0 right-0 flex items-center justify-center gap-[4px]">
-                          {[1, 2, 3, 4, 5].map((dot) => (
-                            <div key={dot} className={`w-[6px] h-[6px] rounded-full ${dot === 1 ? "bg-white" : "bg-white/40"}`} />
-                          ))}
                         </div>
-                      </div>
-                      <div className="p-[16px]">
-                        <h3 className="text-[#1A1A1A] text-[15px] font-semibold mb-[8px] line-clamp-2">{property.title}</h3>
-                        <div className="flex items-center gap-[12px] mb-[12px] text-[13px] text-[#6B6B6B]">
-                          <div className="flex items-center gap-[4px]"><MapPin className="w-[12px] h-[12px]" /><span>{property.area} m²</span></div>
-                          <div className="flex items-center gap-[4px]"><UserIcon className="w-[12px] h-[12px]" /><span>{property.bedrooms} bedrooms</span></div>
+                        <div className="p-[16px]">
+                          <h3 className="text-[#1A1A1A] text-[15px] font-semibold mb-[8px] line-clamp-2">{property.title}</h3>
+                          <div className="flex items-center gap-[12px] mb-[12px] text-[13px] text-[#6B6B6B]">
+                            <div className="flex items-center gap-[4px]"><MapPin className="w-[12px] h-[12px]" /><span>{property.area} m²</span></div>
+                            <div className="flex items-center gap-[4px]"><UserIcon className="w-[12px] h-[12px]" /><span>{property.bedrooms} bedrooms</span></div>
+                          </div>
+                          <div className="flex items-baseline gap-[4px] mb-[8px]">
+                            <span className="text-[#1A1A1A] text-[18px] font-bold">€{property.monthlyRent}</span>
+                            <span className="text-[#6B6B6B] text-[13px]">/month, {property.utilitiesIncluded ? "utilities included" : "excl. utilities"}</span>
+                          </div>
+                          <div className="flex items-center gap-[6px] text-accent-blue text-[12px] font-semibold">
+                            <div className="w-[6px] h-[6px] rounded-full bg-accent-blue" />
+                            Available from {new Date(property.availableFrom).toLocaleDateString("en-GB")}
+                          </div>
                         </div>
-                        <div className="flex items-baseline gap-[4px] mb-[8px]">
-                          <span className="text-[#1A1A1A] text-[18px] font-bold">€{property.monthlyRent}</span>
-                          <span className="text-[#6B6B6B] text-[13px]">/month, {property.utilitiesIncluded ? "utilities included" : "excl. utilities"}</span>
-                        </div>
-                        <div className="flex items-center gap-[6px] text-accent-blue text-[12px] font-semibold">
-                          <div className="w-[6px] h-[6px] rounded-full bg-accent-blue" />
-                          Available from {new Date(property.availableFrom).toLocaleDateString("en-GB")}
-                        </div>
-                      </div>
-                    </Link>
-                  ))}
-                </div>
-                {!isLoadingRecommendations && activeTab === "recommendations" && recommendations.length === 0 && (
-                  <div className="text-[#6B6B6B] text-[14px] py-[8px]">No recommendations available yet.</div>
+                      </Link>
+                    ))}
+                  </div>
                 )}
-                {!isLoadingListings && activeTab === "recently" && recentlyViewed.length === 0 && (
-                  <div className="text-[#6B6B6B] text-[14px] py-[8px]">No recently viewed listings available yet.</div>
+                {!isListingsTabLoading && isListingsTabEmpty && isRecommendationsTab && (
+                  <div className="rounded-[20px] border border-[rgba(0,0,0,0.08)] bg-[#F7F7F9] p-[24px] text-center">
+                    <div className="text-[#1A1A1A] text-[18px] font-semibold mb-[8px]">No recommendations yet</div>
+                    <div className="text-[#6B6B6B] text-[14px] max-w-[560px] mx-auto mb-[16px]">
+                      Start exploring listings, save a few favorites, or message landlords to help us personalize your recommendations.
+                    </div>
+                    <Link
+                      to="/s"
+                      className="inline-flex items-center gap-[8px] px-[16px] py-[10px] bg-[#1A1A1A] text-white text-[14px] font-semibold hover:bg-[#0891B2] transition-colors"
+                    >
+                      Explore listings
+                      <ArrowRight className="w-[16px] h-[16px]" />
+                    </Link>
+                  </div>
+                )}
+                {!isListingsTabLoading && isListingsTabEmpty && isRecentlyViewedTab && (
+                  <div className="rounded-[20px] border border-[rgba(0,0,0,0.08)] bg-[#F7F7F9] p-[24px] text-center">
+                    <div className="text-[#1A1A1A] text-[18px] font-semibold mb-[8px]">No recently viewed listings yet</div>
+                    <div className="text-[#6B6B6B] text-[14px] max-w-[560px] mx-auto mb-[16px]">
+                      Once you open a property, it will appear here so you can jump back to it quickly.
+                    </div>
+                    <div className="flex items-center justify-center gap-[12px] flex-wrap">
+                      {recommendations.length > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => setActiveTab("recommendations")}
+                          className="inline-flex items-center gap-[8px] px-[16px] py-[10px] border border-[rgba(0,0,0,0.12)] text-[#1A1A1A] text-[14px] font-semibold hover:border-[rgba(0,0,0,0.24)] hover:bg-white transition-colors"
+                        >
+                          See recommendations
+                        </button>
+                      )}
+                      <Link
+                        to="/s"
+                        className="inline-flex items-center gap-[8px] px-[16px] py-[10px] bg-[#1A1A1A] text-white text-[14px] font-semibold hover:bg-[#0891B2] transition-colors"
+                      >
+                        Browse listings
+                        <ArrowRight className="w-[16px] h-[16px]" />
+                      </Link>
+                    </div>
+                  </div>
                 )}
                 <div className="mt-[24px] flex justify-end">
                   <Link
