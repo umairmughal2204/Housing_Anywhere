@@ -127,6 +127,7 @@ export function SearchResults() {
     () => getRequestedStayLengthLabel(requestedStartDate, requestedEndDate),
     [requestedEndDate, requestedStartDate],
   );
+  const cityLabel = city ? city.charAt(0).toUpperCase() + city.slice(1) : "All cities";
 
   useEffect(() => {
     const loadListings = async () => {
@@ -277,7 +278,7 @@ export function SearchResults() {
             </Link>
             <span className="text-[#6B6B6B]">&gt;</span>
             <span className="text-[#1A1A1A] font-semibold">
-              {city ? `${city.charAt(0).toUpperCase() + city.slice(1)} Housing` : "Noisy-le-Sec Housing"}
+              {cityLabel} Housing
             </span>
           </div>
         </div>
@@ -288,7 +289,7 @@ export function SearchResults() {
         <div className="max-w-[1440px] mx-auto px-[32px] py-[24px]">
           <div className="flex items-center justify-between">
             <h1 className="text-[#1A1A1A] text-[20px] font-semibold">
-              {filteredProperties.length} rooms, studios and apartments for rent in {city ? city.charAt(0).toUpperCase() + city.slice(1) : "your selected city"}
+              {filteredProperties.length} rooms, studios and apartments for rent in {cityLabel}
             </h1>
 
             <div className="flex items-center gap-[8px]">

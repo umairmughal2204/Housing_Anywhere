@@ -592,6 +592,15 @@ export function Home() {
                 {!isLoadingListings && recentlyViewed.length === 0 && (
                   <div className="text-[#6B6B6B] text-[14px] py-[8px]">No live listings available yet.</div>
                 )}
+                <div className="mt-[24px] flex justify-end">
+                  <Link
+                    to="/s"
+                    className="inline-flex items-center gap-[8px] px-[16px] py-[10px] border border-[rgba(0,0,0,0.12)] text-[#1A1A1A] text-[14px] font-semibold hover:border-[rgba(0,0,0,0.24)] hover:bg-[#F7F7F9] transition-colors"
+                  >
+                    View all listings
+                    <ArrowRight className="w-[16px] h-[16px]" />
+                  </Link>
+                </div>
               </>
             )}
 

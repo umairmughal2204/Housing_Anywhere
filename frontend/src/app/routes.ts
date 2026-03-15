@@ -110,6 +110,11 @@ export const router = createBrowserRouter([
     ErrorBoundary,
   },
   {
+    path: "/s",
+    Component: SearchResults,
+    ErrorBoundary,
+  },
+  {
     path: "/s/:city",
     Component: SearchResults,
     ErrorBoundary,
