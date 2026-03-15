@@ -3,8 +3,10 @@ import { z } from "zod";
 import multer from "multer";
 import fs from "fs/promises";
 import path from "path";
+import { Types } from "mongoose";
 import { requireAuth, requireRole } from "../middleware/auth.js";
 import { ListingModel } from "../models/Listing.js";
+import { ListingInteractionModel } from "../models/ListingInteraction.js";
 import { UserModel } from "../models/User.js";
 
 const router = Router();
@@ -155,6 +157,34 @@ router.get("/:id([0-9a-fA-F]{24})", async (req, res) => {
         : undefined,
     }),
   });
+});
+
+router.post("/:id([0-9a-fA-F]{24})/interactions/view", requireAuth, async (req, res) => {
+  const listingExists = await ListingModel.exists({ _id: req.params.id, status: "active" });
+  if (!listingExists) {
+    res.status(404).json({ message: "Active listing not found" });
+    return;
+  }
+
+  await ListingInteractionModel.updateOne(
+    {
+      tenantId: new Types.ObjectId(req.user!.sub),
+      listingId: new Types.ObjectId(req.params.id),
+      interactionType: "view",
+    },
+    {
+      $inc: { count: 1 },
+      $set: { lastInteractedAt: new Date() },
+      $setOnInsert: {
+        tenantId: new Types.ObjectId(req.user!.sub),
+        listingId: new Types.ObjectId(req.params.id),
+        interactionType: "view",
+      },
+    },
+    { upsert: true }
+  );
+
+  res.status(204).send();
 });
 
 router.use(requireAuth, requireRole("landlord"));

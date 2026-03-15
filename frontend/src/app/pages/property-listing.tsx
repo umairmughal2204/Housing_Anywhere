@@ -110,6 +110,26 @@ export function PropertyListing() {
   }, [apiBase, id]);
 
   useEffect(() => {
+    if (!id || !isAuthenticated || !listing || isListingUnavailable) {
+      return;
+    }
+
+    const token = localStorage.getItem("authToken");
+    if (!token) {
+      return;
+    }
+
+    void fetch(`${apiBase}/api/listings/${id}/interactions/view`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }).catch(() => {
+      // Interaction tracking should never block listing detail experience.
+    });
+  }, [apiBase, id, isAuthenticated, isListingUnavailable, listing]);
+
+  useEffect(() => {
     const loadFavoriteState = async () => {
       if (!id || !isAuthenticated) {
         setIsFavorited(false);

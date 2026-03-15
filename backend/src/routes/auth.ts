@@ -9,6 +9,7 @@ import { UserModel } from "../models/User.js";
 import { ListingModel } from "../models/Listing.js";
 import { RentalApplicationModel } from "../models/RentalApplication.js";
 import { ConversationModel } from "../models/Conversation.js";
+import { ListingInteractionModel } from "../models/ListingInteraction.js";
 import { signAccessToken } from "../utils/jwt.js";
 import { requireAuth } from "../middleware/auth.js";
 
@@ -117,6 +118,11 @@ function toRecommendedListing(listing: {
     createdAt: listing.createdAt,
     utilitiesIncluded: listing.utilitiesIncluded ?? false,
   };
+}
+
+function sortListingsByReferenceOrder<T extends { _id: unknown }>(listings: T[], orderedIds: string[]) {
+  const listingById = new Map(listings.map((listing) => [String(listing._id), listing]));
+  return orderedIds.map((id) => listingById.get(id)).filter(Boolean) as T[];
 }
 
 function toAuthUser(user: {
@@ -442,11 +448,14 @@ router.get("/me/recommendations", requireAuth, async (req, res) => {
   const userId = req.user!.sub;
   const { limit } = parsed.data;
 
-  const [user, activeListings, applications, conversations] = await Promise.all([
+  const [user, activeListings, applications, conversations, interactions] = await Promise.all([
     UserModel.findById(userId).select("favoriteListingIds").lean(),
     ListingModel.find({ status: "active" }).lean(),
     RentalApplicationModel.find({ tenantId: userId }).select("listingId createdAt").lean(),
     ConversationModel.find({ tenantId: userId }).select("listingId createdAt").lean(),
+    ListingInteractionModel.find({ tenantId: userId, interactionType: "view" })
+      .select("listingId count lastInteractedAt")
+      .lean(),
   ]);
 
   if (!user) {
@@ -522,6 +531,18 @@ router.get("/me/recommendations", requireAuth, async (req, res) => {
     bumpAffinity(listingId, 1.3 * interactionRecency);
   }
 
+  for (const interaction of interactions) {
+    const listingId = String(interaction.listingId);
+    if (!listingById.has(listingId)) {
+      continue;
+    }
+
+    const interactionRecency = getRecencyWeight(interaction.lastInteractedAt, 90);
+    const interactionStrength = Math.min(interaction.count, 10) / 10;
+    bumpScore(listingId, 3.6 * interactionRecency + 2 * interactionStrength);
+    bumpAffinity(listingId, 2.4 * interactionRecency + 1.2 * interactionStrength);
+  }
+
   for (const listing of activeListings) {
     const listingId = String(listing._id);
     const cityBoost = cityAffinity.get(listing.city) ?? 0;
@@ -543,6 +564,37 @@ router.get("/me/recommendations", requireAuth, async (req, res) => {
     .map((listing) => toRecommendedListing(listing));
 
   res.json({ recommendations });
+});
+
+router.get("/me/recently-viewed", requireAuth, async (req, res) => {
+  const parsed = recommendationsQuerySchema.safeParse(req.query);
+  if (!parsed.success) {
+    res.status(400).json({ message: "Invalid query parameters" });
+    return;
+  }
+
+  const interactions = await ListingInteractionModel.find({
+    tenantId: req.user!.sub,
+    interactionType: "view",
+  })
+    .sort({ lastInteractedAt: -1 })
+    .limit(parsed.data.limit)
+    .select("listingId")
+    .lean();
+
+  const orderedListingIds = interactions.map((interaction) => String(interaction.listingId));
+  if (orderedListingIds.length === 0) {
+    res.json({ listings: [] });
+    return;
+  }
+
+  const listings = await ListingModel.find({
+    _id: { $in: orderedListingIds },
+    status: "active",
+  }).lean();
+
+  const orderedListings = sortListingsByReferenceOrder(listings, orderedListingIds);
+  res.json({ listings: orderedListings.map((listing) => toRecommendedListing(listing)) });
 });
 
 router.post("/me/favorites", requireAuth, async (req, res) => {

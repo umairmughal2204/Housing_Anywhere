@@ -317,15 +317,23 @@ export function Home() {
         return;
       }
 
+      const token = localStorage.getItem("authToken");
+      if (!token) {
+        setRecentlyViewed([]);
+        return;
+      }
+
       setIsLoadingListings(true);
       try {
-        const response = await fetch(`${apiBase}/api/listings`);
+        const response = await fetch(`${apiBase}/api/auth/me/recently-viewed?limit=3`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
         if (!response.ok) {
           throw new Error("Failed to load home listings");
         }
 
         const payload = (await response.json()) as { listings: HomeListing[] };
-        setRecentlyViewed(payload.listings.slice(0, 3));
+        setRecentlyViewed(payload.listings);
       } catch {
         setRecentlyViewed([]);
       } finally {
