@@ -1,4 +1,5 @@
 import { LandlordPortalLayout } from "../components/landlord-portal-layout";
+import { API_BASE } from "../config";
 import { 
   MapPin,
   Home,
@@ -42,6 +43,7 @@ interface ListingPayload {
   availableFrom: string;
   minStay: number;
   utilitiesIncluded: boolean;
+  utilitiesCost: number;
   registrationPossible: boolean;
   amenities: string[];
   houseRules: string[];
@@ -65,6 +67,7 @@ interface ListingResponse {
   availableFrom: string;
   minStay: number;
   utilitiesIncluded: boolean;
+  utilitiesCost: number;
   registrationPossible: boolean;
   amenities: string[];
   houseRules: string[];
@@ -97,7 +100,7 @@ export function LandlordAddListing() {
   const navigate = useNavigate();
   const { id } = useParams();
   const isEditMode = Boolean(id);
-  const apiBase = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:4000";
+  const apiBase = API_BASE;
   const [currentStep, setCurrentStep] = useState(1);
   const [isSaving, setIsSaving] = useState(false);
   const [isUploadingImages, setIsUploadingImages] = useState(false);
@@ -119,6 +122,7 @@ export function LandlordAddListing() {
   const [availableFrom, setAvailableFrom] = useState("");
   const [minStay, setMinStay] = useState(3);
   const [utilitiesIncluded, setUtilitiesIncluded] = useState(false);
+  const [utilitiesCost, setUtilitiesCost] = useState("");
   const [registrationPossible, setRegistrationPossible] = useState(false);
   const [selectedAmenities, setSelectedAmenities] = useState<string[]>([]);
   const [selectedRules, setSelectedRules] = useState<string[]>([]);
@@ -168,6 +172,7 @@ export function LandlordAddListing() {
         setAvailableFrom(String(listing.availableFrom).slice(0, 10));
         setMinStay(listing.minStay);
         setUtilitiesIncluded(listing.utilitiesIncluded);
+        setUtilitiesCost(String(listing.utilitiesCost ?? 0));
         setRegistrationPossible(listing.registrationPossible);
         setSelectedAmenities(listing.amenities);
         setSelectedRules(listing.houseRules);
@@ -293,6 +298,7 @@ export function LandlordAddListing() {
       availableFrom,
       minStay,
       utilitiesIncluded,
+      utilitiesCost: utilitiesIncluded ? Number(utilitiesCost || 0) : 0,
       registrationPossible,
       amenities: selectedAmenities,
       houseRules: selectedRules,
@@ -684,6 +690,26 @@ export function LandlordAddListing() {
                           <span className="text-[13px] text-neutral-black">Registration Possible</span>
                         </label>
                       </div>
+
+                      {utilitiesIncluded && (
+                        <div className="mt-[12px]">
+                          <label className="block text-[12px] font-semibold text-neutral-black mb-[6px]">
+                            Utilities cost (€)
+                          </label>
+                          <input
+                            type="number"
+                            min={0}
+                            step={0.01}
+                            value={utilitiesCost}
+                            onChange={(e) => setUtilitiesCost(e.target.value)}
+                            placeholder="e.g. 150"
+                            className="w-full px-[16px] py-[12px] bg-neutral-light-gray rounded-[10px] text-[14px] text-neutral-black placeholder:text-neutral-gray border-2 border-transparent focus:border-brand-primary focus:outline-none transition-colors"
+                          />
+                          <p className="text-[12px] text-neutral-gray mt-[6px]">
+                            This value is shown to tenants in the application cost summary.
+                          </p>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>

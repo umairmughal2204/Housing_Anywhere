@@ -2,7 +2,7 @@ import { Link, useParams, useNavigate } from "react-router";
 import { useState, useEffect } from "react";
 import { ChevronLeft, Info, ChevronDown, Shield, Check, Plus, Upload, FileText, User, LogOut } from "lucide-react";
 import { useAuth } from "../contexts/auth-context";
-import propertyImage from "../../assets/2db5a7303bce6c3d85b53a7866c4838e88cb5e61.png";
+import { API_BASE } from "../config";
 
 interface ListingSummary {
   id: string;
@@ -14,13 +14,14 @@ interface ListingSummary {
   availableFrom: string;
   images: string[];
   utilitiesIncluded: boolean;
+  utilitiesCost: number;
 }
 
 export function RentalApplication() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user, logout } = useAuth();
-  const apiBase = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:4000";
+  const apiBase = API_BASE;
   const [currentStep, setCurrentStep] = useState(1);
   const [listing, setListing] = useState<ListingSummary | null>(null);
   const [isLoadingListing, setIsLoadingListing] = useState(true);
@@ -1109,7 +1110,7 @@ export function RentalApplication() {
               {/* Property Card */}
               <div className="border border-[rgba(0,0,0,0.08)] p-[16px] mb-[24px]">
                 <div className="relative mb-[12px]">
-                  <img src={listing?.images?.[0] || propertyImage} alt="Property" className="w-full h-[120px] object-cover" />
+                  <img src={listing?.images?.[0] || "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800&q=80"} alt="Property" className="w-full h-[120px] object-cover" />
                   <div className="absolute bottom-[8px] right-[8px] w-[32px] h-[32px] bg-brand-primary rounded-full flex items-center justify-center">
                     <span className="text-white text-[12px] font-bold">S</span>
                   </div>
@@ -1211,7 +1212,11 @@ export function RentalApplication() {
                   <div className="flex items-center justify-between">
                     <span className="text-neutral-gray text-[14px]">Utilities</span>
                     <span className="text-neutral-black text-[14px] font-semibold">
-                      {listing?.utilitiesIncluded ? "Included" : "Not included"}
+                      {listing?.utilitiesIncluded
+                        ? listing.utilitiesCost > 0
+                          ? `€${listing.utilitiesCost.toFixed(2)}`
+                          : "Included"
+                        : "Not included"}
                     </span>
                   </div>
 

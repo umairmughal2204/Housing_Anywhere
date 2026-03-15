@@ -21,6 +21,7 @@ const listingSchema = new Schema(
     availableFrom: { type: Date, required: true },
     minStay: { type: Number, required: true, min: 1 },
     utilitiesIncluded: { type: Boolean, default: false },
+    utilitiesCost: { type: Number, default: 0, min: 0 },
     registrationPossible: { type: Boolean, default: false },
     amenities: { type: [String], default: [] },
     houseRules: { type: [String], default: [] },

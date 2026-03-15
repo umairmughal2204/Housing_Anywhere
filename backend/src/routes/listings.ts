@@ -33,6 +33,7 @@ const listingWriteSchema = z.object({
   availableFrom: z.string().datetime({ offset: true }).or(z.string().date()),
   minStay: z.number().int().min(1),
   utilitiesIncluded: z.boolean().optional().default(false),
+  utilitiesCost: z.number().nonnegative().optional().default(0),
   registrationPossible: z.boolean().optional().default(false),
   amenities: z.array(z.string()).optional().default([]),
   houseRules: z.array(z.string()).optional().default([]),
@@ -61,6 +62,7 @@ function toListingResponse(listing: {
   availableFrom: Date;
   minStay: number;
   utilitiesIncluded: boolean;
+  utilitiesCost: number;
   registrationPossible: boolean;
   amenities: string[];
   houseRules: string[];
@@ -87,6 +89,7 @@ function toListingResponse(listing: {
     availableFrom: listing.availableFrom,
     minStay: listing.minStay,
     utilitiesIncluded: listing.utilitiesIncluded,
+    utilitiesCost: listing.utilitiesCost,
     registrationPossible: listing.registrationPossible,
     amenities: listing.amenities,
     houseRules: listing.houseRules,
@@ -228,6 +231,7 @@ router.post("/", async (req, res) => {
     availableFrom: new Date(input.availableFrom),
     minStay: input.minStay,
     utilitiesIncluded: input.utilitiesIncluded,
+    utilitiesCost: input.utilitiesIncluded ? input.utilitiesCost : 0,
     registrationPossible: input.registrationPossible,
     amenities: input.amenities,
     houseRules: input.houseRules,
@@ -267,11 +271,14 @@ router.patch("/:id([0-9a-fA-F]{24})", async (req, res) => {
   if (updates.availableFrom !== undefined) listing.availableFrom = new Date(updates.availableFrom);
   if (updates.minStay !== undefined) listing.minStay = updates.minStay;
   if (updates.utilitiesIncluded !== undefined) listing.utilitiesIncluded = updates.utilitiesIncluded;
+  if (updates.utilitiesCost !== undefined) listing.utilitiesCost = updates.utilitiesCost;
   if (updates.registrationPossible !== undefined) listing.registrationPossible = updates.registrationPossible;
   if (updates.amenities !== undefined) listing.amenities = updates.amenities;
   if (updates.houseRules !== undefined) listing.houseRules = updates.houseRules;
   if (updates.images !== undefined) listing.images = updates.images;
   if (updates.status !== undefined) listing.status = updates.status;
+
+  if (!listing.utilitiesIncluded) listing.utilitiesCost = 0;
 
   await listing.save();
 
