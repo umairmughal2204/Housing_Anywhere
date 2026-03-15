@@ -44,7 +44,19 @@ interface FavoriteListing {
   availableFrom: string;
 }
 
-const cities = [
+interface CitySuggestion {
+  name: string;
+  country: string;
+  properties: number;
+  image?: string;
+}
+
+interface ListingCitySuggestion {
+  city: string;
+  images?: string[];
+}
+
+const cities: CitySuggestion[] = [
   {
     name: "Berlin",
     country: "Germany",
@@ -95,6 +107,76 @@ const cities = [
   },
 ];
 
+function buildCitySuggestions(listings: ListingCitySuggestion[]) {
+  const suggestionMap = new Map<string, CitySuggestion & { liveProperties: number }>();
+
+  for (const city of cities) {
+    suggestionMap.set(city.name.toLowerCase(), {
+      ...city,
+      liveProperties: 0,
+    });
+  }
+
+  for (const listing of listings) {
+    const normalizedCity = listing.city.trim();
+    if (!normalizedCity) {
+      continue;
+    }
+
+    const key = normalizedCity.toLowerCase();
+    const existing = suggestionMap.get(key);
+    const listingImage = listing.images?.[0];
+
+    if (existing) {
+      existing.liveProperties += 1;
+      if (!existing.image && listingImage) {
+        existing.image = listingImage;
+      }
+      continue;
+    }
+
+    suggestionMap.set(key, {
+      name: normalizedCity,
+      country: "Live listings",
+      properties: 0,
+      image: listingImage,
+      liveProperties: 1,
+    });
+  }
+
+  return [...suggestionMap.values()]
+    .map(({ liveProperties, ...city }) => ({
+      ...city,
+      properties: liveProperties > 0 ? liveProperties : city.properties,
+    }))
+    .sort((left, right) => left.name.localeCompare(right.name));
+}
+
+function getFilteredCities(suggestions: CitySuggestion[], query: string) {
+  const normalizedQuery = query.trim().toLowerCase();
+  const matchingCities = suggestions.filter((city) => {
+    if (!normalizedQuery) {
+      return true;
+    }
+
+    return city.name.toLowerCase().includes(normalizedQuery) ||
+      city.country.toLowerCase().includes(normalizedQuery);
+  });
+
+  return matchingCities.sort((left, right) => {
+    const leftName = left.name.toLowerCase();
+    const rightName = right.name.toLowerCase();
+    const leftStartsWith = normalizedQuery ? leftName.startsWith(normalizedQuery) : false;
+    const rightStartsWith = normalizedQuery ? rightName.startsWith(normalizedQuery) : false;
+
+    if (leftStartsWith !== rightStartsWith) {
+      return leftStartsWith ? -1 : 1;
+    }
+
+    return right.properties - left.properties || left.name.localeCompare(right.name);
+  }).slice(0, 8);
+}
+
 function toDateQueryValue(date: Date) {
   const year = date.getFullYear();
   const month = `${date.getMonth() + 1}`.padStart(2, "0");
@@ -102,28 +184,28 @@ function toDateQueryValue(date: Date) {
   return `${year}-${month}-${day}`;
 }
 
-function resolveCityQuery(query: string) {
+function resolveCityQuery(query: string, suggestions: CitySuggestion[]) {
   const normalizedQuery = query.trim().toLowerCase();
   if (!normalizedQuery) {
     return null;
   }
 
-  const exactMatch = cities.find((city) => city.name.toLowerCase() === normalizedQuery);
+  const exactMatch = suggestions.find((city) => city.name.toLowerCase() === normalizedQuery);
   if (exactMatch) {
     return exactMatch.name;
   }
 
-  const startsWithMatch = cities.find((city) => city.name.toLowerCase().startsWith(normalizedQuery));
+  const startsWithMatch = suggestions.find((city) => city.name.toLowerCase().startsWith(normalizedQuery));
   if (startsWithMatch) {
     return startsWithMatch.name;
   }
 
-  const partialNameMatch = cities.find((city) => city.name.toLowerCase().includes(normalizedQuery));
+  const partialNameMatch = suggestions.find((city) => city.name.toLowerCase().includes(normalizedQuery));
   if (partialNameMatch) {
     return partialNameMatch.name;
   }
 
-  const countryMatch = cities.find((city) => city.country.toLowerCase().includes(normalizedQuery));
+  const countryMatch = suggestions.find((city) => city.country.toLowerCase().includes(normalizedQuery));
   return countryMatch?.name ?? query.trim();
 }
 
@@ -168,10 +250,29 @@ export function Home() {
   const cityDropdownRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
+  const [citySuggestions, setCitySuggestions] = useState<CitySuggestion[]>(cities);
   const [recentlyViewed, setRecentlyViewed] = useState<HomeListing[]>([]);
   const [isLoadingListings, setIsLoadingListings] = useState(false);
   const [favorites, setFavorites] = useState<FavoriteListing[]>([]);
   const [isLoadingFavorites, setIsLoadingFavorites] = useState(false);
+
+  useEffect(() => {
+    const loadCitySuggestions = async () => {
+      try {
+        const response = await fetch(`${apiBase}/api/listings`);
+        if (!response.ok) {
+          throw new Error("Failed to load listing cities");
+        }
+
+        const payload = (await response.json()) as { listings: ListingCitySuggestion[] };
+        setCitySuggestions(buildCitySuggestions(payload.listings));
+      } catch {
+        setCitySuggestions(cities);
+      }
+    };
+
+    void loadCitySuggestions();
+  }, [apiBase]);
 
   useEffect(() => {
     const loadHomeListings = async () => {
@@ -243,7 +344,7 @@ export function Home() {
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    const resolvedCity = resolveCityQuery(searchCity);
+    const resolvedCity = resolveCityQuery(searchCity, citySuggestions);
     if (!resolvedCity) {
       return;
     }
@@ -275,10 +376,7 @@ export function Home() {
     setIsCityDropdownOpen(false);
   };
 
-  const filteredCities = cities.filter((city) =>
-    city.name.toLowerCase().includes(searchCity.toLowerCase()) ||
-    city.country.toLowerCase().includes(searchCity.toLowerCase())
-  );
+  const filteredCities = getFilteredCities(citySuggestions, searchCity);
 
   return (
     <div className="min-h-screen bg-white">
@@ -325,11 +423,17 @@ export function Home() {
                         className="w-full px-[24px] py-[16px] flex items-center gap-[16px] hover:bg-[#F7F7F9] transition-colors text-left border-b border-[rgba(0,0,0,0.04)] last:border-b-0"
                       >
                         <div className="w-[64px] h-[48px] flex-shrink-0 overflow-hidden">
-                          <img
-                            src={city.image}
-                            alt={city.name}
-                            className="w-full h-full object-cover"
-                          />
+                          {city.image ? (
+                            <img
+                              src={city.image}
+                              alt={city.name}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <div className="w-full h-full bg-[#E0F2FE] flex items-center justify-center">
+                              <MapPin className="w-[18px] h-[18px] text-[#0891B2]" />
+                            </div>
+                          )}
                         </div>
                         <div className="flex-1">
                           <div className="text-[#1A1A1A] text-[16px] font-bold mb-[2px]">
