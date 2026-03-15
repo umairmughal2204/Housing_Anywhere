@@ -251,6 +251,8 @@ export function Home() {
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
   const [citySuggestions, setCitySuggestions] = useState<CitySuggestion[]>(cities);
+  const [recommendations, setRecommendations] = useState<HomeListing[]>([]);
+  const [isLoadingRecommendations, setIsLoadingRecommendations] = useState(false);
   const [recentlyViewed, setRecentlyViewed] = useState<HomeListing[]>([]);
   const [isLoadingListings, setIsLoadingListings] = useState(false);
   const [favorites, setFavorites] = useState<FavoriteListing[]>([]);
@@ -273,6 +275,40 @@ export function Home() {
 
     void loadCitySuggestions();
   }, [apiBase]);
+
+  useEffect(() => {
+    const loadRecommendations = async () => {
+      if (!isAuthenticated) {
+        setRecommendations([]);
+        return;
+      }
+
+      const token = localStorage.getItem("authToken");
+      if (!token) {
+        setRecommendations([]);
+        return;
+      }
+
+      setIsLoadingRecommendations(true);
+      try {
+        const response = await fetch(`${apiBase}/api/auth/me/recommendations?limit=3`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!response.ok) {
+          throw new Error("Failed to load recommendations");
+        }
+
+        const payload = (await response.json()) as { recommendations: HomeListing[] };
+        setRecommendations(payload.recommendations);
+      } catch {
+        setRecommendations([]);
+      } finally {
+        setIsLoadingRecommendations(false);
+      }
+    };
+
+    void loadRecommendations();
+  }, [apiBase, isAuthenticated]);
 
   useEffect(() => {
     const loadHomeListings = async () => {
@@ -543,11 +579,12 @@ export function Home() {
             {/* Property Cards */}
             {(activeTab === "recently" || activeTab === "recommendations") && (
               <>
-                {isLoadingListings && (
+                {((activeTab === "recommendations" && isLoadingRecommendations) ||
+                  (activeTab === "recently" && isLoadingListings)) && (
                   <div className="text-[#6B6B6B] text-[14px] py-[8px]">Loading properties...</div>
                 )}
                 <div className="grid grid-cols-3 gap-[24px]">
-                  {recentlyViewed.map((property) => (
+                  {(activeTab === "recommendations" ? recommendations : recentlyViewed).map((property) => (
                     <Link
                       key={property.id}
                       to={`/listing/${property.id}`}
@@ -589,8 +626,11 @@ export function Home() {
                     </Link>
                   ))}
                 </div>
-                {!isLoadingListings && recentlyViewed.length === 0 && (
-                  <div className="text-[#6B6B6B] text-[14px] py-[8px]">No live listings available yet.</div>
+                {!isLoadingRecommendations && activeTab === "recommendations" && recommendations.length === 0 && (
+                  <div className="text-[#6B6B6B] text-[14px] py-[8px]">No recommendations available yet.</div>
+                )}
+                {!isLoadingListings && activeTab === "recently" && recentlyViewed.length === 0 && (
+                  <div className="text-[#6B6B6B] text-[14px] py-[8px]">No recently viewed listings available yet.</div>
                 )}
                 <div className="mt-[24px] flex justify-end">
                   <Link

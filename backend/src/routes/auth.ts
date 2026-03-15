@@ -8,6 +8,7 @@ import { Types } from "mongoose";
 import { UserModel } from "../models/User.js";
 import { ListingModel } from "../models/Listing.js";
 import { RentalApplicationModel } from "../models/RentalApplication.js";
+import { ConversationModel } from "../models/Conversation.js";
 import { signAccessToken } from "../utils/jwt.js";
 import { requireAuth } from "../middleware/auth.js";
 
@@ -71,6 +72,52 @@ const passwordUpdateSchema = z.object({
 const favoriteListingSchema = z.object({
   listingId: z.string().regex(/^[0-9a-fA-F]{24}$/),
 });
+
+const recommendationsQuerySchema = z.object({
+  limit: z.coerce.number().int().min(1).max(24).optional().default(6),
+});
+
+function getRecencyWeight(date: Date | string | undefined, windowDays = 90) {
+  if (!date) {
+    return 0.25;
+  }
+
+  const time = new Date(date).getTime();
+  if (Number.isNaN(time)) {
+    return 0.25;
+  }
+
+  const ageDays = (Date.now() - time) / (1000 * 60 * 60 * 24);
+  return Math.max(0.25, 1 - ageDays / windowDays);
+}
+
+function toRecommendedListing(listing: {
+  _id: unknown;
+  title: string;
+  city: string;
+  address: string;
+  area: number;
+  bedrooms: number;
+  price: number;
+  availableFrom: Date;
+  images: string[];
+  createdAt: Date;
+  utilitiesIncluded?: boolean;
+}) {
+  return {
+    id: String(listing._id),
+    title: listing.title,
+    city: listing.city,
+    address: listing.address,
+    area: listing.area,
+    bedrooms: listing.bedrooms,
+    monthlyRent: listing.price,
+    availableFrom: listing.availableFrom,
+    images: listing.images,
+    createdAt: listing.createdAt,
+    utilitiesIncluded: listing.utilitiesIncluded ?? false,
+  };
+}
 
 function toAuthUser(user: {
   _id: { toString(): string };
@@ -383,6 +430,119 @@ router.get("/me/favorites", requireAuth, async (req, res) => {
       status: listing!.status,
     })),
   });
+});
+
+router.get("/me/recommendations", requireAuth, async (req, res) => {
+  const parsed = recommendationsQuerySchema.safeParse(req.query);
+  if (!parsed.success) {
+    res.status(400).json({ message: "Invalid query parameters" });
+    return;
+  }
+
+  const userId = req.user!.sub;
+  const { limit } = parsed.data;
+
+  const [user, activeListings, applications, conversations] = await Promise.all([
+    UserModel.findById(userId).select("favoriteListingIds").lean(),
+    ListingModel.find({ status: "active" }).lean(),
+    RentalApplicationModel.find({ tenantId: userId }).select("listingId createdAt").lean(),
+    ConversationModel.find({ tenantId: userId }).select("listingId createdAt").lean(),
+  ]);
+
+  if (!user) {
+    res.status(404).json({ message: "User not found" });
+    return;
+  }
+
+  if (activeListings.length === 0) {
+    res.json({ recommendations: [] });
+    return;
+  }
+
+  const listingById = new Map(activeListings.map((listing) => [String(listing._id), listing]));
+  const maxViews = Math.max(...activeListings.map((listing) => listing.views ?? 0), 1);
+  const maxInquiries = Math.max(...activeListings.map((listing) => listing.inquiries ?? 0), 1);
+
+  const scoreByListingId = new Map<string, number>();
+  const cityAffinity = new Map<string, number>();
+  const typeAffinity = new Map<string, number>();
+
+  const bumpScore = (listingId: string, points: number) => {
+    scoreByListingId.set(listingId, (scoreByListingId.get(listingId) ?? 0) + points);
+  };
+
+  const bumpAffinity = (listingId: string, points: number) => {
+    const listing = listingById.get(listingId);
+    if (!listing) {
+      return;
+    }
+
+    cityAffinity.set(listing.city, (cityAffinity.get(listing.city) ?? 0) + points);
+    typeAffinity.set(listing.propertyType, (typeAffinity.get(listing.propertyType) ?? 0) + points);
+  };
+
+  for (const listing of activeListings) {
+    const listingId = String(listing._id);
+    const viewsScore = (listing.views ?? 0) / maxViews;
+    const inquiryScore = (listing.inquiries ?? 0) / maxInquiries;
+    const freshnessScore = getRecencyWeight(listing.createdAt, 120);
+    bumpScore(listingId, viewsScore * 1.2 + inquiryScore * 1.8 + freshnessScore * 0.8);
+  }
+
+  const favoriteIds = (user.favoriteListingIds ?? []).map((id) => String(id));
+  for (const favoriteId of favoriteIds) {
+    const listing = listingById.get(favoriteId);
+    if (!listing) {
+      continue;
+    }
+
+    bumpScore(favoriteId, 4);
+    bumpAffinity(favoriteId, 2.5);
+  }
+
+  for (const application of applications) {
+    const listingId = String(application.listingId);
+    if (!listingById.has(listingId)) {
+      continue;
+    }
+
+    const interactionRecency = getRecencyWeight(application.createdAt, 180);
+    bumpScore(listingId, 3 * interactionRecency);
+    bumpAffinity(listingId, 1.8 * interactionRecency);
+  }
+
+  for (const conversation of conversations) {
+    const listingId = String(conversation.listingId);
+    if (!listingById.has(listingId)) {
+      continue;
+    }
+
+    const interactionRecency = getRecencyWeight(conversation.createdAt, 180);
+    bumpScore(listingId, 2.2 * interactionRecency);
+    bumpAffinity(listingId, 1.3 * interactionRecency);
+  }
+
+  for (const listing of activeListings) {
+    const listingId = String(listing._id);
+    const cityBoost = cityAffinity.get(listing.city) ?? 0;
+    const typeBoost = typeAffinity.get(listing.propertyType) ?? 0;
+    bumpScore(listingId, cityBoost * 0.8 + typeBoost * 0.65);
+  }
+
+  const recommendations = [...activeListings]
+    .sort((left, right) => {
+      const leftScore = scoreByListingId.get(String(left._id)) ?? 0;
+      const rightScore = scoreByListingId.get(String(right._id)) ?? 0;
+      if (rightScore !== leftScore) {
+        return rightScore - leftScore;
+      }
+
+      return right.createdAt.getTime() - left.createdAt.getTime();
+    })
+    .slice(0, limit)
+    .map((listing) => toRecommendedListing(listing));
+
+  res.json({ recommendations });
 });
 
 router.post("/me/favorites", requireAuth, async (req, res) => {
