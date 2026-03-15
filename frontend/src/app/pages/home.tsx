@@ -95,6 +95,38 @@ const cities = [
   },
 ];
 
+function toDateQueryValue(date: Date) {
+  const year = date.getFullYear();
+  const month = `${date.getMonth() + 1}`.padStart(2, "0");
+  const day = `${date.getDate()}`.padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function resolveCityQuery(query: string) {
+  const normalizedQuery = query.trim().toLowerCase();
+  if (!normalizedQuery) {
+    return null;
+  }
+
+  const exactMatch = cities.find((city) => city.name.toLowerCase() === normalizedQuery);
+  if (exactMatch) {
+    return exactMatch.name;
+  }
+
+  const startsWithMatch = cities.find((city) => city.name.toLowerCase().startsWith(normalizedQuery));
+  if (startsWithMatch) {
+    return startsWithMatch.name;
+  }
+
+  const partialNameMatch = cities.find((city) => city.name.toLowerCase().includes(normalizedQuery));
+  if (partialNameMatch) {
+    return partialNameMatch.name;
+  }
+
+  const countryMatch = cities.find((city) => city.country.toLowerCase().includes(normalizedQuery));
+  return countryMatch?.name ?? query.trim();
+}
+
 // Counter Animation Component
 function Counter({ value, suffix = "", prefix = "", duration = 2 }: { value: number; suffix?: string; prefix?: string; duration?: number }) {
   const ref = useRef<HTMLSpanElement>(null);
@@ -211,9 +243,24 @@ export function Home() {
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    if (searchCity.trim()) {
-      navigate(`/s/${searchCity.toLowerCase()}`);
+    const resolvedCity = resolveCityQuery(searchCity);
+    if (!resolvedCity) {
+      return;
     }
+
+    const nextSearchParams = new URLSearchParams();
+    if (startDate) {
+      nextSearchParams.set("startDate", toDateQueryValue(startDate));
+    }
+    if (endDate) {
+      nextSearchParams.set("endDate", toDateQueryValue(endDate));
+    }
+
+    setSearchCity(resolvedCity);
+    navigate({
+      pathname: `/s/${resolvedCity.toLowerCase()}`,
+      search: nextSearchParams.toString(),
+    });
   };
 
   const formatDateRange = () => {
@@ -258,7 +305,10 @@ export function Home() {
                     type="text"
                     placeholder="Where will you go?"
                     value={searchCity}
-                    onChange={(e) => setSearchCity(e.target.value)}
+                    onChange={(e) => {
+                      setSearchCity(e.target.value);
+                      setIsCityDropdownOpen(true);
+                    }}
                     onFocus={() => setIsCityDropdownOpen(true)}
                     className="flex-1 outline-none text-[#1A1A1A] text-[16px] placeholder:text-[#6B6B6B] bg-transparent py-[20px]"
                   />

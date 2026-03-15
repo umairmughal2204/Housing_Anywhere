@@ -1,4 +1,4 @@
-import { useParams, Link, useNavigate } from "react-router";
+import { useParams, Link, useNavigate, useSearchParams } from "react-router";
 import { Header } from "../components/header";
 import { Footer } from "../components/footer";
 import { 
@@ -12,7 +12,7 @@ import {
   SlidersHorizontal,
   Map
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 interface ListingItem {
   id: string;
@@ -22,21 +22,111 @@ interface ListingItem {
   bedrooms: number;
   monthlyRent: number;
   availableFrom: string;
+  minStay: number;
   images: string[];
+}
+
+function parseFilterDate(value: string | null) {
+  if (!value) {
+    return null;
+  }
+
+  const parsedDate = new Date(`${value}T00:00:00`);
+  return Number.isNaN(parsedDate.getTime()) ? null : parsedDate;
+}
+
+function formatDateLabel(date: Date | null) {
+  if (!date) {
+    return null;
+  }
+
+  return date.toLocaleDateString("en-GB", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+}
+
+function getRequestedStayLengthLabel(startDate: Date | null, endDate: Date | null) {
+  if (!startDate || !endDate || endDate <= startDate) {
+    return null;
+  }
+
+  const millisecondsPerDay = 1000 * 60 * 60 * 24;
+  const dayCount = Math.ceil((endDate.getTime() - startDate.getTime()) / millisecondsPerDay);
+  if (dayCount < 28) {
+    return `${dayCount} day${dayCount === 1 ? "" : "s"}`;
+  }
+
+  const monthCount = Math.max(1, Math.round(dayCount / 30));
+  return `${monthCount} month${monthCount === 1 ? "" : "s"}`;
+}
+
+function getRequestedStayMonths(startDate: Date | null, endDate: Date | null) {
+  if (!startDate || !endDate || endDate <= startDate) {
+    return null;
+  }
+
+  const millisecondsPerDay = 1000 * 60 * 60 * 24;
+  const dayCount = Math.ceil((endDate.getTime() - startDate.getTime()) / millisecondsPerDay);
+  return Math.max(1, Math.ceil(dayCount / 30));
 }
 
 export function SearchResults() {
   const { city } = useParams();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const apiBase = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:4000";
   const [viewMode, setViewMode] = useState<"list" | "map">("list");
   const [priceOpen, setPriceOpen] = useState(false);
   const [propertyTypeOpen, setPropertyTypeOpen] = useState(false);
   const [neighborhoodsOpen, setNeighborhoodsOpen] = useState(false);
-  const [activeFilters, setActiveFilters] = useState(3);
   const [activeTab, setActiveTab] = useState<"anyone" | "students" | "professionals" | "families">("anyone");
   const [properties, setProperties] = useState<ListingItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const requestedStartDate = useMemo(() => parseFilterDate(searchParams.get("startDate")), [searchParams]);
+  const requestedEndDate = useMemo(() => parseFilterDate(searchParams.get("endDate")), [searchParams]);
+  const requestedStayMonths = useMemo(
+    () => getRequestedStayMonths(requestedStartDate, requestedEndDate),
+    [requestedEndDate, requestedStartDate],
+  );
+  const filteredProperties = useMemo(() => {
+    return properties.filter((property) => {
+      if (!requestedStartDate) {
+        return true;
+      }
+
+      const availableFromDate = new Date(property.availableFrom);
+      if (Number.isNaN(availableFromDate.getTime())) {
+        return false;
+      }
+
+      if (availableFromDate > requestedStartDate) {
+        return false;
+      }
+
+      if (requestedStayMonths !== null && property.minStay > requestedStayMonths) {
+        return false;
+      }
+
+      return true;
+    });
+  }, [properties, requestedStartDate, requestedStayMonths]);
+  const activeFilters = requestedStartDate || requestedEndDate ? 1 : 0;
+  const dateRangeLabel = useMemo(() => {
+    const startLabel = formatDateLabel(requestedStartDate);
+    const endLabel = formatDateLabel(requestedEndDate);
+
+    if (startLabel && endLabel) {
+      return `${startLabel} - ${endLabel}`;
+    }
+
+    return startLabel ?? endLabel ?? "Flexible dates";
+  }, [requestedEndDate, requestedStartDate]);
+  const stayLengthLabel = useMemo(
+    () => getRequestedStayLengthLabel(requestedStartDate, requestedEndDate),
+    [requestedEndDate, requestedStartDate],
+  );
 
   useEffect(() => {
     const loadListings = async () => {
@@ -71,8 +161,8 @@ export function SearchResults() {
           <div className="flex items-center gap-[16px] py-[16px]">
             {/* Date Display */}
             <div className="flex items-center gap-[8px] text-[#1A1A1A] text-[14px]">
-              <span className="font-semibold">9 Mar – 1 Jun 2026</span>
-              <span className="text-[#6B6B6B]">(1 week)</span>
+              <span className="font-semibold">{dateRangeLabel}</span>
+              {stayLengthLabel && <span className="text-[#6B6B6B]">({stayLengthLabel})</span>}
             </div>
 
             {/* Divider */}
@@ -115,9 +205,11 @@ export function SearchResults() {
             <button className="flex items-center gap-[8px] px-[16px] py-[8px] border border-[rgba(0,0,0,0.08)] hover:border-[rgba(0,0,0,0.16)] transition-colors">
               <SlidersHorizontal className="w-[16px] h-[16px] text-[#1A1A1A]" />
               <span className="text-[#1A1A1A] text-[14px] font-semibold">All filters</span>
-              <div className="w-[20px] h-[20px] rounded-full bg-[#1A1A1A] flex items-center justify-center">
-                <span className="text-white text-[11px] font-bold">{activeFilters}</span>
-              </div>
+              {activeFilters > 0 && (
+                <div className="w-[20px] h-[20px] rounded-full bg-[#1A1A1A] flex items-center justify-center">
+                  <span className="text-white text-[11px] font-bold">{activeFilters}</span>
+                </div>
+              )}
             </button>
 
             {/* Spacer */}
@@ -196,7 +288,7 @@ export function SearchResults() {
         <div className="max-w-[1440px] mx-auto px-[32px] py-[24px]">
           <div className="flex items-center justify-between">
             <h1 className="text-[#1A1A1A] text-[20px] font-semibold">
-              {properties.length} rooms, studios and apartments for rent in {city ? city.charAt(0).toUpperCase() + city.slice(1) : "your selected city"}
+              {filteredProperties.length} rooms, studios and apartments for rent in {city ? city.charAt(0).toUpperCase() + city.slice(1) : "your selected city"}
             </h1>
 
             <div className="flex items-center gap-[8px]">
@@ -231,7 +323,7 @@ export function SearchResults() {
       <div className="bg-white">
         <div className="max-w-[1440px] mx-auto px-[32px] py-[32px]">
           <div className="grid grid-cols-4 gap-[24px]">
-            {properties.map((property) => (
+            {filteredProperties.map((property) => (
               <div
                 key={property.id}
                 onClick={() => navigate(`/property/${property.id}`)}
@@ -316,8 +408,12 @@ export function SearchResults() {
               </div>
             ))}
           </div>
-          {!isLoading && properties.length === 0 && (
-            <div className="text-center text-[#6B6B6B] text-[14px] py-[40px]">No live listings found for this city yet.</div>
+          {!isLoading && filteredProperties.length === 0 && (
+            <div className="text-center text-[#6B6B6B] text-[14px] py-[40px]">
+              {requestedStartDate
+                ? "No live listings match the selected dates yet."
+                : "No live listings found for this city yet."}
+            </div>
           )}
         </div>
       </div>
