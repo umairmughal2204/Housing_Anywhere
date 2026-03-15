@@ -1,8 +1,10 @@
 import { useParams, Link, useNavigate, useSearchParams } from "react-router";
 import { Header } from "../components/header";
 import { Footer } from "../components/footer";
+import { DatePicker } from "../components/date-picker";
 import { 
   ChevronDown,
+  Calendar,
   MapPin,
   Users,
   Home as HomeIcon,
@@ -18,12 +20,23 @@ interface ListingItem {
   id: string;
   title: string;
   city: string;
+  address: string;
   area: number;
   bedrooms: number;
   monthlyRent: number;
   availableFrom: string;
   minStay: number;
+  propertyType: "apartment" | "studio" | "house" | "room";
   images: string[];
+}
+
+const PROPERTY_TYPES: Array<ListingItem["propertyType"]> = ["apartment", "studio", "house", "room"];
+
+function toDateQueryValue(date: Date) {
+  const year = date.getFullYear();
+  const month = `${date.getMonth() + 1}`.padStart(2, "0");
+  const day = `${date.getDate()}`.padStart(2, "0");
+  return `${year}-${month}-${day}`;
 }
 
 function parseFilterDate(value: string | null) {
@@ -72,47 +85,173 @@ function getRequestedStayMonths(startDate: Date | null, endDate: Date | null) {
   return Math.max(1, Math.ceil(dayCount / 30));
 }
 
+function parseNumberParam(value: string | null) {
+  if (!value) {
+    return null;
+  }
+
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function parseDelimitedParam(value: string | null) {
+  if (!value) {
+    return [];
+  }
+
+  return value.split(",").map((item) => item.trim()).filter(Boolean);
+}
+
+function serializeDelimitedParam(values: string[]) {
+  return values.join(",");
+}
+
+function extractNeighborhood(property: ListingItem) {
+  const firstAddressToken = property.address?.split(",")[0]?.trim();
+  if (firstAddressToken && firstAddressToken.length > 0) {
+    return firstAddressToken;
+  }
+
+  return property.city;
+}
+
 export function SearchResults() {
   const { city } = useParams();
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const apiBase = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:4000";
   const [viewMode, setViewMode] = useState<"list" | "map">("list");
+  const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
   const [priceOpen, setPriceOpen] = useState(false);
   const [propertyTypeOpen, setPropertyTypeOpen] = useState(false);
   const [neighborhoodsOpen, setNeighborhoodsOpen] = useState(false);
+  const [allFiltersOpen, setAllFiltersOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<"anyone" | "students" | "professionals" | "families">("anyone");
   const [properties, setProperties] = useState<ListingItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [minPriceDraft, setMinPriceDraft] = useState("");
+  const [maxPriceDraft, setMaxPriceDraft] = useState("");
+  const [minBedroomsDraft, setMinBedroomsDraft] = useState("");
   const requestedStartDate = useMemo(() => parseFilterDate(searchParams.get("startDate")), [searchParams]);
   const requestedEndDate = useMemo(() => parseFilterDate(searchParams.get("endDate")), [searchParams]);
+  const minPrice = useMemo(() => parseNumberParam(searchParams.get("minPrice")), [searchParams]);
+  const maxPrice = useMemo(() => parseNumberParam(searchParams.get("maxPrice")), [searchParams]);
+  const minBedrooms = useMemo(() => parseNumberParam(searchParams.get("minBedrooms")), [searchParams]);
+  const selectedPropertyTypes = useMemo(
+    () => new Set(parseDelimitedParam(searchParams.get("types"))),
+    [searchParams],
+  );
+  const selectedNeighborhoods = useMemo(
+    () => new Set(parseDelimitedParam(searchParams.get("neighborhoods"))),
+    [searchParams],
+  );
   const requestedStayMonths = useMemo(
     () => getRequestedStayMonths(requestedStartDate, requestedEndDate),
     [requestedEndDate, requestedStartDate],
   );
+  const neighborhoodOptions = useMemo(() => {
+    const uniqueNeighborhoods = new Set<string>();
+    for (const property of properties) {
+      uniqueNeighborhoods.add(extractNeighborhood(property));
+    }
+
+    return [...uniqueNeighborhoods].sort((left, right) => left.localeCompare(right));
+  }, [properties]);
+
+  useEffect(() => {
+    setMinPriceDraft(minPrice !== null ? String(minPrice) : "");
+    setMaxPriceDraft(maxPrice !== null ? String(maxPrice) : "");
+    setMinBedroomsDraft(minBedrooms !== null ? String(minBedrooms) : "");
+  }, [maxPrice, minBedrooms, minPrice]);
+
+  const updateSearchFilters = (nextValues: Record<string, string | number | null>) => {
+    const nextParams = new URLSearchParams(searchParams);
+    for (const [key, value] of Object.entries(nextValues)) {
+      if (value === null || value === "") {
+        nextParams.delete(key);
+        continue;
+      }
+
+      nextParams.set(key, String(value));
+    }
+
+    setSearchParams(nextParams);
+  };
+
+  const clearAllFilters = () => {
+    const nextParams = new URLSearchParams(searchParams);
+    ["startDate", "endDate", "minPrice", "maxPrice", "types", "neighborhoods", "minBedrooms"].forEach((key) => {
+      nextParams.delete(key);
+    });
+    setSearchParams(nextParams);
+    setPriceOpen(false);
+    setPropertyTypeOpen(false);
+    setNeighborhoodsOpen(false);
+    setAllFiltersOpen(false);
+    setIsDatePickerOpen(false);
+  };
+
   const filteredProperties = useMemo(() => {
     return properties.filter((property) => {
       if (!requestedStartDate) {
-        return true;
+        // no-op: keep evaluating the rest of active filters
+      } else {
+        const availableFromDate = new Date(property.availableFrom);
+        if (Number.isNaN(availableFromDate.getTime())) {
+          return false;
+        }
+
+        if (availableFromDate > requestedStartDate) {
+          return false;
+        }
+
+        if (requestedStayMonths !== null && property.minStay > requestedStayMonths) {
+          return false;
+        }
       }
 
-      const availableFromDate = new Date(property.availableFrom);
-      if (Number.isNaN(availableFromDate.getTime())) {
+      if (minPrice !== null && property.monthlyRent < minPrice) {
         return false;
       }
 
-      if (availableFromDate > requestedStartDate) {
+      if (maxPrice !== null && property.monthlyRent > maxPrice) {
         return false;
       }
 
-      if (requestedStayMonths !== null && property.minStay > requestedStayMonths) {
+      if (minBedrooms !== null && property.bedrooms < minBedrooms) {
+        return false;
+      }
+
+      if (selectedPropertyTypes.size > 0 && !selectedPropertyTypes.has(property.propertyType)) {
+        return false;
+      }
+
+      const propertyNeighborhood = extractNeighborhood(property);
+      if (selectedNeighborhoods.size > 0 && !selectedNeighborhoods.has(propertyNeighborhood)) {
         return false;
       }
 
       return true;
     });
-  }, [properties, requestedStartDate, requestedStayMonths]);
-  const activeFilters = requestedStartDate || requestedEndDate ? 1 : 0;
+  }, [
+    maxPrice,
+    minBedrooms,
+    minPrice,
+    properties,
+    requestedStartDate,
+    requestedStayMonths,
+    selectedNeighborhoods,
+    selectedPropertyTypes,
+  ]);
+  const activeFilters = useMemo(() => {
+    let count = 0;
+    if (requestedStartDate || requestedEndDate) count += 1;
+    if (minPrice !== null || maxPrice !== null) count += 1;
+    if (selectedPropertyTypes.size > 0) count += 1;
+    if (selectedNeighborhoods.size > 0) count += 1;
+    if (minBedrooms !== null) count += 1;
+    return count;
+  }, [maxPrice, minBedrooms, minPrice, requestedEndDate, requestedStartDate, selectedNeighborhoods.size, selectedPropertyTypes.size]);
   const dateRangeLabel = useMemo(() => {
     const startLabel = formatDateLabel(requestedStartDate);
     const endLabel = formatDateLabel(requestedEndDate);
@@ -127,6 +266,21 @@ export function SearchResults() {
     () => getRequestedStayLengthLabel(requestedStartDate, requestedEndDate),
     [requestedEndDate, requestedStartDate],
   );
+  const priceLabel = useMemo(() => {
+    if (minPrice !== null && maxPrice !== null) {
+      return `€${minPrice} - €${maxPrice}`;
+    }
+
+    if (minPrice !== null) {
+      return `From €${minPrice}`;
+    }
+
+    if (maxPrice !== null) {
+      return `Up to €${maxPrice}`;
+    }
+
+    return "Price";
+  }, [maxPrice, minPrice]);
   const cityLabel = city ? city.charAt(0).toUpperCase() + city.slice(1) : "All cities";
 
   useEffect(() => {
@@ -161,9 +315,29 @@ export function SearchResults() {
           {/* Top Filter Row */}
           <div className="flex items-center gap-[16px] py-[16px]">
             {/* Date Display */}
-            <div className="flex items-center gap-[8px] text-[#1A1A1A] text-[14px]">
-              <span className="font-semibold">{dateRangeLabel}</span>
-              {stayLengthLabel && <span className="text-[#6B6B6B]">({stayLengthLabel})</span>}
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setIsDatePickerOpen((value) => !value)}
+                className="flex items-center gap-[8px] text-[#1A1A1A] text-[14px] px-[12px] py-[8px] border border-[rgba(0,0,0,0.08)] hover:border-[rgba(0,0,0,0.16)] transition-colors"
+              >
+                <Calendar className="w-[16px] h-[16px]" />
+                <span className="font-semibold">{dateRangeLabel}</span>
+                {stayLengthLabel && <span className="text-[#6B6B6B]">({stayLengthLabel})</span>}
+              </button>
+              <DatePicker
+                isOpen={isDatePickerOpen}
+                onClose={() => setIsDatePickerOpen(false)}
+                startDate={requestedStartDate}
+                endDate={requestedEndDate}
+                onDateChange={(start, end) => {
+                  updateSearchFilters({
+                    startDate: start ? toDateQueryValue(start) : null,
+                    endDate: end ? toDateQueryValue(end) : null,
+                  });
+                  setIsDatePickerOpen(false);
+                }}
+              />
             </div>
 
             {/* Divider */}
@@ -175,9 +349,60 @@ export function SearchResults() {
                 onClick={() => setPriceOpen(!priceOpen)}
                 className="flex items-center gap-[8px] px-[16px] py-[8px] border border-[rgba(0,0,0,0.08)] hover:border-[rgba(0,0,0,0.16)] transition-colors"
               >
-                <span className="text-[#1A1A1A] text-[14px] font-semibold">Price</span>
+                <span className="text-[#1A1A1A] text-[14px] font-semibold">{priceLabel}</span>
                 <ChevronDown className="w-[16px] h-[16px] text-[#6B6B6B]" />
               </button>
+              {priceOpen && (
+                <div className="absolute top-full left-0 mt-[8px] w-[260px] bg-white border border-[rgba(0,0,0,0.08)] shadow-[0_8px_32px_rgba(0,0,0,0.12)] p-[16px] z-50">
+                  <div className="text-[13px] font-semibold text-[#1A1A1A] mb-[12px]">Monthly rent</div>
+                  <div className="flex items-center gap-[8px] mb-[12px]">
+                    <input
+                      type="number"
+                      min={0}
+                      placeholder="Min"
+                      value={minPriceDraft}
+                      onChange={(event) => setMinPriceDraft(event.target.value)}
+                      className="w-full border border-[rgba(0,0,0,0.12)] px-[10px] py-[8px] text-[13px] outline-none"
+                    />
+                    <span className="text-[#6B6B6B]">-</span>
+                    <input
+                      type="number"
+                      min={0}
+                      placeholder="Max"
+                      value={maxPriceDraft}
+                      onChange={(event) => setMaxPriceDraft(event.target.value)}
+                      className="w-full border border-[rgba(0,0,0,0.12)] px-[10px] py-[8px] text-[13px] outline-none"
+                    />
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setMinPriceDraft("");
+                        setMaxPriceDraft("");
+                        updateSearchFilters({ minPrice: null, maxPrice: null });
+                        setPriceOpen(false);
+                      }}
+                      className="text-[12px] font-semibold text-[#6B6B6B] hover:text-[#1A1A1A]"
+                    >
+                      Clear
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        updateSearchFilters({
+                          minPrice: minPriceDraft.trim() ? Number(minPriceDraft) : null,
+                          maxPrice: maxPriceDraft.trim() ? Number(maxPriceDraft) : null,
+                        });
+                        setPriceOpen(false);
+                      }}
+                      className="px-[12px] py-[6px] bg-[#1A1A1A] text-white text-[12px] font-semibold"
+                    >
+                      Apply
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Property Type Dropdown */}
@@ -186,9 +411,38 @@ export function SearchResults() {
                 onClick={() => setPropertyTypeOpen(!propertyTypeOpen)}
                 className="flex items-center gap-[8px] px-[16px] py-[8px] border border-[rgba(0,0,0,0.08)] hover:border-[rgba(0,0,0,0.16)] transition-colors"
               >
-                <span className="text-[#1A1A1A] text-[14px] font-semibold">Property type</span>
+                <span className="text-[#1A1A1A] text-[14px] font-semibold">
+                  {selectedPropertyTypes.size > 0 ? `Property type (${selectedPropertyTypes.size})` : "Property type"}
+                </span>
                 <ChevronDown className="w-[16px] h-[16px] text-[#6B6B6B]" />
               </button>
+              {propertyTypeOpen && (
+                <div className="absolute top-full left-0 mt-[8px] w-[240px] bg-white border border-[rgba(0,0,0,0.08)] shadow-[0_8px_32px_rgba(0,0,0,0.12)] p-[12px] z-50">
+                  {PROPERTY_TYPES.map((type) => {
+                    const checked = selectedPropertyTypes.has(type);
+                    return (
+                      <label key={type} className="flex items-center gap-[8px] px-[8px] py-[6px] text-[13px] text-[#1A1A1A] cursor-pointer hover:bg-[#F7F7F9]">
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          onChange={() => {
+                            const nextTypes = new Set(selectedPropertyTypes);
+                            if (nextTypes.has(type)) {
+                              nextTypes.delete(type);
+                            } else {
+                              nextTypes.add(type);
+                            }
+                            updateSearchFilters({
+                              types: nextTypes.size > 0 ? serializeDelimitedParam([...nextTypes]) : null,
+                            });
+                          }}
+                        />
+                        <span className="capitalize">{type}</span>
+                      </label>
+                    );
+                  })}
+                </div>
+              )}
             </div>
 
             {/* Neighborhoods Dropdown */}
@@ -197,21 +451,92 @@ export function SearchResults() {
                 onClick={() => setNeighborhoodsOpen(!neighborhoodsOpen)}
                 className="flex items-center gap-[8px] px-[16px] py-[8px] border border-[rgba(0,0,0,0.08)] hover:border-[rgba(0,0,0,0.16)] transition-colors"
               >
-                <span className="text-[#1A1A1A] text-[14px] font-semibold">Neighborhoods</span>
+                <span className="text-[#1A1A1A] text-[14px] font-semibold">
+                  {selectedNeighborhoods.size > 0 ? `Neighborhoods (${selectedNeighborhoods.size})` : "Neighborhoods"}
+                </span>
                 <ChevronDown className="w-[16px] h-[16px] text-[#6B6B6B]" />
               </button>
+              {neighborhoodsOpen && (
+                <div className="absolute top-full left-0 mt-[8px] w-[280px] max-h-[320px] overflow-y-auto bg-white border border-[rgba(0,0,0,0.08)] shadow-[0_8px_32px_rgba(0,0,0,0.12)] p-[12px] z-50">
+                  {neighborhoodOptions.length === 0 && (
+                    <div className="text-[13px] text-[#6B6B6B] px-[8px] py-[6px]">No neighborhoods available yet.</div>
+                  )}
+                  {neighborhoodOptions.map((neighborhood) => {
+                    const checked = selectedNeighborhoods.has(neighborhood);
+                    return (
+                      <label key={neighborhood} className="flex items-center gap-[8px] px-[8px] py-[6px] text-[13px] text-[#1A1A1A] cursor-pointer hover:bg-[#F7F7F9]">
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          onChange={() => {
+                            const nextNeighborhoods = new Set(selectedNeighborhoods);
+                            if (nextNeighborhoods.has(neighborhood)) {
+                              nextNeighborhoods.delete(neighborhood);
+                            } else {
+                              nextNeighborhoods.add(neighborhood);
+                            }
+                            updateSearchFilters({
+                              neighborhoods: nextNeighborhoods.size > 0 ? serializeDelimitedParam([...nextNeighborhoods]) : null,
+                            });
+                          }}
+                        />
+                        <span>{neighborhood}</span>
+                      </label>
+                    );
+                  })}
+                </div>
+              )}
             </div>
 
             {/* All Filters Button */}
-            <button className="flex items-center gap-[8px] px-[16px] py-[8px] border border-[rgba(0,0,0,0.08)] hover:border-[rgba(0,0,0,0.16)] transition-colors">
-              <SlidersHorizontal className="w-[16px] h-[16px] text-[#1A1A1A]" />
-              <span className="text-[#1A1A1A] text-[14px] font-semibold">All filters</span>
-              {activeFilters > 0 && (
-                <div className="w-[20px] h-[20px] rounded-full bg-[#1A1A1A] flex items-center justify-center">
-                  <span className="text-white text-[11px] font-bold">{activeFilters}</span>
+            <div className="relative">
+              <button
+                onClick={() => setAllFiltersOpen(!allFiltersOpen)}
+                className="flex items-center gap-[8px] px-[16px] py-[8px] border border-[rgba(0,0,0,0.08)] hover:border-[rgba(0,0,0,0.16)] transition-colors"
+              >
+                <SlidersHorizontal className="w-[16px] h-[16px] text-[#1A1A1A]" />
+                <span className="text-[#1A1A1A] text-[14px] font-semibold">All filters</span>
+                {activeFilters > 0 && (
+                  <div className="w-[20px] h-[20px] rounded-full bg-[#1A1A1A] flex items-center justify-center">
+                    <span className="text-white text-[11px] font-bold">{activeFilters}</span>
+                  </div>
+                )}
+              </button>
+              {allFiltersOpen && (
+                <div className="absolute top-full left-0 mt-[8px] w-[300px] bg-white border border-[rgba(0,0,0,0.08)] shadow-[0_8px_32px_rgba(0,0,0,0.12)] p-[16px] z-50">
+                  <div className="text-[13px] font-semibold text-[#1A1A1A] mb-[8px]">Minimum bedrooms</div>
+                  <input
+                    type="number"
+                    min={0}
+                    value={minBedroomsDraft}
+                    onChange={(event) => setMinBedroomsDraft(event.target.value)}
+                    placeholder="e.g. 2"
+                    className="w-full border border-[rgba(0,0,0,0.12)] px-[10px] py-[8px] text-[13px] outline-none mb-[12px]"
+                  />
+                  <div className="flex items-center justify-between">
+                    <button
+                      type="button"
+                      onClick={clearAllFilters}
+                      className="text-[12px] font-semibold text-[#6B6B6B] hover:text-[#1A1A1A]"
+                    >
+                      Clear all
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        updateSearchFilters({
+                          minBedrooms: minBedroomsDraft.trim() ? Number(minBedroomsDraft) : null,
+                        });
+                        setAllFiltersOpen(false);
+                      }}
+                      className="px-[12px] py-[6px] bg-[#1A1A1A] text-white text-[12px] font-semibold"
+                    >
+                      Apply
+                    </button>
+                  </div>
                 </div>
               )}
-            </button>
+            </div>
 
             {/* Spacer */}
             <div className="flex-1" />
@@ -411,7 +736,9 @@ export function SearchResults() {
           </div>
           {!isLoading && filteredProperties.length === 0 && (
             <div className="text-center text-[#6B6B6B] text-[14px] py-[40px]">
-              {requestedStartDate
+              {activeFilters > 0
+                ? "No listings match your current filters."
+                : requestedStartDate
                 ? "No live listings match the selected dates yet."
                 : "No live listings found for this city yet."}
             </div>
