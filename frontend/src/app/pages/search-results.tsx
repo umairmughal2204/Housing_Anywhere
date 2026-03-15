@@ -1,7 +1,6 @@
 import { useParams, Link, useNavigate, useSearchParams } from "react-router";
 import { Header } from "../components/header";
 import { Footer } from "../components/footer";
-import { DatePicker } from "../components/date-picker";
 import { 
   ChevronDown,
   Calendar,
@@ -12,9 +11,10 @@ import {
   Bell,
   Star,
   SlidersHorizontal,
+  X,
   Map
 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 interface ListingItem {
   id: string;
@@ -121,7 +121,7 @@ export function SearchResults() {
   const [searchParams, setSearchParams] = useSearchParams();
   const apiBase = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:4000";
   const [viewMode, setViewMode] = useState<"list" | "map">("list");
-  const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
+  const [dateOpen, setDateOpen] = useState(false);
   const [priceOpen, setPriceOpen] = useState(false);
   const [propertyTypeOpen, setPropertyTypeOpen] = useState(false);
   const [neighborhoodsOpen, setNeighborhoodsOpen] = useState(false);
@@ -132,8 +132,11 @@ export function SearchResults() {
   const [minPriceDraft, setMinPriceDraft] = useState("");
   const [maxPriceDraft, setMaxPriceDraft] = useState("");
   const [minBedroomsDraft, setMinBedroomsDraft] = useState("");
+  const filtersRef = useRef<HTMLDivElement>(null);
   const requestedStartDate = useMemo(() => parseFilterDate(searchParams.get("startDate")), [searchParams]);
   const requestedEndDate = useMemo(() => parseFilterDate(searchParams.get("endDate")), [searchParams]);
+  const startDateValue = searchParams.get("startDate") ?? "";
+  const endDateValue = searchParams.get("endDate") ?? "";
   const minPrice = useMemo(() => parseNumberParam(searchParams.get("minPrice")), [searchParams]);
   const maxPrice = useMemo(() => parseNumberParam(searchParams.get("maxPrice")), [searchParams]);
   const minBedrooms = useMemo(() => parseNumberParam(searchParams.get("minBedrooms")), [searchParams]);
@@ -178,6 +181,30 @@ export function SearchResults() {
     setSearchParams(nextParams);
   };
 
+  const closeAllPanels = () => {
+    setDateOpen(false);
+    setPriceOpen(false);
+    setPropertyTypeOpen(false);
+    setNeighborhoodsOpen(false);
+    setAllFiltersOpen(false);
+  };
+
+  const togglePanel = (panel: "date" | "price" | "propertyType" | "neighborhoods" | "all") => {
+    const nextOpen = {
+      date: panel === "date" ? !dateOpen : false,
+      price: panel === "price" ? !priceOpen : false,
+      propertyType: panel === "propertyType" ? !propertyTypeOpen : false,
+      neighborhoods: panel === "neighborhoods" ? !neighborhoodsOpen : false,
+      all: panel === "all" ? !allFiltersOpen : false,
+    };
+
+    setDateOpen(nextOpen.date);
+    setPriceOpen(nextOpen.price);
+    setPropertyTypeOpen(nextOpen.propertyType);
+    setNeighborhoodsOpen(nextOpen.neighborhoods);
+    setAllFiltersOpen(nextOpen.all);
+  };
+
   const clearAllFilters = () => {
     const nextParams = new URLSearchParams(searchParams);
     ["startDate", "endDate", "minPrice", "maxPrice", "types", "neighborhoods", "minBedrooms"].forEach((key) => {
@@ -188,8 +215,24 @@ export function SearchResults() {
     setPropertyTypeOpen(false);
     setNeighborhoodsOpen(false);
     setAllFiltersOpen(false);
-    setIsDatePickerOpen(false);
+    setDateOpen(false);
   };
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (filtersRef.current && !filtersRef.current.contains(event.target as Node)) {
+        closeAllPanels();
+      }
+    };
+
+    if (dateOpen || priceOpen || propertyTypeOpen || neighborhoodsOpen || allFiltersOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [allFiltersOpen, dateOpen, neighborhoodsOpen, priceOpen, propertyTypeOpen]);
 
   const filteredProperties = useMemo(() => {
     return properties.filter((property) => {
@@ -282,6 +325,61 @@ export function SearchResults() {
     return "Price";
   }, [maxPrice, minPrice]);
   const cityLabel = city ? city.charAt(0).toUpperCase() + city.slice(1) : "All cities";
+  const activeFilterChips = useMemo(() => {
+    const chips: Array<{ key: string; label: string; clear: () => void }> = [];
+
+    if (requestedStartDate || requestedEndDate) {
+      chips.push({
+        key: "dates",
+        label: dateRangeLabel,
+        clear: () => updateSearchFilters({ startDate: null, endDate: null }),
+      });
+    }
+
+    if (minPrice !== null || maxPrice !== null) {
+      chips.push({
+        key: "price",
+        label: priceLabel,
+        clear: () => updateSearchFilters({ minPrice: null, maxPrice: null }),
+      });
+    }
+
+    if (selectedPropertyTypes.size > 0) {
+      chips.push({
+        key: "types",
+        label: `Type: ${[...selectedPropertyTypes].join(", ")}`,
+        clear: () => updateSearchFilters({ types: null }),
+      });
+    }
+
+    if (selectedNeighborhoods.size > 0) {
+      chips.push({
+        key: "neighborhoods",
+        label: `Area: ${[...selectedNeighborhoods].join(", ")}`,
+        clear: () => updateSearchFilters({ neighborhoods: null }),
+      });
+    }
+
+    if (minBedrooms !== null) {
+      chips.push({
+        key: "bedrooms",
+        label: `${minBedrooms}+ bedrooms`,
+        clear: () => updateSearchFilters({ minBedrooms: null }),
+      });
+    }
+
+    return chips;
+  }, [
+    dateRangeLabel,
+    maxPrice,
+    minBedrooms,
+    minPrice,
+    priceLabel,
+    requestedEndDate,
+    requestedStartDate,
+    selectedNeighborhoods,
+    selectedPropertyTypes,
+  ]);
 
   useEffect(() => {
     const loadListings = async () => {
@@ -311,43 +409,85 @@ export function SearchResults() {
 
       {/* Filter Bar */}
       <div className="border-b border-[rgba(0,0,0,0.08)] bg-white sticky top-[64px] z-40">
-        <div className="max-w-[1440px] mx-auto px-[32px]">
+        <div ref={filtersRef} className="max-w-[1440px] mx-auto px-[32px]">
           {/* Top Filter Row */}
-          <div className="flex items-center gap-[16px] py-[16px]">
+          <div className="flex items-center gap-[12px] py-[14px] flex-wrap">
             {/* Date Display */}
             <div className="relative">
               <button
                 type="button"
-                onClick={() => setIsDatePickerOpen((value) => !value)}
-                className="flex items-center gap-[8px] text-[#1A1A1A] text-[14px] px-[12px] py-[8px] border border-[rgba(0,0,0,0.08)] hover:border-[rgba(0,0,0,0.16)] transition-colors"
+                onClick={() => togglePanel("date")}
+                className={`flex items-center gap-[8px] text-[#1A1A1A] text-[14px] px-[12px] py-[8px] border transition-colors ${
+                  dateOpen || requestedStartDate || requestedEndDate
+                    ? "border-[#1A1A1A] bg-[#F7F7F9]"
+                    : "border-[rgba(0,0,0,0.08)] hover:border-[rgba(0,0,0,0.16)]"
+                }`}
               >
                 <Calendar className="w-[16px] h-[16px]" />
                 <span className="font-semibold">{dateRangeLabel}</span>
                 {stayLengthLabel && <span className="text-[#6B6B6B]">({stayLengthLabel})</span>}
+                <ChevronDown className="w-[16px] h-[16px] text-[#6B6B6B]" />
               </button>
-              <DatePicker
-                isOpen={isDatePickerOpen}
-                onClose={() => setIsDatePickerOpen(false)}
-                startDate={requestedStartDate}
-                endDate={requestedEndDate}
-                onDateChange={(start, end) => {
-                  updateSearchFilters({
-                    startDate: start ? toDateQueryValue(start) : null,
-                    endDate: end ? toDateQueryValue(end) : null,
-                  });
-                  setIsDatePickerOpen(false);
-                }}
-              />
+              {dateOpen && (
+                <div className="absolute top-full left-0 mt-[8px] w-[320px] bg-white border border-[rgba(0,0,0,0.08)] shadow-[0_8px_32px_rgba(0,0,0,0.12)] p-[16px] z-50">
+                  <div className="text-[13px] font-semibold text-[#1A1A1A] mb-[10px]">Select your stay dates</div>
+                  <div className="grid grid-cols-2 gap-[10px] mb-[12px]">
+                    <label className="text-[12px] text-[#6B6B6B]">
+                      Move in
+                      <input
+                        type="date"
+                        value={startDateValue}
+                        max={endDateValue || undefined}
+                        onChange={(event) => {
+                          const nextStart = event.target.value;
+                          updateSearchFilters({ startDate: nextStart || null });
+                        }}
+                        className="mt-[4px] w-full border border-[rgba(0,0,0,0.12)] px-[10px] py-[8px] text-[13px] outline-none"
+                      />
+                    </label>
+                    <label className="text-[12px] text-[#6B6B6B]">
+                      Move out
+                      <input
+                        type="date"
+                        value={endDateValue}
+                        min={startDateValue || undefined}
+                        onChange={(event) => {
+                          const nextEnd = event.target.value;
+                          updateSearchFilters({ endDate: nextEnd || null });
+                        }}
+                        className="mt-[4px] w-full border border-[rgba(0,0,0,0.12)] px-[10px] py-[8px] text-[13px] outline-none"
+                      />
+                    </label>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <button
+                      type="button"
+                      onClick={() => updateSearchFilters({ startDate: null, endDate: null })}
+                      className="text-[12px] font-semibold text-[#6B6B6B] hover:text-[#1A1A1A]"
+                    >
+                      Clear dates
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setDateOpen(false)}
+                      className="px-[12px] py-[6px] bg-[#1A1A1A] text-white text-[12px] font-semibold"
+                    >
+                      Done
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
-
-            {/* Divider */}
-            <div className="w-[1px] h-[24px] bg-[rgba(0,0,0,0.08)]" />
 
             {/* Price Dropdown */}
             <div className="relative">
               <button
-                onClick={() => setPriceOpen(!priceOpen)}
-                className="flex items-center gap-[8px] px-[16px] py-[8px] border border-[rgba(0,0,0,0.08)] hover:border-[rgba(0,0,0,0.16)] transition-colors"
+                onClick={() => togglePanel("price")}
+                className={`flex items-center gap-[8px] px-[16px] py-[8px] border transition-colors ${
+                  priceOpen || minPrice !== null || maxPrice !== null
+                    ? "border-[#1A1A1A] bg-[#F7F7F9]"
+                    : "border-[rgba(0,0,0,0.08)] hover:border-[rgba(0,0,0,0.16)]"
+                }`}
               >
                 <span className="text-[#1A1A1A] text-[14px] font-semibold">{priceLabel}</span>
                 <ChevronDown className="w-[16px] h-[16px] text-[#6B6B6B]" />
@@ -408,8 +548,12 @@ export function SearchResults() {
             {/* Property Type Dropdown */}
             <div className="relative">
               <button
-                onClick={() => setPropertyTypeOpen(!propertyTypeOpen)}
-                className="flex items-center gap-[8px] px-[16px] py-[8px] border border-[rgba(0,0,0,0.08)] hover:border-[rgba(0,0,0,0.16)] transition-colors"
+                onClick={() => togglePanel("propertyType")}
+                className={`flex items-center gap-[8px] px-[16px] py-[8px] border transition-colors ${
+                  propertyTypeOpen || selectedPropertyTypes.size > 0
+                    ? "border-[#1A1A1A] bg-[#F7F7F9]"
+                    : "border-[rgba(0,0,0,0.08)] hover:border-[rgba(0,0,0,0.16)]"
+                }`}
               >
                 <span className="text-[#1A1A1A] text-[14px] font-semibold">
                   {selectedPropertyTypes.size > 0 ? `Property type (${selectedPropertyTypes.size})` : "Property type"}
@@ -448,8 +592,12 @@ export function SearchResults() {
             {/* Neighborhoods Dropdown */}
             <div className="relative">
               <button
-                onClick={() => setNeighborhoodsOpen(!neighborhoodsOpen)}
-                className="flex items-center gap-[8px] px-[16px] py-[8px] border border-[rgba(0,0,0,0.08)] hover:border-[rgba(0,0,0,0.16)] transition-colors"
+                onClick={() => togglePanel("neighborhoods")}
+                className={`flex items-center gap-[8px] px-[16px] py-[8px] border transition-colors ${
+                  neighborhoodsOpen || selectedNeighborhoods.size > 0
+                    ? "border-[#1A1A1A] bg-[#F7F7F9]"
+                    : "border-[rgba(0,0,0,0.08)] hover:border-[rgba(0,0,0,0.16)]"
+                }`}
               >
                 <span className="text-[#1A1A1A] text-[14px] font-semibold">
                   {selectedNeighborhoods.size > 0 ? `Neighborhoods (${selectedNeighborhoods.size})` : "Neighborhoods"}
@@ -491,8 +639,12 @@ export function SearchResults() {
             {/* All Filters Button */}
             <div className="relative">
               <button
-                onClick={() => setAllFiltersOpen(!allFiltersOpen)}
-                className="flex items-center gap-[8px] px-[16px] py-[8px] border border-[rgba(0,0,0,0.08)] hover:border-[rgba(0,0,0,0.16)] transition-colors"
+                onClick={() => togglePanel("all")}
+                className={`flex items-center gap-[8px] px-[16px] py-[8px] border transition-colors ${
+                  allFiltersOpen || minBedrooms !== null
+                    ? "border-[#1A1A1A] bg-[#F7F7F9]"
+                    : "border-[rgba(0,0,0,0.08)] hover:border-[rgba(0,0,0,0.16)]"
+                }`}
               >
                 <SlidersHorizontal className="w-[16px] h-[16px] text-[#1A1A1A]" />
                 <span className="text-[#1A1A1A] text-[14px] font-semibold">All filters</span>
@@ -547,6 +699,22 @@ export function SearchResults() {
               Get alerts
             </button>
           </div>
+
+          {activeFilterChips.length > 0 && (
+            <div className="flex items-center gap-[8px] pb-[10px] flex-wrap">
+              {activeFilterChips.map((chip) => (
+                <button
+                  key={chip.key}
+                  type="button"
+                  onClick={chip.clear}
+                  className="inline-flex items-center gap-[6px] px-[10px] py-[6px] bg-[#F7F7F9] border border-[rgba(0,0,0,0.08)] text-[#1A1A1A] text-[12px] font-semibold hover:bg-[#EEF2F7]"
+                >
+                  <span>{chip.label}</span>
+                  <X className="w-[12px] h-[12px]" />
+                </button>
+              ))}
+            </div>
+          )}
 
           {/* Tenant Type Tabs */}
           <div className="flex items-center gap-[32px] border-t border-[rgba(0,0,0,0.08)] pt-[8px] pb-[8px]">
