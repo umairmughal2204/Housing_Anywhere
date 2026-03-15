@@ -15,11 +15,13 @@ export interface ChatMessage {
 interface UseConversationOptions {
   conversationId: string | undefined;
   token: string | null;
+  myRole: "tenant" | "landlord";
 }
 
 interface UseConversationReturn {
   messages: ChatMessage[];
   isConnected: boolean;
+  otherUserOnline: boolean;
   isLoadingHistory: boolean;
   hasMoreMessages: boolean;
   sendMessage: (body: string) => Promise<void>;
@@ -34,12 +36,14 @@ const SOCKET_URL = API_BASE;
 export function useConversation({
   conversationId,
   token,
+  myRole,
 }: UseConversationOptions): UseConversationReturn {
   const socketRef = useRef<Socket | null>(null);
   const typingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isConnected, setIsConnected] = useState(false);
+  const [otherUserOnline, setOtherUserOnline] = useState(false);
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
   const [hasMoreMessages, setHasMoreMessages] = useState(false);
   const [otherUserTyping, setOtherUserTyping] = useState(false);
@@ -89,6 +93,8 @@ export function useConversation({
   useEffect(() => {
     if (!token || !conversationId) return;
 
+    setOtherUserOnline(false);
+
     // Load REST history first
     void loadHistory();
 
@@ -112,12 +118,25 @@ export function useConversation({
 
     socket.on("disconnect", () => setIsConnected(false));
 
+    socket.on(
+      "presence_update",
+      (payload: { conversationId: string; tenantOnline: boolean; landlordOnline: boolean }) => {
+        if (payload.conversationId !== conversationId) return;
+        const next = myRole === "tenant" ? payload.landlordOnline : payload.tenantOnline;
+        setOtherUserOnline(next);
+      }
+    );
+
     socket.on("new_message", (msg: ChatMessage) => {
       setMessages((prev) => {
         // Deduplicate by id (socket may re-deliver on reconnect in some edge cases)
         if (prev.some((m) => m.id === msg.id)) return prev;
         return [...prev, msg];
       });
+
+      // If the user is currently inside this conversation, treat incoming messages as read.
+      // This keeps the server-side unread counter from growing while the chat is open.
+      socket.emit("mark_read", conversationId);
     });
 
     socket.on("typing", ({ conversationId: cId }: { conversationId: string }) => {
@@ -140,8 +159,9 @@ export function useConversation({
       socketRef.current = null;
       setIsConnected(false);
       setMessages([]);
+      setOtherUserOnline(false);
     };
-  }, [conversationId, token]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [conversationId, token, myRole]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Keep messages reasonably fresh when realtime connection is unavailable.
   useEffect(() => {
@@ -219,6 +239,7 @@ export function useConversation({
   return {
     messages,
     isConnected,
+    otherUserOnline,
     isLoadingHistory,
     hasMoreMessages,
     sendMessage,

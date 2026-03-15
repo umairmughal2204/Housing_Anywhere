@@ -70,6 +70,8 @@ export function PropertyListing() {
   const [listing, setListing] = useState<ListingDetails | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isFavoriteBusy, setIsFavoriteBusy] = useState(false);
+  const [listingError, setListingError] = useState("");
+  const [isListingUnavailable, setIsListingUnavailable] = useState(false);
 
   useEffect(() => {
     const loadListing = async () => {
@@ -80,15 +82,25 @@ export function PropertyListing() {
 
       setIsLoading(true);
       try {
-        const response = await fetch(`${apiBase}/api/listings/${id}`);
+        const response = await fetch(`${apiBase}/api/listings/${id}`, {
+          cache: "no-store",
+        });
         if (!response.ok) {
-          throw new Error("Listing not found");
+          const payload = (await response.json().catch(() => ({}))) as { message?: string };
+          setListing(null);
+          setListingError(payload.message ?? "Listing not found");
+          setIsListingUnavailable(response.status === 410);
+          return;
         }
 
         const payload = (await response.json()) as { listing: ListingDetails };
         setListing(payload.listing);
+        setListingError("");
+        setIsListingUnavailable(false);
       } catch {
         setListing(null);
+        setListingError("Could not load this listing right now");
+        setIsListingUnavailable(false);
       } finally {
         setIsLoading(false);
       }
@@ -141,6 +153,11 @@ export function PropertyListing() {
   };
 
   const handleApplyToRent = () => {
+    if (isListingUnavailable) {
+      toast.error("This listing is no longer available for applications.");
+      return;
+    }
+
     if (!isAuthenticated) {
       // Redirect to login with return URL
       navigate(`/login?returnTo=/property/${id}/apply`);
@@ -150,6 +167,11 @@ export function PropertyListing() {
   };
 
   const handleMessageLandlord = async () => {
+    if (isListingUnavailable) {
+      toast.error("This listing is no longer available.");
+      return;
+    }
+
     if (!isAuthenticated) {
       // Redirect to login with return URL
       navigate(`/login?returnTo=/property/${id}`);
@@ -189,6 +211,11 @@ export function PropertyListing() {
   };
 
   const handleToggleFavorite = async () => {
+    if (isListingUnavailable) {
+      toast.error("Unavailable listings cannot be favorited.");
+      return;
+    }
+
     if (!isAuthenticated) {
       // Redirect to login with return URL
       navigate(`/login?returnTo=/property/${id}`);
@@ -259,6 +286,37 @@ export function PropertyListing() {
 
       {/* Main Content */}
       <div className="max-w-[1440px] mx-auto px-[32px] py-[32px]">
+        {!isLoading && !listing && (
+          <div className="max-w-[760px] py-[56px]">
+            <div className="border border-[rgba(0,0,0,0.08)] bg-[#FFF7ED] p-[32px]">
+              <p className="text-[12px] font-bold uppercase tracking-[0.08em] text-[#C2410C] mb-[12px]">
+                {isListingUnavailable ? "Listing unavailable" : "Listing not found"}
+              </p>
+              <h1 className="text-[#1A1A1A] text-[32px] font-bold tracking-[-0.02em] mb-[12px]">
+                {isListingUnavailable ? "This home is no longer available" : "We couldn't find this property"}
+              </h1>
+              <p className="text-[#6B6B6B] text-[15px] leading-[1.6] mb-[24px]">
+                {listingError || "The listing may have been removed or is no longer accepting applications."}
+              </p>
+              <div className="flex items-center gap-[12px]">
+                <Link
+                  to="/"
+                  className="px-[20px] py-[12px] bg-brand-primary text-white text-[14px] font-semibold hover:bg-brand-primary-dark transition-colors"
+                >
+                  Browse available homes
+                </Link>
+                <button
+                  onClick={() => navigate(-1)}
+                  className="px-[20px] py-[12px] border border-[rgba(0,0,0,0.16)] text-[#1A1A1A] text-[14px] font-semibold hover:bg-[#F7F7F9] transition-colors"
+                >
+                  Go back
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {listing && (
         <div className="flex gap-[48px]">
           {/* Left Column - Gallery & Details */}
           <div className="flex-[2]">
@@ -347,7 +405,8 @@ export function PropertyListing() {
                 <span className="text-[#1A1A1A] text-[28px] font-bold">€{listing?.monthlyRent ?? 0}</span>
                 <span className="text-[#6B6B6B] text-[16px]">per month,</span>
                 <span className="text-[#6B6B6B] text-[14px] underline cursor-pointer">
-                  excludes bills, deposit required
+                  {listing?.utilitiesIncluded ? "includes bills" : "excludes bills"}
+                  {listing?.deposit === 0 ? " (no deposit)" : " (deposit required)"}
                 </span>
               </div>
             </div>
@@ -363,13 +422,13 @@ export function PropertyListing() {
               <div className="flex items-center gap-[8px] text-[#1A1A1A]">
                 <Square className="w-[18px] h-[18px] text-[#6B6B6B]" />
                 <span className="text-[14px]">
-                  <span className="font-semibold">Bedroom</span>
+                  <span className="font-semibold">Bedrooms:</span> {listing?.bedrooms ?? 0}
                 </span>
               </div>
               <div className="flex items-center gap-[8px] text-[#1A1A1A]">
                 <HomeIcon className="w-[18px] h-[18px] text-[#6B6B6B]" />
                 <span className="text-[14px]">
-                  <span className="font-semibold">Property:</span> 92 m²
+                  <span className="font-semibold">Property:</span> {listing?.area ?? 0} m²
                 </span>
               </div>
               <div className="flex items-center gap-[8px] text-[#1A1A1A]">
@@ -540,6 +599,7 @@ export function PropertyListing() {
             </div>
           </div>
         </div>
+        )}
       </div>
 
       <Footer />

@@ -7,13 +7,13 @@ import {
   Settings,
   LogOut,
   Bell,
-  Search,
   ChevronDown,
   Menu,
   X,
 } from "lucide-react";
 import { useAuth } from "../contexts/auth-context";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { API_BASE } from "../config";
 
 interface LandlordPortalLayoutProps {
   children: React.ReactNode;
@@ -25,6 +25,13 @@ export function LandlordPortalLayout({ children }: LandlordPortalLayoutProps) {
   const { user, logout } = useAuth();
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [unreadMessages, setUnreadMessages] = useState(0);
+  const [pendingApplications, setPendingApplications] = useState(0);
+  const [totalProperties, setTotalProperties] = useState(0);
+  const [hasLoadedSummary, setHasLoadedSummary] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const notificationsRef = useRef<HTMLDivElement>(null);
+  const userMenuRef = useRef<HTMLDivElement>(null);
 
   const navigation = [
     { name: "Dashboard", href: "/landlord/dashboard", icon: LayoutDashboard },
@@ -34,6 +41,94 @@ export function LandlordPortalLayout({ children }: LandlordPortalLayoutProps) {
   ];
 
   const isActive = (href: string) => location.pathname === href;
+
+  useEffect(() => {
+    const token = localStorage.getItem("authToken");
+    if (!token) {
+      setUnreadMessages(0);
+      setPendingApplications(0);
+      setTotalProperties(0);
+      setHasLoadedSummary(false);
+      return;
+    }
+
+    let isCancelled = false;
+
+    const loadSummary = async () => {
+      try {
+        const response = await fetch(`${API_BASE}/api/landlord/dashboard`, {
+          cache: "no-store",
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        if (!response.ok) {
+          if (!isCancelled) {
+            setUnreadMessages(0);
+            setPendingApplications(0);
+            setTotalProperties(0);
+            setHasLoadedSummary(true);
+          }
+          return;
+        }
+
+        const payload = (await response.json()) as {
+          stats?: {
+            totalProperties?: number;
+            pendingApplications?: number;
+            unreadMessages?: number;
+          };
+        };
+
+        if (!isCancelled) {
+          setUnreadMessages(payload.stats?.unreadMessages ?? 0);
+          setPendingApplications(payload.stats?.pendingApplications ?? 0);
+          setTotalProperties(payload.stats?.totalProperties ?? 0);
+          setHasLoadedSummary(true);
+        }
+      } catch {
+        if (!isCancelled) {
+          setUnreadMessages(0);
+          setPendingApplications(0);
+          setTotalProperties(0);
+          setHasLoadedSummary(true);
+        }
+      }
+    };
+
+    const interval = window.setInterval(() => {
+      void loadSummary();
+    }, 15000);
+
+    const handleWindowFocus = () => {
+      void loadSummary();
+    };
+
+    void loadSummary();
+    window.addEventListener("focus", handleWindowFocus);
+
+    return () => {
+      isCancelled = true;
+      window.clearInterval(interval);
+      window.removeEventListener("focus", handleWindowFocus);
+    };
+  }, []);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Node;
+
+      if (showNotifications && notificationsRef.current && !notificationsRef.current.contains(target)) {
+        setShowNotifications(false);
+      }
+
+      if (showUserMenu && userMenuRef.current && !userMenuRef.current.contains(target)) {
+        setShowUserMenu(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [showNotifications, showUserMenu]);
 
   const handleLogout = () => {
     logout();
@@ -48,6 +143,11 @@ export function LandlordPortalLayout({ children }: LandlordPortalLayoutProps) {
     }
     return user.name.charAt(0).toUpperCase();
   };
+
+  const notificationCount = unreadMessages + pendingApplications;
+  const propertyCountLabel = hasLoadedSummary
+    ? totalProperties
+    : (user?.landlordProfile?.numberOfProperties ?? 0);
 
   return (
     <div className="min-h-screen bg-neutral-light-gray">
@@ -80,7 +180,7 @@ export function LandlordPortalLayout({ children }: LandlordPortalLayoutProps) {
               <div className="text-neutral-black text-[14px] font-bold">Landlord Portal</div>
               {user?.landlordProfile && (
                 <div className="text-neutral-gray text-[12px]">
-                  {user.landlordProfile.numberOfProperties} {user.landlordProfile.numberOfProperties === 1 ? "Property" : "Properties"}
+                  {propertyCountLabel} {propertyCountLabel === 1 ? "Property" : "Properties"}
                 </div>
               )}
             </div>
@@ -101,13 +201,73 @@ export function LandlordPortalLayout({ children }: LandlordPortalLayoutProps) {
           {/* Right: Actions */}
           <div className="flex items-center gap-[16px]">
             {/* Notifications */}
-            <button className="relative p-[8px] hover:bg-neutral-light-gray transition-colors">
-              <Bell className="w-[20px] h-[20px] text-neutral-gray" />
-              <span className="absolute top-[4px] right-[4px] w-[8px] h-[8px] bg-brand-primary rounded-full"></span>
-            </button>
+            <div className="relative" ref={notificationsRef}>
+              <button
+                onClick={() => setShowNotifications((prev) => !prev)}
+                className="relative p-[8px] hover:bg-neutral-light-gray transition-colors"
+              >
+                <Bell className="w-[20px] h-[20px] text-neutral-gray" />
+                {notificationCount > 0 && (
+                  <span className="absolute top-[4px] right-[4px] min-w-[16px] h-[16px] px-[4px] bg-brand-primary text-white text-[10px] font-bold flex items-center justify-center rounded-full">
+                    {notificationCount > 99 ? "99+" : notificationCount}
+                  </span>
+                )}
+              </button>
+
+              {showNotifications && (
+                <div className="absolute top-[calc(100%+8px)] right-0 w-[320px] bg-white border border-[rgba(0,0,0,0.08)] shadow-lg">
+                  <div className="px-[16px] py-[12px] border-b border-[rgba(0,0,0,0.08)]">
+                    <div className="text-neutral-black text-[14px] font-bold">Notifications</div>
+                    <div className="text-neutral-gray text-[12px]">Messages and applications</div>
+                  </div>
+
+                  <div className="py-[8px]">
+                    <Link
+                      to="/landlord/inbox"
+                      onClick={() => setShowNotifications(false)}
+                      className="flex items-center gap-[12px] px-[16px] py-[12px] hover:bg-neutral-light-gray transition-colors"
+                    >
+                      <div className="w-[32px] h-[32px] bg-brand-light flex items-center justify-center">
+                        <MessageSquare className="w-[16px] h-[16px] text-brand-primary" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-neutral-black text-[14px] font-semibold">Unread messages</div>
+                        <div className="text-neutral-gray text-[12px] truncate">Go to your inbox</div>
+                      </div>
+                      <div className="text-[12px] font-bold text-neutral-black">
+                        {unreadMessages}
+                      </div>
+                    </Link>
+
+                    <Link
+                      to="/landlord/rentals"
+                      onClick={() => setShowNotifications(false)}
+                      className="flex items-center gap-[12px] px-[16px] py-[12px] hover:bg-neutral-light-gray transition-colors"
+                    >
+                      <div className="w-[32px] h-[32px] bg-brand-light flex items-center justify-center">
+                        <Calendar className="w-[16px] h-[16px] text-brand-primary" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-neutral-black text-[14px] font-semibold">Pending applications</div>
+                        <div className="text-neutral-gray text-[12px] truncate">Review rental requests</div>
+                      </div>
+                      <div className="text-[12px] font-bold text-neutral-black">
+                        {pendingApplications}
+                      </div>
+                    </Link>
+
+                    {notificationCount === 0 && (
+                      <div className="px-[16px] py-[12px] text-neutral-gray text-[12px]">
+                        You're all caught up.
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
 
             {/* User Menu */}
-            <div className="relative">
+            <div className="relative" ref={userMenuRef}>
               <button
                 onClick={() => setShowUserMenu(!showUserMenu)}
                 className="flex items-center gap-[12px] p-[8px] hover:bg-neutral-light-gray transition-colors"
@@ -212,9 +372,11 @@ export function LandlordPortalLayout({ children }: LandlordPortalLayoutProps) {
                   <Icon className="w-[20px] h-[20px]" />
                   {item.name}
                   {item.name === "Messages" && (
-                    <span className="ml-auto bg-brand-primary text-white text-[12px] font-bold px-[6px] py-[2px] rounded-full">
-                      3
-                    </span>
+                    unreadMessages > 0 ? (
+                      <span className="ml-auto bg-brand-primary text-white text-[12px] font-bold px-[6px] py-[2px] rounded-full">
+                        {unreadMessages > 99 ? "99+" : unreadMessages}
+                      </span>
+                    ) : null
                   )}
                 </Link>
               );

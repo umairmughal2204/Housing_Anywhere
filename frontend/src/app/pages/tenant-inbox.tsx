@@ -13,9 +13,10 @@ import {
   Archive,
   AlignJustify,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router";
 import { API_BASE } from "../config";
+import { io, type Socket } from "socket.io-client";
 
 interface ConversationItem {
   id: string;
@@ -72,33 +73,135 @@ export function TenantInbox() {
   const [error, setError] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [activeFilter, setActiveFilter] = useState<TenantMessageFilter>("active");
+  const [isLiveConnected, setIsLiveConnected] = useState(false);
+  const socketRef = useRef<Socket | null>(null);
+  const joinedRoomsRef = useRef<Set<string>>(new Set());
+  const conversationsRef = useRef<ConversationItem[]>([]);
 
   useEffect(() => {
+    conversationsRef.current = conversations;
+  }, [conversations]);
+
+  useEffect(() => {
+    const token = localStorage.getItem("authToken");
+    if (!token) {
+      setError("Please log in to view your messages.");
+      setIsLoading(false);
+      return;
+    }
+
+    let isCancelled = false;
+
     const load = async () => {
-      const token = localStorage.getItem("authToken");
-      if (!token) {
-        setError("Please log in to view your messages.");
-        setIsLoading(false);
-        return;
-      }
       try {
         const res = await fetch(`${API_BASE}/api/conversations`, {
           headers: { Authorization: `Bearer ${token}` },
         });
+
         if (!res.ok) {
-          const d = (await res.json()) as { message?: string };
+          const d = (await res.json().catch(() => ({}))) as { message?: string };
           throw new Error(d.message ?? "Failed to load conversations");
         }
+
         const data = (await res.json()) as { conversations: ConversationItem[] };
-        setConversations(data.conversations);
+        if (!isCancelled) {
+          setConversations(data.conversations);
+          setError("");
+        }
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Failed to load conversations");
+        if (!isCancelled) {
+          setError(err instanceof Error ? err.message : "Failed to load conversations");
+        }
       } finally {
-        setIsLoading(false);
+        if (!isCancelled) setIsLoading(false);
       }
     };
+
+    const interval = window.setInterval(() => {
+      void load();
+    }, 15000);
+
+    const handleWindowFocus = () => {
+      void load();
+    };
+
     void load();
+    window.addEventListener("focus", handleWindowFocus);
+
+    return () => {
+      isCancelled = true;
+      window.clearInterval(interval);
+      window.removeEventListener("focus", handleWindowFocus);
+    };
   }, []);
+
+  useEffect(() => {
+    const token = localStorage.getItem("authToken");
+    if (!token) return;
+
+    const socket: Socket = io(API_BASE, {
+      auth: { token },
+      transports: ["websocket", "polling"],
+      reconnection: true,
+      reconnectionAttempts: 5,
+      reconnectionDelay: 1000,
+    });
+
+    socketRef.current = socket;
+
+    socket.on("connect", () => {
+      setIsLiveConnected(true);
+
+      for (const c of conversationsRef.current) {
+        if (joinedRoomsRef.current.has(c.id)) continue;
+        joinedRoomsRef.current.add(c.id);
+        socket.emit("join_conversation", c.id);
+      }
+    });
+
+    socket.on("disconnect", () => setIsLiveConnected(false));
+
+    socket.on(
+      "new_message",
+      (msg: { conversationId: string; senderRole: "tenant" | "landlord"; body: string; createdAt: string }) => {
+        setConversations((prev) => {
+          const idx = prev.findIndex((c) => c.id === msg.conversationId);
+          if (idx === -1) return prev;
+          const existing = prev[idx];
+
+          const isIncoming = msg.senderRole === "landlord";
+          const nextItem: ConversationItem = {
+            ...existing,
+            lastMessage: msg.body,
+            lastMessageAt: msg.createdAt,
+            unread: isIncoming ? existing.unread + 1 : existing.unread,
+          };
+
+          const next = [...prev];
+          next[idx] = nextItem;
+          return next;
+        });
+      }
+    );
+
+    return () => {
+      socket.disconnect();
+      socketRef.current = null;
+      joinedRoomsRef.current = new Set();
+      setIsLiveConnected(false);
+    };
+  }, []);
+
+  useEffect(() => {
+    const socket = socketRef.current;
+    if (!socket || !socket.connected) return;
+
+    for (const c of conversations) {
+      if (joinedRoomsRef.current.has(c.id)) continue;
+      joinedRoomsRef.current.add(c.id);
+      socket.emit("join_conversation", c.id);
+    }
+  }, [conversations]);
 
   const sortedConversations = [...conversations].sort((a, b) => {
     if (a.unread > 0 && b.unread === 0) return -1;

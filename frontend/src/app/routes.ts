@@ -10,6 +10,7 @@ import { TenantInbox } from "./pages/tenant-inbox";
 import { TenantApplications } from "./pages/tenant-applications";
 import { LandlordInbox } from "./pages/landlord-inbox";
 import { LandlordDashboard } from "./pages/landlord-dashboard";
+import { LandlordAnalytics } from "./pages/landlord-analytics";
 import { LandlordListings } from "./pages/landlord-listings";
 import { LandlordRentals } from "./pages/landlord-rentals";
 import { LandlordRegister } from "./pages/landlord-register";
@@ -56,6 +57,11 @@ export const router = createBrowserRouter([
   {
     path: "/landlord/dashboard",
     Component: LandlordDashboard,
+    ErrorBoundary,
+  },
+  {
+    path: "/landlord/analytics",
+    Component: LandlordAnalytics,
     ErrorBoundary,
   },
   {

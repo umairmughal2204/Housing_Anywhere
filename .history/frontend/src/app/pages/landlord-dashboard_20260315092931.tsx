@@ -147,10 +147,10 @@ export function LandlordDashboard() {
             </div>
             <div className="text-[14px] text-neutral-gray">Properties</div>
             <div className="mt-[12px] flex items-center gap-[8px]">
-              <span className="px-[8px] py-[3px] text-[11px] font-bold bg-accent-blue/10 text-accent-blue">
+              <span className="inline-flex items-center px-[8px] py-[3px] text-[11px] font-bold uppercase tracking-[0.04em] bg-accent-blue/10 text-accent-blue">
                 Active {stats.activeListings}
               </span>
-              <span className="px-[8px] py-[3px] text-[11px] font-bold bg-neutral-gray/10 text-neutral-gray">
+              <span className="inline-flex items-center px-[8px] py-[3px] text-[11px] font-bold uppercase tracking-[0.04em] bg-neutral-gray/10 text-neutral-gray">
                 Inactive {stats.inactiveListings}
               </span>
             </div>

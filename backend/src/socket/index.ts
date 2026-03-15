@@ -11,6 +11,35 @@ interface AuthenticatedSocket extends Socket {
 }
 
 export function setupSocketServer(io: Server): void {
+  const broadcastPresence = async (conversationId: string): Promise<void> => {
+    if (!Types.ObjectId.isValid(conversationId)) return;
+
+    const conversation = await ConversationModel.findById(conversationId)
+      .select("tenantId landlordId")
+      .lean();
+    if (!conversation) return;
+
+    const room = `conversation:${conversationId}`;
+    const sockets = await io.in(room).fetchSockets();
+
+    const onlineUserIds = new Set<string>();
+    for (const s of sockets) {
+      const maybeUserId = (s as unknown as AuthenticatedSocket).userId;
+      if (typeof maybeUserId === "string" && maybeUserId.length > 0) {
+        onlineUserIds.add(maybeUserId);
+      }
+    }
+
+    const tenantOnline = onlineUserIds.has(String(conversation.tenantId));
+    const landlordOnline = onlineUserIds.has(String(conversation.landlordId));
+
+    io.to(room).emit("presence_update", {
+      conversationId,
+      tenantOnline,
+      landlordOnline,
+    });
+  };
+
   // ── JWT authentication middleware ──────────────────────────────
   io.use((socket, next) => {
     const token =
@@ -35,6 +64,7 @@ export function setupSocketServer(io: Server): void {
   io.on("connection", (rawSocket: Socket) => {
     const socket = rawSocket as AuthenticatedSocket;
     const { userId, userRole } = socket;
+    const joinedConversationIds = new Set<string>();
 
     // ── join_conversation ─────────────────────────────────────────
     // Client emits this after connecting to subscribe to a conversation room
@@ -50,6 +80,8 @@ export function setupSocketServer(io: Server): void {
         if (!isParticipant) throw new Error("Forbidden");
 
         await socket.join(`conversation:${conversationId}`);
+        joinedConversationIds.add(conversationId);
+        void broadcastPresence(conversationId);
         if (typeof ack === "function") ack({ ok: true });
       } catch (err) {
         const msg = err instanceof Error ? err.message : "Failed to join";
@@ -159,7 +191,10 @@ export function setupSocketServer(io: Server): void {
     });
 
     socket.on("disconnect", () => {
-      // Rooms are automatically left on disconnect
+      // Rooms are automatically left on disconnect; broadcast updated presence.
+      for (const conversationId of joinedConversationIds) {
+        void broadcastPresence(conversationId);
+      }
     });
   });
 }

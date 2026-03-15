@@ -275,27 +275,26 @@ export function LandlordListings() {
                 {/* Content */}
                 <div className="flex-1 flex flex-col">
                   <div className="flex items-start justify-between mb-[12px]">
-                    <div className="flex-1 min-w-0 pr-[16px]">
-                      <h3 className="text-neutral-black text-[20px] font-bold mb-[8px] leading-snug">
-                        {listing.title}
-                      </h3>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-[12px] mb-[8px]">
+                        <h3 className="text-neutral-black text-[20px] font-bold">
+                          {listing.title}
+                        </h3>
+                        <span className={`px-[12px] py-[4px] text-[12px] font-bold uppercase tracking-[0.05em] ${
+                          listing.status === "active"
+                            ? "bg-accent-blue/10 text-accent-blue"
+                            : "bg-neutral-gray/10 text-neutral-gray"
+                        }`}>
+                          {listing.status}
+                        </span>
+                      </div>
                       <div className="flex items-center gap-[6px] text-neutral-gray text-[14px] mb-[16px]">
                         <MapPin className="w-[14px] h-[14px]" />
                         <span>{listing.address}, {listing.city}</span>
                       </div>
                     </div>
 
-                    <div className="flex flex-col items-end gap-[8px] flex-shrink-0">
-                      <span className={`px-[10px] py-[4px] text-[11px] font-bold uppercase tracking-[0.05em] ${
-                        listing.status === "active"
-                          ? "bg-accent-blue/10 text-accent-blue"
-                          : listing.status === "draft"
-                          ? "bg-yellow-100 text-yellow-700"
-                          : "bg-neutral-gray/10 text-neutral-gray"
-                      }`}>
-                        {listing.status === "active" ? "Active" : listing.status === "draft" ? "Draft" : "Inactive"}
-                      </span>
-                      <button
+                    <button
                       onClick={() => { void handleStatusToggle(listing.id, listing.status); }}
                       disabled={updatingStatusId === listing.id || listing.status === "draft"}
                       className={`inline-flex items-center gap-[6px] px-[14px] py-[7px] text-[13px] font-semibold border transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
@@ -313,7 +312,6 @@ export function LandlordListings() {
                         ? "Deactivate"
                         : "Activate"}
                     </button>
-                    </div>
                   </div>
 
                   {/* Property Details */}

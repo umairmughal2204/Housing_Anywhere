@@ -5,6 +5,7 @@ import { Link } from "react-router";
 import { useAuth } from "../contexts/auth-context";
 import { useConversation } from "../hooks/use-conversation";
 import { API_BASE } from "../config";
+import { io, type Socket } from "socket.io-client";
 
 interface ConversationItem {
   id: string;
@@ -60,8 +61,8 @@ function ChatPanel({ conversation, onClose }: ChatPanelProps) {
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const isFirstLoad = useRef(true);
 
-  const { messages, isConnected, isLoadingHistory, hasMoreMessages, sendMessage, loadMoreMessages, otherUserTyping, emitTyping, emitStopTyping } =
-    useConversation({ conversationId: conversation.id, token });
+  const { messages, isConnected, otherUserOnline, isLoadingHistory, hasMoreMessages, sendMessage, loadMoreMessages, otherUserTyping, emitTyping, emitStopTyping } =
+    useConversation({ conversationId: conversation.id, token, myRole: "landlord" });
 
   useEffect(() => {
     if (messages.length === 0) return;
@@ -109,9 +110,9 @@ function ChatPanel({ conversation, onClose }: ChatPanelProps) {
             <span className="truncate">{conversation.listing.title}</span>
           </div>
         </div>
-        <div className={`flex items-center gap-[5px] text-[11px] font-medium px-[8px] py-[3px] rounded-full ${isConnected ? "bg-green-50 text-green-700" : "bg-[#F7F7F9] text-[#6B6B6B]"}`}>
+        <div className={`flex items-center gap-[5px] text-[11px] font-medium px-[8px] py-[3px] rounded-full ${!isConnected ? "bg-[#F7F7F9] text-[#6B6B6B]" : otherUserOnline ? "bg-green-50 text-green-700" : "bg-[#F7F7F9] text-[#6B6B6B]"}`}>
           <Wifi className="w-[10px] h-[10px]" />
-          {isConnected ? "Live" : "Connecting"}
+          {!isConnected ? "Connecting" : otherUserOnline ? "Online" : "Offline"}
         </div>
         <Link to={`/property/${conversation.listingId}`} className="text-[12px] font-semibold text-brand-primary hover:underline hidden sm:block">
           View listing
@@ -230,7 +231,20 @@ export function LandlordInbox() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
+  const socketRef = useRef<Socket | null>(null);
+  const joinedRoomsRef = useRef<Set<string>>(new Set());
+  const selectedIdRef = useRef<string | null>(null);
+  const conversationsRef = useRef<ConversationItem[]>([]);
+
   const token = localStorage.getItem("authToken");
+
+  useEffect(() => {
+    selectedIdRef.current = selectedId;
+  }, [selectedId]);
+
+  useEffect(() => {
+    conversationsRef.current = conversations;
+  }, [conversations]);
 
   useEffect(() => {
     const load = async () => {
@@ -246,6 +260,79 @@ export function LandlordInbox() {
     };
     void load();
   }, [token]);
+
+  useEffect(() => {
+    if (!token) return;
+
+    const socket: Socket = io(API_BASE, {
+      auth: { token },
+      transports: ["websocket", "polling"],
+      reconnection: true,
+      reconnectionAttempts: 5,
+      reconnectionDelay: 1000,
+    });
+
+    socketRef.current = socket;
+
+    socket.on("connect", () => {
+      // Join any rooms we already know about.
+      for (const c of conversationsRef.current) {
+        if (joinedRoomsRef.current.has(c.id)) continue;
+        joinedRoomsRef.current.add(c.id);
+        socket.emit("join_conversation", c.id);
+      }
+    });
+
+    socket.on("new_message", (msg: { conversationId: string; senderRole: "tenant" | "landlord"; body: string; createdAt: string }) => {
+      setConversations((prev) => {
+        const idx = prev.findIndex((c) => c.id === msg.conversationId);
+        if (idx === -1) return prev;
+        const existing = prev[idx];
+
+        const isIncoming = msg.senderRole === "tenant";
+        const isOpen = selectedIdRef.current === msg.conversationId;
+
+        const nextItem: ConversationItem = {
+          ...existing,
+          lastMessage: msg.body,
+          lastMessageAt: msg.createdAt,
+          unread: isIncoming ? (isOpen ? 0 : existing.unread + 1) : existing.unread,
+        };
+
+        const next = [...prev];
+        next[idx] = nextItem;
+        return next;
+      });
+    });
+
+    return () => {
+      socket.disconnect();
+      socketRef.current = null;
+      joinedRoomsRef.current = new Set();
+    };
+  }, [token]);
+
+  useEffect(() => {
+    const socket = socketRef.current;
+    if (!socket || !socket.connected) return;
+
+    for (const c of conversations) {
+      if (joinedRoomsRef.current.has(c.id)) continue;
+      joinedRoomsRef.current.add(c.id);
+      socket.emit("join_conversation", c.id);
+    }
+  }, [conversations]);
+
+  useEffect(() => {
+    if (!selectedId || !token) return;
+
+    setConversations((prev) => prev.map((c) => (c.id === selectedId ? { ...c, unread: 0 } : c)));
+
+    void fetch(`${API_BASE}/api/conversations/${selectedId}/read`, {
+      method: "PATCH",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+  }, [selectedId, token]);
 
   const filtered = conversations.filter((c) => {
     if (!searchQuery) return true;

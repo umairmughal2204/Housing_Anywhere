@@ -38,7 +38,6 @@ router.get("/dashboard", requireAuth, requireRole("landlord"), async (req, res) 
     unreadAggregation,
     totalProperties,
     activeListings,
-    inactiveListings,
     pendingApplications,
     listings,
     approvedListingIds,
@@ -53,7 +52,6 @@ router.get("/dashboard", requireAuth, requireRole("landlord"), async (req, res) 
     ]),
     ListingModel.countDocuments({ landlordId }),
     ListingModel.countDocuments({ landlordId, status: "active" }),
-    ListingModel.countDocuments({ landlordId, status: "inactive" }),
     RentalApplicationModel.countDocuments({ landlordId, status: "pending" }),
     ListingModel.find({ landlordId }).select({ title: 1, views: 1, inquiries: 1, price: 1 }).lean(),
     RentalApplicationModel.distinct("listingId", { landlordId: landlordObjectId, status: "approved" }),
@@ -182,7 +180,6 @@ router.get("/dashboard", requireAuth, requireRole("landlord"), async (req, res) 
     stats: {
       totalProperties,
       activeListings,
-      inactiveListings,
       occupancyRate,
       occupancyChange,
       monthlyRevenue,

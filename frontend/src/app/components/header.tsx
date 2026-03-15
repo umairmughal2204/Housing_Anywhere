@@ -3,11 +3,18 @@ import { Globe, MessageCircle, Heart, User, CreditCard, HelpCircle, Settings, Lo
 import { useState, useRef, useEffect } from "react";
 import { useAuth } from "../contexts/auth-context";
 
+const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:4000";
+
+interface HeaderConversationItem {
+  unread: number;
+}
+
 export function Header() {
   const { user, isAuthenticated, logout } = useAuth();
   const [showDropdown, setShowDropdown] = useState(false);
   const [selectedLanguage, setSelectedLanguage] = useState("English");
   const [showLanguageDropdown, setShowLanguageDropdown] = useState(false);
+  const [unreadMessages, setUnreadMessages] = useState(0);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const languageDropdownRef = useRef<HTMLDivElement>(null);
 
@@ -50,6 +57,61 @@ export function Header() {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      setUnreadMessages(0);
+      return;
+    }
+
+    const token = localStorage.getItem("authToken");
+    if (!token) {
+      setUnreadMessages(0);
+      return;
+    }
+
+    let isCancelled = false;
+
+    const loadUnreadMessages = async () => {
+      try {
+        const response = await fetch(`${API_BASE}/api/conversations`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        if (!response.ok) {
+          throw new Error("Failed to load conversations");
+        }
+
+        const payload = (await response.json()) as { conversations: HeaderConversationItem[] };
+        if (!isCancelled) {
+          setUnreadMessages(payload.conversations.reduce((sum, conversation) => sum + conversation.unread, 0));
+        }
+      } catch {
+        if (!isCancelled) {
+          setUnreadMessages(0);
+        }
+      }
+    };
+
+    const interval = window.setInterval(() => {
+      void loadUnreadMessages();
+    }, 15000);
+
+    const handleWindowFocus = () => {
+      void loadUnreadMessages();
+    };
+
+    void loadUnreadMessages();
+    window.addEventListener("focus", handleWindowFocus);
+
+    return () => {
+      isCancelled = true;
+      window.clearInterval(interval);
+      window.removeEventListener("focus", handleWindowFocus);
+    };
+  }, [isAuthenticated]);
+
+  const inboxHref = user?.role === "landlord" ? "/landlord/inbox" : "/tenant/inbox";
 
   return (
     <header className="border-b border-neutral bg-white sticky top-0 z-50">
@@ -163,11 +225,13 @@ export function Header() {
             )}
 
             {/* Messages Icon with Badge */}
-            <Link to="/tenant/inbox" className="relative p-[8px] hover:bg-neutral-light-gray transition-colors">
+            <Link to={inboxHref} className="relative p-[8px] hover:bg-neutral-light-gray transition-colors">
               <MessageCircle className="w-[20px] h-[20px] text-neutral-gray" />
-              <span className="absolute top-[4px] right-[4px] w-[16px] h-[16px] bg-brand-primary text-white text-[10px] font-bold flex items-center justify-center rounded-full">
-                2
-              </span>
+              {unreadMessages > 0 && (
+                <span className="absolute top-[4px] right-[4px] min-w-[16px] h-[16px] px-[4px] bg-brand-primary text-white text-[10px] font-bold flex items-center justify-center rounded-full">
+                  {unreadMessages > 99 ? "99+" : unreadMessages}
+                </span>
+              )}
             </Link>
 
             {/* Favorites Icon */}
@@ -221,7 +285,7 @@ export function Header() {
                       </Link>
                     )}
                     <Link
-                      to="/tenant/inbox"
+                      to={inboxHref}
                       className="flex items-center gap-[12px] px-[16px] py-[12px] text-neutral-black text-[14px] hover:bg-neutral-light-gray transition-colors"
                       onClick={() => setShowDropdown(false)}
                     >

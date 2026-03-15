@@ -349,12 +349,27 @@ router.get("/me/favorites", requireAuth, async (req, res) => {
     return;
   }
 
-  const listings = await ListingModel.find({ _id: { $in: favoriteIds } }).lean();
+  const listings = await ListingModel.find({
+    _id: { $in: favoriteIds },
+    status: "active",
+  }).lean();
   const byId = new Map(listings.map((l) => [String(l._id), l]));
   const orderedListings = favoriteIds.map((id) => byId.get(id)).filter(Boolean);
+  const activeFavoriteIds = orderedListings.map((listing) => String(listing!._id));
+
+  if (activeFavoriteIds.length !== favoriteIds.length) {
+    await UserModel.updateOne(
+      { _id: req.user!.sub },
+      {
+        $set: {
+          favoriteListingIds: activeFavoriteIds.map((id) => new Types.ObjectId(id)),
+        },
+      }
+    );
+  }
 
   res.json({
-    listingIds: favoriteIds,
+    listingIds: activeFavoriteIds,
     favorites: orderedListings.map((listing) => ({
       id: String(listing!._id),
       title: listing!.title,
@@ -377,9 +392,12 @@ router.post("/me/favorites", requireAuth, async (req, res) => {
     return;
   }
 
-  const listing = await ListingModel.findById(parsed.data.listingId).lean();
+  const listing = await ListingModel.findOne({
+    _id: parsed.data.listingId,
+    status: "active",
+  }).lean();
   if (!listing) {
-    res.status(404).json({ message: "Listing not found" });
+    res.status(404).json({ message: "Active listing not found" });
     return;
   }
 

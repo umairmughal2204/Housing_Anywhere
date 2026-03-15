@@ -115,12 +115,26 @@ router.get("/", async (req, res) => {
   }
 
   const listings = await ListingModel.find(filter).sort({ createdAt: -1 }).lean();
-  res.json({ listings: listings.map(toListingResponse) });
+  res.json({ listings: listings.map((listing) => toListingResponse(listing)) });
 });
 
 router.get("/:id([0-9a-fA-F]{24})", async (req, res) => {
-  const listing = await ListingModel.findOne({ _id: req.params.id, status: "active" }).lean();
+  // Avoid caching listing detail responses (especially 410 Gone), so reactivating
+  // a listing becomes visible immediately.
+  res.set("Cache-Control", "no-store");
+
+  const listing = await ListingModel.findOneAndUpdate(
+    { _id: req.params.id, status: "active" },
+    { $inc: { views: 1 } },
+    { new: true, lean: true }
+  );
   if (!listing) {
+    const existingListing = await ListingModel.findById(req.params.id).select("status").lean();
+    if (existingListing) {
+      res.status(410).json({ message: "This listing is no longer available" });
+      return;
+    }
+
     res.status(404).json({ message: "Listing not found" });
     return;
   }
@@ -177,7 +191,7 @@ router.post("/upload-images", upload.array("images", 10), async (req, res) => {
 
 router.get("/mine", async (req, res) => {
   const listings = await ListingModel.find({ landlordId: req.user!.sub }).sort({ createdAt: -1 }).lean();
-  res.json({ listings: listings.map(toListingResponse) });
+  res.json({ listings: listings.map((listing) => toListingResponse(listing)) });
 });
 
 router.get("/mine/:id([0-9a-fA-F]{24})", async (req, res) => {

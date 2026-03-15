@@ -14,6 +14,7 @@ interface TenantApplication {
   status: ApplicationStatus;
   createdAt: string;
   listing: {
+    isAvailable: boolean;
     title: string;
     city: string;
     address: string;
@@ -176,6 +177,14 @@ export function TenantApplications() {
                         </p>
                       </div>
                     )}
+                    {!application.listing.isAvailable && (
+                      <div className="flex items-start gap-[10px] bg-[#FFF7ED] border border-[#FDBA74] rounded-[4px] px-[14px] py-[10px] mb-[14px]">
+                        <Clock className="w-[16px] h-[16px] text-[#C2410C] mt-[1px] flex-shrink-0" />
+                        <p className="text-[13px] text-[#9A3412] font-medium">
+                          This listing is no longer available. Your application is still saved, but new bookings are closed.
+                        </p>
+                      </div>
+                    )}
 
                     {/* Status-aware action buttons */}
                     <div className="flex items-center gap-[10px]">
@@ -212,7 +221,7 @@ export function TenantApplications() {
                         to={`/property/${application.listingId}`}
                         className="px-[14px] py-[8px] border border-[rgba(0,0,0,0.16)] text-[#1A1A1A] text-[13px] font-semibold hover:bg-[#F7F7F9] transition-colors"
                       >
-                        View listing
+                        {application.listing.isAvailable ? "View listing" : "View status"}
                       </Link>
                     </div>
                   </div>

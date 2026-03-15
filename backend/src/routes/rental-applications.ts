@@ -91,6 +91,12 @@ router.post(
 
     const listing = await ListingModel.findOne({ _id: input.listingId, status: "active" }).lean();
     if (!listing) {
+      const existingListing = await ListingModel.findById(input.listingId).select("status").lean();
+      if (existingListing) {
+        res.status(410).json({ message: "This listing is no longer available for applications" });
+        return;
+      }
+
       res.status(404).json({ message: "Listing not found" });
       return;
     }
@@ -324,6 +330,7 @@ router.get("/tenant", requireAuth, async (req, res) => {
       status: item.status,
       createdAt: item.createdAt,
       listing: {
+        isAvailable: listingMap.get(String(item.listingId))?.status === "active",
         title: listingMap.get(String(item.listingId))?.title ?? "Listing unavailable",
         city: listingMap.get(String(item.listingId))?.city ?? "",
         address: listingMap.get(String(item.listingId))?.address ?? "",

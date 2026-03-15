@@ -313,7 +313,6 @@ export function LandlordListings() {
                         ? "Deactivate"
                         : "Activate"}
                     </button>
-                    </div>
                   </div>
 
                   {/* Property Details */}

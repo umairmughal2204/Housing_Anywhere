@@ -63,6 +63,7 @@ export function TenantConversation() {
   const {
     messages,
     isConnected,
+    otherUserOnline,
     isLoadingHistory,
     hasMoreMessages,
     sendMessage,
@@ -70,7 +71,7 @@ export function TenantConversation() {
     otherUserTyping,
     emitTyping,
     emitStopTyping,
-  } = useConversation({ conversationId: id, token });
+  } = useConversation({ conversationId: id, token, myRole: "tenant" });
 
   // Load conversation metadata
   useEffect(() => {
@@ -178,9 +179,17 @@ export function TenantConversation() {
           </Link>
 
           <div className="flex-1 flex justify-end">
-            <div className={`flex items-center gap-[6px] text-[12px] font-medium px-[10px] py-[4px] rounded-full ${isConnected ? "bg-green-50 text-green-700" : "bg-[#F7F7F9] text-[#6B6B6B]"}`}>
+            <div
+              className={`flex items-center gap-[6px] text-[12px] font-medium px-[10px] py-[4px] rounded-full ${
+                !isConnected
+                  ? "bg-[#F7F7F9] text-[#6B6B6B]"
+                  : otherUserOnline
+                    ? "bg-green-50 text-green-700"
+                    : "bg-[#F7F7F9] text-[#6B6B6B]"
+              }`}
+            >
               <Wifi className="w-[12px] h-[12px]" />
-              {isConnected ? "Live" : "Connecting"}
+              {!isConnected ? "Connecting" : otherUserOnline ? "Online" : "Offline"}
             </div>
           </div>
         </div>

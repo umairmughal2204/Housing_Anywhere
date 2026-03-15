@@ -101,6 +101,10 @@ export function Account() {
       return;
     }
 
+    if (user.role !== "landlord") {
+      setActiveTab((prev) => (prev === "documents" ? "profile" : prev));
+    }
+
     const parsedDate = splitDate(user.dateOfBirth);
 
     setProfileForm({
@@ -333,17 +337,19 @@ export function Account() {
                 <User className="w-[16px] h-[16px]" />
                 Profile
               </button>
-              <button
-                onClick={() => setActiveTab("documents")}
-                className={`w-full flex items-center gap-[12px] px-[12px] py-[10px] text-left text-[14px] mb-[4px] transition-colors ${
-                  activeTab === "documents"
-                    ? "bg-[#F7F7F9] text-[#1A1A1A] font-semibold"
-                    : "text-[#6B6B6B] hover:bg-[#F7F7F9]"
-                }`}
-              >
-                <FileText className="w-[16px] h-[16px]" />
-                Supporting documents
-              </button>
+              {user?.role === "landlord" ? (
+                <button
+                  onClick={() => setActiveTab("documents")}
+                  className={`w-full flex items-center gap-[12px] px-[12px] py-[10px] text-left text-[14px] mb-[4px] transition-colors ${
+                    activeTab === "documents"
+                      ? "bg-[#F7F7F9] text-[#1A1A1A] font-semibold"
+                      : "text-[#6B6B6B] hover:bg-[#F7F7F9]"
+                  }`}
+                >
+                  <FileText className="w-[16px] h-[16px]" />
+                  Supporting documents
+                </button>
+              ) : null}
               <button
                 onClick={() => setActiveTab("contact")}
                 className={`w-full flex items-center gap-[12px] px-[12px] py-[10px] text-left text-[14px] mb-[4px] transition-colors ${
@@ -663,7 +669,7 @@ export function Account() {
                 </div>
               )}
 
-              {activeTab === "documents" && (
+              {user?.role === "landlord" && activeTab === "documents" && (
                 <div>
                   <h2 className="text-[#1A1A1A] text-[20px] font-bold mb-[32px]">Supporting documents</h2>
 

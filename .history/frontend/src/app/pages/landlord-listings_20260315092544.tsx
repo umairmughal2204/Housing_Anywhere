@@ -179,17 +179,9 @@ export function LandlordListings() {
             <h1 className="text-neutral-black text-[32px] font-bold tracking-[-0.02em] mb-[8px]">
               Listings
             </h1>
-            <p className="text-neutral-gray text-[16px] mb-[12px]">
+            <p className="text-neutral-gray text-[16px]">
               Manage your property listings
             </p>
-            <div className="flex items-center gap-[8px]">
-              <span className="px-[8px] py-[3px] text-[11px] font-bold bg-accent-blue/10 text-accent-blue">
-                Active {statusCounts.active}
-              </span>
-              <span className="px-[8px] py-[3px] text-[11px] font-bold bg-neutral-gray/10 text-neutral-gray">
-                Inactive {statusCounts.inactive}
-              </span>
-            </div>
           </div>
           <Link
             to="/landlord/listings/add"
@@ -275,45 +267,46 @@ export function LandlordListings() {
                 {/* Content */}
                 <div className="flex-1 flex flex-col">
                   <div className="flex items-start justify-between mb-[12px]">
-                    <div className="flex-1 min-w-0 pr-[16px]">
-                      <h3 className="text-neutral-black text-[20px] font-bold mb-[8px] leading-snug">
-                        {listing.title}
-                      </h3>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-[12px] mb-[8px]">
+                        <h3 className="text-neutral-black text-[20px] font-bold">
+                          {listing.title}
+                        </h3>
+                        <span className={`px-[12px] py-[4px] text-[12px] font-bold uppercase tracking-[0.05em] ${
+                          listing.status === "active"
+                            ? "bg-accent-blue/10 text-accent-blue"
+                            : "bg-neutral-gray/10 text-neutral-gray"
+                        }`}>
+                          {listing.status}
+                        </span>
+                      </div>
                       <div className="flex items-center gap-[6px] text-neutral-gray text-[14px] mb-[16px]">
                         <MapPin className="w-[14px] h-[14px]" />
                         <span>{listing.address}, {listing.city}</span>
                       </div>
                     </div>
 
-                    <div className="flex flex-col items-end gap-[8px] flex-shrink-0">
-                      <span className={`px-[10px] py-[4px] text-[11px] font-bold uppercase tracking-[0.05em] ${
+                    <button
+                      onClick={() => {
+                        void handleStatusToggle(listing.id, listing.status);
+                      }}
+                      disabled={updatingStatusId === listing.id}
+                      title={listing.status === "active" ? "Deactivate listing" : "Activate listing"}
+                      className={`inline-flex items-center gap-[8px] px-[14px] py-[8px] rounded-[8px] text-[12px] font-bold uppercase tracking-[0.04em] border transition-colors disabled:opacity-70 disabled:cursor-not-allowed ${
                         listing.status === "active"
-                          ? "bg-accent-blue/10 text-accent-blue"
-                          : listing.status === "draft"
-                          ? "bg-yellow-100 text-yellow-700"
-                          : "bg-neutral-gray/10 text-neutral-gray"
-                      }`}>
-                        {listing.status === "active" ? "Active" : listing.status === "draft" ? "Draft" : "Inactive"}
-                      </span>
-                      <button
-                      onClick={() => { void handleStatusToggle(listing.id, listing.status); }}
-                      disabled={updatingStatusId === listing.id || listing.status === "draft"}
-                      className={`inline-flex items-center gap-[6px] px-[14px] py-[7px] text-[13px] font-semibold border transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
-                        listing.status === "active"
-                          ? "border-[#D03A2B]/40 text-[#D03A2B] bg-[#FFF5F3] hover:bg-[#FFE8E4]"
-                          : "border-[#0E7A4D]/40 text-[#0E7A4D] bg-[#EEFAF4] hover:bg-[#D6F5E7]"
+                          ? "border-[#D03A2B] text-[#D03A2B] bg-[#FFF5F3] hover:bg-[#FFE8E3]"
+                          : "border-[#0E7A4D] text-[#0E7A4D] bg-[#EEFAF4] hover:bg-[#DDF4EA]"
                       }`}
                     >
                       {updatingStatusId === listing.id ? (
-                        <Loader2 className="w-[13px] h-[13px] animate-spin" />
+                        <Loader2 className="w-[14px] h-[14px] animate-spin" />
                       ) : null}
                       {updatingStatusId === listing.id
-                        ? "Updating…"
+                        ? "Updating"
                         : listing.status === "active"
-                        ? "Deactivate"
-                        : "Activate"}
+                          ? "Deactivate"
+                          : "Activate"}
                     </button>
-                    </div>
                   </div>
 
                   {/* Property Details */}
@@ -345,21 +338,23 @@ export function LandlordListings() {
                   </div>
 
                   {/* Stats */}
-                  <div className="flex items-center pt-[16px] border-t border-[rgba(0,0,0,0.08)]">
-                    <div className="flex items-center gap-[16px] text-neutral-gray text-[12px]">
-                      <span className="flex items-center gap-[5px]">
-                        <Eye className="w-[13px] h-[13px]" />
+                  <div className="flex items-center gap-[32px] pt-[16px] border-t border-[rgba(0,0,0,0.08)]">
+                    <div className="flex items-center gap-[8px]">
+                      <Eye className="w-[14px] h-[14px] text-neutral-gray" />
+                      <span className="text-neutral-gray text-[12px]">
                         {listing.views.toLocaleString()} views
                       </span>
-                      <span className="text-[rgba(0,0,0,0.2)]">·</span>
-                      <span className="flex items-center gap-[5px]">
-                        <MessageSquare className="w-[13px] h-[13px]" />
-                        {listing.inquiries} {listing.inquiries === 1 ? "inquiry" : "inquiries"}
+                    </div>
+                    <div className="flex items-center gap-[8px]">
+                      <MessageSquare className="w-[14px] h-[14px] text-neutral-gray" />
+                      <span className="text-neutral-gray text-[12px]">
+                        {listing.inquiries} inquiries
                       </span>
-                      <span className="text-[rgba(0,0,0,0.2)]">·</span>
-                      <span className="flex items-center gap-[5px]">
-                        <Calendar className="w-[13px] h-[13px]" />
-                        {new Date(listing.createdAt).toLocaleDateString("en-GB", {
+                    </div>
+                    <div className="flex items-center gap-[8px] text-neutral-gray text-[12px]">
+                      <Calendar className="w-[14px] h-[14px] text-neutral-gray" />
+                      <span>
+                        Created: {new Date(listing.createdAt).toLocaleDateString("en-GB", {
                           day: "numeric",
                           month: "short",
                           year: "numeric",
