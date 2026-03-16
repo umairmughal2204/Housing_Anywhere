@@ -360,7 +360,41 @@ export function RentalApplication() {
         </div>
       </header>
 
-      {!isLoadingListing && !listing && (
+      {user?.isLandlord && (
+        <div className="max-w-[1200px] mx-auto px-[32px] py-[48px]">
+          <div className="max-w-[720px] border border-[rgba(0,0,0,0.08)] bg-[#FFF7ED] p-[40px]">
+            <p className="text-[12px] font-bold uppercase tracking-[0.08em] text-[#C2410C] mb-[12px]">
+              Action not allowed
+            </p>
+            <h1 className="text-[#1A1A1A] text-[28px] font-bold tracking-[-0.02em] mb-[12px]">
+              Landlords can't apply for rentals
+            </h1>
+            <p className="text-[#6B6B6B] text-[15px] leading-[1.6] mb-[28px]">
+              Your current account is registered as a landlord. Only tenants can submit rental applications.
+              To apply for this property, please create a separate tenant account.
+            </p>
+            <div className="flex items-center gap-[12px] flex-wrap">
+              <button
+                onClick={() => {
+                  logout();
+                  navigate("/signup?role=tenant");
+                }}
+                className="px-[20px] py-[12px] bg-brand-primary text-white text-[14px] font-semibold hover:bg-brand-primary-dark transition-colors"
+              >
+                Create a tenant account
+              </button>
+              <button
+                onClick={() => navigate(`/property/${id}`)}
+                className="px-[20px] py-[12px] border border-[rgba(0,0,0,0.16)] text-[#1A1A1A] text-[14px] font-semibold hover:bg-[#F7F7F9] transition-colors"
+              >
+                Back to listing
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {!user?.isLandlord && !isLoadingListing && !listing && (
         <div className="max-w-[1200px] mx-auto px-[32px] py-[48px]">
           <div className="max-w-[720px] border border-[rgba(0,0,0,0.08)] bg-[#FFF7ED] p-[32px]">
             <p className="text-[12px] font-bold uppercase tracking-[0.08em] text-[#C2410C] mb-[12px]">
@@ -390,7 +424,7 @@ export function RentalApplication() {
         </div>
       )}
 
-      {listing && (
+      {!user?.isLandlord && listing && (
       <>
       {/* Progress Steps */}
       <div className="bg-neutral-light-gray border-b border-[rgba(0,0,0,0.08)]">

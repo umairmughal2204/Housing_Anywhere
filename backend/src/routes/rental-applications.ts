@@ -66,6 +66,13 @@ router.post(
     { name: "incomeProof", maxCount: 1 },
   ]),
   async (req, res) => {
+    if (req.user!.role === "landlord") {
+      res
+        .status(403)
+        .json({ message: "Landlords cannot submit rental applications. Please create a tenant account to apply for properties." });
+      return;
+    }
+
     const rawApplication = req.body.application;
     if (typeof rawApplication !== "string") {
       res.status(400).json({ message: "Invalid application payload" });
