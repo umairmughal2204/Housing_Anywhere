@@ -55,6 +55,7 @@ export function TenantConversation() {
   const [inputText, setInputText] = useState("");
   const [isSending, setIsSending] = useState(false);
   const [sendError, setSendError] = useState("");
+  const [applicationStatus, setApplicationStatus] = useState<{ hasApplied: boolean; status: string | null } | null>(null);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
@@ -88,6 +89,16 @@ export function TenantConversation() {
         }
         const data = (await res.json()) as { conversation: ConversationMeta };
         setMeta(data.conversation);
+
+        // Check application status for this listing
+        const checkRes = await fetch(
+          `${API_BASE}/api/rental-applications/tenant/check?listingId=${data.conversation.listingId}`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        if (checkRes.ok) {
+          const checkData = (await checkRes.json()) as { hasApplied: boolean; status: string | null };
+          setApplicationStatus(checkData);
+        }
       } catch {
         setMetaError("Failed to load conversation");
       }
@@ -385,18 +396,33 @@ export function TenantConversation() {
                 </div>
 
                 {/* Apply CTA */}
-                <div className="bg-brand-light border border-brand-primary/20 p-[14px]">
-                  <p className="text-[13px] text-[#1A1A1A] font-semibold mb-[6px]">Ready to apply?</p>
-                  <p className="text-[12px] text-[#6B6B6B] mb-[10px] leading-[1.5]">
-                    Submit an application to secure this place.
-                  </p>
-                  <Link
-                    to={`/property/${meta.listingId}/apply`}
-                    className="block text-center py-[8px] bg-brand-primary text-white text-[12px] font-semibold hover:bg-brand-primary-dark transition-colors"
-                  >
-                    Apply to rent
-                  </Link>
-                </div>
+                {applicationStatus?.hasApplied ? (
+                  <div className="bg-[#F0FDF4] border border-[#86EFAC] p-[14px]">
+                    <p className="text-[13px] text-[#166534] font-bold mb-[4px]">
+                      Application submitted
+                    </p>
+                    <p className="text-[12px] text-[#15803D] leading-[1.5]">
+                      {applicationStatus.status === "approved"
+                        ? "Your application has been approved."
+                        : applicationStatus.status === "rejected"
+                        ? "Your application was not accepted."
+                        : "Your application is under review by the landlord."}
+                    </p>
+                  </div>
+                ) : (
+                  <div className="bg-brand-light border border-brand-primary/20 p-[14px]">
+                    <p className="text-[13px] text-[#1A1A1A] font-semibold mb-[6px]">Ready to apply?</p>
+                    <p className="text-[12px] text-[#6B6B6B] mb-[10px] leading-[1.5]">
+                      Submit an application to secure this place.
+                    </p>
+                    <Link
+                      to={`/property/${meta.listingId}/apply`}
+                      className="block text-center py-[8px] bg-brand-primary text-white text-[12px] font-semibold hover:bg-brand-primary-dark transition-colors"
+                    >
+                      Apply to rent
+                    </Link>
+                  </div>
+                )}
 
                 {/* My applications */}
                 <Link

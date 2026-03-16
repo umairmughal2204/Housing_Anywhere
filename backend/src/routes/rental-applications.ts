@@ -228,6 +228,27 @@ router.post(
   }
 );
 
+router.get("/tenant/check", requireAuth, async (req, res) => {
+  const listingId = req.query.listingId;
+  if (typeof listingId !== "string" || !/^[0-9a-fA-F]{24}$/.test(listingId)) {
+    res.status(400).json({ message: "Invalid listingId" });
+    return;
+  }
+
+  const application = await RentalApplicationModel.findOne({
+    tenantId: new Types.ObjectId(req.user!.sub),
+    listingId: new Types.ObjectId(listingId),
+  })
+    .select("status createdAt")
+    .lean();
+
+  res.json({
+    hasApplied: !!application,
+    status: application?.status ?? null,
+    createdAt: application?.createdAt ?? null,
+  });
+});
+
 router.get("/landlord", requireAuth, requireRole("landlord"), async (req, res) => {
   const landlordId = req.user!.sub;
 
