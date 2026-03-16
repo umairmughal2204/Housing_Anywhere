@@ -240,7 +240,7 @@ function Counter({ value, suffix = "", prefix = "", duration = 2 }: { value: num
 }
 
 export function Home() {
-  const apiBase = (import.meta as any).env.VITE_API_BASE_URL ?? "http://localhost:4000";
+  const apiBase = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:4000";
   const [searchCity, setSearchCity] = useState("");
   const [startDate, setStartDate] = useState<Date | null>(new Date(2026, 2, 1)); // March 1, 2026
   const [endDate, setEndDate] = useState<Date | null>(new Date(2026, 5, 1)); // June 1, 2026
