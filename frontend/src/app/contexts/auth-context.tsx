@@ -148,8 +148,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     const data = (await response.json()) as AuthResponse;
-    saveUser(data.user);
     localStorage.setItem("authToken", data.token);
+    saveUser(data.user);
   };
 
   const signup = async (data: SignupData) => {
@@ -167,8 +167,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     const payload = (await response.json()) as AuthResponse;
-    saveUser(payload.user);
     localStorage.setItem("authToken", payload.token);
+    saveUser(payload.user);
   };
 
   const logout = () => {
@@ -198,8 +198,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     const payload = (await response.json()) as AuthResponse;
-    saveUser(payload.user);
     localStorage.setItem("authToken", payload.token);
+    saveUser(payload.user);
   };
 
   const updateProfile = async (data: ProfileUpdateData) => {

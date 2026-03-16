@@ -250,7 +250,7 @@ export function Home() {
   const [hasAutoShiftedEmptyRecent, setHasAutoShiftedEmptyRecent] = useState(false);
   const cityDropdownRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, isLoading: isAuthLoading } = useAuth();
   const [citySuggestions, setCitySuggestions] = useState<CitySuggestion[]>(cities);
   const [recommendations, setRecommendations] = useState<HomeListing[]>([]);
   const [isLoadingRecommendations, setIsLoadingRecommendations] = useState(false);
@@ -258,6 +258,9 @@ export function Home() {
   const [isLoadingListings, setIsLoadingListings] = useState(false);
   const [favorites, setFavorites] = useState<FavoriteListing[]>([]);
   const [isLoadingFavorites, setIsLoadingFavorites] = useState(false);
+
+  const isAbortError = (error: unknown) =>
+    error instanceof DOMException && error.name === "AbortError";
 
   useEffect(() => {
     const loadCitySuggestions = async () => {
@@ -278,22 +281,43 @@ export function Home() {
   }, [apiBase]);
 
   useEffect(() => {
+    if (isAuthLoading) {
+      return;
+    }
+
+    if (!isAuthenticated) {
+      setRecommendations([]);
+      setRecentlyViewed([]);
+      setFavorites([]);
+      setIsLoadingRecommendations(false);
+      setIsLoadingListings(false);
+      setIsLoadingFavorites(false);
+      return;
+    }
+
+    const token = localStorage.getItem("authToken");
+    if (!token) {
+      setRecommendations([]);
+      setRecentlyViewed([]);
+      setFavorites([]);
+      setIsLoadingRecommendations(false);
+      setIsLoadingListings(false);
+      setIsLoadingFavorites(false);
+      return;
+    }
+
+    const abortController = new AbortController();
+    const headers = { Authorization: `Bearer ${token}` };
+
+    setIsLoadingRecommendations(true);
+    setIsLoadingListings(true);
+    setIsLoadingFavorites(true);
+
     const loadRecommendations = async () => {
-      if (!isAuthenticated) {
-        setRecommendations([]);
-        return;
-      }
-
-      const token = localStorage.getItem("authToken");
-      if (!token) {
-        setRecommendations([]);
-        return;
-      }
-
-      setIsLoadingRecommendations(true);
       try {
         const response = await fetch(`${apiBase}/api/auth/me/recommendations?limit=3`, {
-          headers: { Authorization: `Bearer ${token}` },
+          headers,
+          signal: abortController.signal,
         });
         if (!response.ok) {
           throw new Error("Failed to load recommendations");
@@ -301,33 +325,22 @@ export function Home() {
 
         const payload = (await response.json()) as { recommendations: HomeListing[] };
         setRecommendations(payload.recommendations);
-      } catch {
-        setRecommendations([]);
+      } catch (error) {
+        if (!isAbortError(error)) {
+          setRecommendations([]);
+        }
       } finally {
-        setIsLoadingRecommendations(false);
+        if (!abortController.signal.aborted) {
+          setIsLoadingRecommendations(false);
+        }
       }
     };
 
-    void loadRecommendations();
-  }, [apiBase, isAuthenticated]);
-
-  useEffect(() => {
     const loadHomeListings = async () => {
-      if (!isAuthenticated) {
-        setRecentlyViewed([]);
-        return;
-      }
-
-      const token = localStorage.getItem("authToken");
-      if (!token) {
-        setRecentlyViewed([]);
-        return;
-      }
-
-      setIsLoadingListings(true);
       try {
         const response = await fetch(`${apiBase}/api/auth/me/recently-viewed?limit=3`, {
-          headers: { Authorization: `Bearer ${token}` },
+          headers,
+          signal: abortController.signal,
         });
         if (!response.ok) {
           throw new Error("Failed to load home listings");
@@ -335,40 +348,46 @@ export function Home() {
 
         const payload = (await response.json()) as { listings: HomeListing[] };
         setRecentlyViewed(payload.listings);
-      } catch {
-        setRecentlyViewed([]);
+      } catch (error) {
+        if (!isAbortError(error)) {
+          setRecentlyViewed([]);
+        }
       } finally {
-        setIsLoadingListings(false);
+        if (!abortController.signal.aborted) {
+          setIsLoadingListings(false);
+        }
       }
     };
 
-    void loadHomeListings();
-  }, [apiBase, isAuthenticated]);
-
-  useEffect(() => {
     const loadFavorites = async () => {
-      if (!isAuthenticated) {
-        setFavorites([]);
-        return;
-      }
-      const token = localStorage.getItem("authToken");
-      if (!token) return;
-      setIsLoadingFavorites(true);
       try {
         const response = await fetch(`${apiBase}/api/auth/me/favorites`, {
-          headers: { Authorization: `Bearer ${token}` },
+          headers,
+          signal: abortController.signal,
         });
-        if (!response.ok) throw new Error("Failed to load favorites");
+        if (!response.ok) {
+          throw new Error("Failed to load favorites");
+        }
+
         const payload = (await response.json()) as { favorites: FavoriteListing[] };
         setFavorites(payload.favorites);
-      } catch {
-        setFavorites([]);
+      } catch (error) {
+        if (!isAbortError(error)) {
+          setFavorites([]);
+        }
       } finally {
-        setIsLoadingFavorites(false);
+        if (!abortController.signal.aborted) {
+          setIsLoadingFavorites(false);
+        }
       }
     };
-    void loadFavorites();
-  }, [apiBase, isAuthenticated]);
+
+    void Promise.allSettled([loadRecommendations(), loadHomeListings(), loadFavorites()]);
+
+    return () => {
+      abortController.abort();
+    };
+  }, [apiBase, isAuthenticated, isAuthLoading]);
 
   useEffect(() => {
     if (!isAuthenticated) {

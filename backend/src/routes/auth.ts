@@ -578,7 +578,6 @@ router.get("/me/recently-viewed", requireAuth, async (req, res) => {
     interactionType: "view",
   })
     .sort({ lastInteractedAt: -1 })
-    .limit(parsed.data.limit)
     .select("listingId")
     .lean();
 
@@ -593,7 +592,7 @@ router.get("/me/recently-viewed", requireAuth, async (req, res) => {
     status: "active",
   }).lean();
 
-  const orderedListings = sortListingsByReferenceOrder(listings, orderedListingIds);
+  const orderedListings = sortListingsByReferenceOrder(listings, orderedListingIds).slice(0, parsed.data.limit);
   res.json({ listings: orderedListings.map((listing) => toRecommendedListing(listing)) });
 });
 
