@@ -202,7 +202,7 @@ export function TenantApplications() {
                           type="button"
                           onClick={() => void handleMessageLandlord(application.id, application.listingId)}
                           disabled={startingConversationId === application.listingId}
-                          className="inline-flex items-center gap-[8px] px-[16px] py-[9px] bg-brand-primary text-white text-[13px] font-semibold hover:bg-brand-primary-dark transition-colors"
+                          className="inline-flex items-center gap-[8px] px-[16px] py-[9px] bg-brand-primary text-white text-[13px] font-semibold hover:bg-brand-primary-dark transition-colors disabled:opacity-60"
                         >
                           <MessageCircle className="w-[13px] h-[13px]" />
                           {startingConversationId === application.listingId ? "Opening chat..." : "Message landlord"}
@@ -216,6 +216,17 @@ export function TenantApplications() {
                           <Search className="w-[13px] h-[13px]" />
                           Browse other properties
                         </Link>
+                      )}
+                      {(application.status === "approved" || application.status === "rejected") && (
+                        <button
+                          type="button"
+                          onClick={() => void handleMessageLandlord(application.id, application.listingId)}
+                          disabled={startingConversationId === application.listingId}
+                          className="inline-flex items-center gap-[8px] px-[16px] py-[9px] border border-[rgba(0,0,0,0.16)] text-[#1A1A1A] text-[13px] font-semibold hover:bg-[#F7F7F9] transition-colors disabled:opacity-60"
+                        >
+                          <MessageCircle className="w-[13px] h-[13px]" />
+                          {startingConversationId === application.listingId ? "Opening chat..." : "Message landlord"}
+                        </button>
                       )}
                       <Link
                         to={`/property/${application.listingId}`}
