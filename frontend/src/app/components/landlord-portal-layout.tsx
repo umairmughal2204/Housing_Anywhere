@@ -8,12 +8,14 @@ import {
   LogOut,
   Bell,
   ChevronDown,
+  Globe,
   Menu,
   X,
 } from "lucide-react";
 import { useAuth } from "../contexts/auth-context";
 import { useEffect, useRef, useState } from "react";
 import { API_BASE } from "../config";
+import { changeSiteLanguage, getSavedLanguageLabel, SUPPORTED_LANGUAGES } from "../utils/translate";
 
 interface LandlordPortalLayoutProps {
   children: React.ReactNode;
@@ -25,6 +27,8 @@ export function LandlordPortalLayout({ children }: LandlordPortalLayoutProps) {
   const { user, logout } = useAuth();
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [selectedLanguage, setSelectedLanguage] = useState(getSavedLanguageLabel());
+  const [showLanguageDropdown, setShowLanguageDropdown] = useState(false);
   const [unreadMessages, setUnreadMessages] = useState(0);
   const [pendingApplications, setPendingApplications] = useState(0);
   const [totalProperties, setTotalProperties] = useState(0);
@@ -32,6 +36,7 @@ export function LandlordPortalLayout({ children }: LandlordPortalLayoutProps) {
   const [showNotifications, setShowNotifications] = useState(false);
   const notificationsRef = useRef<HTMLDivElement>(null);
   const userMenuRef = useRef<HTMLDivElement>(null);
+  const languageDropdownRef = useRef<HTMLDivElement>(null);
 
   const navigation = [
     { name: "Dashboard", href: "/landlord/dashboard", icon: LayoutDashboard },
@@ -124,11 +129,15 @@ export function LandlordPortalLayout({ children }: LandlordPortalLayoutProps) {
       if (showUserMenu && userMenuRef.current && !userMenuRef.current.contains(target)) {
         setShowUserMenu(false);
       }
+
+      if (showLanguageDropdown && languageDropdownRef.current && !languageDropdownRef.current.contains(target)) {
+        setShowLanguageDropdown(false);
+      }
     };
 
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [showNotifications, showUserMenu]);
+  }, [showLanguageDropdown, showNotifications, showUserMenu]);
 
   const handleLogout = () => {
     logout();
@@ -200,6 +209,37 @@ export function LandlordPortalLayout({ children }: LandlordPortalLayoutProps) {
 
           {/* Right: Actions */}
           <div className="flex items-center gap-[16px]">
+            {/* Language */}
+            <div className="relative" ref={languageDropdownRef}>
+              <button
+                onClick={() => setShowLanguageDropdown((prev) => !prev)}
+                className="p-[8px] hover:bg-neutral-light-gray transition-colors"
+                aria-label="Change language"
+              >
+                <Globe className="w-[20px] h-[20px] text-neutral-gray" />
+              </button>
+
+              {showLanguageDropdown && (
+                <div className="absolute top-[calc(100%+8px)] right-0 w-[180px] max-h-[260px] overflow-y-auto bg-white border border-[rgba(0,0,0,0.08)] shadow-lg">
+                  {SUPPORTED_LANGUAGES.map((language) => (
+                    <button
+                      key={language.code}
+                      onClick={() => {
+                        setSelectedLanguage(language.label);
+                        changeSiteLanguage(language.code);
+                        setShowLanguageDropdown(false);
+                      }}
+                      className={`w-full flex items-center justify-between px-[16px] py-[12px] text-neutral-black text-[14px] hover:bg-neutral-light-gray transition-colors ${
+                        selectedLanguage === language.label ? "bg-neutral-light-gray" : ""
+                      }`}
+                    >
+                      <span>{language.label}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
             {/* Notifications */}
             <div className="relative" ref={notificationsRef}>
               <button

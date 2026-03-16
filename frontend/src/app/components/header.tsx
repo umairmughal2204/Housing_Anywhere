@@ -2,6 +2,7 @@ import { Link } from "react-router";
 import { Globe, MessageCircle, Heart, User, CreditCard, HelpCircle, Settings, LogOut, TrendingUp, LayoutDashboard, FileText } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { useAuth } from "../contexts/auth-context";
+import { changeSiteLanguage, getSavedLanguageLabel, SUPPORTED_LANGUAGES } from "../utils/translate";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:4000";
 
@@ -12,26 +13,11 @@ interface HeaderConversationItem {
 export function Header() {
   const { user, isAuthenticated, logout } = useAuth();
   const [showDropdown, setShowDropdown] = useState(false);
-  const [selectedLanguage, setSelectedLanguage] = useState("English");
+  const [selectedLanguage, setSelectedLanguage] = useState(getSavedLanguageLabel());
   const [showLanguageDropdown, setShowLanguageDropdown] = useState(false);
   const [unreadMessages, setUnreadMessages] = useState(0);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const languageDropdownRef = useRef<HTMLDivElement>(null);
-
-  const languages = [
-    "English",
-    "Español",
-    "Français",
-    "Deutsch",
-    "Italiano",
-    "Nederlands",
-    "Português",
-    "Polski",
-    "Türkçe",
-    "中文",
-    "日本語",
-    "한국어"
-  ];
 
   // Get user initials
   const getUserInitials = () => {
@@ -184,17 +170,20 @@ export function Header() {
 
               {/* Language Dropdown Menu */}
               {showLanguageDropdown && (
-                <div className="absolute top-[calc(100%+8px)] right-0 w-[160px] bg-white border border-neutral shadow-lg">
-                  {languages.map((language) => (
+                <div className="absolute top-[calc(100%+8px)] right-0 w-[180px] max-h-[260px] overflow-y-auto bg-white border border-neutral shadow-lg">
+                  {SUPPORTED_LANGUAGES.map((language) => (
                     <button
-                      key={language}
+                      key={language.code}
                       onClick={() => {
-                        setSelectedLanguage(language);
+                        setSelectedLanguage(language.label);
+                        changeSiteLanguage(language.code);
                         setShowLanguageDropdown(false);
                       }}
-                      className="w-full flex items-center px-[16px] py-[12px] text-neutral-black text-[14px] hover:bg-neutral-light-gray transition-colors"
+                      className={`w-full flex items-center justify-between px-[16px] py-[12px] text-neutral-black text-[14px] hover:bg-neutral-light-gray transition-colors ${
+                        selectedLanguage === language.label ? "bg-neutral-light-gray" : ""
+                      }`}
                     >
-                      {language}
+                      <span>{language.label}</span>
                     </button>
                   ))}
                 </div>
@@ -389,17 +378,20 @@ export function Header() {
 
               {/* Language Dropdown Menu */}
               {showLanguageDropdown && (
-                <div className="absolute top-[calc(100%+8px)] right-0 w-[160px] bg-white border border-neutral shadow-lg">
-                  {languages.map((language) => (
+                <div className="absolute top-[calc(100%+8px)] right-0 w-[180px] max-h-[260px] overflow-y-auto bg-white border border-neutral shadow-lg">
+                  {SUPPORTED_LANGUAGES.map((language) => (
                     <button
-                      key={language}
+                      key={language.code}
                       onClick={() => {
-                        setSelectedLanguage(language);
+                        setSelectedLanguage(language.label);
+                        changeSiteLanguage(language.code);
                         setShowLanguageDropdown(false);
                       }}
-                      className="w-full flex items-center px-[16px] py-[12px] text-neutral-black text-[14px] hover:bg-neutral-light-gray transition-colors"
+                      className={`w-full flex items-center justify-between px-[16px] py-[12px] text-neutral-black text-[14px] hover:bg-neutral-light-gray transition-colors ${
+                        selectedLanguage === language.label ? "bg-neutral-light-gray" : ""
+                      }`}
                     >
-                      {language}
+                      <span>{language.label}</span>
                     </button>
                   ))}
                 </div>

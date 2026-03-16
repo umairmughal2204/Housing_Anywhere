@@ -1,3 +1,18 @@
 @import './fonts.css';
 @import './tailwind.css';
 @import './theme.css';
+
+/* Hide default Google Translate widget/banner; language switching is handled via custom UI. */
+#google_translate_element,
+.goog-te-banner-frame,
+.goog-te-gadget,
+.goog-te-combo,
+.goog-tooltip,
+.goog-tooltip:hover,
+.goog-text-highlight {
+	display: none !important;
+}
+
+body {
+	top: 0 !important;
+}
