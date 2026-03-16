@@ -423,7 +423,7 @@ export function Account() {
                     <div className="grid grid-cols-2 gap-[16px]">
                       <div>
                         <label className="block text-[#1A1A1A] text-[13px] font-semibold mb-[8px]">
-                          First Name <span className="text-[#FF4B27]">*</span>
+                          First Name <span className="text-[#0066CC]">*</span>
                         </label>
                         <input
                           type="text"
@@ -435,12 +435,12 @@ export function Account() {
                               firstName: e.target.value,
                             }))
                           }
-                          className="w-full px-[12px] py-[10px] border border-[rgba(0,0,0,0.16)] text-[#1A1A1A] text-[14px] focus:outline-none focus:border-[#FF4B27]"
+                          className="w-full px-[12px] py-[10px] border border-[rgba(0,0,0,0.16)] text-[#1A1A1A] text-[14px] focus:outline-none focus:border-[#0066CC]"
                         />
                       </div>
                       <div>
                         <label className="block text-[#1A1A1A] text-[13px] font-semibold mb-[8px]">
-                          Last Name <span className="text-[#FF4B27]">*</span>
+                          Last Name <span className="text-[#0066CC]">*</span>
                         </label>
                         <input
                           type="text"
@@ -452,7 +452,7 @@ export function Account() {
                               lastName: e.target.value,
                             }))
                           }
-                          className="w-full px-[12px] py-[10px] border border-[rgba(0,0,0,0.16)] text-[#1A1A1A] text-[14px] focus:outline-none focus:border-[#FF4B27]"
+                          className="w-full px-[12px] py-[10px] border border-[rgba(0,0,0,0.16)] text-[#1A1A1A] text-[14px] focus:outline-none focus:border-[#0066CC]"
                         />
                       </div>
                     </div>
@@ -463,7 +463,7 @@ export function Account() {
                         <select
                           value={profileForm.day}
                           onChange={(e) => setProfileForm((prev) => ({ ...prev, day: e.target.value }))}
-                          className="px-[12px] py-[10px] border border-[rgba(0,0,0,0.16)] text-[#1A1A1A] text-[14px] focus:outline-none focus:border-[#FF4B27]"
+                          className="px-[12px] py-[10px] border border-[rgba(0,0,0,0.16)] text-[#1A1A1A] text-[14px] focus:outline-none focus:border-[#0066CC]"
                         >
                           <option value="">Day</option>
                           {Array.from({ length: 31 }, (_, i) => (
@@ -475,7 +475,7 @@ export function Account() {
                         <select
                           value={profileForm.month}
                           onChange={(e) => setProfileForm((prev) => ({ ...prev, month: e.target.value }))}
-                          className="px-[12px] py-[10px] border border-[rgba(0,0,0,0.16)] text-[#1A1A1A] text-[14px] focus:outline-none focus:border-[#FF4B27]"
+                          className="px-[12px] py-[10px] border border-[rgba(0,0,0,0.16)] text-[#1A1A1A] text-[14px] focus:outline-none focus:border-[#0066CC]"
                         >
                           <option value="">Month</option>
                           {Array.from({ length: 12 }, (_, i) => (
@@ -487,7 +487,7 @@ export function Account() {
                         <select
                           value={profileForm.year}
                           onChange={(e) => setProfileForm((prev) => ({ ...prev, year: e.target.value }))}
-                          className="px-[12px] py-[10px] border border-[rgba(0,0,0,0.16)] text-[#1A1A1A] text-[14px] focus:outline-none focus:border-[#FF4B27]"
+                          className="px-[12px] py-[10px] border border-[rgba(0,0,0,0.16)] text-[#1A1A1A] text-[14px] focus:outline-none focus:border-[#0066CC]"
                         >
                           <option value="">Year</option>
                           {years.map((year) => (
@@ -515,7 +515,7 @@ export function Account() {
                                   gender: e.target.value as Gender,
                                 }))
                               }
-                              className="w-[16px] h-[16px] accent-[#FF4B27]"
+                              className="w-[16px] h-[16px] accent-[#0066CC]"
                             />
                             <span className="text-[#1A1A1A] text-[14px] capitalize">{option}</span>
                           </label>
@@ -535,7 +535,7 @@ export function Account() {
                               cityOfResidence: e.target.value,
                             }))
                           }
-                          className="w-full px-[12px] py-[10px] border border-[rgba(0,0,0,0.16)] text-[#1A1A1A] text-[14px] focus:outline-none focus:border-[#FF4B27]"
+                          className="w-full px-[12px] py-[10px] border border-[rgba(0,0,0,0.16)] text-[#1A1A1A] text-[14px] focus:outline-none focus:border-[#0066CC]"
                         />
                       </div>
                       <div>
@@ -549,7 +549,7 @@ export function Account() {
                               nationality: e.target.value,
                             }))
                           }
-                          className="w-full px-[12px] py-[10px] border border-[rgba(0,0,0,0.16)] text-[#1A1A1A] text-[14px] focus:outline-none focus:border-[#FF4B27]"
+                          className="w-full px-[12px] py-[10px] border border-[rgba(0,0,0,0.16)] text-[#1A1A1A] text-[14px] focus:outline-none focus:border-[#0066CC]"
                         />
                       </div>
                     </div>
@@ -570,7 +570,7 @@ export function Account() {
                                   occupation: e.target.value as Occupation,
                                 }))
                               }
-                              className="w-[16px] h-[16px] accent-[#FF4B27]"
+                              className="w-[16px] h-[16px] accent-[#0066CC]"
                             />
                             <span className="text-[#1A1A1A] text-[14px]">
                               {option === "working" ? "Working professional" : option.charAt(0).toUpperCase() + option.slice(1)}
@@ -588,7 +588,7 @@ export function Account() {
                             organization: e.target.value,
                           }))
                         }
-                        className="w-full px-[12px] py-[10px] border border-[rgba(0,0,0,0.16)] text-[#1A1A1A] text-[14px] placeholder:text-[#6B6B6B] focus:outline-none focus:border-[#FF4B27]"
+                        className="w-full px-[12px] py-[10px] border border-[rgba(0,0,0,0.16)] text-[#1A1A1A] text-[14px] placeholder:text-[#6B6B6B] focus:outline-none focus:border-[#0066CC]"
                       />
                     </div>
 
@@ -604,7 +604,7 @@ export function Account() {
                           }))
                         }
                         placeholder="Tell us about yourself..."
-                        className="w-full px-[12px] py-[10px] border border-[rgba(0,0,0,0.16)] text-[#1A1A1A] text-[14px] placeholder:text-[#6B6B6B] focus:outline-none focus:border-[#FF4B27] resize-none"
+                        className="w-full px-[12px] py-[10px] border border-[rgba(0,0,0,0.16)] text-[#1A1A1A] text-[14px] placeholder:text-[#6B6B6B] focus:outline-none focus:border-[#0066CC] resize-none"
                       />
                     </div>
 
@@ -616,7 +616,7 @@ export function Account() {
                             <select
                               value={lang}
                               onChange={(e) => updateLanguage(index, e.target.value)}
-                              className="flex-1 px-[12px] py-[10px] border border-[rgba(0,0,0,0.16)] text-[#1A1A1A] text-[14px] focus:outline-none focus:border-[#FF4B27]"
+                              className="flex-1 px-[12px] py-[10px] border border-[rgba(0,0,0,0.16)] text-[#1A1A1A] text-[14px] focus:outline-none focus:border-[#0066CC]"
                             >
                               <option value="">Select language</option>
                               {LANGUAGE_OPTIONS.map((language) => (
@@ -628,7 +628,7 @@ export function Account() {
                             <button
                               type="button"
                               onClick={() => removeLanguage(index)}
-                              className="p-[8px] text-[#FF4B27] hover:bg-[#F7F7F9] transition-colors"
+                              className="p-[8px] text-[#0066CC] hover:bg-[#F7F7F9] transition-colors"
                             >
                               <Trash2 className="w-[16px] h-[16px]" />
                             </button>
@@ -638,7 +638,7 @@ export function Account() {
                       <button
                         type="button"
                         onClick={addLanguage}
-                        className="flex items-center gap-[8px] text-[#FF4B27] text-[13px] font-semibold hover:underline"
+                        className="flex items-center gap-[8px] text-[#0066CC] text-[13px] font-semibold hover:underline"
                       >
                         <Plus className="w-[14px] h-[14px]" />
                         Add languages
@@ -660,7 +660,7 @@ export function Account() {
                       <button
                         type="submit"
                         disabled={isSavingProfile}
-                        className="px-[32px] py-[12px] bg-[#FF4B27] text-white text-[14px] font-bold hover:bg-[#E63E1C] transition-colors disabled:opacity-70"
+                        className="px-[32px] py-[12px] bg-[#0066CC] text-white text-[14px] font-bold hover:bg-[#0052A3] transition-colors disabled:opacity-70"
                       >
                         {isSavingProfile ? "SAVING..." : "SAVE CHANGES"}
                       </button>
@@ -741,7 +741,7 @@ export function Account() {
                             email: e.target.value,
                           }))
                         }
-                        className="w-full px-[12px] py-[10px] border border-[rgba(0,0,0,0.16)] text-[#1A1A1A] text-[14px] focus:outline-none focus:border-[#FF4B27]"
+                        className="w-full px-[12px] py-[10px] border border-[rgba(0,0,0,0.16)] text-[#1A1A1A] text-[14px] focus:outline-none focus:border-[#0066CC]"
                       />
                       <p className="text-[#6B6B6B] text-[12px] mt-[6px]">
                         Status: {user?.emailVerified ? "Verified" : "Not Verified"}
@@ -759,7 +759,7 @@ export function Account() {
                               phoneCountryCode: e.target.value,
                             }))
                           }
-                          className="w-[120px] px-[12px] py-[10px] border border-[rgba(0,0,0,0.16)] text-[#1A1A1A] text-[14px] focus:outline-none focus:border-[#FF4B27]"
+                          className="w-[120px] px-[12px] py-[10px] border border-[rgba(0,0,0,0.16)] text-[#1A1A1A] text-[14px] focus:outline-none focus:border-[#0066CC]"
                         >
                           {COUNTRY_CODES.map((code) => (
                             <option key={code} value={code}>
@@ -776,7 +776,7 @@ export function Account() {
                               phoneNumber: e.target.value,
                             }))
                           }
-                          className="flex-1 px-[12px] py-[10px] border border-[rgba(0,0,0,0.16)] text-[#1A1A1A] text-[14px] focus:outline-none focus:border-[#FF4B27]"
+                          className="flex-1 px-[12px] py-[10px] border border-[rgba(0,0,0,0.16)] text-[#1A1A1A] text-[14px] focus:outline-none focus:border-[#0066CC]"
                         />
                       </div>
                       <p className="text-[#6B6B6B] text-[12px]">
@@ -790,7 +790,7 @@ export function Account() {
                     <button
                       type="submit"
                       disabled={isSavingContact}
-                      className="px-[32px] py-[12px] bg-[#FF4B27] text-white text-[14px] font-bold hover:bg-[#E63E1C] transition-colors disabled:opacity-70"
+                      className="px-[32px] py-[12px] bg-[#0066CC] text-white text-[14px] font-bold hover:bg-[#0052A3] transition-colors disabled:opacity-70"
                     >
                       {isSavingContact ? "SAVING..." : "SAVE CONTACT DETAILS"}
                     </button>
@@ -808,7 +808,7 @@ export function Account() {
                         type="password"
                         value={currentPassword}
                         onChange={(e) => setCurrentPassword(e.target.value)}
-                        className="w-full px-[12px] py-[10px] border border-[rgba(0,0,0,0.16)] text-[#1A1A1A] text-[14px] focus:outline-none focus:border-[#FF4B27]"
+                        className="w-full px-[12px] py-[10px] border border-[rgba(0,0,0,0.16)] text-[#1A1A1A] text-[14px] focus:outline-none focus:border-[#0066CC]"
                       />
                     </div>
                     <div>
@@ -817,7 +817,7 @@ export function Account() {
                         type="password"
                         value={newPassword}
                         onChange={(e) => setNewPassword(e.target.value)}
-                        className="w-full px-[12px] py-[10px] border border-[rgba(0,0,0,0.16)] text-[#1A1A1A] text-[14px] focus:outline-none focus:border-[#FF4B27]"
+                        className="w-full px-[12px] py-[10px] border border-[rgba(0,0,0,0.16)] text-[#1A1A1A] text-[14px] focus:outline-none focus:border-[#0066CC]"
                       />
                     </div>
                     <div>
@@ -826,7 +826,7 @@ export function Account() {
                         type="password"
                         value={confirmPassword}
                         onChange={(e) => setConfirmPassword(e.target.value)}
-                        className="w-full px-[12px] py-[10px] border border-[rgba(0,0,0,0.16)] text-[#1A1A1A] text-[14px] focus:outline-none focus:border-[#FF4B27]"
+                        className="w-full px-[12px] py-[10px] border border-[rgba(0,0,0,0.16)] text-[#1A1A1A] text-[14px] focus:outline-none focus:border-[#0066CC]"
                       />
                     </div>
 
@@ -836,7 +836,7 @@ export function Account() {
                     <button
                       type="submit"
                       disabled={isSavingPassword}
-                      className="px-[32px] py-[12px] bg-[#FF4B27] text-white text-[14px] font-bold hover:bg-[#E63E1C] transition-colors disabled:opacity-70"
+                      className="px-[32px] py-[12px] bg-[#0066CC] text-white text-[14px] font-bold hover:bg-[#0052A3] transition-colors disabled:opacity-70"
                     >
                       {isSavingPassword ? "UPDATING..." : "UPDATE PASSWORD"}
                     </button>
@@ -853,21 +853,21 @@ export function Account() {
                         <p className="text-[#1A1A1A] text-[14px] font-semibold mb-[4px]">Email notifications</p>
                         <p className="text-[#6B6B6B] text-[13px]">Receive updates about messages and bookings</p>
                       </div>
-                      <input type="checkbox" defaultChecked className="w-[20px] h-[20px] accent-[#FF4B27]" />
+                      <input type="checkbox" defaultChecked className="w-[20px] h-[20px] accent-[#0066CC]" />
                     </div>
                     <div className="flex items-center justify-between py-[12px] border-b border-[rgba(0,0,0,0.08)]">
                       <div>
                         <p className="text-[#1A1A1A] text-[14px] font-semibold mb-[4px]">SMS notifications</p>
                         <p className="text-[#6B6B6B] text-[13px]">Get text messages for important updates</p>
                       </div>
-                      <input type="checkbox" className="w-[20px] h-[20px] accent-[#FF4B27]" />
+                      <input type="checkbox" className="w-[20px] h-[20px] accent-[#0066CC]" />
                     </div>
                     <div className="flex items-center justify-between py-[12px] border-b border-[rgba(0,0,0,0.08)]">
                       <div>
                         <p className="text-[#1A1A1A] text-[14px] font-semibold mb-[4px]">Marketing emails</p>
                         <p className="text-[#6B6B6B] text-[13px]">Receive tips, promotions, and special offers</p>
                       </div>
-                      <input type="checkbox" defaultChecked className="w-[20px] h-[20px] accent-[#FF4B27]" />
+                      <input type="checkbox" defaultChecked className="w-[20px] h-[20px] accent-[#0066CC]" />
                     </div>
                   </div>
                 </div>

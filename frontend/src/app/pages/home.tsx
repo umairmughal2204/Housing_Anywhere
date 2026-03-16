@@ -656,7 +656,7 @@ export function Home() {
                           <img
                             src={property.images[0] ?? "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800&q=80"}
                             alt={property.title}
-                            className="w-full h-full object-contain object-center bg-[#F3F4F6]"
+                            className="w-full h-full object-cover object-center bg-[#F3F4F6]"
                           />
                           {Date.now() - new Date(property.createdAt).getTime() < 1000 * 60 * 60 * 24 * 7 && (
                             <div className="absolute top-[12px] left-[12px] bg-[#FFD93D] text-[#1A1A1A] px-[8px] py-[4px] text-[11px] font-bold uppercase tracking-[0.05em] flex items-center gap-[4px]">
@@ -758,7 +758,7 @@ export function Home() {
                         <img
                           src={property.image || "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800&q=80"}
                           alt={property.title}
-                          className="w-full h-full object-contain object-center bg-[#F3F4F6]"
+                          className="w-full h-full object-cover object-center bg-[#F3F4F6]"
                         />
                         <div className="absolute bottom-[12px] left-0 right-0 flex items-center justify-center gap-[4px]">
                           {[1, 2, 3, 4, 5].map((dot) => (

@@ -9,7 +9,7 @@ import {
   MapPin,
   ChevronLeft,
   ChevronRight,
-  Play,
+  X,
   Home as HomeIcon,
   Square,
   Users,
@@ -64,7 +64,7 @@ export function PropertyListing() {
   const { id } = useParams();
   const navigate = useNavigate();
   const apiBase = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:4000";
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isFavorited, setIsFavorited] = useState(false);
   const [listing, setListing] = useState<ListingDetails | null>(null);
@@ -72,6 +72,7 @@ export function PropertyListing() {
   const [isFavoriteBusy, setIsFavoriteBusy] = useState(false);
   const [listingError, setListingError] = useState("");
   const [isListingUnavailable, setIsListingUnavailable] = useState(false);
+  const [isPhotosModalOpen, setIsPhotosModalOpen] = useState(false);
 
   useEffect(() => {
     const loadListing = async () => {
@@ -164,6 +165,8 @@ export function PropertyListing() {
     return fallbackPropertyImages;
   }, [listing]);
 
+  const hiddenPhotoCount = Math.max(0, propertyImages.length - 4);
+
   const previousImage = () => {
     setCurrentImageIndex((prev) => (prev === 0 ? propertyImages.length - 1 : prev - 1));
   };
@@ -178,6 +181,10 @@ export function PropertyListing() {
       return;
     }
 
+    if (user?.role === "landlord") {
+      return;
+    }
+
     if (!isAuthenticated) {
       // Redirect to login with return URL
       navigate(`/login?returnTo=/property/${id}/apply`);
@@ -189,6 +196,10 @@ export function PropertyListing() {
   const handleMessageLandlord = async () => {
     if (isListingUnavailable) {
       toast.error("This listing is no longer available.");
+      return;
+    }
+
+    if (user?.role === "landlord") {
       return;
     }
 
@@ -347,7 +358,7 @@ export function PropertyListing() {
                 <img
                   src={propertyImages[currentImageIndex]}
                   alt="Property"
-                  className="w-full h-[480px] object-contain object-center bg-[#F3F4F6]"
+                  className="w-full h-[480px] object-cover object-center bg-[#F3F4F6]"
                 />
 
                 {/* Navigation Arrows */}
@@ -398,23 +409,52 @@ export function PropertyListing() {
                       currentImageIndex === index ? "ring-2 ring-brand-primary" : ""
                     }`}
                   >
-                    <img src={image} alt={`Thumbnail ${index + 1}`} className="w-full h-full object-contain object-center bg-[#F3F4F6]" />
+                    <img src={image} alt={`Thumbnail ${index + 1}`} className="w-full h-full object-cover object-center bg-[#F3F4F6]" />
                   </button>
                 ))}
 
                 {/* More Photos Button */}
-                <button className="w-[120px] h-[80px] bg-neutral-black text-white flex flex-col items-center justify-center hover:bg-brand-primary transition-colors">
-                  <HomeIcon className="w-[20px] h-[20px] mb-[4px]" />
-                  <span className="text-[12px] font-semibold">More photos</span>
-                </button>
-
-                {/* Videos Button */}
-                <button className="w-[120px] h-[80px] bg-neutral-black text-white flex flex-col items-center justify-center hover:bg-brand-primary transition-colors">
-                  <Play className="w-[20px] h-[20px] mb-[4px]" />
-                  <span className="text-[12px] font-semibold">Videos</span>
-                </button>
+                {hiddenPhotoCount > 0 && (
+                  <button
+                    onClick={() => setIsPhotosModalOpen(true)}
+                    className="w-[120px] h-[80px] bg-neutral-black text-white flex flex-col items-center justify-center hover:bg-brand-primary transition-colors"
+                  >
+                    <HomeIcon className="w-[20px] h-[20px] mb-[4px]" />
+                    <span className="text-[12px] font-semibold">+{hiddenPhotoCount} photos</span>
+                  </button>
+                )}
               </div>
             </div>
+
+            {isPhotosModalOpen && (
+              <div className="fixed inset-0 z-[60] bg-black/80 p-[24px] overflow-y-auto">
+                <div className="max-w-[1200px] mx-auto">
+                  <div className="flex items-center justify-between mb-[16px]">
+                    <h3 className="text-white text-[20px] font-bold">All photos</h3>
+                    <button
+                      onClick={() => setIsPhotosModalOpen(false)}
+                      className="w-[40px] h-[40px] bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-colors"
+                    >
+                      <X className="w-[20px] h-[20px]" />
+                    </button>
+                  </div>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-[12px]">
+                    {propertyImages.map((image, index) => (
+                      <button
+                        key={index}
+                        onClick={() => {
+                          setCurrentImageIndex(index);
+                          setIsPhotosModalOpen(false);
+                        }}
+                        className="relative aspect-[4/3] overflow-hidden bg-[#F3F4F6]"
+                      >
+                        <img src={image} alt={`Photo ${index + 1}`} className="w-full h-full object-cover object-center" />
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Property Title & Price */}
             <div className="mb-[24px]">
@@ -566,14 +606,24 @@ export function PropertyListing() {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-[6px]">
                     <span className="text-neutral-black text-[14px]">First month's rent</span>
-                    <Info className="w-[14px] h-[14px] text-neutral-gray" />
+                    <span className="relative group inline-flex items-center">
+                      <Info className="w-[14px] h-[14px] text-neutral-gray" />
+                      <span className="pointer-events-none absolute bottom-[calc(100%+8px)] left-1/2 -translate-x-1/2 w-[220px] bg-neutral-black text-white text-[11px] leading-[1.4] px-[10px] py-[8px] opacity-0 group-hover:opacity-100 transition-opacity z-20">
+                        This is your first month rent payment charged when confirming the stay.
+                      </span>
+                    </span>
                   </div>
                     <span className="text-neutral-black text-[14px] font-semibold">€{listing?.monthlyRent ?? 0}</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-[6px]">
                     <span className="text-neutral-black text-[14px]">Tenant Protection</span>
-                    <Info className="w-[14px] h-[14px] text-neutral-gray" />
+                    <span className="relative group inline-flex items-center">
+                      <Info className="w-[14px] h-[14px] text-neutral-gray" />
+                      <span className="pointer-events-none absolute bottom-[calc(100%+8px)] left-1/2 -translate-x-1/2 w-[220px] bg-neutral-black text-white text-[11px] leading-[1.4] px-[10px] py-[8px] opacity-0 group-hover:opacity-100 transition-opacity z-20">
+                        Tenant Protection helps cover issues like scams or move-in problems.
+                      </span>
+                    </span>
                   </div>
                   <span className="text-neutral-black text-[14px] font-semibold">€{listing?.deposit ?? 0}</span>
                 </div>
@@ -594,7 +644,8 @@ export function PropertyListing() {
               {/* Apply Button */}
               <button
                 onClick={handleApplyToRent}
-                className="w-full bg-brand-primary text-white font-bold py-[16px] mb-[24px] hover:bg-brand-primary-dark transition-colors text-[16px]"
+                disabled={user?.role === "landlord"}
+                className="w-full bg-brand-primary text-white font-bold py-[16px] mb-[24px] hover:bg-brand-primary-dark transition-colors text-[16px] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-brand-primary"
               >
                 Apply to rent
               </button>
@@ -611,7 +662,8 @@ export function PropertyListing() {
               {/* Message Landlord */}
               <button
                 onClick={handleMessageLandlord}
-                className="w-full flex items-center justify-center gap-[8px] border-[2px] border-neutral-black text-neutral-black font-bold py-[14px] hover:bg-neutral-black hover:text-white transition-colors"
+                disabled={user?.role === "landlord"}
+                className="w-full flex items-center justify-center gap-[8px] border-[2px] border-neutral-black text-neutral-black font-bold py-[14px] hover:bg-neutral-black hover:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-neutral-black"
               >
                 <MessageCircle className="w-[18px] h-[18px]" />
                 Message landlord
