@@ -202,7 +202,7 @@ export function LandlordDashboard() {
             </div>
             <div className="text-[14px] text-neutral-gray">Applications</div>
             <div className="mt-[12px] text-[13px] text-brand-primary font-semibold">
-              Review now →
+              <a href="/landlord/rentals" className="hover:underline">Review now →</a>
             </div>
           </div>
         </div>

@@ -10,6 +10,8 @@ import {
   MessageSquare,
   Phone,
   User,
+  CheckCircle,
+  XCircle,
 } from "lucide-react";
 import { ImageWithFallback } from "../components/figma/ImageWithFallback";
 
@@ -312,18 +314,42 @@ export function LandlordRentals() {
                             <button
                               onClick={() => updateStatus(application.id, "approved")}
                               disabled={updatingApplicationId === application.id}
-                              className="px-[14px] py-[8px] bg-accent-blue text-white text-[13px] font-semibold hover:opacity-90 transition-opacity disabled:opacity-60"
+                              className="inline-flex items-center gap-[6px] px-[14px] py-[8px] bg-accent-blue text-white text-[13px] font-semibold hover:opacity-90 transition-opacity disabled:opacity-60"
                             >
-                              Approve
+                              <CheckCircle className="w-[14px] h-[14px]" />
+                              {updatingApplicationId === application.id ? "Updating..." : "Approve"}
                             </button>
                             <button
                               onClick={() => updateStatus(application.id, "rejected")}
                               disabled={updatingApplicationId === application.id}
-                              className="px-[14px] py-[8px] bg-red-600 text-white text-[13px] font-semibold hover:bg-red-700 transition-colors disabled:opacity-60"
+                              className="inline-flex items-center gap-[6px] px-[14px] py-[8px] bg-red-600 text-white text-[13px] font-semibold hover:bg-red-700 transition-colors disabled:opacity-60"
                             >
-                              Reject
+                              <XCircle className="w-[14px] h-[14px]" />
+                              {updatingApplicationId === application.id ? "Updating..." : "Reject"}
                             </button>
                           </>
+                        )}
+
+                        {application.status === "approved" && (
+                          <button
+                            onClick={() => updateStatus(application.id, "rejected")}
+                            disabled={updatingApplicationId === application.id}
+                            className="inline-flex items-center gap-[6px] px-[14px] py-[8px] bg-red-600 text-white text-[13px] font-semibold hover:bg-red-700 transition-colors disabled:opacity-60"
+                          >
+                            <XCircle className="w-[14px] h-[14px]" />
+                            {updatingApplicationId === application.id ? "Updating..." : "Change to Rejected"}
+                          </button>
+                        )}
+
+                        {application.status === "rejected" && (
+                          <button
+                            onClick={() => updateStatus(application.id, "approved")}
+                            disabled={updatingApplicationId === application.id}
+                            className="inline-flex items-center gap-[6px] px-[14px] py-[8px] bg-accent-blue text-white text-[13px] font-semibold hover:opacity-90 transition-opacity disabled:opacity-60"
+                          >
+                            <CheckCircle className="w-[14px] h-[14px]" />
+                            {updatingApplicationId === application.id ? "Updating..." : "Change to Approved"}
+                          </button>
                         )}
 
                         <Link
