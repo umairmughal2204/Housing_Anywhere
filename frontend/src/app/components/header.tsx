@@ -292,14 +292,16 @@ export function Header() {
                       <MessageCircle className="w-[16px] h-[16px] text-neutral-gray" />
                       Messages
                     </Link>
-                    <Link
-                      to="/tenant/applications"
-                      className="flex items-center gap-[12px] px-[16px] py-[12px] text-neutral-black text-[14px] hover:bg-neutral-light-gray transition-colors"
-                      onClick={() => setShowDropdown(false)}
-                    >
-                      <FileText className="w-[16px] h-[16px] text-neutral-gray" />
-                      My Applications
-                    </Link>
+                    {!user?.isLandlord && (
+                      <Link
+                        to="/tenant/applications"
+                        className="flex items-center gap-[12px] px-[16px] py-[12px] text-neutral-black text-[14px] hover:bg-neutral-light-gray transition-colors"
+                        onClick={() => setShowDropdown(false)}
+                      >
+                        <FileText className="w-[16px] h-[16px] text-neutral-gray" />
+                        My Applications
+                      </Link>
+                    )}
                     <Link
                       to="/favorites"
                       className="flex items-center gap-[12px] px-[16px] py-[12px] text-neutral-black text-[14px] hover:bg-neutral-light-gray transition-colors"

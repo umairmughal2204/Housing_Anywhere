@@ -5,6 +5,7 @@ import { Footer } from "../components/footer";
 import { useEffect, useState } from "react";
 import { ImageWithFallback } from "../components/figma/ImageWithFallback";
 import { API_BASE } from "../config";
+import { useAuth } from "../contexts/auth-context";
 
 type ApplicationStatus = "pending" | "approved" | "rejected";
 
@@ -34,6 +35,7 @@ const statusStyle: Record<ApplicationStatus, string> = {
 };
 
 export function TenantApplications() {
+  const { user, isLoading: isAuthLoading } = useAuth();
   const [applications, setApplications] = useState<TenantApplication[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
@@ -41,6 +43,17 @@ export function TenantApplications() {
   const navigate = useNavigate();
 
   useEffect(() => {
+    if (isAuthLoading) {
+      return;
+    }
+
+    if (user?.isLandlord) {
+      setIsLoading(false);
+      setApplications([]);
+      setError("");
+      return;
+    }
+
     const loadApplications = async () => {
       const token = localStorage.getItem("authToken");
       if (!token) {
@@ -71,7 +84,7 @@ export function TenantApplications() {
     };
 
     void loadApplications();
-  }, []);
+  }, [isAuthLoading, user?.isLandlord]);
 
   const handleMessageLandlord = async (applicationId: string, listingId: string) => {
     const token = localStorage.getItem("authToken");
@@ -112,6 +125,26 @@ export function TenantApplications() {
 
       <main className="flex-1 bg-[#F7F7F9] py-[48px]">
         <div className="max-w-[1100px] mx-auto px-[32px]">
+          {!isAuthLoading && user?.isLandlord && (
+            <div className="bg-white border border-[rgba(0,0,0,0.08)] p-[32px] mb-[24px]">
+              <h1 className="text-[#1A1A1A] text-[30px] font-bold tracking-[-0.02em] mb-[10px]">
+                Tenant applications are not available for landlord accounts
+              </h1>
+              <p className="text-[#6B6B6B] text-[15px] mb-[20px]">
+                Landlords cannot submit rental applications. You can review tenant requests in your rentals section.
+              </p>
+              <button
+                type="button"
+                onClick={() => navigate("/landlord/rentals")}
+                className="px-[20px] py-[10px] bg-brand-primary text-white text-[14px] font-semibold hover:bg-brand-primary-dark transition-colors"
+              >
+                Go to Rentals
+              </button>
+            </div>
+          )}
+
+          {!user?.isLandlord && (
+            <>
           <div className="mb-[24px]">
             <h1 className="text-[#1A1A1A] text-[34px] font-bold tracking-[-0.02em] mb-[8px]">My Applications</h1>
             <p className="text-[#6B6B6B] text-[15px]">Track the status of the rental requests you sent to landlords.</p>
@@ -254,6 +287,8 @@ export function TenantApplications() {
               </div>
             )}
           </div>
+            </>
+          )}
         </div>
       </main>
 
