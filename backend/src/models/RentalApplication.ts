@@ -4,7 +4,7 @@ const rentalApplicationDocumentSchema = new Schema(
   {
     type: {
       type: String,
-      enum: ["enrollment", "employment", "income"],
+      enum: ["enrollment", "employment", "income", "profile"],
       required: true,
     },
     name: { type: String, required: true },

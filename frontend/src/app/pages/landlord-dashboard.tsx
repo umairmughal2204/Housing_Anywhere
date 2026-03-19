@@ -56,6 +56,9 @@ interface DashboardResponse {
   topProperties: TopProperty[];
 }
 
+const TOP_PROPERTIES_LIMIT = 5;
+const RECENT_ACTIVITY_LIMIT = 5;
+
 export function LandlordDashboard() {
   const { isAuthenticated, user } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
@@ -105,9 +108,9 @@ export function LandlordDashboard() {
 
         const payload = (await response.json()) as DashboardResponse;
         setStats(payload.stats);
-        setRecentActivity(payload.recentActivity);
+        setRecentActivity(payload.recentActivity.slice(0, RECENT_ACTIVITY_LIMIT));
         setUpcomingEvents(payload.upcomingEvents);
-        setTopProperties(payload.topProperties);
+        setTopProperties(payload.topProperties.slice(0, TOP_PROPERTIES_LIMIT));
       } catch (err) {
         setError(err instanceof Error ? err.message : "Failed to load landlord dashboard");
       } finally {

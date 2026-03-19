@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { API_BASE } from "../config";
 
 interface LandlordProfile {
   businessType: "individual" | "dealer" | "agency";
@@ -78,7 +79,6 @@ interface SignupData {
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
-const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:4000";
 
 interface AuthResponse {
   token: string;

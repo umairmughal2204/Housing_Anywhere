@@ -16,7 +16,7 @@ const upload = multer({
   storage: multer.memoryStorage(),
   limits: {
     fileSize: 7 * 1024 * 1024,
-    files: 3,
+    files: 4,
   },
 });
 
@@ -50,10 +50,11 @@ const updateStatusSchema = z.object({
   status: z.enum(["approved", "rejected"]),
 });
 
-function mapDocumentType(fieldname: string): "enrollment" | "employment" | "income" | null {
+function mapDocumentType(fieldname: string): "enrollment" | "employment" | "income" | "profile" | null {
   if (fieldname === "enrollmentProof") return "enrollment";
   if (fieldname === "employmentProof") return "employment";
   if (fieldname === "incomeProof") return "income";
+  if (fieldname === "profilePicture") return "profile";
   return null;
 }
 
@@ -64,6 +65,7 @@ router.post(
     { name: "enrollmentProof", maxCount: 1 },
     { name: "employmentProof", maxCount: 1 },
     { name: "incomeProof", maxCount: 1 },
+    { name: "profilePicture", maxCount: 1 },
   ]),
   async (req, res) => {
     if (req.user!.role === "landlord") {
@@ -126,7 +128,7 @@ router.post(
     const allFiles = filesByField ? Object.values(filesByField).flat() : [];
 
     const documents: Array<{
-      type: "enrollment" | "employment" | "income";
+      type: "enrollment" | "employment" | "income" | "profile";
       name: string;
       url: string;
       mimeType: string;

@@ -3,8 +3,7 @@ import { Globe, MessageCircle, Heart, User, CreditCard, HelpCircle, Settings, Lo
 import { useState, useRef, useEffect } from "react";
 import { useAuth } from "../contexts/auth-context";
 import { changeSiteLanguage, getSavedLanguageLabel, SUPPORTED_LANGUAGES } from "../utils/translate";
-
-const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:4000";
+import { API_BASE } from "../config";
 
 interface HeaderConversationItem {
   unread: number;
@@ -15,9 +14,23 @@ export function Header() {
   const [showDropdown, setShowDropdown] = useState(false);
   const [selectedLanguage, setSelectedLanguage] = useState(getSavedLanguageLabel());
   const [showLanguageDropdown, setShowLanguageDropdown] = useState(false);
+  const [pendingLanguage, setPendingLanguage] = useState<{
+    code: (typeof SUPPORTED_LANGUAGES)[number]["code"];
+    label: string;
+  } | null>(null);
   const [unreadMessages, setUnreadMessages] = useState(0);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const languageDropdownRef = useRef<HTMLDivElement>(null);
+
+  const confirmLanguageChange = () => {
+    if (!pendingLanguage) {
+      return;
+    }
+
+    setSelectedLanguage(pendingLanguage.label);
+    changeSiteLanguage(pendingLanguage.code);
+    setPendingLanguage(null);
+  };
 
   // Get user initials
   const getUserInitials = () => {
@@ -175,8 +188,7 @@ export function Header() {
                     <button
                       key={language.code}
                       onClick={() => {
-                        setSelectedLanguage(language.label);
-                        changeSiteLanguage(language.code);
+                        setPendingLanguage({ code: language.code, label: language.label });
                         setShowLanguageDropdown(false);
                       }}
                       className={`w-full flex items-center justify-between px-[16px] py-[12px] text-neutral-black text-[14px] hover:bg-neutral-light-gray transition-colors ${
@@ -255,8 +267,8 @@ export function Header() {
                         )}
                       </div>
                       <div>
-                        <div className="text-neutral-black text-[14px] font-bold">{user.name}</div>
-                        <div className="text-neutral-gray text-[12px]">{user.email}</div>
+                        <div className="text-neutral-black text-[14px] font-bold">{user?.name}</div>
+                        <div className="text-neutral-gray text-[12px]">{user?.email}</div>
                       </div>
                     </div>
                   </div>
@@ -383,8 +395,7 @@ export function Header() {
                     <button
                       key={language.code}
                       onClick={() => {
-                        setSelectedLanguage(language.label);
-                        changeSiteLanguage(language.code);
+                        setPendingLanguage({ code: language.code, label: language.label });
                         setShowLanguageDropdown(false);
                       }}
                       className={`w-full flex items-center justify-between px-[16px] py-[12px] text-neutral-black text-[14px] hover:bg-neutral-light-gray transition-colors ${
@@ -400,6 +411,31 @@ export function Header() {
           </div>
         )}
       </div>
+
+      {pendingLanguage && (
+        <div className="fixed inset-0 z-[70] bg-black/40 flex items-center justify-center p-[24px]">
+          <div className="w-full max-w-[460px] bg-white border border-[rgba(0,0,0,0.12)] p-[24px]">
+            <h3 className="text-neutral-black text-[20px] font-bold mb-[8px]">Change Language</h3>
+            <p className="text-neutral-gray text-[14px] leading-[1.6] mb-[20px]">
+              Switch site language to <span className="font-semibold text-neutral-black">{pendingLanguage.label}</span>?
+            </p>
+            <div className="flex items-center justify-end gap-[10px]">
+              <button
+                onClick={() => setPendingLanguage(null)}
+                className="px-[16px] py-[10px] border border-[rgba(0,0,0,0.16)] text-neutral-black text-[13px] font-semibold hover:bg-neutral-light-gray transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmLanguageChange}
+                className="px-[16px] py-[10px] bg-brand-primary text-white text-[13px] font-semibold hover:bg-brand-primary-dark transition-colors"
+              >
+                Confirm
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </header>
   );
 }

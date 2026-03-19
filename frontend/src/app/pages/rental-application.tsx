@@ -17,6 +17,23 @@ interface ListingSummary {
   utilitiesCost: number;
 }
 
+const COUNTRY_CODE_OPTIONS = [
+  { value: "NL +31", label: "Netherlands (+31)" },
+  { value: "DE +49", label: "Germany (+49)" },
+  { value: "FR +33", label: "France (+33)" },
+  { value: "ES +34", label: "Spain (+34)" },
+  { value: "IT +39", label: "Italy (+39)" },
+  { value: "GB +44", label: "United Kingdom (+44)" },
+  { value: "US +1", label: "United States (+1)" },
+  { value: "PK +92", label: "Pakistan (+92)" },
+  { value: "IN +91", label: "India (+91)" },
+  { value: "TR +90", label: "Turkey (+90)" },
+  { value: "CN +86", label: "China (+86)" },
+];
+
+const TENANT_PROTECTION_RATE = 0.1;
+const TENANT_PROTECTION_FEE_CAP = 250;
+
 export function RentalApplication() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -29,6 +46,7 @@ export function RentalApplication() {
   const [isListingUnavailable, setIsListingUnavailable] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState("");
+  const [stepOneError, setStepOneError] = useState("");
   
   // Dropdown states
   const [isLanguageOpen, setIsLanguageOpen] = useState(false);
@@ -40,7 +58,8 @@ export function RentalApplication() {
   const [gender, setGender] = useState<"male" | "female" | "other" | null>(null);
   const [countryCode, setCountryCode] = useState("NL +31");
   const [mobileNumber, setMobileNumber] = useState("");
-  const [profilePicture, setProfilePicture] = useState<string | null>(null);
+  const [profilePicture, setProfilePicture] = useState<File | null>(null);
+  const [profilePicturePreview, setProfilePicturePreview] = useState<string | null>(null);
   const [moveInCount, setMoveInCount] = useState(1);
   const [withPets, setWithPets] = useState(false);
   const [occupation, setOccupation] = useState<"student" | "professional" | "other" | null>(null);
@@ -61,9 +80,81 @@ export function RentalApplication() {
   const [employmentProof, setEmploymentProof] = useState<File | null>(null);
   const [incomeProof, setIncomeProof] = useState<File | null>(null);
   const [shareDocuments, setShareDocuments] = useState(false);
+  const tenantProtectionFee = listing
+    ? Math.min(listing.monthlyRent * TENANT_PROTECTION_RATE, TENANT_PROTECTION_FEE_CAP)
+    : 0;
+
+  const getStepOneValidationError = () => {
+    const day = Number(dateOfBirth.day);
+    const month = Number(dateOfBirth.month);
+    const year = Number(dateOfBirth.year);
+
+    if (!day || !month || !year) {
+      return "Please complete your full date of birth.";
+    }
+
+    const dob = new Date(year, month - 1, day);
+    if (
+      Number.isNaN(dob.getTime()) ||
+      dob.getDate() !== day ||
+      dob.getMonth() !== month - 1 ||
+      dob.getFullYear() !== year
+    ) {
+      return "Please enter a valid date of birth.";
+    }
+
+    if (!gender) {
+      return "Please select your gender.";
+    }
+
+    if (!countryCode) {
+      return "Please select a country code.";
+    }
+
+    const digitsOnlyPhone = mobileNumber.replace(/\D/g, "");
+    if (digitsOnlyPhone.length < 6 || digitsOnlyPhone.length > 15) {
+      return "Please enter a valid mobile number (6-15 digits).";
+    }
+
+    if (!occupation) {
+      return "Please select your occupation.";
+    }
+
+    if (occupation === "student" && !universityName.trim()) {
+      return "Please enter your university name.";
+    }
+
+    if (occupation === "student" && paymentMethods.length === 0) {
+      return "Please choose at least one payment method.";
+    }
+
+    if (occupation === "professional" && !employerName.trim()) {
+      return "Please enter your employer name.";
+    }
+
+    if (occupation === "professional") {
+      const numericIncome = Number(income);
+      if (!Number.isFinite(numericIncome) || numericIncome <= 0) {
+        return "Please enter a valid monthly income greater than 0.";
+      }
+    }
+
+    if (supportingMessage.trim().length < 20) {
+      return "Please write at least 20 characters in your supporting message.";
+    }
+
+    return "";
+  };
 
   const handleContinue = () => {
     if (currentStep === 1) {
+      const validationError = getStepOneValidationError();
+      if (validationError) {
+        setStepOneError(validationError);
+        return;
+      }
+
+      setStepOneError("");
       setCurrentStep(2);
       window.scrollTo(0, 0);
     } else if (currentStep === 2) {
@@ -129,6 +220,10 @@ export function RentalApplication() {
         formData.append("incomeProof", incomeProof);
       }
 
+      if (profilePicture) {
+        formData.append("profilePicture", profilePicture);
+      }
+
       const response = await fetch(`${apiBase}/api/rental-applications`, {
         method: "POST",
         headers: {
@@ -156,7 +251,10 @@ export function RentalApplication() {
   };
 
   const handleFileUpload = (file: File, type: string) => {
-    if (type === "enrollment") {
+    if (type === "profile") {
+      setProfilePicture(file);
+      setProfilePicturePreview(URL.createObjectURL(file));
+    } else if (type === "enrollment") {
       setEnrollmentProof(file);
     } else if (type === "employment") {
       setEmploymentProof(file);
@@ -213,6 +311,14 @@ export function RentalApplication() {
 
     void loadListing();
   }, [apiBase, id]);
+
+  useEffect(() => {
+    return () => {
+      if (profilePicturePreview) {
+        URL.revokeObjectURL(profilePicturePreview);
+      }
+    };
+  }, [profilePicturePreview]);
 
   return (
     <div className="min-h-screen bg-white">
@@ -494,7 +600,7 @@ export function RentalApplication() {
                   Fill in your rental application in 5 minutes
                 </h1>
                 <p className="text-[#6B6B6B] text-[15px] leading-[1.6] mb-[32px]">
-                  Confirm your details and introduce yourself to Sental — we'll save your info for future applications.
+                  Confirm your details and introduce yourself to EasyRent — we'll save your info for future applications.
                 </p>
 
                 {/* About You Section */}
@@ -564,21 +670,31 @@ export function RentalApplication() {
                     <label className="block text-[#1A1A1A] text-[14px] font-semibold mb-[8px]">Mobile number*</label>
                     <div className="grid grid-cols-3 gap-[16px]">
                       <div className="col-span-1">
-                        <input
-                          type="text"
+                        <select
                           value={countryCode}
                           onChange={(e) => setCountryCode(e.target.value)}
-                          placeholder="Country code"
                           className="w-full px-[16px] py-[12px] border border-[rgba(0,0,0,0.16)] text-[#1A1A1A] text-[14px]"
-                        />
+                        >
+                          {COUNTRY_CODE_OPTIONS.map((option) => (
+                            <option key={option.value} value={option.value}>
+                              {option.label}
+                            </option>
+                          ))}
+                        </select>
                         <span className="block text-[#6B6B6B] text-[12px] mt-[4px]">Country code</span>
                       </div>
                       <div className="col-span-2">
                         <input
                           type="tel"
                           value={mobileNumber}
-                          onChange={(e) => setMobileNumber(e.target.value)}
+                          onChange={(e) => {
+                            const next = e.target.value.replace(/[^0-9]/g, "").slice(0, 15);
+                            setMobileNumber(next);
+                          }}
                           placeholder="Mobile number"
+                          inputMode="numeric"
+                          pattern="[0-9]{6,15}"
+                          maxLength={15}
                           className="w-full px-[16px] py-[12px] border border-[rgba(0,0,0,0.16)] text-[#1A1A1A] text-[14px]"
                         />
                         <span className="block text-[#6B6B6B] text-[12px] mt-[4px]">Mobile number</span>
@@ -589,11 +705,48 @@ export function RentalApplication() {
                   <div className="mb-[24px]">
                     <div className="flex items-center gap-[8px] mb-[8px]">
                       <label className="text-[#1A1A1A] text-[14px] font-semibold">Profile picture (Optional)</label>
-                      <Info className="w-[14px] h-[14px] text-[#6B6B6B]" />
+                      <span className="relative group inline-flex items-center">
+                        <Info className="w-[14px] h-[14px] text-[#6B6B6B]" />
+                        <span className="pointer-events-none absolute bottom-[calc(100%+8px)] left-1/2 -translate-x-1/2 w-[230px] bg-neutral-black text-white text-[11px] leading-[1.4] px-[10px] py-[8px] opacity-0 group-hover:opacity-100 transition-opacity z-20">
+                          Upload a clear face photo (JPG, PNG, or WEBP). This helps landlords recognize your application.
+                        </span>
+                      </span>
                     </div>
-                    <button className="w-[80px] h-[80px] border-[2px] border-dashed border-[rgba(0,0,0,0.16)] bg-[#F7F7F9] flex items-center justify-center hover:bg-[#EDEDED] transition-colors">
-                      <Plus className="w-[24px] h-[24px] text-[#6B6B6B]" />
-                    </button>
+                    <div className="flex items-center gap-[12px]">
+                      <label className="w-[80px] h-[80px] border-[2px] border-dashed border-[rgba(0,0,0,0.16)] bg-[#F7F7F9] flex items-center justify-center hover:bg-[#EDEDED] transition-colors cursor-pointer overflow-hidden">
+                        {profilePicturePreview ? (
+                          <img src={profilePicturePreview} alt="Profile preview" className="w-full h-full object-cover" />
+                        ) : (
+                          <Plus className="w-[24px] h-[24px] text-[#6B6B6B]" />
+                        )}
+                        <input
+                          type="file"
+                          accept=".png,.jpg,.jpeg,.webp"
+                          onChange={(e) => {
+                            if (e.target.files?.[0]) {
+                              handleFileUpload(e.target.files[0], "profile");
+                            }
+                          }}
+                          className="hidden"
+                        />
+                      </label>
+
+                      {profilePicture && (
+                        <div>
+                          <p className="text-neutral-black text-[13px] font-semibold">{profilePicture.name}</p>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setProfilePicture(null);
+                              setProfilePicturePreview(null);
+                            }}
+                            className="text-brand-primary text-[13px] hover:underline"
+                          >
+                            Remove
+                          </button>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
 
@@ -682,7 +835,12 @@ export function RentalApplication() {
                           className="w-full px-[16px] py-[12px] border border-[rgba(0,0,0,0.16)] text-[#1A1A1A] text-[14px]"
                         />
                         <div className="flex items-center gap-[8px] mt-[8px] bg-[#F7F7F9] px-[12px] py-[8px]">
-                          <Info className="w-[16px] h-[16px] text-[#0066CC]" />
+                          <span className="relative group inline-flex items-center">
+                            <Info className="w-[16px] h-[16px] text-[#0066CC]" />
+                            <span className="pointer-events-none absolute bottom-[calc(100%+8px)] left-1/2 -translate-x-1/2 w-[210px] bg-neutral-black text-white text-[11px] leading-[1.4] px-[10px] py-[8px] opacity-0 group-hover:opacity-100 transition-opacity z-20">
+                              You can upload your enrollment proof in the next step.
+                            </span>
+                          </span>
                           <span className="text-[#1A1A1A] text-[13px]">
                             You can add proof of enrollment in the next step.
                           </span>
@@ -752,10 +910,12 @@ export function RentalApplication() {
                         <div className="relative">
                           <span className="absolute left-[16px] top-1/2 -translate-y-1/2 text-[#6B6B6B] text-[14px]">€</span>
                           <input
-                            type="text"
+                            type="number"
                             value={monthlyBudget}
                             onChange={(e) => setMonthlyBudget(e.target.value)}
                             placeholder=""
+                            min={0}
+                            step="1"
                             className="w-[250px] pl-[32px] pr-[16px] py-[12px] border border-[rgba(0,0,0,0.16)] text-[#1A1A1A] text-[14px]"
                           />
                         </div>
@@ -782,10 +942,12 @@ export function RentalApplication() {
                         <div className="relative">
                           <span className="absolute left-[16px] top-1/2 -translate-y-1/2 text-neutral-gray text-[14px]">€</span>
                           <input
-                            type="text"
+                            type="number"
                             value={income}
                             onChange={(e) => setIncome(e.target.value)}
                             placeholder=""
+                            min={0}
+                            step="1"
                             className="w-[250px] pl-[32px] pr-[16px] py-[12px] border border-[rgba(0,0,0,0.16)] text-neutral-black text-[14px]"
                           />
                         </div>
@@ -823,15 +985,21 @@ export function RentalApplication() {
                   <div className="mb-[24px]">
                     <div className="flex items-center gap-[8px] mb-[8px]">
                       <label className="text-[#1A1A1A] text-[14px] font-semibold">
-                        Introduce yourself to Sental!
+                        Introduce yourself to EasyRent!
                       </label>
-                      <Info className="w-[14px] h-[14px] text-[#6B6B6B]" />
+                      <span className="relative group inline-flex items-center">
+                        <Info className="w-[14px] h-[14px] text-[#6B6B6B]" />
+                        <span className="pointer-events-none absolute bottom-[calc(100%+8px)] left-1/2 -translate-x-1/2 w-[240px] bg-neutral-black text-white text-[11px] leading-[1.4] px-[10px] py-[8px] opacity-0 group-hover:opacity-100 transition-opacity z-20">
+                          Share your background, move-in plan, and why you would be a great tenant.
+                        </span>
+                      </span>
                     </div>
                     <textarea
                       value={supportingMessage}
                       onChange={(e) => setSupportingMessage(e.target.value)}
                       placeholder="Introduce yourself and mention why you are a good tenant"
                       rows={4}
+                      maxLength={2000}
                       className="w-full px-[16px] py-[12px] border border-[rgba(0,0,0,0.16)] text-[#1A1A1A] text-[14px] leading-[1.6] resize-none"
                     />
                     <p className="text-[#6B6B6B] text-[12px] mt-[6px]">{supportingMessage.trim().length}/2000</p>
@@ -840,15 +1008,11 @@ export function RentalApplication() {
 
                 <button
                   onClick={handleContinue}
-                  disabled={!supportingMessage.trim()}
-                  className={`w-full font-bold py-[16px] transition-colors text-[16px] ${
-                    supportingMessage.trim()
-                      ? "bg-brand-primary text-white hover:bg-brand-primary-dark"
-                      : "bg-[#EDEDED] text-neutral-gray cursor-not-allowed"
-                  }`}
+                  className="w-full font-bold py-[16px] transition-colors text-[16px] bg-brand-primary text-white hover:bg-brand-primary-dark"
                 >
                   Continue
                 </button>
+                {stepOneError && <p className="text-brand-primary text-[14px] mt-[12px]">{stepOneError}</p>}
               </>
             )}
 
@@ -1117,6 +1281,12 @@ export function RentalApplication() {
                         <span className="text-accent-blue text-[14px] font-semibold">✓ Uploaded</span>
                       </div>
                     )}
+                    {profilePicture && (
+                      <div className="flex items-center justify-between">
+                        <span className="text-neutral-gray text-[14px]">Profile picture</span>
+                        <span className="text-accent-blue text-[14px] font-semibold">✓ Uploaded</span>
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -1152,7 +1322,7 @@ export function RentalApplication() {
 
                 <h3 className="text-neutral-black text-[18px] font-bold mb-[4px]">{listing?.title ?? "Listing"}</h3>
                 <p className="text-neutral-gray text-[13px] mb-[8px]">{listing ? `${listing.address}, ${listing.city}` : ""}</p>
-                <p className="text-neutral-gray text-[13px] mb-[8px]">Published by Sental</p>
+                <p className="text-neutral-gray text-[13px] mb-[8px]">Published by EasyRent</p>
 
                 <div className="bg-neutral-light-gray px-[12px] py-[8px]">
                   <p className="text-neutral-black text-[13px] font-semibold mb-[2px]">Rental period</p>
@@ -1193,16 +1363,21 @@ export function RentalApplication() {
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-[4px]">
                       <span className="text-neutral-gray text-[14px]">Tenant Protection fee</span>
-                      <Info className="w-[12px] h-[12px] text-neutral-gray" />
+                      <span className="relative group inline-flex items-center">
+                        <Info className="w-[12px] h-[12px] text-neutral-gray" />
+                        <span className="pointer-events-none absolute bottom-[calc(100%+8px)] left-1/2 -translate-x-1/2 w-[220px] bg-neutral-black text-white text-[11px] leading-[1.4] px-[10px] py-[8px] opacity-0 group-hover:opacity-100 transition-opacity z-20">
+                          Tenant Protection fee is 10% of monthly rent, capped at €250. It covers payment security and move-in support.
+                        </span>
+                      </span>
                     </div>
-                    <span className="text-neutral-black text-[14px] font-semibold">€{(listing ? Math.round(listing.monthlyRent * 0.1 * 100) / 100 : 0).toFixed(2)}</span>
+                    <span className="text-neutral-black text-[14px] font-semibold">€{tenantProtectionFee.toFixed(2)}</span>
                   </div>
                 </div>
 
                 <div className="flex items-center justify-between pt-[16px] border-t border-[rgba(0,0,0,0.08)] mb-[12px]">
                   <span className="text-[#1A1A1A] text-[16px] font-bold">Total</span>
                   <span className="text-[#1A1A1A] text-[20px] font-bold">
-                    €{(listing ? listing.monthlyRent + Math.round(listing.monthlyRent * 0.1 * 100) / 100 : 0).toFixed(2)}
+                    €{(listing ? listing.monthlyRent + tenantProtectionFee : 0).toFixed(2)}
                   </span>
                 </div>
 
@@ -1239,7 +1414,12 @@ export function RentalApplication() {
                     <div className="flex items-center gap-[4px]">
                       <span className="text-neutral-gray text-[14px]">Security deposit</span>
                       <span className="text-neutral-gray text-[12px]">before move-in</span>
-                      <Info className="w-[12px] h-[12px] text-neutral-gray" />
+                      <span className="relative group inline-flex items-center">
+                        <Info className="w-[12px] h-[12px] text-neutral-gray" />
+                        <span className="pointer-events-none absolute bottom-[calc(100%+8px)] left-1/2 -translate-x-1/2 w-[250px] bg-neutral-black text-white text-[11px] leading-[1.4] px-[10px] py-[8px] opacity-0 group-hover:opacity-100 transition-opacity z-20">
+                          This refundable amount is held by the landlord and may be returned after move-out, based on contract terms.
+                        </span>
+                      </span>
                     </div>
                     <span className="text-neutral-black text-[14px] font-semibold">€{(listing?.deposit ?? 0).toFixed(2)}</span>
                   </div>

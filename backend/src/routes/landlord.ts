@@ -7,6 +7,9 @@ import { RentalApplicationModel } from "../models/RentalApplication.js";
 import { UserModel } from "../models/User.js";
 
 const router = Router();
+const TOP_PROPERTIES_LIMIT = 5;
+const RECENT_ACTIVITY_LIMIT = 5;
+const TOP_PROPERTIES_LOOKBACK = 10;
 
 function startOfMonth(dateValue: Date) {
   const date = new Date(dateValue);
@@ -55,7 +58,11 @@ router.get("/dashboard", requireAuth, requireRole("landlord"), async (req, res) 
     ListingModel.countDocuments({ landlordId, status: "active" }),
     ListingModel.countDocuments({ landlordId, status: "inactive" }),
     RentalApplicationModel.countDocuments({ landlordId, status: "pending" }),
-    ListingModel.find({ landlordId }).select({ title: 1, views: 1, inquiries: 1, price: 1 }).lean(),
+    ListingModel.find({ landlordId })
+      .sort({ updatedAt: -1 })
+      .limit(TOP_PROPERTIES_LOOKBACK)
+      .select({ title: 1, views: 1, inquiries: 1, price: 1, updatedAt: 1 })
+      .lean(),
     RentalApplicationModel.distinct("listingId", { landlordId: landlordObjectId, status: "approved" }),
     RentalApplicationModel.distinct("listingId", {
       landlordId: landlordObjectId,
@@ -115,7 +122,7 @@ router.get("/dashboard", requireAuth, requireRole("landlord"), async (req, res) 
   const topProperties = listings
     .slice()
     .sort((a, b) => (b.views ?? 0) - (a.views ?? 0))
-    .slice(0, 5)
+    .slice(0, TOP_PROPERTIES_LIMIT)
     .map((listing, index) => {
       const inquiries = listing.inquiries ?? 0;
       const approvedCount = approvedCountsMap.get(String(listing._id)) ?? 0;
@@ -170,7 +177,7 @@ router.get("/dashboard", requireAuth, requireRole("landlord"), async (req, res) 
       }),
   ]
     .sort((a, b) => b.date.getTime() - a.date.getTime())
-    .slice(0, 8)
+    .slice(0, RECENT_ACTIVITY_LIMIT)
     .map((item, index) => ({
       id: index + 1,
       type: item.type,

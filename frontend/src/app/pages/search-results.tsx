@@ -15,6 +15,7 @@ import {
   Map
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { API_BASE } from "../config";
 
 interface ListingItem {
   id: string;
@@ -119,7 +120,7 @@ export function SearchResults() {
   const { city } = useParams();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
-  const apiBase = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:4000";
+  const apiBase = API_BASE;
   const [viewMode, setViewMode] = useState<"list" | "map">("list");
   const [dateOpen, setDateOpen] = useState(false);
   const [priceOpen, setPriceOpen] = useState(false);

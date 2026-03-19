@@ -5,12 +5,25 @@
 /* Hide default Google Translate widget/banner; language switching is handled via custom UI. */
 #google_translate_element,
 .goog-te-banner-frame,
+.goog-te-banner-frame.skiptranslate,
 .goog-te-gadget,
 .goog-te-combo,
+.goog-te-menu-frame,
+.goog-te-balloon-frame,
+.VIpgJd-ZVi9od-ORHb,
+.VIpgJd-ZVi9od-ORHb-OEVmcd,
 .goog-tooltip,
 .goog-tooltip:hover,
 .goog-text-highlight {
 	display: none !important;
+	visibility: hidden !important;
+}
+
+iframe.goog-te-banner-frame,
+iframe.goog-te-menu-frame,
+iframe.goog-te-balloon-frame {
+	display: none !important;
+	visibility: hidden !important;
 }
 
 body {

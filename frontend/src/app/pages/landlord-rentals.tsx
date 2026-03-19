@@ -14,6 +14,7 @@ import {
   XCircle,
 } from "lucide-react";
 import { ImageWithFallback } from "../components/figma/ImageWithFallback";
+import { API_BASE } from "../config";
 
 type RequestStatus = "pending" | "approved" | "rejected";
 
@@ -92,12 +93,13 @@ function formatDate(dateValue: string) {
 }
 
 export function LandlordRentals() {
-  const apiBase = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:4000";
+  const apiBase = API_BASE;
   const [filterStatus, setFilterStatus] = useState<RequestStatus | "all">("pending");
   const [applications, setApplications] = useState<ApplicationRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
   const [updatingApplicationId, setUpdatingApplicationId] = useState<string | null>(null);
+  const [confirmTarget, setConfirmTarget] = useState<{ applicationId: string; status: "approved" | "rejected" } | null>(null);
 
   useEffect(() => {
     const loadApplications = async () => {
@@ -179,6 +181,15 @@ export function LandlordRentals() {
     } finally {
       setUpdatingApplicationId(null);
     }
+  };
+
+  const confirmStatusUpdate = async () => {
+    if (!confirmTarget) {
+      return;
+    }
+
+    await updateStatus(confirmTarget.applicationId, confirmTarget.status);
+    setConfirmTarget(null);
   };
 
   return (
@@ -312,7 +323,7 @@ export function LandlordRentals() {
                         {application.status === "pending" && (
                           <>
                             <button
-                              onClick={() => updateStatus(application.id, "approved")}
+                              onClick={() => setConfirmTarget({ applicationId: application.id, status: "approved" })}
                               disabled={updatingApplicationId === application.id}
                               className="inline-flex items-center gap-[6px] px-[14px] py-[8px] bg-accent-blue text-white text-[13px] font-semibold hover:opacity-90 transition-opacity disabled:opacity-60"
                             >
@@ -320,7 +331,7 @@ export function LandlordRentals() {
                               {updatingApplicationId === application.id ? "Updating..." : "Approve"}
                             </button>
                             <button
-                              onClick={() => updateStatus(application.id, "rejected")}
+                              onClick={() => setConfirmTarget({ applicationId: application.id, status: "rejected" })}
                               disabled={updatingApplicationId === application.id}
                               className="inline-flex items-center gap-[6px] px-[14px] py-[8px] bg-red-600 text-white text-[13px] font-semibold hover:bg-red-700 transition-colors disabled:opacity-60"
                             >
@@ -332,7 +343,7 @@ export function LandlordRentals() {
 
                         {application.status === "approved" && (
                           <button
-                            onClick={() => updateStatus(application.id, "rejected")}
+                            onClick={() => setConfirmTarget({ applicationId: application.id, status: "rejected" })}
                             disabled={updatingApplicationId === application.id}
                             className="inline-flex items-center gap-[6px] px-[14px] py-[8px] bg-red-600 text-white text-[13px] font-semibold hover:bg-red-700 transition-colors disabled:opacity-60"
                           >
@@ -343,7 +354,7 @@ export function LandlordRentals() {
 
                         {application.status === "rejected" && (
                           <button
-                            onClick={() => updateStatus(application.id, "approved")}
+                            onClick={() => setConfirmTarget({ applicationId: application.id, status: "approved" })}
                             disabled={updatingApplicationId === application.id}
                             className="inline-flex items-center gap-[6px] px-[14px] py-[8px] bg-accent-blue text-white text-[13px] font-semibold hover:opacity-90 transition-opacity disabled:opacity-60"
                           >
@@ -398,6 +409,45 @@ export function LandlordRentals() {
             </div>
           )}
         </div>
+
+        {confirmTarget && (
+          <div className="fixed inset-0 z-[70] bg-black/40 flex items-center justify-center p-[24px]">
+            <div className="w-full max-w-[520px] bg-white border border-[rgba(0,0,0,0.12)] p-[24px]">
+              <h3 className="text-neutral-black text-[20px] font-bold mb-[8px]">
+                Confirm {confirmTarget.status === "approved" ? "Approval" : "Rejection"}
+              </h3>
+              <p className="text-neutral-gray text-[14px] leading-[1.6] mb-[20px]">
+                Are you sure you want to mark this rental request as
+                <span className="font-semibold text-neutral-black"> {confirmTarget.status === "approved" ? "Approved" : "Rejected"}</span>?
+              </p>
+
+              <div className="flex items-center justify-end gap-[10px]">
+                <button
+                  onClick={() => setConfirmTarget(null)}
+                  disabled={updatingApplicationId === confirmTarget.applicationId}
+                  className="px-[16px] py-[10px] border border-[rgba(0,0,0,0.16)] text-neutral-black text-[13px] font-semibold hover:bg-neutral-light-gray transition-colors disabled:opacity-60"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => {
+                    void confirmStatusUpdate();
+                  }}
+                  disabled={updatingApplicationId === confirmTarget.applicationId}
+                  className={`px-[16px] py-[10px] text-white text-[13px] font-semibold transition-colors disabled:opacity-60 ${
+                    confirmTarget.status === "approved" ? "bg-accent-blue hover:opacity-90" : "bg-red-600 hover:bg-red-700"
+                  }`}
+                >
+                  {updatingApplicationId === confirmTarget.applicationId
+                    ? "Updating..."
+                    : confirmTarget.status === "approved"
+                    ? "Approve request"
+                    : "Reject request"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </main>
     </LandlordPortalLayout>
   );

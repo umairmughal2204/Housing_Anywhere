@@ -336,7 +336,7 @@ export function LandlordListings() {
                   </div>
 
                   {/* Property Details */}
-                  <div className="flex items-center gap-[24px] mb-[16px]">
+                  <div className="flex flex-wrap items-center gap-[24px] mb-[16px]">
                     <div className="flex items-center gap-[8px]">
                       <Bed className="w-[16px] h-[16px] text-neutral-gray" />
                       <span className="text-neutral-black text-[14px] font-semibold">

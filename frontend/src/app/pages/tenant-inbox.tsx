@@ -212,6 +212,11 @@ export function TenantInbox() {
   const filterBySection = (items: ConversationItem[], filter: TenantMessageFilter) => {
     switch (filter) {
       case "active":
+      case "pending":
+      case "rented":
+      case "shortlisted":
+      case "expired":
+      case "archived":
       case "all":
         return items;
       case "unread":
@@ -219,7 +224,7 @@ export function TenantInbox() {
       case "read":
         return items.filter((c) => c.unread === 0);
       default:
-        return [];
+        return items;
     }
   };
 

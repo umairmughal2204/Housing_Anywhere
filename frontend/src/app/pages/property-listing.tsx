@@ -24,6 +24,7 @@ import {
   Utensils,
 } from "lucide-react";
 import { toast } from "sonner";
+import { API_BASE } from "../config";
 
 const fallbackPropertyImages = [
   "https://images.unsplash.com/photo-1649740718655-3c70b0e3d431?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxwYXJpcyUyMGFwYXJ0bWVudCUyMGJlZHJvb20lMjB3aW5kb3d8ZW58MXx8fHwxNzczMDg5ODczfDA&ixlib=rb-4.1.0&q=80&w=1080",
@@ -63,7 +64,7 @@ interface ListingDetails {
 export function PropertyListing() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const apiBase = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:4000";
+  const apiBase = API_BASE;
   const { isAuthenticated, user } = useAuth();
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isFavorited, setIsFavorited] = useState(false);
@@ -307,7 +308,7 @@ export function PropertyListing() {
             </Link>
             <span className="text-neutral-gray">&gt;</span>
             <Link to={`/s/${(listing?.city ?? "city").toLowerCase()}`} className="text-brand-primary hover:underline font-semibold">
-              Rooms
+              {listing?.propertyType ? `${listing.propertyType.charAt(0).toUpperCase()}${listing.propertyType.slice(1)}s` : "Properties"}
             </Link>
             <span className="text-neutral-gray">&gt;</span>
             <span className="text-neutral-black font-semibold">{listing?.title ?? "Listing"}</span>
@@ -642,13 +643,20 @@ export function PropertyListing() {
               </button>
 
               {/* Apply Button */}
-              <button
-                onClick={handleApplyToRent}
-                disabled={user?.role === "landlord"}
-                className="w-full bg-brand-primary text-white font-bold py-[16px] mb-[24px] hover:bg-brand-primary-dark transition-colors text-[16px] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-brand-primary"
-              >
-                Apply to rent
-              </button>
+              <div className="relative group mb-[24px]">
+                <button
+                  onClick={handleApplyToRent}
+                  disabled={user?.role === "landlord"}
+                  className="w-full bg-brand-primary text-white font-bold py-[16px] hover:bg-brand-primary-dark transition-colors text-[16px] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-brand-primary"
+                >
+                  Apply to rent
+                </button>
+                {user?.role === "landlord" && (
+                  <span className="pointer-events-none absolute bottom-[calc(100%+8px)] left-1/2 -translate-x-1/2 w-[260px] bg-neutral-black text-white text-[11px] leading-[1.4] px-[10px] py-[8px] opacity-0 group-hover:opacity-100 transition-opacity z-20">
+                    Landlord accounts cannot apply to rent. Use a tenant account to submit rental applications.
+                  </span>
+                )}
+              </div>
 
               {/* Not Ready Section */}
               <div className="bg-neutral-light-gray p-[16px] mb-[16px]">
