@@ -17,7 +17,6 @@ import {
   Loader2,
 } from "lucide-react";
 import { ImageWithFallback } from "../components/figma/ImageWithFallback";
-import { API_BASE } from "../config";
 
 type ListingStatus = "active" | "draft" | "inactive";
 type ActiveInactiveStatus = "active" | "inactive";
@@ -50,7 +49,7 @@ interface Listing {
 }
 
 export function LandlordListings() {
-  const apiBase = API_BASE;
+  const apiBase = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:4000";
   const [filterStatus, setFilterStatus] = useState<ListingStatus | "all">("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [listings, setListings] = useState<Listing[]>([]);

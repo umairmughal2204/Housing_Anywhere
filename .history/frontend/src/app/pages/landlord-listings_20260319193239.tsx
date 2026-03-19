@@ -17,7 +17,6 @@ import {
   Loader2,
 } from "lucide-react";
 import { ImageWithFallback } from "../components/figma/ImageWithFallback";
-import { API_BASE } from "../config";
 
 type ListingStatus = "active" | "draft" | "inactive";
 type ActiveInactiveStatus = "active" | "inactive";
@@ -50,7 +49,7 @@ interface Listing {
 }
 
 export function LandlordListings() {
-  const apiBase = API_BASE;
+  const apiBase = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:4000";
   const [filterStatus, setFilterStatus] = useState<ListingStatus | "all">("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [listings, setListings] = useState<Listing[]>([]);
@@ -58,8 +57,6 @@ export function LandlordListings() {
   const [error, setError] = useState("");
   const [updatingStatusId, setUpdatingStatusId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
-  const [deleteTarget, setDeleteTarget] = useState<Listing | null>(null);
-  const [deleteConfirmationText, setDeleteConfirmationText] = useState("");
 
   useEffect(() => {
     const loadListings = async () => {
@@ -129,11 +126,7 @@ export function LandlordListings() {
     }
   };
 
-  const handleDelete = async () => {
-    if (!deleteTarget) {
-      return;
-    }
-
+  const handleDelete = async (listingId: string) => {
     const token = localStorage.getItem("authToken");
     if (!token) {
       setError("Please log in to delete listings");
@@ -144,12 +137,21 @@ export function LandlordListings() {
       return;
     }
 
-    if (deleteConfirmationText.trim() !== "DELETE") {
-      setError("Please type DELETE to confirm.");
+    const listing = listings.find((item) => item.id === listingId);
+    const listingTitle = listing?.title ?? "this listing";
+
+    const confirmed = window.confirm(
+      `Delete "${listingTitle}" permanently?\n\nThis action cannot be undone.`
+    );
+    if (!confirmed) {
       return;
     }
 
-    const listingId = deleteTarget.id;
+    const confirmationText = window.prompt('Type DELETE to confirm permanent deletion:');
+    if (confirmationText !== "DELETE") {
+      return;
+    }
+
     setDeletingId(listingId);
 
     try {
@@ -166,8 +168,6 @@ export function LandlordListings() {
       }
 
       setListings((prev) => prev.filter((listing) => listing.id !== listingId));
-      setDeleteTarget(null);
-      setDeleteConfirmationText("");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to delete listing");
     } finally {
@@ -403,9 +403,7 @@ export function LandlordListings() {
                       </Link>
                       <button
                         onClick={() => {
-                          setError("");
-                          setDeleteConfirmationText("");
-                          setDeleteTarget(listing);
+                          void handleDelete(listing.id);
                         }}
                         disabled={deletingId === listing.id}
                         className="flex items-center gap-[8px] px-[16px] py-[8px] border border-[rgba(255,75,39,0.35)] text-brand-primary text-[14px] font-semibold hover:bg-brand-light transition-colors"
@@ -441,51 +439,6 @@ export function LandlordListings() {
             </div>
           )}
         </div>
-
-        {deleteTarget && (
-          <div className="fixed inset-0 z-[70] bg-black/40 flex items-center justify-center p-[24px]">
-            <div className="w-full max-w-[520px] bg-white border border-[rgba(0,0,0,0.12)] p-[24px]">
-              <h3 className="text-neutral-black text-[20px] font-bold mb-[8px]">Delete Listing</h3>
-              <p className="text-neutral-gray text-[14px] leading-[1.6] mb-[16px]">
-                You are about to permanently delete <span className="font-semibold text-neutral-black">{deleteTarget.title}</span>.
-                This action cannot be undone.
-              </p>
-
-              <label className="block text-[13px] font-semibold text-neutral-black mb-[8px]">
-                Type <span className="text-brand-primary">DELETE</span> to confirm
-              </label>
-              <input
-                type="text"
-                value={deleteConfirmationText}
-                onChange={(event) => setDeleteConfirmationText(event.target.value)}
-                placeholder="DELETE"
-                className="w-full px-[12px] py-[10px] border border-[rgba(0,0,0,0.16)] text-neutral-black text-[14px] focus:outline-none focus:border-brand-primary"
-              />
-
-              <div className="flex items-center justify-end gap-[10px] mt-[20px]">
-                <button
-                  onClick={() => {
-                    setDeleteTarget(null);
-                    setDeleteConfirmationText("");
-                  }}
-                  disabled={deletingId === deleteTarget.id}
-                  className="px-[16px] py-[10px] border border-[rgba(0,0,0,0.16)] text-neutral-black text-[13px] font-semibold hover:bg-neutral-light-gray transition-colors disabled:opacity-60"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={() => {
-                    void handleDelete();
-                  }}
-                  disabled={deletingId === deleteTarget.id || deleteConfirmationText.trim() !== "DELETE"}
-                  className="px-[16px] py-[10px] bg-brand-primary text-white text-[13px] font-semibold hover:bg-brand-primary-dark transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
-                >
-                  {deletingId === deleteTarget.id ? "Deleting..." : "Delete permanently"}
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
       </main>
     </LandlordPortalLayout>
   );
