@@ -450,7 +450,7 @@ export function Home() {
 
     setSearchCity(resolvedCity);
     navigate({
-      pathname: `/s/${resolvedCity.toLowerCase()}`,
+      pathname: `/listings/${resolvedCity.toLowerCase()}`,
       search: nextSearchParams.toString(),
     });
   };
@@ -696,7 +696,7 @@ export function Home() {
                       Start exploring listings, save a few favorites, or message landlords to help us personalize your recommendations.
                     </div>
                     <Link
-                      to="/s"
+                      to="/listings"
                       className="inline-flex items-center gap-[8px] px-[16px] py-[10px] bg-[#1A1A1A] text-white text-[14px] font-semibold hover:bg-[#0891B2] transition-colors"
                     >
                       Explore listings
@@ -721,7 +721,7 @@ export function Home() {
                         </button>
                       )}
                       <Link
-                        to="/s"
+                        to="/listings"
                         className="inline-flex items-center gap-[8px] px-[16px] py-[10px] bg-[#1A1A1A] text-white text-[14px] font-semibold hover:bg-[#0891B2] transition-colors"
                       >
                         Browse listings
@@ -732,7 +732,7 @@ export function Home() {
                 )}
                 <div className="mt-[24px] flex justify-end">
                   <Link
-                    to="/s"
+                    to="/listings"
                     className="inline-flex items-center gap-[8px] px-[16px] py-[10px] border border-[rgba(0,0,0,0.12)] text-[#1A1A1A] text-[14px] font-semibold hover:border-[rgba(0,0,0,0.24)] hover:bg-[#F7F7F9] transition-colors"
                   >
                     View all listings
@@ -949,7 +949,7 @@ export function Home() {
               </p>
             </div>
             <Link
-              to="/s/berlin"
+              to="/listings/berlin"
               className="flex items-center gap-[8px] text-[#0891B2] font-bold hover:gap-[12px] transition-all"
             >
               View All Cities
@@ -961,7 +961,7 @@ export function Home() {
             {cities.map((city, idx) => (
               <Link
                 key={idx}
-                to={`/s/${city.name.toLowerCase()}`}
+                to={`/listings/${city.name.toLowerCase()}`}
                 className="group relative overflow-hidden aspect-[3/4] bg-[#F7F7F9]"
               >
                 <img

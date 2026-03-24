@@ -303,11 +303,11 @@ export function PropertyListing() {
               EasyRent
             </Link>
             <span className="text-neutral-gray">&gt;</span>
-            <Link to={`/s/${(listing?.city ?? "city").toLowerCase()}`} className="text-brand-primary hover:underline font-semibold">
+            <Link to={`/listings/${(listing?.city ?? "city").toLowerCase()}`} className="text-brand-primary hover:underline font-semibold">
               {listing?.city ?? "City"}
             </Link>
             <span className="text-neutral-gray">&gt;</span>
-            <Link to={`/s/${(listing?.city ?? "city").toLowerCase()}`} className="text-brand-primary hover:underline font-semibold">
+            <Link to={`/listings/${(listing?.city ?? "city").toLowerCase()}`} className="text-brand-primary hover:underline font-semibold">
               {listing?.propertyType ? `${listing.propertyType.charAt(0).toUpperCase()}${listing.propertyType.slice(1)}s` : "Properties"}
             </Link>
             <span className="text-neutral-gray">&gt;</span>

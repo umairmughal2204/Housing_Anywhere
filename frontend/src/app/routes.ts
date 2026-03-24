@@ -110,13 +110,30 @@ export const router = createBrowserRouter([
     ErrorBoundary,
   },
   {
-    path: "/s",
+    path: "/listings",
     Component: SearchResults,
     ErrorBoundary,
   },
   {
-    path: "/s/:city",
+    path: "/listings/:city",
     Component: SearchResults,
+    ErrorBoundary,
+  },
+  {
+    path: "/s",
+    loader: ({ request }) => {
+      const url = new URL(request.url);
+      return redirect(`/listings${url.search}`);
+    },
+    ErrorBoundary,
+  },
+  {
+    path: "/s/:city",
+    loader: ({ params, request }) => {
+      const url = new URL(request.url);
+      const city = params.city ? `/${params.city}` : "";
+      return redirect(`/listings${city}${url.search}`);
+    },
     ErrorBoundary,
   },
   {

@@ -230,7 +230,7 @@ export function Favorites() {
                 Start saving properties you love to keep track of them and get notifications when they become available.
               </p>
               <Link
-                to="/s/berlin"
+                to="/listings/berlin"
                 className="inline-block px-[24px] py-[12px] bg-brand-primary text-white font-semibold hover:bg-brand-primary-dark transition-colors rounded-[8px]"
               >
                 Browse Properties
