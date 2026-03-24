@@ -116,6 +116,19 @@ function extractNeighborhood(property: ListingItem) {
   return property.city;
 }
 
+function resolveListingImageUrl(image: string | undefined, apiBase: string) {
+  if (!image || image.trim().length === 0) {
+    return "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800&q=80";
+  }
+
+  if (/^https?:\/\//i.test(image)) {
+    return image;
+  }
+
+  const normalizedPath = image.startsWith("/") ? image : `/${image}`;
+  return `${apiBase}${normalizedPath}`;
+}
+
 export function SearchResults() {
   const { city } = useParams();
   const navigate = useNavigate();
@@ -832,9 +845,9 @@ export function SearchResults() {
                 {/* Image Container */}
                 <div className="relative mb-[12px] overflow-hidden">
                   <img
-                    src={property.images[0] ?? "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800&q=80"}
+                    src={resolveListingImageUrl(property.images[0], apiBase)}
                     alt={property.title}
-                    className="w-full h-[220px] object-contain object-center bg-[#F3F4F6]"
+                    className="w-full h-[220px] object-cover object-center bg-[#F3F4F6]"
                   />
                   
                   {/* New Badge */}
