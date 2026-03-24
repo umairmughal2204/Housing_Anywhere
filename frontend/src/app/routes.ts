@@ -22,7 +22,6 @@ import { Login } from "./pages/login";
 import { Signup } from "./pages/signup";
 import { Landlord } from "./pages/landlord";
 import { Payments } from "./pages/payments";
-import { Alerts } from "./pages/alerts";
 import { Account } from "./pages/account";
 import { Favorites } from "./pages/favorites";
 import { ErrorBoundary } from "./components/error-boundary";
@@ -179,11 +178,6 @@ export const router = createBrowserRouter([
   {
     path: "/payments",
     Component: Payments,
-    ErrorBoundary,
-  },
-  {
-    path: "/alerts",
-    Component: Alerts,
     ErrorBoundary,
   },
   {

@@ -8,7 +8,6 @@ import {
   Users,
   Home as HomeIcon,
   Heart,
-  Bell,
   Star,
   SlidersHorizontal,
   X,
@@ -134,6 +133,18 @@ function getImageDotCount(images: string[] | undefined) {
   return Math.max(1, images?.length ?? 0);
 }
 
+function buildMapsQuery(property: ListingItem) {
+  return [property.address, property.city].filter(Boolean).join(", ");
+}
+
+function buildMapsSearchUrl(query: string) {
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
+}
+
+function buildMapsEmbedUrl(query: string) {
+  return `https://www.google.com/maps?q=${encodeURIComponent(query)}&output=embed`;
+}
+
 export function SearchResults() {
   const { city } = useParams();
   const navigate = useNavigate();
@@ -151,6 +162,7 @@ export function SearchResults() {
   const [isLoading, setIsLoading] = useState(true);
   const [favoriteListingIds, setFavoriteListingIds] = useState<Set<string>>(new Set());
   const [favoriteBusyId, setFavoriteBusyId] = useState<string | null>(null);
+  const [selectedMapListingId, setSelectedMapListingId] = useState<string | null>(null);
   const [minPriceDraft, setMinPriceDraft] = useState("");
   const [maxPriceDraft, setMaxPriceDraft] = useState("");
   const [minBedroomsDraft, setMinBedroomsDraft] = useState("");
@@ -352,6 +364,20 @@ export function SearchResults() {
     return "Price";
   }, [maxPrice, minPrice]);
   const cityLabel = city ? city.charAt(0).toUpperCase() + city.slice(1) : "All cities";
+  const activeMapListing = useMemo(() => {
+    if (filteredProperties.length === 0) {
+      return null;
+    }
+
+    if (!selectedMapListingId) {
+      return filteredProperties[0] ?? null;
+    }
+
+    return filteredProperties.find((property) => property.id === selectedMapListingId) ?? filteredProperties[0] ?? null;
+  }, [filteredProperties, selectedMapListingId]);
+  const mapQuery = activeMapListing ? buildMapsQuery(activeMapListing) : cityLabel;
+  const mapEmbedUrl = useMemo(() => buildMapsEmbedUrl(mapQuery), [mapQuery]);
+  const mapSearchUrl = useMemo(() => buildMapsSearchUrl(mapQuery), [mapQuery]);
   const activeFilterChips = useMemo(() => {
     const chips: Array<{ key: string; label: string; clear: () => void }> = [];
 
@@ -458,6 +484,21 @@ export function SearchResults() {
     void loadFavoriteState();
   }, [apiBase]);
 
+  useEffect(() => {
+    if (viewMode !== "map") {
+      return;
+    }
+
+    if (filteredProperties.length === 0) {
+      setSelectedMapListingId(null);
+      return;
+    }
+
+    if (!selectedMapListingId || !filteredProperties.some((property) => property.id === selectedMapListingId)) {
+      setSelectedMapListingId(filteredProperties[0].id);
+    }
+  }, [filteredProperties, selectedMapListingId, viewMode]);
+
   const handleToggleFavorite = async (listingId: string) => {
     const token = localStorage.getItem("authToken");
     if (!token) {
@@ -521,12 +562,37 @@ export function SearchResults() {
     }
   };
 
+  const scrollToResultsHeader = () => {
+    const resultsHeader = document.getElementById("results-header");
+    if (!resultsHeader) {
+      return;
+    }
+
+    const appHeader = document.querySelector("header.sticky") as HTMLElement | null;
+    const filterBar = document.querySelector('[data-results-filter-bar="true"]') as HTMLElement | null;
+    const stickyHeaderOffset = (appHeader?.offsetHeight ?? 64) + (filterBar?.offsetHeight ?? 64) + 12;
+    const sectionTop = resultsHeader.getBoundingClientRect().top + window.scrollY;
+    const targetTop = Math.max(0, sectionTop - stickyHeaderOffset);
+    window.scrollTo({ top: targetTop, behavior: "smooth" });
+  };
+
+  const handleShowRecommended = () => {
+    setViewMode("list");
+    setSelectedMapListingId(null);
+    requestAnimationFrame(scrollToResultsHeader);
+  };
+
+  const handleShowMap = () => {
+    setViewMode("map");
+    requestAnimationFrame(scrollToResultsHeader);
+  };
+
   return (
     <div className="min-h-screen bg-white">
       <Header />
 
       {/* Filter Bar */}
-      <div className="border-b border-[rgba(0,0,0,0.08)] bg-white sticky top-[64px] z-40">
+      <div data-results-filter-bar="true" className="border-b border-[rgba(0,0,0,0.08)] bg-white sticky top-[64px] z-40">
         <div ref={filtersRef} className="max-w-[1440px] mx-auto px-[32px]">
           {/* Top Filter Row */}
           <div className="flex items-center gap-[12px] py-[14px] flex-wrap">
@@ -810,12 +876,6 @@ export function SearchResults() {
 
             {/* Spacer */}
             <div className="flex-1" />
-
-            {/* Get Alerts Button */}
-            <button className="flex items-center gap-[8px] px-[24px] py-[10px] bg-[#1A1A1A] text-white font-semibold hover:bg-[#0891B2] transition-colors">
-              <Bell className="w-[16px] h-[16px]" />
-              Get alerts
-            </button>
           </div>
 
           {activeFilterChips.length > 0 && (
@@ -896,7 +956,7 @@ export function SearchResults() {
       </div>
 
       {/* Results Header */}
-      <div className="bg-white border-b border-[rgba(0,0,0,0.08)]">
+      <div id="results-header" className="bg-white border-b border-[rgba(0,0,0,0.08)]">
         <div className="max-w-[1440px] mx-auto px-[32px] py-[24px]">
           <div className="flex items-center justify-between">
             <h1 className="text-[#1A1A1A] text-[20px] font-semibold">
@@ -905,7 +965,8 @@ export function SearchResults() {
 
             <div className="flex items-center gap-[8px]">
               <button
-                onClick={() => setViewMode("list")}
+                type="button"
+                onClick={handleShowRecommended}
                 className={`flex items-center gap-[8px] px-[16px] py-[8px] border transition-colors ${
                   viewMode === "list"
                     ? "bg-[#F7F7F9] border-[rgba(0,0,0,0.16)]"
@@ -913,10 +974,11 @@ export function SearchResults() {
                 }`}
               >
                 <HomeIcon className="w-[16px] h-[16px] text-[#1A1A1A]" />
-                <span className="text-[#1A1A1A] text-[14px] font-semibold">Recommended</span>
+                <span className="text-[#1A1A1A] text-[14px] font-semibold">List view</span>
               </button>
               <button
-                onClick={() => setViewMode("map")}
+                type="button"
+                onClick={handleShowMap}
                 className={`flex items-center gap-[8px] px-[16px] py-[8px] border transition-colors ${
                   viewMode === "map"
                     ? "bg-[#F7F7F9] border-[rgba(0,0,0,0.16)]"
@@ -932,104 +994,175 @@ export function SearchResults() {
       </div>
 
       {/* Property Grid */}
-      <div className="bg-white">
+      <div id="results-content" className="bg-white">
         <div className="max-w-[1440px] mx-auto px-[32px] py-[32px]">
-          <div className="grid grid-cols-4 gap-[24px]">
-            {filteredProperties.map((property) => (
-              <div
-                key={property.id}
-                onClick={() => navigate(`/property/${property.id}`)}
-                className="cursor-pointer group"
-              >
-                {/* Image Container */}
-                <div className="relative mb-[12px] overflow-hidden">
-                  <img
-                    src={resolveListingImageUrl(property.images[0], apiBase)}
-                    alt={property.title}
-                    className="w-full h-[220px] object-cover object-center bg-[#F3F4F6]"
-                  />
-                  
-                  {/* New Badge */}
-                  {!property.images[1] && (
-                    <div className="absolute top-[12px] left-[12px] bg-[#2563EB] text-white px-[12px] py-[4px]">
-                      <span className="text-[12px] font-bold uppercase tracking-[0.05em]">New</span>
-                    </div>
-                  )}
-
-                  {/* Favorite Icon */}
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      void handleToggleFavorite(property.id);
-                    }}
-                    type="button"
-                    disabled={favoriteBusyId === property.id}
-                    aria-label={favoriteListingIds.has(property.id) ? "Remove from favorites" : "Add to favorites"}
-                    className="absolute top-[12px] right-[12px] w-[32px] h-[32px] bg-white/90 hover:bg-white flex items-center justify-center transition-colors"
-                  >
-                    <Heart
-                      className={`w-[16px] h-[16px] ${
-                        favoriteListingIds.has(property.id)
-                          ? "fill-[#FF4B27] text-[#FF4B27]"
-                          : "text-[#1A1A1A]"
-                      }`}
+          {viewMode === "list" && (
+            <div className="grid grid-cols-4 gap-[24px]">
+              {filteredProperties.map((property) => (
+                <div
+                  key={property.id}
+                  onClick={() => navigate(`/property/${property.id}`)}
+                  className="cursor-pointer group"
+                >
+                  {/* Image Container */}
+                  <div className="relative mb-[12px] overflow-hidden">
+                    <img
+                      src={resolveListingImageUrl(property.images[0], apiBase)}
+                      alt={property.title}
+                      className="w-full h-[220px] object-cover object-center bg-[#F3F4F6]"
                     />
-                  </button>
+                    
+                    {/* New Badge */}
+                    {!property.images[1] && (
+                      <div className="absolute top-[12px] left-[12px] bg-[#2563EB] text-white px-[12px] py-[4px]">
+                        <span className="text-[12px] font-bold uppercase tracking-[0.05em]">New</span>
+                      </div>
+                    )}
 
-                  {/* Image Dots */}
-                  <div className="absolute bottom-[12px] left-1/2 -translate-x-1/2 flex items-center gap-[4px]">
-                    {Array.from({ length: getImageDotCount(property.images) }, (_, index) => (
-                      <div
-                        key={index}
-                        className={`w-[6px] h-[6px] rounded-full ${
-                          index === 0 ? "bg-white" : "bg-white/40"
+                    {/* Favorite Icon */}
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        void handleToggleFavorite(property.id);
+                      }}
+                      type="button"
+                      disabled={favoriteBusyId === property.id}
+                      aria-label={favoriteListingIds.has(property.id) ? "Remove from favorites" : "Add to favorites"}
+                      className="absolute top-[12px] right-[12px] w-[32px] h-[32px] bg-white/90 hover:bg-white flex items-center justify-center transition-colors"
+                    >
+                      <Heart
+                        className={`w-[16px] h-[16px] ${
+                          favoriteListingIds.has(property.id)
+                            ? "fill-[#FF4B27] text-[#FF4B27]"
+                            : "text-[#1A1A1A]"
                         }`}
                       />
-                    ))}
+                    </button>
+
+                    {/* Image Dots */}
+                    <div className="absolute bottom-[12px] left-1/2 -translate-x-1/2 flex items-center gap-[4px]">
+                      {Array.from({ length: getImageDotCount(property.images) }, (_, index) => (
+                        <div
+                          key={index}
+                          className={`w-[6px] h-[6px] rounded-full ${
+                            index === 0 ? "bg-white" : "bg-white/40"
+                          }`}
+                        />
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Property Info */}
+                  <div className="space-y-[8px]">
+                    {/* Title */}
+                    <h3 className="text-[#1A1A1A] text-[16px] font-bold leading-tight line-clamp-1">
+                      {property.title}, {property.city}
+                    </h3>
+
+                    {/* Rating */}
+                    <div className="flex items-center gap-[4px]">
+                      <Star className="w-[14px] h-[14px] text-[#0891B2] fill-[#0891B2]" />
+                      <span className="text-[#1A1A1A] text-[14px] font-semibold">Live</span>
+                      <span className="text-[#6B6B6B] text-[14px]">listing</span>
+                    </div>
+
+                    {/* Size and Housemates */}
+                    <div className="flex items-center gap-[12px] text-[#6B6B6B] text-[13px]">
+                      <div className="flex items-center gap-[4px]">
+                        <HomeIcon className="w-[14px] h-[14px]" />
+                        <span>{property.area} m²</span>
+                      </div>
+                      <div className="flex items-center gap-[4px]">
+                        <Users className="w-[14px] h-[14px]" />
+                        <span>{property.bedrooms} bedrooms</span>
+                      </div>
+                    </div>
+
+                    {/* Price */}
+                    <div className="flex items-baseline gap-[4px]">
+                      <span className="text-[#1A1A1A] text-[18px] font-bold">€{property.monthlyRent}</span>
+                      <span className="text-[#6B6B6B] text-[13px]">/month, excl. utilities</span>
+                    </div>
+
+                    {/* Availability */}
+                    <div className="flex items-center gap-[6px]">
+                      <div className="w-[6px] h-[6px] rounded-full bg-[#2563EB]" />
+                      <span className="text-[#1A1A1A] text-[13px] font-semibold">Available from {new Date(property.availableFrom).toLocaleDateString("en-GB")}</span>
+                    </div>
                   </div>
                 </div>
-
-                {/* Property Info */}
-                <div className="space-y-[8px]">
-                  {/* Title */}
-                  <h3 className="text-[#1A1A1A] text-[16px] font-bold leading-tight line-clamp-1">
-                    {property.title}, {property.city}
-                  </h3>
-
-                  {/* Rating */}
-                  <div className="flex items-center gap-[4px]">
-                    <Star className="w-[14px] h-[14px] text-[#0891B2] fill-[#0891B2]" />
-                    <span className="text-[#1A1A1A] text-[14px] font-semibold">Live</span>
-                    <span className="text-[#6B6B6B] text-[14px]">listing</span>
+              ))}
+            </div>
+          )}
+          {viewMode === "map" && (
+            <div className="grid grid-cols-1 lg:grid-cols-[380px_1fr] gap-[20px]">
+              <div className="border border-[rgba(0,0,0,0.08)] max-h-[680px] overflow-y-auto">
+                {filteredProperties.map((property) => {
+                  const isActive = activeMapListing?.id === property.id;
+                  return (
+                    <button
+                      key={property.id}
+                      type="button"
+                      onClick={() => setSelectedMapListingId(property.id)}
+                      className={`w-full text-left p-[14px] border-b border-[rgba(0,0,0,0.08)] transition-colors ${
+                        isActive ? "bg-[#E0F2FE]" : "hover:bg-[#F7F7F9]"
+                      }`}
+                    >
+                      <div className="flex items-start gap-[12px]">
+                        <img
+                          src={resolveListingImageUrl(property.images[0], apiBase)}
+                          alt={property.title}
+                          className="w-[90px] h-[70px] object-cover bg-[#F3F4F6] flex-shrink-0"
+                        />
+                        <div className="min-w-0 flex-1">
+                          <div className="text-[#1A1A1A] text-[14px] font-bold leading-tight truncate">{property.title}</div>
+                          <div className="text-[#6B6B6B] text-[12px] truncate">{property.address}, {property.city}</div>
+                          <div className="text-[#1A1A1A] text-[13px] font-semibold mt-[4px]">€{property.monthlyRent}/month</div>
+                          <div className="mt-[8px] flex items-center gap-[8px]">
+                            <span className="text-[#6B6B6B] text-[12px]">{property.bedrooms} bedrooms</span>
+                            <span className="text-[#6B6B6B] text-[12px]">{property.area} m²</span>
+                          </div>
+                        </div>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+              <div className="border border-[rgba(0,0,0,0.08)] overflow-hidden">
+                <iframe
+                  title="Listing map"
+                  src={mapEmbedUrl}
+                  className="w-full h-[680px]"
+                  loading="lazy"
+                  referrerPolicy="no-referrer-when-downgrade"
+                />
+                <div className="p-[14px] border-t border-[rgba(0,0,0,0.08)] flex items-center justify-between gap-[12px] flex-wrap">
+                  <div className="text-[13px] text-[#6B6B6B]">
+                    {activeMapListing ? `${activeMapListing.title} - ${activeMapListing.city}` : `Map for ${cityLabel}`}
                   </div>
-
-                  {/* Size and Housemates */}
-                  <div className="flex items-center gap-[12px] text-[#6B6B6B] text-[13px]">
-                    <div className="flex items-center gap-[4px]">
-                      <HomeIcon className="w-[14px] h-[14px]" />
-                      <span>{property.area} m²</span>
-                    </div>
-                    <div className="flex items-center gap-[4px]">
-                      <Users className="w-[14px] h-[14px]" />
-                      <span>{property.bedrooms} bedrooms</span>
-                    </div>
-                  </div>
-
-                  {/* Price */}
-                  <div className="flex items-baseline gap-[4px]">
-                    <span className="text-[#1A1A1A] text-[18px] font-bold">€{property.monthlyRent}</span>
-                    <span className="text-[#6B6B6B] text-[13px]">/month, excl. utilities</span>
-                  </div>
-
-                  {/* Availability */}
-                  <div className="flex items-center gap-[6px]">
-                    <div className="w-[6px] h-[6px] rounded-full bg-[#2563EB]" />
-                    <span className="text-[#1A1A1A] text-[13px] font-semibold">Available from {new Date(property.availableFrom).toLocaleDateString("en-GB")}</span>
+                  <div className="flex items-center gap-[8px]">
+                    {activeMapListing && (
+                      <button
+                        type="button"
+                        onClick={() => navigate(`/property/${activeMapListing.id}`)}
+                        className="px-[14px] py-[8px] border border-[rgba(0,0,0,0.16)] text-[#1A1A1A] text-[13px] font-semibold hover:bg-[#F7F7F9] transition-colors"
+                      >
+                        View listing
+                      </button>
+                    )}
+                    <a
+                      href={mapSearchUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="px-[14px] py-[8px] bg-[#1A1A1A] text-white text-[13px] font-semibold hover:bg-[#0891B2] transition-colors"
+                    >
+                      Open in maps
+                    </a>
                   </div>
                 </div>
               </div>
-            ))}
-          </div>
+            </div>
+          )}
           {!isLoading && filteredProperties.length === 0 && (
             <div className="text-center text-[#6B6B6B] text-[14px] py-[40px]">
               {activeFilters > 0
