@@ -209,6 +209,10 @@ function resolveCityQuery(query: string, suggestions: CitySuggestion[]) {
   return countryMatch?.name ?? query.trim();
 }
 
+function getImageDotCount(images: string[] | undefined) {
+  return Math.max(1, images?.length ?? 0);
+}
+
 // Counter Animation Component
 function Counter({ value, suffix = "", prefix = "", duration = 2 }: { value: number; suffix?: string; prefix?: string; duration?: number }) {
   const ref = useRef<HTMLSpanElement>(null);
@@ -665,8 +669,8 @@ export function Home() {
                             </div>
                           )}
                           <div className="absolute bottom-[12px] left-0 right-0 flex items-center justify-center gap-[4px]">
-                            {[1, 2, 3, 4, 5].map((dot) => (
-                              <div key={dot} className={`w-[6px] h-[6px] rounded-full ${dot === 1 ? "bg-white" : "bg-white/40"}`} />
+                            {Array.from({ length: getImageDotCount(property.images) }, (_, index) => (
+                              <div key={index} className={`w-[6px] h-[6px] rounded-full ${index === 0 ? "bg-white" : "bg-white/40"}`} />
                             ))}
                           </div>
                         </div>
@@ -761,8 +765,8 @@ export function Home() {
                           className="w-full h-full object-cover object-center bg-[#F3F4F6]"
                         />
                         <div className="absolute bottom-[12px] left-0 right-0 flex items-center justify-center gap-[4px]">
-                          {[1, 2, 3, 4, 5].map((dot) => (
-                            <div key={dot} className={`w-[6px] h-[6px] rounded-full ${dot === 1 ? "bg-white" : "bg-white/40"}`} />
+                          {Array.from({ length: getImageDotCount(property.image ? [property.image] : []) }, (_, index) => (
+                            <div key={index} className={`w-[6px] h-[6px] rounded-full ${index === 0 ? "bg-white" : "bg-white/40"}`} />
                           ))}
                         </div>
                       </div>

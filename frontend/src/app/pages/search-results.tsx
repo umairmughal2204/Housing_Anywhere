@@ -129,6 +129,10 @@ function resolveListingImageUrl(image: string | undefined, apiBase: string) {
   return `${apiBase}${normalizedPath}`;
 }
 
+function getImageDotCount(images: string[] | undefined) {
+  return Math.max(1, images?.length ?? 0);
+}
+
 export function SearchResults() {
   const { city } = useParams();
   const navigate = useNavigate();
@@ -869,11 +873,11 @@ export function SearchResults() {
 
                   {/* Image Dots */}
                   <div className="absolute bottom-[12px] left-1/2 -translate-x-1/2 flex items-center gap-[4px]">
-                    {[1, 2, 3, 4, 5].map((dot) => (
+                    {Array.from({ length: getImageDotCount(property.images) }, (_, index) => (
                       <div
-                        key={dot}
+                        key={index}
                         className={`w-[6px] h-[6px] rounded-full ${
-                          dot === 1 ? "bg-white" : "bg-white/40"
+                          index === 0 ? "bg-white" : "bg-white/40"
                         }`}
                       />
                     ))}
