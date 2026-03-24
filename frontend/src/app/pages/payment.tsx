@@ -70,26 +70,7 @@ export function Payment() {
     // Process payment
     alert("Payment successful!");
 
-    try {
-      const response = await fetch(`${API_BASE}/api/conversations`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ listingId: id }),
-      });
-
-      if (!response.ok) {
-        navigate("/tenant/inbox");
-        return;
-      }
-
-      const payload = (await response.json()) as { conversationId: string };
-      navigate(`/tenant/inbox/conversation/${payload.conversationId}`);
-    } catch {
-      navigate("/tenant/inbox");
-    }
+    navigate(`/property/${id}/success`);
   };
 
   // Close dropdowns when clicking outside

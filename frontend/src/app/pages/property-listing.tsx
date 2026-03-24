@@ -336,6 +336,16 @@ export function PropertyListing() {
     window.open(mapUrl, "_blank", "noopener,noreferrer");
   };
 
+  const handleOpenDateSelector = () => {
+    if (!listing || !id) {
+      toast.error("Listing details are not available yet.");
+      return;
+    }
+
+    toast.info(`This home is available from ${new Date(listing.availableFrom).toLocaleDateString("en-GB")}. Continue to application to confirm your move-in details.`);
+    navigate(`/property/${id}/apply`);
+  };
+
   return (
     <div className="min-h-screen bg-white">
       <Header />
@@ -646,7 +656,11 @@ export function PropertyListing() {
 
               {/* Date Selector */}
               <div className="mb-[24px]">
-                <button className="w-full flex items-center gap-[12px] px-[16px] py-[14px] border border-[rgba(0,0,0,0.16)] hover:bg-neutral-light-gray transition-colors">
+                <button
+                  type="button"
+                  onClick={handleOpenDateSelector}
+                  className="w-full flex items-center gap-[12px] px-[16px] py-[14px] border border-[rgba(0,0,0,0.16)] hover:bg-neutral-light-gray transition-colors"
+                >
                   <Calendar className="w-[20px] h-[20px] text-neutral-black" />
                   <div className="flex-1 text-left">
                     <span className="text-neutral-black text-[14px] font-semibold">
@@ -689,12 +703,6 @@ export function PropertyListing() {
                 <span className="text-neutral-black text-[16px] font-bold">To confirm stay</span>
                 <span className="text-neutral-black text-[20px] font-bold">€{(listing?.monthlyRent ?? 0) + (listing?.deposit ?? 0)}</span>
               </div>
-
-              {/* View All Payments */}
-              <button className="w-full flex items-center justify-center gap-[8px] text-neutral-black text-[14px] font-semibold mb-[24px] hover:text-brand-primary transition-colors">
-                <Calendar className="w-[16px] h-[16px]" />
-                View all payments
-              </button>
 
               {/* Apply Button */}
               <div className="relative group mb-[24px]">
