@@ -1,4 +1,4 @@
-import { useParams, Link, useNavigate, useSearchParams } from "react-router";
+import { useParams, Link, useNavigate, useSearchParams, useLocation } from "react-router";
 import { Header } from "../components/header";
 import { Footer } from "../components/footer";
 import { 
@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { API_BASE } from "../config";
+import { toast } from "sonner";
 
 interface ListingItem {
   id: string;
@@ -136,6 +137,7 @@ function getImageDotCount(images: string[] | undefined) {
 export function SearchResults() {
   const { city } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
   const apiBase = API_BASE;
   const [viewMode, setViewMode] = useState<"list" | "map">("list");
@@ -147,6 +149,8 @@ export function SearchResults() {
   const [activeTab, setActiveTab] = useState<"anyone" | "students" | "professionals" | "families">("anyone");
   const [properties, setProperties] = useState<ListingItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [favoriteListingIds, setFavoriteListingIds] = useState<Set<string>>(new Set());
+  const [favoriteBusyId, setFavoriteBusyId] = useState<string | null>(null);
   const [minPriceDraft, setMinPriceDraft] = useState("");
   const [maxPriceDraft, setMaxPriceDraft] = useState("");
   const [minBedroomsDraft, setMinBedroomsDraft] = useState("");
@@ -425,6 +429,97 @@ export function SearchResults() {
 
     void loadListings();
   }, [apiBase, city]);
+
+  useEffect(() => {
+    const loadFavoriteState = async () => {
+      const token = localStorage.getItem("authToken");
+      if (!token) {
+        setFavoriteListingIds(new Set());
+        return;
+      }
+
+      try {
+        const response = await fetch(`${apiBase}/api/auth/me/favorites`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        if (!response.ok) {
+          return;
+        }
+
+        const payload = (await response.json()) as { listingIds: string[] };
+        setFavoriteListingIds(new Set(payload.listingIds));
+      } catch {
+        // Keep page usable even if favorites state cannot be loaded.
+      }
+    };
+
+    void loadFavoriteState();
+  }, [apiBase]);
+
+  const handleToggleFavorite = async (listingId: string) => {
+    const token = localStorage.getItem("authToken");
+    if (!token) {
+      const returnTo = `${location.pathname}${location.search}`;
+      navigate(`/login?returnTo=${encodeURIComponent(returnTo)}`);
+      return;
+    }
+
+    if (favoriteBusyId === listingId) {
+      return;
+    }
+
+    const isCurrentlyFavorite = favoriteListingIds.has(listingId);
+    setFavoriteBusyId(listingId);
+    setFavoriteListingIds((prev) => {
+      const next = new Set(prev);
+      if (isCurrentlyFavorite) {
+        next.delete(listingId);
+      } else {
+        next.add(listingId);
+      }
+      return next;
+    });
+
+    try {
+      const response = isCurrentlyFavorite
+        ? await fetch(`${apiBase}/api/auth/me/favorites/${listingId}`, {
+            method: "DELETE",
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          })
+        : await fetch(`${apiBase}/api/auth/me/favorites`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({ listingId }),
+          });
+
+      if (!response.ok) {
+        throw new Error("Failed to update favorites");
+      }
+
+      toast.success(isCurrentlyFavorite ? "Removed from favorites" : "Added to favorites");
+    } catch {
+      setFavoriteListingIds((prev) => {
+        const next = new Set(prev);
+        if (isCurrentlyFavorite) {
+          next.add(listingId);
+        } else {
+          next.delete(listingId);
+        }
+        return next;
+      });
+
+      toast.error("Could not update favorites. Please try again.");
+    } finally {
+      setFavoriteBusyId(null);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-white">
@@ -865,10 +960,20 @@ export function SearchResults() {
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
+                      void handleToggleFavorite(property.id);
                     }}
+                    type="button"
+                    disabled={favoriteBusyId === property.id}
+                    aria-label={favoriteListingIds.has(property.id) ? "Remove from favorites" : "Add to favorites"}
                     className="absolute top-[12px] right-[12px] w-[32px] h-[32px] bg-white/90 hover:bg-white flex items-center justify-center transition-colors"
                   >
-                    <Heart className="w-[16px] h-[16px] text-[#1A1A1A]" />
+                    <Heart
+                      className={`w-[16px] h-[16px] ${
+                        favoriteListingIds.has(property.id)
+                          ? "fill-[#FF4B27] text-[#FF4B27]"
+                          : "text-[#1A1A1A]"
+                      }`}
+                    />
                   </button>
 
                   {/* Image Dots */}
