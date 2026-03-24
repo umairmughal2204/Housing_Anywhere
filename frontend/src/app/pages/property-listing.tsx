@@ -74,6 +74,8 @@ export function PropertyListing() {
   const [listingError, setListingError] = useState("");
   const [isListingUnavailable, setIsListingUnavailable] = useState(false);
   const [isPhotosModalOpen, setIsPhotosModalOpen] = useState(false);
+  const [hasApplied, setHasApplied] = useState(false);
+  const [applicationStatus, setApplicationStatus] = useState<"pending" | "approved" | "rejected" | null>(null);
 
   useEffect(() => {
     const loadListing = async () => {
@@ -159,6 +161,47 @@ export function PropertyListing() {
     void loadFavoriteState();
   }, [apiBase, id, isAuthenticated]);
 
+  useEffect(() => {
+    const loadApplicationState = async () => {
+      if (!id || !isAuthenticated || user?.role === "landlord") {
+        setHasApplied(false);
+        setApplicationStatus(null);
+        return;
+      }
+
+      const token = localStorage.getItem("authToken");
+      if (!token) {
+        setHasApplied(false);
+        setApplicationStatus(null);
+        return;
+      }
+
+      try {
+        const response = await fetch(`${apiBase}/api/rental-applications/tenant/check?listingId=${id}`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (!response.ok) {
+          return;
+        }
+
+        const payload = (await response.json()) as {
+          hasApplied: boolean;
+          status: "pending" | "approved" | "rejected" | null;
+        };
+
+        setHasApplied(payload.hasApplied);
+        setApplicationStatus(payload.status);
+      } catch {
+        // Keep page usable when application check fails.
+      }
+    };
+
+    void loadApplicationState();
+  }, [apiBase, id, isAuthenticated, user?.role]);
+
   const propertyImages = useMemo(() => {
     if (listing && listing.images.length > 0) {
       return listing.images;
@@ -179,6 +222,14 @@ export function PropertyListing() {
   const handleApplyToRent = () => {
     if (isListingUnavailable) {
       toast.error("This listing is no longer available for applications.");
+      return;
+    }
+
+    if (hasApplied) {
+      const statusMessage = applicationStatus
+        ? `You have already applied for this property (${applicationStatus}).`
+        : "You have already applied for this property.";
+      toast.info(statusMessage);
       return;
     }
 
@@ -708,15 +759,20 @@ export function PropertyListing() {
               <div className="relative group mb-[24px]">
                 <button
                   onClick={handleApplyToRent}
-                  disabled={user?.role === "landlord"}
+                  disabled={user?.role === "landlord" || hasApplied}
                   className="w-full bg-brand-primary text-white font-bold py-[16px] hover:bg-brand-primary-dark transition-colors text-[16px] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-brand-primary"
                 >
-                  Apply to rent
+                  {hasApplied ? "Application already submitted" : "Apply to rent"}
                 </button>
                 {user?.role === "landlord" && (
                   <span className="pointer-events-none absolute bottom-[calc(100%+8px)] left-1/2 -translate-x-1/2 w-[260px] bg-neutral-black text-white text-[11px] leading-[1.4] px-[10px] py-[8px] opacity-0 group-hover:opacity-100 transition-opacity z-20">
                     Landlord accounts cannot apply to rent. Use a tenant account to submit rental applications.
                   </span>
+                )}
+                {hasApplied && (
+                  <p className="mt-[8px] text-[12px] text-[#6B6B6B]">
+                    You already applied for this property{applicationStatus ? ` (${applicationStatus})` : ""}. Track it in My Applications.
+                  </p>
                 )}
               </div>
 
