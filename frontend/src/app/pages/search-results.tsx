@@ -163,6 +163,11 @@ export function SearchResults() {
   }, [properties]);
 
   useEffect(() => {
+    // Keep new searches anchored at the page top so users always see the header first.
+    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+  }, [city]);
+
+  useEffect(() => {
     setMinPriceDraft(minPrice !== null ? String(minPrice) : "");
     setMaxPriceDraft(maxPrice !== null ? String(maxPrice) : "");
     setMinBedroomsDraft(minBedrooms !== null ? String(minBedrooms) : "");
