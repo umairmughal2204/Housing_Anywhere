@@ -291,6 +291,51 @@ export function PropertyListing() {
     }
   };
 
+  const handleShareListing = async () => {
+    if (!listing || !id) {
+      toast.error("Listing details are not available yet.");
+      return;
+    }
+
+    const listingUrl = `${window.location.origin}/property/${id}`;
+    const sharePayload = {
+      title: listing.title,
+      text: `Check out this property in ${listing.city}`,
+      url: listingUrl,
+    };
+
+    try {
+      if (navigator.share) {
+        await navigator.share(sharePayload);
+        return;
+      }
+
+      await navigator.clipboard.writeText(listingUrl);
+      toast.success("Listing link copied to clipboard");
+    } catch {
+      toast.error("Could not share this listing right now.");
+    }
+  };
+
+  const handleViewOnMap = () => {
+    if (!listing) {
+      toast.error("Listing details are not available yet.");
+      return;
+    }
+
+    const locationQuery = [listing.address, listing.city, listing.postalCode]
+      .filter((part) => part && part.trim().length > 0)
+      .join(", ");
+
+    if (!locationQuery) {
+      toast.error("No address is available for this listing.");
+      return;
+    }
+
+    const mapUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(locationQuery)}`;
+    window.open(mapUrl, "_blank", "noopener,noreferrer");
+  };
+
   return (
     <div className="min-h-screen bg-white">
       <Header />
@@ -378,10 +423,15 @@ export function PropertyListing() {
 
                 {/* Top Right Actions */}
                 <div className="absolute top-[16px] right-[16px] flex items-center gap-[8px]">
-                  <button className="w-[40px] h-[40px] bg-white/90 hover:bg-white flex items-center justify-center transition-colors">
+                  <button
+                    type="button"
+                    onClick={() => void handleShareListing()}
+                    className="w-[40px] h-[40px] bg-white/90 hover:bg-white flex items-center justify-center transition-colors"
+                  >
                     <Share2 className="w-[18px] h-[18px] text-[#1A1A1A]" />
                   </button>
                   <button
+                    type="button"
                     onClick={handleToggleFavorite}
                     className="w-[40px] h-[40px] bg-white/90 hover:bg-white flex items-center justify-center transition-colors"
                   >
@@ -394,7 +444,11 @@ export function PropertyListing() {
                 </div>
 
                 {/* View on Map Button */}
-                <button className="absolute bottom-[16px] left-[16px] flex items-center gap-[8px] bg-white px-[16px] py-[10px] hover:bg-[#F7F7F9] transition-colors">
+                <button
+                  type="button"
+                  onClick={handleViewOnMap}
+                  className="absolute bottom-[16px] left-[16px] flex items-center gap-[8px] bg-white px-[16px] py-[10px] hover:bg-[#F7F7F9] transition-colors"
+                >
                   <MapPin className="w-[16px] h-[16px] text-[#1A1A1A]" />
                   <span className="text-[#1A1A1A] text-[14px] font-semibold">View on map</span>
                 </button>
