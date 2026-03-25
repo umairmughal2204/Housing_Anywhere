@@ -1,4 +1,4 @@
-import { Link } from "react-router";
+import { Link, useNavigate } from "react-router";
 import { Globe, MessageCircle, Heart, User, CreditCard, HelpCircle, Settings, LogOut, TrendingUp, LayoutDashboard, FileText } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { useAuth } from "../contexts/auth-context";
@@ -11,6 +11,7 @@ interface HeaderConversationItem {
 
 export function Header() {
   const { user, isAuthenticated, logout } = useAuth();
+  const navigate = useNavigate();
   const [showDropdown, setShowDropdown] = useState(false);
   const [selectedLanguage, setSelectedLanguage] = useState(getSavedLanguageLabel());
   const [showLanguageDropdown, setShowLanguageDropdown] = useState(false);
@@ -368,6 +369,7 @@ export function Header() {
                       onClick={() => {
                         logout();
                         setShowDropdown(false);
+                        navigate("/");
                       }}
                       className="w-full flex items-center gap-[12px] px-[16px] py-[12px] text-neutral-black text-[14px] hover:bg-neutral-light-gray transition-colors"
                     >

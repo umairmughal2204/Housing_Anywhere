@@ -17,9 +17,14 @@ import {
   Users, 
   Home as HomeIcon, 
   Star,
+  Heart,
+  ChevronLeft,
+  ChevronRight,
   User as UserIcon
 } from "lucide-react";
 import { useAuth } from "../contexts/auth-context";
+import { toast } from "sonner";
+import { API_BASE } from "../config";
 
 interface HomeListing {
   id: string;
@@ -262,9 +267,18 @@ export function Home() {
   const [isLoadingListings, setIsLoadingListings] = useState(false);
   const [favorites, setFavorites] = useState<FavoriteListing[]>([]);
   const [isLoadingFavorites, setIsLoadingFavorites] = useState(false);
+  const [carouselImagesByListingId, setCarouselImagesByListingId] = useState<Record<string, number>>({});
+  const [favoriteSplashById, setFavoriteSplashById] = useState<Set<string>>(new Set());
+  const [favoriteListingIds, setFavoriteListingIds] = useState<Set<string>>(new Set());
+  const [favoriteBusyId, setFavoriteBusyId] = useState<string | null>(null);
 
   const isAbortError = (error: unknown) =>
     error instanceof DOMException && error.name === "AbortError";
+
+  // Scroll to top on home page load
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+  }, []);
 
   useEffect(() => {
     const loadCitySuggestions = async () => {
@@ -436,6 +450,101 @@ export function Home() {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, [isCityDropdownOpen]);
+
+  const MAX_CARD_PREVIEW_IMAGES = 5;
+
+  const getListingCardImages = (listingId: string, images: string[]) => {
+    return images.slice(0, MAX_CARD_PREVIEW_IMAGES);
+  };
+
+  const moveListingImage = (listingId: string, direction: "prev" | "next", images: string[]) => {
+    const previewImages = getListingCardImages(listingId, images);
+    const currentIndex = carouselImagesByListingId[listingId] ?? 0;
+    let nextIndex = currentIndex;
+
+    if (direction === "next") {
+      nextIndex = Math.min(currentIndex + 1, previewImages.length - 1);
+    } else {
+      nextIndex = Math.max(currentIndex - 1, 0);
+    }
+
+    setCarouselImagesByListingId((prev) => ({
+      ...prev,
+      [listingId]: nextIndex,
+    }));
+  };
+
+  const triggerFavoriteSplash = (listingId: string) => {
+    setFavoriteSplashById((prev) => new Set(prev).add(listingId));
+    setTimeout(() => {
+      setFavoriteSplashById((prev) => {
+        const next = new Set(prev);
+        next.delete(listingId);
+        return next;
+      });
+    }, 480);
+  };
+
+  const handleToggleFavorite = async (listingId: string, isAdd: boolean) => {
+    const token = localStorage.getItem("authToken");
+    if (!token) {
+      navigate("/login");
+      return;
+    }
+
+    if (favoriteBusyId === listingId) {
+      return;
+    }
+
+    setFavoriteBusyId(listingId);
+    setFavoriteListingIds((prev) => {
+      const next = new Set(prev);
+      if (isAdd) {
+        next.add(listingId);
+      } else {
+        next.delete(listingId);
+      }
+      return next;
+    });
+
+    try {
+      const response = isAdd
+        ? await fetch(`${API_BASE}/api/auth/me/favorites`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({ listingId }),
+          })
+        : await fetch(`${API_BASE}/api/auth/me/favorites/${listingId}`, {
+            method: "DELETE",
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          });
+
+      if (!response.ok) {
+        throw new Error("Failed to update favorites");
+      }
+
+      toast.success(isAdd ? "Added to favorites" : "Removed from favorites");
+    } catch {
+      setFavoriteListingIds((prev) => {
+        const next = new Set(prev);
+        if (isAdd) {
+          next.delete(listingId);
+        } else {
+          next.add(listingId);
+        }
+        return next;
+      });
+
+      toast.error("Could not update favorites. Please try again.");
+    } finally {
+      setFavoriteBusyId(null);
+    }
+  };
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -656,24 +765,113 @@ export function Home() {
                         to={`/listing/${property.id}`}
                         className="group bg-white hover:shadow-lg transition-all duration-300"
                       >
-                        <div className="relative aspect-[4/3] overflow-hidden bg-[#F7F7F9]">
-                          <img
-                            src={property.images[0] ?? "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800&q=80"}
-                            alt={property.title}
-                            className="w-full h-full object-cover object-center bg-[#F3F4F6]"
-                          />
-                          {Date.now() - new Date(property.createdAt).getTime() < 1000 * 60 * 60 * 24 * 7 && (
-                            <div className="absolute top-[12px] left-[12px] bg-[#FFD93D] text-[#1A1A1A] px-[8px] py-[4px] text-[11px] font-bold uppercase tracking-[0.05em] flex items-center gap-[4px]">
-                              <Star className="w-[10px] h-[10px] fill-current" />
-                              New
-                            </div>
-                          )}
-                          <div className="absolute bottom-[12px] left-0 right-0 flex items-center justify-center gap-[4px]">
-                            {Array.from({ length: getImageDotCount(property.images) }, (_, index) => (
-                              <div key={index} className={`w-[6px] h-[6px] rounded-full ${index === 0 ? "bg-white" : "bg-white/40"}`} />
-                            ))}
-                          </div>
+                        <div
+                    className="relative aspect-[4/3] overflow-hidden bg-[#F7F7F9] group/carousel"
+                    onWheel={(e) => {
+                      const previewImages = getListingCardImages(property.id, property.images);
+                      if (previewImages.length <= 1) return;
+                      
+                      e.preventDefault();
+                      e.stopPropagation();
+                      const isScrollingDown = e.deltaY > 0;
+                      moveListingImage(property.id, isScrollingDown ? "next" : "prev", property.images);
+                    }}
+                  >
+                    {/* Carousel Image */}
+                    <img
+                      src={getListingCardImages(property.id, property.images)[carouselImagesByListingId[property.id] ?? 0] ?? "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800&q=80"}
+                      alt={property.title}
+                      className="w-full h-full object-cover object-center bg-[#F3F4F6]"
+                    />
+                    {Date.now() - new Date(property.createdAt).getTime() < 1000 * 60 * 60 * 24 * 7 && (
+                      <div className="absolute top-[12px] left-[12px] bg-[#FFD93D] text-[#1A1A1A] px-[8px] py-[4px] text-[11px] font-bold uppercase tracking-[0.05em] flex items-center gap-[4px]">
+                        <Star className="w-[10px] h-[10px] fill-current" />
+                        New
+                      </div>
+                    )}
+
+                    {/* Left Arrow */}
+                    {getListingCardImages(property.id, property.images).length > 1 && (carouselImagesByListingId[property.id] ?? 0) > 0 && (
+                      <button
+                        onClick={(e) => {
+                          e.preventDefault();
+                          moveListingImage(property.id, "prev", property.images);
+                        }}
+                        className="absolute left-[8px] top-1/2 -translate-y-1/2 w-[28px] h-[28px] bg-white/80 hover:bg-white flex items-center justify-center transition-colors opacity-0 group-hover/carousel:opacity-100 rounded-full z-10"
+                        aria-label="Previous image"
+                      >
+                        <ChevronLeft className="w-[16px] h-[16px] text-[#1A1A1A]" />
+                      </button>
+                    )}
+
+                    {/* Right Arrow */}
+                    {getListingCardImages(property.id, property.images).length > 1 && (carouselImagesByListingId[property.id] ?? 0) < getListingCardImages(property.id, property.images).length - 1 && (
+                      <button
+                        onClick={(e) => {
+                          e.preventDefault();
+                          moveListingImage(property.id, "next", property.images);
+                        }}
+                        className="absolute right-[8px] top-1/2 -translate-y-1/2 w-[28px] h-[28px] bg-white/80 hover:bg-white flex items-center justify-center transition-colors opacity-0 group-hover/carousel:opacity-100 rounded-full z-10"
+                        aria-label="Next image"
+                      >
+                        <ChevronRight className="w-[16px] h-[16px] text-[#1A1A1A]" />
+                      </button>
+                    )}
+
+                    {/* Favorite Icon with Splash */}
+                    <button
+                      onClick={(e) => {
+                        e.preventDefault();
+                        const isAdd = !favoriteListingIds.has(property.id);
+                        triggerFavoriteSplash(property.id);
+                        void handleToggleFavorite(property.id, isAdd);
+                      }}
+                      type="button"
+                      disabled={favoriteBusyId === property.id}
+                      aria-label={favoriteListingIds.has(property.id) ? "Remove from favorites" : "Add to favorites"}
+                      className="absolute top-[12px] right-[12px] w-[32px] h-[32px] bg-white/90 hover:bg-white flex items-center justify-center transition-colors rounded-full"
+                    >
+                      <Heart
+                        className={`w-[16px] h-[16px] ${
+                          favoriteListingIds.has(property.id)
+                            ? "fill-[#0891B2] text-[#0891B2]"
+                            : "text-[#1A1A1A]"
+                        }`}
+                      />
+
+                      {/* Splash Animation */}
+                      {favoriteSplashById.has(property.id) && (
+                        <>
+                          <div className="absolute inset-0 border-2 border-[#0891B2] rounded-full animate-ping" style={{ animationDuration: "480ms" }} />
+                          <div className="absolute inset-0 border-2 border-[#0891B2] rounded-full opacity-30" style={{ animation: "ring-pulse 480ms ease-out forwards" }} />
+                        </>
+                      )}
+                    </button>
+
+                    {/* View All Media Overlay - Show on last preview image when there are more images */}
+                    {getListingCardImages(property.id, property.images).length > 1 && (carouselImagesByListingId[property.id] ?? 0) === getListingCardImages(property.id, property.images).length - 1 && property.images.length > getListingCardImages(property.id, property.images).length && (
+                      <div className="absolute inset-0 bg-black/40 flex flex-col items-center justify-center">
+                        <div className="text-white text-center">
+                          <div className="text-[38px] font-bold mb-[4px]">View all media</div>
+                          <div className="text-[33px] text-white/90">{property.images.length} photos</div>
                         </div>
+                      </div>
+                    )}
+
+                    {/* Image Dots */}
+                    {getListingCardImages(property.id, property.images).length > 1 && (
+                      <div className="absolute bottom-[12px] left-1/2 -translate-x-1/2 flex items-center gap-[4px]">
+                        {Array.from({ length: getListingCardImages(property.id, property.images).length }, (_, index) => (
+                          <div
+                            key={index}
+                            className={`w-[6px] h-[6px] rounded-full ${
+                              index === (carouselImagesByListingId[property.id] ?? 0) ? "bg-white" : "bg-white/40"
+                            }`}
+                          />
+                        ))}
+                      </div>
+                    )}
+                  </div>
                         <div className="p-[16px]">
                           <h3 className="text-[#1A1A1A] text-[15px] font-semibold mb-[8px] line-clamp-2">{property.title}</h3>
                           <div className="flex items-center gap-[12px] mb-[12px] text-[13px] text-[#6B6B6B]">

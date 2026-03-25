@@ -1,10 +1,14 @@
 import { useParams, Link, useNavigate, useSearchParams, useLocation } from "react-router";
 import { Header } from "../components/header";
 import { Footer } from "../components/footer";
+import { MapContainer, Marker, Popup, TileLayer, useMap } from "react-leaflet";
+import L from "leaflet";
 import { 
+  Check,
   ChevronDown,
+  ChevronLeft,
+  ChevronRight,
   Calendar,
-  MapPin,
   Users,
   Home as HomeIcon,
   Heart,
@@ -16,6 +20,7 @@ import {
 import { useEffect, useMemo, useRef, useState } from "react";
 import { API_BASE } from "../config";
 import { toast } from "sonner";
+import "leaflet/dist/leaflet.css";
 
 interface ListingItem {
   id: string;
@@ -30,6 +35,8 @@ interface ListingItem {
   propertyType: "apartment" | "studio" | "house" | "room";
   images: string[];
 }
+
+type SortOption = "recommended" | "most-recent" | "lowest-price" | "highest-price" | "landlord-rating";
 
 const PROPERTY_TYPES: Array<ListingItem["propertyType"]> = ["apartment", "studio", "house", "room"];
 
@@ -133,16 +140,96 @@ function getImageDotCount(images: string[] | undefined) {
   return Math.max(1, images?.length ?? 0);
 }
 
-function buildMapsQuery(property: ListingItem) {
-  return [property.address, property.city].filter(Boolean).join(", ");
+type ListingCoordinates = {
+  lat: number;
+  lng: number;
+};
+
+const CITY_CENTER_BY_NAME: Record<string, ListingCoordinates> = {
+  berlin: { lat: 52.52, lng: 13.405 },
+  amsterdam: { lat: 52.3676, lng: 4.9041 },
+  paris: { lat: 48.8566, lng: 2.3522 },
+  madrid: { lat: 40.4168, lng: -3.7038 },
+  barcelona: { lat: 41.3874, lng: 2.1686 },
+  lisbon: { lat: 38.7223, lng: -9.1393 },
+  rome: { lat: 41.9028, lng: 12.4964 },
+  vienna: { lat: 48.2082, lng: 16.3738 },
+};
+
+function hashString(value: string) {
+  let hash = 0;
+  for (let index = 0; index < value.length; index += 1) {
+    hash = (hash << 5) - hash + value.charCodeAt(index);
+    hash |= 0;
+  }
+  return Math.abs(hash);
 }
 
-function buildMapsSearchUrl(query: string) {
-  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
+function buildFallbackCoordinates(listingId: string, cityName: string): ListingCoordinates {
+  const normalizedCity = cityName.trim().toLowerCase();
+  const cityCenter = CITY_CENTER_BY_NAME[normalizedCity] ?? { lat: 52.52, lng: 13.405 };
+  const hash = hashString(`${listingId}-${normalizedCity}`);
+
+  // Keep generated points within ~2km radius around city center.
+  const angle = ((hash % 360) * Math.PI) / 180;
+  const radius = 0.004 + (hash % 12) * 0.001;
+
+  return {
+    lat: cityCenter.lat + Math.sin(angle) * radius,
+    lng: cityCenter.lng + Math.cos(angle) * radius,
+  };
 }
 
-function buildMapsEmbedUrl(query: string) {
-  return `https://www.google.com/maps?q=${encodeURIComponent(query)}&output=embed`;
+function formatMarkerPrice(monthlyRent: number) {
+  return `€${monthlyRent.toLocaleString("en-GB")}`;
+}
+
+function createPriceMarkerIcon(monthlyRent: number) {
+  return L.divIcon({
+    className: "",
+    html: `<div style="background:#fff;border:1px solid rgba(0,0,0,0.18);border-radius:999px;padding:6px 10px;font-weight:700;font-size:14px;color:#12303B;box-shadow:0 4px 12px rgba(0,0,0,0.12);white-space:nowrap;">${formatMarkerPrice(monthlyRent)}</div>`,
+    iconSize: [84, 34],
+    iconAnchor: [42, 17],
+  });
+}
+
+function FitMapToMarkers({ points, resetSignal }: { points: Array<[number, number]>; resetSignal: number }) {
+  const map = useMap();
+
+  useEffect(() => {
+    if (points.length === 0) {
+      return;
+    }
+
+    if (points.length === 1) {
+      map.setView(points[0], 13, { animate: true });
+      return;
+    }
+
+    map.fitBounds(points, {
+      padding: [40, 40],
+      maxZoom: 13,
+      animate: true,
+    });
+  }, [map, points, resetSignal]);
+
+  return null;
+}
+
+function InvalidateMapSize({ isExpanded }: { isExpanded: boolean }) {
+  const map = useMap();
+
+  useEffect(() => {
+    const timeoutId = window.setTimeout(() => {
+      map.invalidateSize();
+    }, 0);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [isExpanded, map]);
+
+  return null;
 }
 
 export function SearchResults() {
@@ -158,15 +245,24 @@ export function SearchResults() {
   const [neighborhoodsOpen, setNeighborhoodsOpen] = useState(false);
   const [allFiltersOpen, setAllFiltersOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<"anyone" | "students" | "professionals" | "families">("anyone");
+  const [sortOpen, setSortOpen] = useState(false);
+  const [sortOption, setSortOption] = useState<SortOption>("recommended");
+  const [isMapExpanded, setIsMapExpanded] = useState(false);
   const [properties, setProperties] = useState<ListingItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [favoriteListingIds, setFavoriteListingIds] = useState<Set<string>>(new Set());
   const [favoriteBusyId, setFavoriteBusyId] = useState<string | null>(null);
-  const [selectedMapListingId, setSelectedMapListingId] = useState<string | null>(null);
+  const [mapCoordinatesByListingId, setMapCoordinatesByListingId] = useState<Record<string, ListingCoordinates>>({});
+  const [hoveredMapListingId, setHoveredMapListingId] = useState<string | null>(null);
+  const [isGeocoding, setIsGeocoding] = useState(false);
   const [minPriceDraft, setMinPriceDraft] = useState("");
   const [maxPriceDraft, setMaxPriceDraft] = useState("");
   const [minBedroomsDraft, setMinBedroomsDraft] = useState("");
+  const [mapResetSignal, setMapResetSignal] = useState(0);
+  const [carouselImagesByListingId, setCarouselImagesByListingId] = useState<Record<string, number>>({});
+  const [favoriteSplashById, setFavoriteSplashById] = useState<Set<string>>(new Set());
   const filtersRef = useRef<HTMLDivElement>(null);
+  const sortMenuRef = useRef<HTMLDivElement>(null);
   const requestedStartDate = useMemo(() => parseFilterDate(searchParams.get("startDate")), [searchParams]);
   const requestedEndDate = useMemo(() => parseFilterDate(searchParams.get("endDate")), [searchParams]);
   const startDateValue = searchParams.get("startDate") ?? "";
@@ -199,6 +295,14 @@ export function SearchResults() {
     // Keep new searches anchored at the page top so users always see the header first.
     window.scrollTo({ top: 0, left: 0, behavior: "auto" });
   }, [city]);
+
+  useEffect(() => {
+    // Check if viewMode is passed in URL and set it
+    const viewModeParam = searchParams.get("viewMode");
+    if (viewModeParam === "map" || viewModeParam === "list") {
+      setViewMode(viewModeParam);
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     setMinPriceDraft(minPrice !== null ? String(minPrice) : "");
@@ -273,6 +377,22 @@ export function SearchResults() {
     };
   }, [allFiltersOpen, dateOpen, neighborhoodsOpen, priceOpen, propertyTypeOpen]);
 
+  useEffect(() => {
+    const handleSortOutside = (event: MouseEvent) => {
+      if (sortMenuRef.current && !sortMenuRef.current.contains(event.target as Node)) {
+        setSortOpen(false);
+      }
+    };
+
+    if (sortOpen) {
+      document.addEventListener("mousedown", handleSortOutside);
+    }
+
+    return () => {
+      document.removeEventListener("mousedown", handleSortOutside);
+    };
+  }, [sortOpen]);
+
   const filteredProperties = useMemo(() => {
     return properties.filter((property) => {
       if (!requestedStartDate) {
@@ -325,6 +445,37 @@ export function SearchResults() {
     selectedNeighborhoods,
     selectedPropertyTypes,
   ]);
+  const sortedProperties = useMemo(() => {
+    const next = [...filteredProperties];
+
+    switch (sortOption) {
+      case "most-recent":
+        next.sort((left, right) => {
+          const leftTime = new Date(left.availableFrom).getTime();
+          const rightTime = new Date(right.availableFrom).getTime();
+          return (Number.isFinite(rightTime) ? rightTime : 0) - (Number.isFinite(leftTime) ? leftTime : 0);
+        });
+        break;
+      case "lowest-price":
+        next.sort((left, right) => left.monthlyRent - right.monthlyRent);
+        break;
+      case "highest-price":
+        next.sort((left, right) => right.monthlyRent - left.monthlyRent);
+        break;
+      case "landlord-rating":
+        // Proxy score until backend provides explicit rating values.
+        next.sort((left, right) => {
+          const leftScore = left.area * 0.5 + left.bedrooms * 20 - left.monthlyRent * 0.02;
+          const rightScore = right.area * 0.5 + right.bedrooms * 20 - right.monthlyRent * 0.02;
+          return rightScore - leftScore;
+        });
+        break;
+      default:
+        break;
+    }
+
+    return next;
+  }, [filteredProperties, sortOption]);
   const activeFilters = useMemo(() => {
     let count = 0;
     if (requestedStartDate || requestedEndDate) count += 1;
@@ -364,20 +515,21 @@ export function SearchResults() {
     return "Price";
   }, [maxPrice, minPrice]);
   const cityLabel = city ? city.charAt(0).toUpperCase() + city.slice(1) : "All cities";
-  const activeMapListing = useMemo(() => {
-    if (filteredProperties.length === 0) {
-      return null;
-    }
+  const mappedListings = useMemo(() => {
+    return sortedProperties
+      .map((property) => {
+        const coordinates = mapCoordinatesByListingId[property.id] ?? buildFallbackCoordinates(property.id, property.city);
 
-    if (!selectedMapListingId) {
-      return filteredProperties[0] ?? null;
-    }
-
-    return filteredProperties.find((property) => property.id === selectedMapListingId) ?? filteredProperties[0] ?? null;
-  }, [filteredProperties, selectedMapListingId]);
-  const mapQuery = activeMapListing ? buildMapsQuery(activeMapListing) : cityLabel;
-  const mapEmbedUrl = useMemo(() => buildMapsEmbedUrl(mapQuery), [mapQuery]);
-  const mapSearchUrl = useMemo(() => buildMapsSearchUrl(mapQuery), [mapQuery]);
+        return {
+          ...property,
+          coordinates,
+        };
+      })
+      .filter((property): property is ListingItem & { coordinates: ListingCoordinates } => Boolean(property));
+  }, [mapCoordinatesByListingId, sortedProperties]);
+  const mapPoints = useMemo(() => {
+    return mappedListings.map((property) => [property.coordinates.lat, property.coordinates.lng] as [number, number]);
+  }, [mappedListings]);
   const activeFilterChips = useMemo(() => {
     const chips: Array<{ key: string; label: string; clear: () => void }> = [];
 
@@ -489,15 +641,92 @@ export function SearchResults() {
       return;
     }
 
-    if (filteredProperties.length === 0) {
-      setSelectedMapListingId(null);
+    const unresolvedListings = filteredProperties.filter((property) => !mapCoordinatesByListingId[property.id]);
+    if (unresolvedListings.length === 0) {
       return;
     }
 
-    if (!selectedMapListingId || !filteredProperties.some((property) => property.id === selectedMapListingId)) {
-      setSelectedMapListingId(filteredProperties[0].id);
-    }
-  }, [filteredProperties, selectedMapListingId, viewMode]);
+    // Always place listings on the map immediately, even if live geocoding fails.
+    setMapCoordinatesByListingId((prev) => {
+      const next = { ...prev };
+      for (const property of unresolvedListings) {
+        if (!next[property.id]) {
+          next[property.id] = buildFallbackCoordinates(property.id, property.city);
+        }
+      }
+      return next;
+    });
+
+    let isCancelled = false;
+    setIsGeocoding(true);
+
+    const geocodeListings = async () => {
+      for (const property of unresolvedListings) {
+        if (isCancelled) {
+          return;
+        }
+
+        const fullQuery = `${property.address}, ${property.city}`;
+        const cityQuery = property.city;
+        const tryQueries = [fullQuery, cityQuery];
+
+        let nextCoordinates: ListingCoordinates | null = null;
+
+        for (const query of tryQueries) {
+          try {
+            const response = await fetch(
+              `https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&q=${encodeURIComponent(query)}`,
+              {
+                headers: {
+                  Accept: "application/json",
+                },
+              },
+            );
+
+            if (!response.ok) {
+              continue;
+            }
+
+            const payload = (await response.json()) as Array<{ lat: string; lon: string }>;
+            const firstResult = payload[0];
+            if (!firstResult) {
+              continue;
+            }
+
+            const lat = Number(firstResult.lat);
+            const lng = Number(firstResult.lon);
+            if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+              continue;
+            }
+
+            nextCoordinates = { lat, lng };
+            break;
+          } catch {
+            // Keep trying with fallback queries.
+          }
+        }
+
+        if (nextCoordinates) {
+          setMapCoordinatesByListingId((prev) => ({
+            ...prev,
+            [property.id]: nextCoordinates as ListingCoordinates,
+          }));
+        }
+
+        await new Promise((resolve) => setTimeout(resolve, 120));
+      }
+
+      if (!isCancelled) {
+        setIsGeocoding(false);
+      }
+    };
+
+    void geocodeListings();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [filteredProperties, mapCoordinatesByListingId, viewMode]);
 
   const handleToggleFavorite = async (listingId: string) => {
     const token = localStorage.getItem("authToken");
@@ -562,6 +791,45 @@ export function SearchResults() {
     }
   };
 
+  const MAX_CARD_PREVIEW_IMAGES = 5;
+
+  const getListingCardImages = (listingId: string, images: string[]) => {
+    return images.slice(0, MAX_CARD_PREVIEW_IMAGES);
+  };
+
+  const moveListingImage = (listingId: string, direction: "prev" | "next", images: string[]) => {
+    const previewImages = getListingCardImages(listingId, images);
+    const currentIndex = carouselImagesByListingId[listingId] ?? 0;
+    let nextIndex = currentIndex;
+
+    if (direction === "next") {
+      nextIndex = Math.min(currentIndex + 1, previewImages.length - 1);
+    } else {
+      nextIndex = Math.max(currentIndex - 1, 0);
+    }
+
+    setCarouselImagesByListingId((prev) => ({
+      ...prev,
+      [listingId]: nextIndex,
+    }));
+  };
+
+  const triggerFavoriteSplash = (listingId: string) => {
+    setFavoriteSplashById((prev) => new Set(prev).add(listingId));
+    setTimeout(() => {
+      setFavoriteSplashById((prev) => {
+        const next = new Set(prev);
+        next.delete(listingId);
+        return next;
+      });
+    }, 480);
+  };
+
+  const handleToggleFavoriteWithSplash = async (listingId: string) => {
+    triggerFavoriteSplash(listingId);
+    await handleToggleFavorite(listingId);
+  };
+
   const scrollToResultsHeader = () => {
     const resultsHeader = document.getElementById("results-header");
     if (!resultsHeader) {
@@ -578,14 +846,68 @@ export function SearchResults() {
 
   const handleShowRecommended = () => {
     setViewMode("list");
-    setSelectedMapListingId(null);
+    setIsMapExpanded(false);
+    setSortOpen(false);
+    setHoveredMapListingId(null);
+    const nextParams = new URLSearchParams(searchParams);
+    nextParams.delete("viewMode");
+    setSearchParams(nextParams);
     requestAnimationFrame(scrollToResultsHeader);
   };
 
   const handleShowMap = () => {
     setViewMode("map");
+    setIsMapExpanded(false);
+    setSortOpen(false);
+    const nextParams = new URLSearchParams(searchParams);
+    nextParams.set("viewMode", "map");
+    setSearchParams(nextParams);
     requestAnimationFrame(scrollToResultsHeader);
   };
+
+  const handleSelectSort = (nextSort: SortOption) => {
+    setSortOption(nextSort);
+    setSortOpen(false);
+    setViewMode("list");
+    setIsMapExpanded(false);
+    const nextParams = new URLSearchParams(searchParams);
+    nextParams.delete("viewMode");
+    setSearchParams(nextParams);
+    requestAnimationFrame(scrollToResultsHeader);
+  };
+
+  const sortLabelByOption: Record<SortOption, string> = {
+    recommended: "Recommended",
+    "most-recent": "Most recent",
+    "lowest-price": "Lowest price",
+    "highest-price": "Highest price",
+    "landlord-rating": "Landlord rating",
+  };
+
+  const sortOptions: Array<{ value: SortOption; label: string }> = [
+    { value: "recommended", label: "Recommended" },
+    { value: "most-recent", label: "Most recent" },
+    { value: "lowest-price", label: "Lowest price" },
+    { value: "highest-price", label: "Highest price" },
+    { value: "landlord-rating", label: "Landlord rating" },
+  ];
+  const isSplitMapMode = viewMode === "map" && !isMapExpanded;
+
+  const handleResetMapView = () => {
+    setHoveredMapListingId(null);
+    setMapResetSignal((prev) => prev + 1);
+  };
+
+  useEffect(() => {
+    const previousOverflow = document.body.style.overflow;
+    if (isMapExpanded) {
+      document.body.style.overflow = "hidden";
+    }
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [isMapExpanded]);
 
   return (
     <div className="min-h-screen bg-white">
@@ -958,36 +1280,61 @@ export function SearchResults() {
       {/* Results Header */}
       <div id="results-header" className="bg-white border-b border-[rgba(0,0,0,0.08)]">
         <div className="max-w-[1440px] mx-auto px-[32px] py-[24px]">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between gap-[20px] flex-wrap">
             <h1 className="text-[#1A1A1A] text-[20px] font-semibold">
               {filteredProperties.length} rooms, studios and apartments for rent in {cityLabel}
             </h1>
 
-            <div className="flex items-center gap-[8px]">
-              <button
-                type="button"
-                onClick={handleShowRecommended}
-                className={`flex items-center gap-[8px] px-[16px] py-[8px] border transition-colors ${
-                  viewMode === "list"
-                    ? "bg-[#F7F7F9] border-[rgba(0,0,0,0.16)]"
-                    : "bg-white border-[rgba(0,0,0,0.08)] hover:border-[rgba(0,0,0,0.16)]"
-                }`}
-              >
-                <HomeIcon className="w-[16px] h-[16px] text-[#1A1A1A]" />
-                <span className="text-[#1A1A1A] text-[14px] font-semibold">List view</span>
-              </button>
-              <button
-                type="button"
-                onClick={handleShowMap}
-                className={`flex items-center gap-[8px] px-[16px] py-[8px] border transition-colors ${
-                  viewMode === "map"
-                    ? "bg-[#F7F7F9] border-[rgba(0,0,0,0.16)]"
-                    : "bg-white border-[rgba(0,0,0,0.08)] hover:border-[rgba(0,0,0,0.16)]"
-                }`}
-              >
-                <Map className="w-[16px] h-[16px] text-[#1A1A1A]" />
-                <span className="text-[#1A1A1A] text-[14px] font-semibold">Map</span>
-              </button>
+            <div className="ml-auto flex items-center gap-[10px]">
+              <div ref={sortMenuRef} className="relative">
+                <button
+                  type="button"
+                  onClick={() => setSortOpen((prev) => !prev)}
+                  className={`inline-flex items-center justify-between gap-[8px] min-w-[190px] px-[16px] py-[12px] border text-[14px] font-semibold transition-colors ${
+                    viewMode === "list"
+                      ? "bg-white text-[#1A1A1A] border-[rgba(0,0,0,0.20)]"
+                      : "bg-white text-[#1A1A1A] border-[rgba(0,0,0,0.14)] hover:border-[rgba(0,0,0,0.24)]"
+                  }`}
+                >
+                  <div className="flex items-center gap-[8px]">
+                    <SlidersHorizontal className="w-[16px] h-[16px]" />
+                    <span>{sortLabelByOption[sortOption]}</span>
+                  </div>
+                  <ChevronDown className="w-[16px] h-[16px]" />
+                </button>
+                {sortOpen && (
+                  <div className="absolute right-0 mt-[4px] min-w-[220px] bg-white border border-[rgba(0,0,0,0.14)] shadow-[0_8px_24px_rgba(0,0,0,0.12)] z-50">
+                    {sortOptions.map((option) => {
+                      const isActive = sortOption === option.value;
+                      return (
+                        <button
+                          key={option.value}
+                          type="button"
+                          onClick={() => handleSelectSort(option.value)}
+                          className={`w-full flex items-center justify-between px-[14px] py-[10px] text-[15px] text-left transition-colors ${
+                            isActive
+                              ? "text-[#12303B] bg-[#F1F5F9]"
+                              : "text-[#12303B] hover:bg-[#F8FAFC]"
+                          }`}
+                        >
+                          <span>{option.label}</span>
+                          {isActive && <Check className="w-[16px] h-[16px]" />}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+              {viewMode !== "map" && (
+                <button
+                  type="button"
+                  onClick={handleShowMap}
+                  className="inline-flex items-center justify-center gap-[8px] min-w-[120px] px-[16px] py-[12px] border text-[14px] font-semibold transition-colors bg-white text-[#1A1A1A] border-[rgba(0,0,0,0.14)] hover:border-[rgba(0,0,0,0.24)]"
+                >
+                  <Map className="w-[16px] h-[16px]" />
+                  <span>Map</span>
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -995,19 +1342,35 @@ export function SearchResults() {
 
       {/* Property Grid */}
       <div id="results-content" className="bg-white">
-        <div className="max-w-[1440px] mx-auto px-[32px] py-[32px]">
-          {viewMode === "list" && (
-            <div className="grid grid-cols-4 gap-[24px]">
-              {filteredProperties.map((property) => (
+        <div className={`max-w-[1440px] mx-auto px-[32px] py-[32px] ${isSplitMapMode ? "xl:pb-[20px]" : ""}`}>
+          {(viewMode === "list" || viewMode === "map") && (
+            <div className={viewMode === "map" ? (isMapExpanded ? "" : "grid grid-cols-1 xl:grid-cols-[58%_42%] xl:gap-0 items-start") : ""}>
+              <div className={viewMode === "map" ? (isMapExpanded ? "hidden" : "grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-[20px] xl:pr-[24px] xl:border-r xl:border-[rgba(0,0,0,0.10)] xl:max-h-[calc(100vh-140px)] xl:overflow-y-auto xl:overscroll-contain") : "grid grid-cols-4 gap-[24px]"}>
+              {sortedProperties.map((property) => (
                 <div
                   key={property.id}
                   onClick={() => navigate(`/property/${property.id}`)}
                   className="cursor-pointer group"
                 >
                   {/* Image Container */}
-                  <div className="relative mb-[12px] overflow-hidden">
+                  <div 
+                    className="relative mb-[12px] overflow-hidden group/carousel"
+                    onWheel={(e) => {
+                      const previewImages = getListingCardImages(property.id, property.images);
+                      if (previewImages.length <= 1) return;
+                      
+                      e.preventDefault();
+                      e.stopPropagation();
+                      const isScrollingDown = e.deltaY > 0;
+                      moveListingImage(property.id, isScrollingDown ? "next" : "prev", property.images);
+                    }}
+                  >
+                    {/* Carousel Image */}
                     <img
-                      src={resolveListingImageUrl(property.images[0], apiBase)}
+                      src={resolveListingImageUrl(
+                        getListingCardImages(property.id, property.images)[carouselImagesByListingId[property.id] ?? 0],
+                        apiBase
+                      )}
                       alt={property.title}
                       className="w-full h-[220px] object-cover object-center bg-[#F3F4F6]"
                     />
@@ -1019,37 +1382,85 @@ export function SearchResults() {
                       </div>
                     )}
 
-                    {/* Favorite Icon */}
+                    {/* Left Arrow */}
+                    {getListingCardImages(property.id, property.images).length > 1 && (carouselImagesByListingId[property.id] ?? 0) > 0 && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          moveListingImage(property.id, "prev", property.images);
+                        }}
+                        className="absolute left-[8px] top-1/2 -translate-y-1/2 w-[28px] h-[28px] bg-white/80 hover:bg-white flex items-center justify-center transition-colors opacity-0 group-hover/carousel:opacity-100 rounded-full z-10"
+                        aria-label="Previous image"
+                      >
+                        <ChevronLeft className="w-[16px] h-[16px] text-[#1A1A1A]" />
+                      </button>
+                    )}
+
+                    {/* Right Arrow */}
+                    {getListingCardImages(property.id, property.images).length > 1 && (carouselImagesByListingId[property.id] ?? 0) < getListingCardImages(property.id, property.images).length - 1 && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          moveListingImage(property.id, "next", property.images);
+                        }}
+                        className="absolute right-[8px] top-1/2 -translate-y-1/2 w-[28px] h-[28px] bg-white/80 hover:bg-white flex items-center justify-center transition-colors opacity-0 group-hover/carousel:opacity-100 rounded-full z-10"
+                        aria-label="Next image"
+                      >
+                        <ChevronRight className="w-[16px] h-[16px] text-[#1A1A1A]" />
+                      </button>
+                    )}
+
+                    {/* Favorite Icon with Splash */}
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        void handleToggleFavorite(property.id);
+                        void handleToggleFavoriteWithSplash(property.id);
                       }}
                       type="button"
                       disabled={favoriteBusyId === property.id}
                       aria-label={favoriteListingIds.has(property.id) ? "Remove from favorites" : "Add to favorites"}
-                      className="absolute top-[12px] right-[12px] w-[32px] h-[32px] bg-white/90 hover:bg-white flex items-center justify-center transition-colors"
+                      className="absolute top-[12px] right-[12px] w-[32px] h-[32px] bg-white/90 hover:bg-white flex items-center justify-center transition-colors rounded-full"
                     >
                       <Heart
                         className={`w-[16px] h-[16px] ${
                           favoriteListingIds.has(property.id)
-                            ? "fill-[#FF4B27] text-[#FF4B27]"
+                            ? "fill-[#0891B2] text-[#0891B2]"
                             : "text-[#1A1A1A]"
                         }`}
                       />
+                      
+                      {/* Splash Animation */}
+                      {favoriteSplashById.has(property.id) && (
+                        <>
+                          <div className="absolute inset-0 border-2 border-[#0891B2] rounded-full animate-ping" style={{ animationDuration: "480ms" }} />
+                          <div className="absolute inset-0 border-2 border-[#0891B2] rounded-full opacity-30" style={{ animation: "ring-pulse 480ms ease-out forwards" }} />
+                        </>
+                      )}
                     </button>
 
+                    {/* View All Media Overlay - Show on last preview image when there are more images */}
+                    {getListingCardImages(property.id, property.images).length > 1 && (carouselImagesByListingId[property.id] ?? 0) === getListingCardImages(property.id, property.images).length - 1 && property.images.length > getListingCardImages(property.id, property.images).length && (
+                      <div className="absolute inset-0 bg-black/40 flex flex-col items-center justify-center">
+                        <div className="text-white text-center">
+                          <div className="text-[38px] font-bold mb-[4px]">View all media</div>
+                          <div className="text-[33px] text-white/90">{property.images.length} photos</div>
+                        </div>
+                      </div>
+                    )}
+
                     {/* Image Dots */}
-                    <div className="absolute bottom-[12px] left-1/2 -translate-x-1/2 flex items-center gap-[4px]">
-                      {Array.from({ length: getImageDotCount(property.images) }, (_, index) => (
-                        <div
-                          key={index}
-                          className={`w-[6px] h-[6px] rounded-full ${
-                            index === 0 ? "bg-white" : "bg-white/40"
-                          }`}
-                        />
-                      ))}
-                    </div>
+                    {getListingCardImages(property.id, property.images).length > 1 && (
+                      <div className="absolute bottom-[12px] left-1/2 -translate-x-1/2 flex items-center gap-[4px]">
+                        {Array.from({ length: getListingCardImages(property.id, property.images).length }, (_, index) => (
+                          <div
+                            key={index}
+                            className={`w-[6px] h-[6px] rounded-full ${
+                              index === (carouselImagesByListingId[property.id] ?? 0) ? "bg-white" : "bg-white/40"
+                            }`}
+                          />
+                        ))}
+                      </div>
+                    )}
                   </div>
 
                   {/* Property Info */}
@@ -1092,75 +1503,110 @@ export function SearchResults() {
                   </div>
                 </div>
               ))}
-            </div>
-          )}
-          {viewMode === "map" && (
-            <div className="grid grid-cols-1 lg:grid-cols-[380px_1fr] gap-[20px]">
-              <div className="border border-[rgba(0,0,0,0.08)] max-h-[680px] overflow-y-auto">
-                {filteredProperties.map((property) => {
-                  const isActive = activeMapListing?.id === property.id;
-                  return (
-                    <button
-                      key={property.id}
-                      type="button"
-                      onClick={() => setSelectedMapListingId(property.id)}
-                      className={`w-full text-left p-[14px] border-b border-[rgba(0,0,0,0.08)] transition-colors ${
-                        isActive ? "bg-[#E0F2FE]" : "hover:bg-[#F7F7F9]"
-                      }`}
-                    >
-                      <div className="flex items-start gap-[12px]">
-                        <img
-                          src={resolveListingImageUrl(property.images[0], apiBase)}
-                          alt={property.title}
-                          className="w-[90px] h-[70px] object-cover bg-[#F3F4F6] flex-shrink-0"
-                        />
-                        <div className="min-w-0 flex-1">
-                          <div className="text-[#1A1A1A] text-[14px] font-bold leading-tight truncate">{property.title}</div>
-                          <div className="text-[#6B6B6B] text-[12px] truncate">{property.address}, {property.city}</div>
-                          <div className="text-[#1A1A1A] text-[13px] font-semibold mt-[4px]">€{property.monthlyRent}/month</div>
-                          <div className="mt-[8px] flex items-center gap-[8px]">
-                            <span className="text-[#6B6B6B] text-[12px]">{property.bedrooms} bedrooms</span>
-                            <span className="text-[#6B6B6B] text-[12px]">{property.area} m²</span>
-                          </div>
-                        </div>
-                      </div>
-                    </button>
-                  );
-                })}
               </div>
-              <div className="border border-[rgba(0,0,0,0.08)] overflow-hidden">
-                <iframe
-                  title="Listing map"
-                  src={mapEmbedUrl}
-                  className="w-full h-[680px]"
-                  loading="lazy"
-                  referrerPolicy="no-referrer-when-downgrade"
-                />
-                <div className="p-[14px] border-t border-[rgba(0,0,0,0.08)] flex items-center justify-between gap-[12px] flex-wrap">
-                  <div className="text-[13px] text-[#6B6B6B]">
-                    {activeMapListing ? `${activeMapListing.title} - ${activeMapListing.city}` : `Map for ${cityLabel}`}
-                  </div>
-                  <div className="flex items-center gap-[8px]">
-                    {activeMapListing && (
+
+              {viewMode === "map" && (
+                <div className={`${isMapExpanded ? "fixed inset-x-0 bottom-0 top-[132px] md:top-[154px] z-[90] flex flex-col" : "xl:sticky xl:top-[76px] xl:-mt-[102px] xl:pl-[24px]"} border border-[rgba(0,0,0,0.08)] overflow-hidden bg-white`}>
+                  <div className="relative">
+                    <div className={`w-full ${isMapExpanded ? "h-[calc(100vh-206px)] md:h-[calc(100vh-228px)] min-h-[460px]" : "h-[68vh] min-h-[520px] xl:h-[calc(100vh-152px)]"} bg-[#E6EEF5]`}>
+                      {mapPoints.length > 0 ? (
+                        <MapContainer
+                          center={mapPoints[0]}
+                          zoom={12}
+                          scrollWheelZoom
+                          zoomControl={false}
+                          className="w-full h-full"
+                        >
+                          <TileLayer
+                            attribution='&copy; OpenStreetMap contributors'
+                            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                          />
+                          <InvalidateMapSize isExpanded={isMapExpanded} />
+                          <FitMapToMarkers points={mapPoints} resetSignal={mapResetSignal} />
+                          {mappedListings.map((property) => (
+                            <Marker
+                              key={property.id}
+                              position={[property.coordinates.lat, property.coordinates.lng]}
+                              icon={createPriceMarkerIcon(property.monthlyRent)}
+                              eventHandlers={{
+                                click: (event) => {
+                                  setHoveredMapListingId(property.id);
+                                  event.target.openPopup();
+                                },
+                                popupclose: (event) => {
+                                  setHoveredMapListingId((prev) => (prev === property.id ? null : prev));
+                                  event.target.closePopup();
+                                },
+                              }}
+                            >
+                              <Popup closeButton offset={[0, -18]} autoPan>
+                                <div className="w-[280px]">
+                                  <img
+                                    src={resolveListingImageUrl(property.images[0], apiBase)}
+                                    alt={property.title}
+                                    className="w-full h-[120px] object-cover bg-[#F3F4F6] mb-[10px]"
+                                  />
+                                  <div className="text-[#1A1A1A] text-[16px] font-bold leading-tight mb-[6px] line-clamp-2">
+                                    {property.title}
+                                  </div>
+                                  <div className="text-[#6B6B6B] text-[12px] mb-[8px] line-clamp-1">
+                                    {property.address}, {property.city}
+                                  </div>
+                                  <div className="text-[#1A1A1A] text-[26px] font-bold mb-[8px]">
+                                    {formatMarkerPrice(property.monthlyRent)}
+                                    <span className="text-[#6B6B6B] text-[13px] font-medium"> /month</span>
+                                  </div>
+                                  <button
+                                    type="button"
+                                    onClick={() => navigate(`/property/${property.id}`)}
+                                    className="w-full px-[12px] py-[8px] border border-[rgba(0,0,0,0.16)] text-[#1A1A1A] text-[13px] font-semibold hover:bg-[#F7F7F9] transition-colors"
+                                  >
+                                    View listing
+                                  </button>
+                                </div>
+                              </Popup>
+                            </Marker>
+                          ))}
+                        </MapContainer>
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-[#6B6B6B] text-[14px]">
+                          {isGeocoding ? "Loading map locations..." : "No map locations available for these filters yet."}
+                        </div>
+                      )}
+                    </div>
+                    <div className="absolute top-[18px] left-[18px] right-[18px] z-[1200] flex items-center justify-between gap-[10px] pointer-events-none">
                       <button
                         type="button"
-                        onClick={() => navigate(`/property/${activeMapListing.id}`)}
-                        className="px-[14px] py-[8px] border border-[rgba(0,0,0,0.16)] text-[#1A1A1A] text-[13px] font-semibold hover:bg-[#F7F7F9] transition-colors"
+                        onClick={() => setIsMapExpanded((prev) => !prev)}
+                        className="pointer-events-auto inline-flex items-center gap-[8px] px-[18px] py-[14px] bg-white text-[#12303B] text-[14px] font-semibold border border-[rgba(0,0,0,0.08)] shadow-[0_8px_20px_rgba(0,0,0,0.08)] hover:bg-[#F7F7F9] transition-colors rounded-[4px] z-[1201]"
                       >
-                        View listing
+                        <ChevronLeft className="w-[16px] h-[16px]" />
+                        {isMapExpanded ? "View list" : "Expand map"}
                       </button>
-                    )}
-                    <a
-                      href={mapSearchUrl}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="px-[14px] py-[8px] bg-[#1A1A1A] text-white text-[13px] font-semibold hover:bg-[#0891B2] transition-colors"
+                      <button
+                        type="button"
+                        onClick={handleShowRecommended}
+                        className="pointer-events-auto inline-flex items-center gap-[8px] px-[18px] py-[14px] bg-white text-[#12303B] text-[14px] font-semibold border border-[rgba(0,0,0,0.08)] shadow-[0_8px_20px_rgba(0,0,0,0.08)] hover:bg-[#F7F7F9] transition-colors rounded-[4px] z-[1201]"
+                      >
+                        <X className="w-[16px] h-[16px]" />
+                        Close map
+                      </button>
+                    </div>
+                  </div>
+                  <div className="p-[14px] border-t border-[rgba(0,0,0,0.08)] flex items-center justify-between gap-[12px] flex-wrap">
+                    <div className="text-[13px] text-[#6B6B6B]">
+                      Showing {mappedListings.length} mapped listings in {cityLabel}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleResetMapView}
+                      className="px-[14px] py-[8px] bg-[#1A1A1A] text-white text-[13px] font-semibold hover:bg-[#0F172A] transition-colors"
                     >
-                      Open in maps
-                    </a>
+                      Reset map
+                    </button>
                   </div>
                 </div>
-              </div>
+              )}
             </div>
           )}
           {!isLoading && filteredProperties.length === 0 && (

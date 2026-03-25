@@ -77,6 +77,11 @@ export function PropertyListing() {
   const [hasApplied, setHasApplied] = useState(false);
   const [applicationStatus, setApplicationStatus] = useState<"pending" | "approved" | "rejected" | null>(null);
 
+  // Scroll to top when navigating to a different property
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+  }, [id]);
+
   useEffect(() => {
     const loadListing = async () => {
       if (!id) {
@@ -374,17 +379,7 @@ export function PropertyListing() {
       return;
     }
 
-    const locationQuery = [listing.address, listing.city, listing.postalCode]
-      .filter((part) => part && part.trim().length > 0)
-      .join(", ");
-
-    if (!locationQuery) {
-      toast.error("No address is available for this listing.");
-      return;
-    }
-
-    const mapUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(locationQuery)}`;
-    window.open(mapUrl, "_blank", "noopener,noreferrer");
+    navigate(`/listings/${listing.city.toLowerCase()}?viewMode=map`);
   };
 
   const handleOpenDateSelector = () => {
