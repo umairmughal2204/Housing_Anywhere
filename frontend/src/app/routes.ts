@@ -15,6 +15,7 @@ import { LandlordListings } from "./pages/landlord-listings";
 import { LandlordRentals } from "./pages/landlord-rentals";
 import { LandlordRegister } from "./pages/landlord-register";
 import { LandlordAddListing } from "./pages/landlord-add-listing";
+import { LandlordAddListingSection1Draft } from "./pages/landlord-add-listing-section1-draft";
 import { HowItWorks } from "./pages/how-it-works";
 import { Pricing } from "./pages/pricing";
 import { Help } from "./pages/help";
@@ -71,6 +72,11 @@ export const router = createBrowserRouter([
   {
     path: "/landlord/listings/add",
     Component: LandlordAddListing,
+    ErrorBoundary,
+  },
+  {
+    path: "/landlord/listings/add-section-1-draft",
+    Component: LandlordAddListingSection1Draft,
     ErrorBoundary,
   },
   {
