@@ -295,9 +295,9 @@ router.get("/landlord", requireAuth, requireRole("landlord"), async (req, res) =
           title: listing?.title ?? "Listing unavailable",
           address: listing?.address ?? "",
           city: listing?.city ?? "",
-          monthlyRent: listing?.price ?? 0,
-          deposit: listing?.deposit ?? 0,
-          image: listing?.images?.[0] ?? "",
+            monthlyRent: listing?.monthlyRent ?? (listing as any)?.price ?? 0,
+            deposit: listing?.deposits?.[0]?.amount ?? (listing as any)?.deposit ?? 0,
+              image: listing?.media?.[0]?.url ?? (listing as any)?.images?.[0] ?? "",
         },
         tenant: {
           id: tenant ? String(tenant._id) : "",
@@ -324,18 +324,17 @@ router.patch("/:id([0-9a-fA-F]{24})/status", requireAuth, requireRole("landlord"
     return;
   }
 
-  const application = await RentalApplicationModel.findOne({
-    _id: req.params.id,
-    landlordId: req.user!.sub,
-  });
+  const application = await RentalApplicationModel.findByIdAndUpdate(
+    req.params.id,
+    { status: parsed.data.status },
+    { new: true }
+  );
 
   if (!application) {
     res.status(404).json({ message: "Rental request not found" });
     return;
   }
 
-  application.status = parsed.data.status;
-  await application.save();
 
   res.json({
     application: {
@@ -364,8 +363,8 @@ router.get("/tenant", requireAuth, async (req, res) => {
         title: listingMap.get(String(item.listingId))?.title ?? "Listing unavailable",
         city: listingMap.get(String(item.listingId))?.city ?? "",
         address: listingMap.get(String(item.listingId))?.address ?? "",
-        monthlyRent: listingMap.get(String(item.listingId))?.price ?? 0,
-        image: listingMap.get(String(item.listingId))?.images?.[0] ?? "",
+        monthlyRent: listingMap.get(String(item.listingId))?.monthlyRent ?? (listingMap.get(String(item.listingId)) as any)?.price ?? 0,
+        image: listingMap.get(String(item.listingId))?.media?.[0]?.url ?? (listingMap.get(String(item.listingId)) as any)?.images?.[0] ?? "",
       },
     })),
   });

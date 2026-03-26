@@ -1,231 +1,317 @@
-import { LandlordPortalLayout } from "../components/landlord-portal-layout";
-import { API_BASE } from "../config";
-import { 
-  MapPin,
-  Home,
-  Bed,
-  Bath,
-  Square,
-  Calendar,
-  DollarSign,
-  Upload,
-  X,
-  Plus,
-  Wifi,
-  Tv,
-  Wind,
-  Utensils,
-  WashingMachine,
-  ParkingCircle,
-  Dog,
-  Cigarette,
-  Users,
-  Check,
-} from "lucide-react";
-import { useEffect, useState } from "react";
+import { ChevronDown, Info, Trash2 } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router";
+import { LandlordPortalLayout } from "../components/landlord-portal-layout";
+import { DateOnlyPicker } from "../components/date-only-picker";
+import { API_BASE } from "../config";
 
-type PropertyType = "apartment" | "studio" | "house" | "room";
-type ListingStatus = "active" | "draft" | "inactive";
+type TernaryArea = "no" | "shared" | "private";
+type YesNo = "yes" | "no";
 
-interface ListingPayload {
-  propertyType: PropertyType;
-  title: string;
-  description: string;
-  address: string;
-  city: string;
-  postalCode: string;
-  bedrooms: number;
-  bathrooms: number;
-  area: number;
-  monthlyRent: number;
-  deposit: number;
-  availableFrom: string;
-  minStay: number;
-  utilitiesIncluded: boolean;
-  utilitiesCost: number;
-  registrationPossible: boolean;
-  amenities: string[];
-  houseRules: string[];
-  images: string[];
-  status: ListingStatus;
-}
-
-interface ListingResponse {
-  id: string;
-  propertyType: PropertyType;
-  title: string;
-  description: string;
-  address: string;
-  city: string;
-  postalCode: string;
-  bedrooms: number;
-  bathrooms: number;
-  area: number;
-  monthlyRent: number;
-  deposit: number;
-  availableFrom: string;
-  minStay: number;
-  utilitiesIncluded: boolean;
-  utilitiesCost: number;
-  registrationPossible: boolean;
-  amenities: string[];
-  houseRules: string[];
-  images: string[];
-  status: ListingStatus;
-}
-
-interface Amenity {
-  id: string;
-  label: string;
-  icon: any;
-}
-
-const amenities: Amenity[] = [
-  { id: "wifi", label: "WiFi", icon: Wifi },
-  { id: "tv", label: "TV", icon: Tv },
-  { id: "ac", label: "Air Conditioning", icon: Wind },
-  { id: "kitchen", label: "Kitchen", icon: Utensils },
-  { id: "washer", label: "Washing Machine", icon: WashingMachine },
-  { id: "parking", label: "Parking", icon: ParkingCircle },
+const kinds = ["Entire place", "Private room", "Shared room"];
+const propertyTypes = ["House", "Building", "Apartment"];
+const currencies = ["EUR", "USD", "GBP"];
+const minRentalOptions = [
+  "No minimum",
+  "1 month",
+  "2 months",
+  "3 months",
+  "4 months",
+  "5 months",
+  "6 months",
+  "7 months",
+  "8 months",
+  "9 months",
+  "10 months",
+  "11 months",
+  "12 months",
+  "1.5 years",
+  "2 years",
+];
+const maxRentalOptions = [
+  "No maximum",
+  "1 month",
+  "2 months",
+  "3 months",
+  "4 months",
+  "5 months",
+  "6 months",
+  "7 months",
+  "8 months",
+  "9 months",
+  "10 months",
+  "11 months",
+  "12 months",
+  "1.5 years",
+  "2 years",
+];
+const bedroomsOptions = ["Select", "Studio", "1", "2", "3", "4", "5", "6", "7", "8+"];
+const bathroomOptions = ["Select", "No", "Private", "Male", "Female", "Mixed"];
+const bathroomsCountOptions = ["Select", "None", "1", "2", "3+"];
+const heatingOptions = ["Select", "Central heating", "Electric", "Gas", "District heating", "Floor heating"];
+const flooringOptions = ["Select", "Laminate", "Carpet", "Stone", "Wood", "Plastic", "Other"];
+const costTypeOptions = ["Electricity", "Water", "Gas", "Internet", "Broadcasting fee", "Cleaning", "Administration", "Membership fee", "Other"];
+const utilityAddOptions = [
+  "Broadcasting fee",
+];
+const additionalRequiredCostOptions = ["Administration", "Membership fee", "Cleaning", "Other"];
+const optionalServicesOptions = [
+  "Bike rent",
+  "Cleaning",
+  "Early move-in",
+  "Early move-out",
+  "Final cleaning",
+  "Full board",
+  "Gym",
+  "Half board",
+  "Late move-in",
+  "Late move-out",
+  "Overnight guests",
+  "Other optional costs",
+  "Parking",
+  "Towels/Bedding",
+  "End-early fee",
+];
+const depositOptions = ["Security deposit", "Bedding deposit", "Towel deposit", "Other deposits"];
+const agePreferenceOptions = [
+  "No preference",
+  ...Array.from({ length: 33 }, (_, index) => String(index + 18)),
 ];
 
-const houseRules: Amenity[] = [
-  { id: "pets", label: "Pets Allowed", icon: Dog },
-  { id: "smoking", label: "Smoking Allowed", icon: Cigarette },
-  { id: "couples", label: "Couples Allowed", icon: Users },
-];
+interface CostLine {
+  type: string;
+  includedInRent: "Included in rent" | "Excluded";
+  frequency: "every month" | "one-time";
+  estimateType: "Estimate" | "Exact";
+  amount: string;
+}
+
+interface OptionalServiceLine {
+  type: string;
+  includedInRent: "Included in rent" | "Excluded";
+  frequency: "At move-in" | "every month" | "one-time";
+  amount: string;
+}
+
+interface DepositLine {
+  type: string;
+  requirement: "Required" | "Optional";
+  amount: string;
+}
+
+interface UploadedMediaItem {
+  url: string;
+  type: "photo";
+}
+
+function TernaryRadioGroup({
+  name,
+  value,
+  onChange,
+}: {
+  name: string;
+  value: TernaryArea;
+  onChange: (value: TernaryArea) => void;
+}) {
+  return (
+    <div className="flex items-center gap-[16px] text-[13px] text-[#244A57]">
+      <label className="inline-flex items-center gap-[8px] cursor-pointer">
+        <input type="radio" name={name} checked={value === "no"} onChange={() => onChange("no")} className="w-[14px] h-[14px] accent-brand-primary" />
+        <span>No</span>
+      </label>
+      <label className="inline-flex items-center gap-[8px] cursor-pointer">
+        <input type="radio" name={name} checked={value === "shared"} onChange={() => onChange("shared")} className="w-[14px] h-[14px] accent-brand-primary" />
+        <span>Shared</span>
+      </label>
+      <label className="inline-flex items-center gap-[8px] cursor-pointer">
+        <input type="radio" name={name} checked={value === "private"} onChange={() => onChange("private")} className="w-[14px] h-[14px] accent-brand-primary" />
+        <span>Private</span>
+      </label>
+    </div>
+  );
+}
+
+function YesNoRadioGroup({
+  name,
+  value,
+  onChange,
+}: {
+  name: string;
+  value: YesNo;
+  onChange: (value: YesNo) => void;
+}) {
+  return (
+    <div className="flex items-center gap-[16px] text-[13px] text-[#244A57]">
+      <label className="inline-flex items-center gap-[8px] cursor-pointer">
+        <input type="radio" name={name} checked={value === "no"} onChange={() => onChange("no")} className="w-[14px] h-[14px] accent-brand-primary" />
+        <span>No</span>
+      </label>
+      <label className="inline-flex items-center gap-[8px] cursor-pointer">
+        <input type="radio" name={name} checked={value === "yes"} onChange={() => onChange("yes")} className="w-[14px] h-[14px] accent-brand-primary" />
+        <span>Yes</span>
+      </label>
+    </div>
+  );
+}
+
+function InfoTooltip({
+  text,
+  iconClassName,
+}: {
+  text: string;
+  iconClassName?: string;
+}) {
+  return (
+    <span className="relative inline-flex items-center group">
+      <Info aria-label={text} className={iconClassName ?? "w-[14px] h-[14px] text-[#5A7380] cursor-help"} />
+      <span className="pointer-events-none absolute left-1/2 -translate-x-1/2 bottom-[calc(100%+8px)] hidden group-hover:block z-50 w-[220px] rounded-[6px] bg-[#12303B] text-white text-[11px] leading-[1.35] px-[10px] py-[8px] shadow-md">
+        {text}
+      </span>
+    </span>
+  );
+}
 
 export function LandlordAddListing() {
-  const navigate = useNavigate();
-  const { id } = useParams();
-  const isEditMode = Boolean(id);
   const apiBase = API_BASE;
-  const [currentStep, setCurrentStep] = useState(1);
-  const [isSaving, setIsSaving] = useState(false);
-  const [isUploadingImages, setIsUploadingImages] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState("");
-  
-  // Form state
-  const [propertyType, setPropertyType] = useState<PropertyType>("apartment");
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [address, setAddress] = useState("");
-  const [city, setCity] = useState("");
-  const [postalCode, setPostalCode] = useState("");
-  const [bedrooms, setBedrooms] = useState(1);
-  const [bathrooms, setBathrooms] = useState(1);
-  const [area, setArea] = useState("");
-  const [monthlyRent, setMonthlyRent] = useState("");
-  const [deposit, setDeposit] = useState("");
+  const [currentSection, setCurrentSection] = useState<1 | 2 | 3 | 4 | 5 | 6 | 7>(1);
+  const totalSections = 7;
+  const completionPercentage = Math.max(
+    0,
+    Math.min(100, ((currentSection - 2) / (totalSections - 2)) * 100)
+  );
+
+  const [kind, setKind] = useState("");
+  const [propertyType, setPropertyType] = useState("");
+  const [cityCountry, setCityCountry] = useState("Rotterdam, Netherlands");
+  const [streetHouse, setStreetHouse] = useState("Mathenesserlaan 22");
+  const [rentalRegistrationNumber, setRentalRegistrationNumber] = useState("");
+  const [apartmentNumber, setApartmentNumber] = useState("");
+  const [floorNumber, setFloorNumber] = useState("");
+  const [isGroundFloor, setIsGroundFloor] = useState(false);
   const [availableFrom, setAvailableFrom] = useState("");
-  const [minStay, setMinStay] = useState(3);
-  const [utilitiesIncluded, setUtilitiesIncluded] = useState(false);
-  const [utilitiesCost, setUtilitiesCost] = useState("");
-  const [registrationPossible, setRegistrationPossible] = useState(false);
-  const [selectedAmenities, setSelectedAmenities] = useState<string[]>([]);
-  const [selectedRules, setSelectedRules] = useState<string[]>([]);
-  const [uploadedImages, setUploadedImages] = useState<string[]>([]);
+  const [isAvailableFromPickerOpen, setIsAvailableFromPickerOpen] = useState(false);
+  const [monthlyRent, setMonthlyRent] = useState("");
+  const [currency, setCurrency] = useState("");
+  const [minimumRentalPeriod, setMinimumRentalPeriod] = useState("No minimum");
+  const [maximumRentalPeriod, setMaximumRentalPeriod] = useState("No maximum");
 
-  useEffect(() => {
-    const loadListing = async () => {
-      if (!isEditMode || !id) {
-        return;
-      }
+  const [propertySize, setPropertySize] = useState("");
+  const [suitablePeopleCount, setSuitablePeopleCount] = useState("0");
+  const [spaceDescription, setSpaceDescription] = useState("");
+  const [bedroomsCount, setBedroomsCount] = useState("Select");
+  const [bedroomFurnished, setBedroomFurnished] = useState<YesNo>("no");
+  const [lockOnBedroom, setLockOnBedroom] = useState<YesNo>("no");
 
-      const token = localStorage.getItem("authToken");
-      if (!token) {
-        setError("Please log in to edit listings");
-        return;
-      }
+  const [kitchen, setKitchen] = useState<TernaryArea>("no");
+  const [toilet, setToilet] = useState<TernaryArea>("no");
+  const [bathroom, setBathroom] = useState("Select");
+  const [bathroomsCount, setBathroomsCount] = useState("Select");
+  const [livingRoom, setLivingRoom] = useState<TernaryArea>("no");
+  const [balconyTerrace, setBalconyTerrace] = useState<TernaryArea>("no");
+  const [garden, setGarden] = useState<TernaryArea>("no");
+  const [basement, setBasement] = useState<TernaryArea>("no");
+  const [parking, setParking] = useState<TernaryArea>("no");
+  const [wheelchairAccessible, setWheelchairAccessible] = useState<YesNo>("no");
+  const [elevator, setElevator] = useState<YesNo>("no");
+  const [allergyFriendly, setAllergyFriendly] = useState<YesNo>("no");
 
-      setIsLoading(true);
-      setError("");
+  const [bedAmenity, setBedAmenity] = useState<YesNo>("no");
+  const [wifiAmenity, setWifiAmenity] = useState<YesNo>("no");
+  const [deskAmenity, setDeskAmenity] = useState<YesNo>("no");
+  const [closetAmenity, setClosetAmenity] = useState<YesNo>("no");
+  const [tvAmenity, setTvAmenity] = useState<YesNo>("no");
+  const [washingMachineAmenity, setWashingMachineAmenity] = useState<YesNo>("no");
+  const [dryerAmenity, setDryerAmenity] = useState<YesNo>("no");
+  const [dishwasherAmenity, setDishwasherAmenity] = useState<YesNo>("no");
+  const [kitchenwareAmenity, setKitchenwareAmenity] = useState<TernaryArea>("no");
+  const [heatingAmenity, setHeatingAmenity] = useState("Select");
+  const [airConditioningAmenity, setAirConditioningAmenity] = useState<YesNo>("no");
+  const [flooringAmenity, setFlooringAmenity] = useState("Select");
+  const [livingRoomFurnitureAmenity, setLivingRoomFurnitureAmenity] = useState<YesNo>("no");
 
-      try {
-        const response = await fetch(`${apiBase}/api/listings/mine/${id}`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
+  const [rentCalculation, setRentCalculation] = useState<"daily" | "half-monthly" | "monthly">("daily");
+  const [cancellationPolicy, setCancellationPolicy] = useState<"strict" | "flexible">("flexible");
+  const [rentPricingMode, setRentPricingMode] = useState<"basic" | "advanced">("basic");
+  const [monthlyRentDisplay, setMonthlyRentDisplay] = useState("234");
+  const [utilityLines, setUtilityLines] = useState<CostLine[]>([
+    { type: "Electricity", includedInRent: "Included in rent", frequency: "every month", estimateType: "Estimate", amount: "0" },
+    { type: "Water", includedInRent: "Included in rent", frequency: "every month", estimateType: "Estimate", amount: "0" },
+    { type: "Gas", includedInRent: "Included in rent", frequency: "every month", estimateType: "Estimate", amount: "0" },
+    { type: "Internet", includedInRent: "Included in rent", frequency: "every month", estimateType: "Estimate", amount: "0" },
+  ]);
+  const [openCostMenu, setOpenCostMenu] = useState<null | "utility" | "required" | "optional" | "deposit">(null);
+  const costMenusRef = useRef<HTMLDivElement | null>(null);
+  const [additionalRequiredLines, setAdditionalRequiredLines] = useState<OptionalServiceLine[]>([]);
+  const [optionalServiceLines, setOptionalServiceLines] = useState<OptionalServiceLine[]>([]);
+  const [depositLines, setDepositLines] = useState<DepositLine[]>([]);
 
-        if (!response.ok) {
-          const payload = (await response.json()) as { message?: string };
-          throw new Error(payload.message ?? "Failed to load listing");
-        }
+  const [preferredGender, setPreferredGender] = useState<"male" | "female" | "no-preference">("no-preference");
+  const [minimumAgePreference, setMinimumAgePreference] = useState("No preference");
+  const [maximumAgePreference, setMaximumAgePreference] = useState("No preference");
+  const [preferredTenantType, setPreferredTenantType] = useState<"any" | "students" | "working">("any");
+  const [couplesAllowed, setCouplesAllowed] = useState<YesNo>("no");
+  const [registrationPossible, setRegistrationPossible] = useState<YesNo>("no");
+  const [petsPolicy, setPetsPolicy] = useState<"no" | "yes" | "negotiable">("no");
+  const [musicPolicy, setMusicPolicy] = useState<"no" | "yes" | "negotiable">("no");
+  const [smokingPolicy, setSmokingPolicy] = useState<"no" | "yes" | "negotiable" | "outside-only">("no");
+  const [requireProofOfIdentity, setRequireProofOfIdentity] = useState(false);
+  const [requireProofOfOccupationOrEnrollment, setRequireProofOfOccupationOrEnrollment] = useState(false);
+  const [requireProofOfIncome, setRequireProofOfIncome] = useState(false);
 
-        const payload = (await response.json()) as { listing: ListingResponse };
-        const listing = payload.listing;
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
+  const [uploadedMedia, setUploadedMedia] = useState<UploadedMediaItem[]>([]);
+  const [isUploadingPhotos, setIsUploadingPhotos] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-        setPropertyType(listing.propertyType);
-        setTitle(listing.title);
-        setDescription(listing.description);
-        setAddress(listing.address);
-        setCity(listing.city);
-        setPostalCode(listing.postalCode);
-        setBedrooms(listing.bedrooms);
-        setBathrooms(listing.bathrooms);
-        setArea(String(listing.area));
-        setMonthlyRent(String(listing.monthlyRent));
-        setDeposit(String(listing.deposit));
-        setAvailableFrom(String(listing.availableFrom).slice(0, 10));
-        setMinStay(listing.minStay);
-        setUtilitiesIncluded(listing.utilitiesIncluded);
-        setUtilitiesCost(String(listing.utilitiesCost ?? 0));
-        setRegistrationPossible(listing.registrationPossible);
-        setSelectedAmenities(listing.amenities);
-        setSelectedRules(listing.houseRules);
-        setUploadedImages(listing.images);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "Failed to load listing");
-      } finally {
-        setIsLoading(false);
-      }
-    };
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [sectionError, setSectionError] = useState<string | null>(null);
 
-    void loadListing();
-  }, [apiBase, id, isEditMode]);
+  const { id: listingId } = useParams();
+  const isEditMode = !!listingId;
 
-  const toggleAmenity = (id: string) => {
-    setSelectedAmenities(prev => 
-      prev.includes(id) ? prev.filter(a => a !== id) : [...prev, id]
-    );
+  const updateUtilityLine = <K extends keyof CostLine>(index: number, key: K, value: CostLine[K]) => {
+    setUtilityLines((prev) => prev.map((line, i) => (i === index ? { ...line, [key]: value } : line)));
   };
 
-  const toggleRule = (id: string) => {
-    setSelectedRules(prev => 
-      prev.includes(id) ? prev.filter(r => r !== id) : [...prev, id]
-    );
+  const updateOptionalServiceLine = <K extends keyof OptionalServiceLine>(
+    index: number,
+    key: K,
+    value: OptionalServiceLine[K]
+  ) => {
+    setOptionalServiceLines((prev) => prev.map((line, i) => (i === index ? { ...line, [key]: value } : line)));
   };
 
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
+  const updateAdditionalRequiredLine = <K extends keyof OptionalServiceLine>(
+    index: number,
+    key: K,
+    value: OptionalServiceLine[K]
+  ) => {
+    setAdditionalRequiredLines((prev) => prev.map((line, i) => (i === index ? { ...line, [key]: value } : line)));
+  };
+
+  const updateDepositLine = <K extends keyof DepositLine>(index: number, key: K, value: DepositLine[K]) => {
+    setDepositLines((prev) => prev.map((line, i) => (i === index ? { ...line, [key]: value } : line)));
+  };
+
+  const handlePhotoUpload = async (files: FileList | null) => {
     if (!files || files.length === 0) {
       return;
     }
 
     const token = localStorage.getItem("authToken");
     if (!token) {
-      setError("Please log in to upload images");
+      setUploadError("Please log in to upload photos.");
       return;
     }
 
-    const remainingSlots = Math.max(0, 10 - uploadedImages.length);
-    const selectedFiles = Array.from(files).slice(0, remainingSlots);
-
-    if (selectedFiles.length === 0) {
-      setError("Maximum 10 images allowed");
-      return;
-    }
-
+    const selectedFiles = Array.from(files).slice(0, 10);
     const formData = new FormData();
-    selectedFiles.forEach((file) => {
-      formData.append("images", file);
-    });
+    selectedFiles.forEach((file) => formData.append("images", file));
 
-    setIsUploadingImages(true);
-    setError("");
+    setIsUploadingPhotos(true);
+    setUploadError(null);
 
     try {
       const response = await fetch(`${apiBase}/api/listings/upload-images`, {
@@ -238,80 +324,206 @@ export function LandlordAddListing() {
 
       if (!response.ok) {
         const payload = (await response.json()) as { message?: string };
-        throw new Error(payload.message ?? "Failed to upload images");
+        throw new Error(payload.message ?? "Failed to upload photos");
       }
 
-      const payload = (await response.json()) as { urls: string[] };
-      setUploadedImages((prev) => [...prev, ...payload.urls].slice(0, 10));
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to upload images");
+      const payload = (await response.json()) as { urls?: string[] };
+      const nextMedia = (payload.urls ?? []).map((url) => ({ url, type: "photo" as const }));
+      setUploadedMedia((prev) => [...prev, ...nextMedia]);
+      setSectionError(null);
+    } catch (error) {
+      setUploadError(error instanceof Error ? error.message : "Failed to upload photos");
     } finally {
-      setIsUploadingImages(false);
-      e.target.value = "";
+      setIsUploadingPhotos(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
     }
   };
 
-  const removeImage = (index: number) => {
-    setUploadedImages(prev => prev.filter((_, i) => i !== index));
+  const parseCityAndCountry = () => {
+    const [cityPart, ...countryParts] = cityCountry.split(",");
+    const city = cityPart?.trim() || "Rotterdam";
+    const country = countryParts.join(",").trim() || "Netherlands";
+    return { city, country };
   };
 
-  const hasRequiredPublishFields = () => {
-    return (
-      title.trim().length > 0 &&
-      description.trim().length > 0 &&
-      address.trim().length > 0 &&
-      city.trim().length > 0 &&
-      postalCode.trim().length > 0 &&
-      Number(area) > 0 &&
-      Number(monthlyRent) >= 0 &&
-      Number(deposit) >= 0 &&
-      availableFrom.trim().length > 0 &&
-      minStay >= 1 &&
-      uploadedImages.length > 0
-    );
+  const parseAvailableFromDate = () => {
+    if (!availableFrom) {
+      return null;
+    }
+
+    const parsed = new Date(`${availableFrom}T00:00:00`);
+    return Number.isNaN(parsed.getTime()) ? null : parsed;
   };
 
-  const saveListing = async (status: ListingStatus) => {
-    const token = localStorage.getItem("authToken");
-    if (!token) {
-      setError("Please log in to manage listings");
+  const toDateInputValue = (date: Date) => {
+    const year = date.getFullYear();
+    const month = `${date.getMonth() + 1}`.padStart(2, "0");
+    const day = `${date.getDate()}`.padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  };
+
+  const parseBathroomsCount = () => {
+    if (bathroomsCount === "None" || bathroomsCount === "Select") {
+      return 0;
+    }
+    if (bathroomsCount === "3+") {
+      return 3;
+    }
+    return Number.parseInt(bathroomsCount, 10) || 0;
+  };
+
+  const isMultiUnitProperty = propertyType === "Apartment" || propertyType === "Building";
+
+  const getSectionValidationErrors = (section: 1 | 2 | 3 | 4 | 5 | 6 | 7): string[] => {
+    const errors: string[] = [];
+
+    if (section === 1) {
+      if (!kind) errors.push("What kind of place are you listing?");
+      if (!propertyType) errors.push("What type of property is this?");
+      if (!cityCountry.trim()) errors.push("City, country");
+      if (!streetHouse.trim()) errors.push("Street, house number");
+      if (!availableFrom) errors.push("Available from");
+      if (!monthlyRent || Number.parseFloat(monthlyRent) <= 0) errors.push("Monthly rent must be greater than 0");
+      if (!currency) errors.push("Currency");
+    }
+
+    if (section === 2) {
+      if (!propertySize || Number.parseFloat(propertySize) <= 0) errors.push("Property size must be greater than 0");
+      if (!suitablePeopleCount || Number.parseInt(suitablePeopleCount, 10) < 1) errors.push("Suitable for how many? must be at least 1");
+      if (!spaceDescription.trim()) errors.push("Description");
+      if (bedroomsCount === "Select") errors.push("Number of bedrooms");
+    }
+
+    if (section === 7) {
+      if (uploadedMedia.length === 0) errors.push("Photos");
+      if (!agreedToTerms) errors.push("HousingAnywhere terms & conditions agreement");
+    }
+
+    return errors;
+  };
+
+  const validateSectionOrShowError = (section: 1 | 2 | 3 | 4 | 5 | 6 | 7) => {
+    const errors = getSectionValidationErrors(section);
+    if (errors.length === 0) {
+      setSectionError(null);
+      return true;
+    }
+
+    setSectionError(`Please complete required fields: ${errors.join(", ")}.`);
+    return false;
+  };
+
+  const handleSubmitListing = async () => {
+    if (!validateSectionOrShowError(7)) {
       return;
     }
 
-    if (status === "active" && !hasRequiredPublishFields()) {
-      setError("Please complete all required fields and upload at least 1 image before publishing");
-      return;
-    }
-
-    const payload: ListingPayload = {
-      propertyType,
-      title: title.trim(),
-      description: description.trim(),
-      address: address.trim(),
-      city: city.trim(),
-      postalCode: postalCode.trim(),
-      bedrooms,
-      bathrooms,
-      area: Number(area),
-      monthlyRent: Number(monthlyRent),
-      deposit: Number(deposit),
-      availableFrom,
-      minStay,
-      utilitiesIncluded,
-      utilitiesCost: utilitiesIncluded ? Number(utilitiesCost || 0) : 0,
-      registrationPossible,
-      amenities: selectedAmenities,
-      houseRules: selectedRules,
-      images: uploadedImages,
-      status,
-    };
-
-    setIsSaving(true);
-    setError("");
+    setIsSubmitting(true);
+    setSubmitError(null);
+    setSectionError(null);
 
     try {
-      const endpoint = isEditMode && id ? `${apiBase}/api/listings/${id}` : `${apiBase}/api/listings`;
-      const method = isEditMode && id ? "PATCH" : "POST";
+      // Transform form data to API schema
+      const payload = {
+        kind: kind.toLowerCase().replace(" ", "-"),
+        propertyType: propertyType.toLowerCase(),
+        address: streetHouse,
+        city: parseCityAndCountry().city,
+        country: parseCityAndCountry().country,
+        apartmentNumber: isMultiUnitProperty ? apartmentNumber : undefined,
+        floorNumber: isMultiUnitProperty ? floorNumber : undefined,
+        isGroundFloor: isMultiUnitProperty ? isGroundFloor : false,
+        rentalRegistrationNumber: rentalRegistrationNumber.trim() || undefined,
+        availableFrom: availableFrom,
+        monthlyRent: parseFloat(monthlyRent) || 0,
+        currency,
+        minimumRentalPeriod: Math.max(1, parseInt(minimumRentalPeriod.match(/\d+/)?.[0] || "1")),
+        maximumRentalPeriod: maximumRentalPeriod === "No maximum" ? undefined : parseInt(maximumRentalPeriod.match(/\d+/)?.[0] || ""),
+        propertySize: parseFloat(propertySize) || 0,
+        suitablePeopleCount: parseInt(suitablePeopleCount) || 1,
+        spaceDescription,
+        bedroomsCount: bedroomsCount === "Select" ? 0 : bedroomsCount === "Studio" ? 0 : parseInt(bedroomsCount),
+        bedroomFurnished: bedroomFurnished === "yes",
+        lockOnBedroom: lockOnBedroom === "yes",
+        kitchen,
+        toilet,
+        bathroomStructure: {
+          count: parseBathroomsCount(),
+          type: bathroom === "Select" ? "private" : bathroom.toLowerCase(),
+        },
+        livingRoom,
+        balconyTerrace,
+        garden,
+        basement,
+        parking,
+        wheelchairAccessible: wheelchairAccessible === "yes",
+        elevator: elevator === "yes",
+        allergyFriendly: allergyFriendly === "yes",
+        amenities: {
+          bed: bedAmenity === "yes",
+          wifi: wifiAmenity === "yes",
+          desk: deskAmenity === "yes",
+          closet: closetAmenity === "yes",
+          tv: tvAmenity === "yes",
+          washingMachine: washingMachineAmenity === "yes",
+          dryer: dryerAmenity === "yes",
+          dishwasher: dishwasherAmenity === "yes",
+          kitchenware: kitchenwareAmenity,
+          heating: heatingAmenity === "Select" ? "central-heating" : heatingAmenity.toLowerCase().replace(" ", "-"),
+          airConditioning: airConditioningAmenity === "yes",
+          flooring: flooringAmenity === "Select" ? "laminate" : flooringAmenity.toLowerCase(),
+          livingRoomFurniture: livingRoomFurnitureAmenity === "yes",
+        },
+        rentCalculation,
+        cancellationPolicy,
+        utilities: utilityLines.map(line => ({
+          type: line.type,
+          frequency: line.frequency === "every month" ? "monthly" : "one-time",
+          included: line.includedInRent === "Included in rent",
+          amount: parseFloat(line.amount) || 0,
+        })),
+        deposits: depositLines.map(line => ({
+          type: line.type,
+          requirement: line.requirement,
+          amount: parseFloat(line.amount) || 0,
+        })),
+        optionalServices: optionalServiceLines.map(line => ({
+          type: line.type,
+          category: "other",
+          frequency: line.frequency === "every month" ? "monthly" : "one-time",
+          amount: parseFloat(line.amount) || 0,
+        })),
+        preferredGender,
+        minimumAgePreference: minimumAgePreference === "No preference" ? undefined : parseInt(minimumAgePreference),
+        maximumAgePreference: maximumAgePreference === "No preference" ? undefined : parseInt(maximumAgePreference),
+        preferredTenantType,
+        couplesAllowed: couplesAllowed === "yes",
+        registrationPossible: registrationPossible === "yes",
+        petsPolicy,
+        musicPolicy,
+        smokingPolicy,
+        requireProofOfIdentity,
+        requireProofOfOccupation: requireProofOfOccupationOrEnrollment,
+        requireProofOfIncome,
+        media: uploadedMedia.map((item, index) => ({
+          url: item.url,
+          type: item.type,
+          order: index,
+        })),
+        agreedToTerms: agreedToTerms ? new Date().toISOString() : undefined,
+        title: `${propertyType} in ${cityCountry}`,
+        status: "active",
+      };
+
+      const token = localStorage.getItem("authToken");
+      if (!token) {
+        throw new Error("Please log in to publish your listing");
+      }
+
+      const endpoint = isEditMode ? `${apiBase}/api/listings/${listingId}` : `${apiBase}/api/listings`;
+      const method = isEditMode ? "PATCH" : "POST";
 
       const response = await fetch(endpoint, {
         method,
@@ -323,531 +535,1297 @@ export function LandlordAddListing() {
       });
 
       if (!response.ok) {
-        const errorPayload = (await response.json()) as { message?: string };
-        throw new Error(errorPayload.message ?? "Failed to save listing");
+        const error = await response.json();
+        throw new Error(error.message || "Failed to save listing");
       }
 
+      const data = await response.json();
       navigate("/landlord/listings");
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to save listing");
+    } catch (error) {
+      setSubmitError(error instanceof Error ? error.message : "An error occurred");
     } finally {
-      setIsSaving(false);
+      setIsSubmitting(false);
     }
   };
 
-  const canProceed = () => {
-    if (currentStep === 1) {
-      return title && description && propertyType;
-    }
-    if (currentStep === 2) {
-      return address && city && postalCode && area;
-    }
-    if (currentStep === 3) {
-      return monthlyRent && deposit && availableFrom;
-    }
-    return true;
-  };
+  useEffect(() => {
+    const handleDocumentMouseDown = (event: MouseEvent) => {
+      if (!costMenusRef.current) {
+        return;
+      }
+
+      if (!costMenusRef.current.contains(event.target as Node)) {
+        setOpenCostMenu(null);
+      }
+    };
+
+    document.addEventListener("mousedown", handleDocumentMouseDown);
+    return () => {
+      document.removeEventListener("mousedown", handleDocumentMouseDown);
+    };
+  }, []);
+
+  const navigate = useNavigate();
+  const contentBottomPaddingClass = currentSection === 1 ? "pb-[44px] md:pb-[56px]" : "pb-[120px] md:pb-[130px]";
 
   return (
-    <LandlordPortalLayout>
-      <div className="min-h-[calc(100vh-73px)] bg-neutral-light-gray">
-        {/* Header */}
-        <div className="bg-white border-b border-[rgba(0,0,0,0.08)]">
-          <div className="max-w-[1000px] mx-auto px-[32px] py-[24px]">
-            <h1 className="text-[28px] font-bold text-neutral-black mb-[4px]">
-              {isEditMode ? "Edit Listing" : "Add New Listing"}
-            </h1>
-            <p className="text-[14px] text-neutral-gray">
-              {isEditMode ? "Update your property details" : "Create a new property listing to attract quality tenants"}
-            </p>
+    <LandlordPortalLayout
+      hideSidebar
+      headerLeadingAction={(
+        <button
+          type="button"
+          onClick={() => navigate("/landlord/dashboard")}
+          className="h-[36px] px-[12px] bg-brand-primary text-white text-[11px] font-semibold hover:bg-brand-primary-dark transition-colors"
+        >
+          GO TO DASHBOARD
+        </button>
+      )}
+    >
+      <div className={`bg-[#F7F7F9] min-h-[calc(100vh-74px)] px-[20px] md:px-[28px] py-[24px] md:py-[32px] ${contentBottomPaddingClass}`}>
+        <div className="max-w-[760px] mr-auto w-full">
+        {submitError && (
+          <div className="mb-[20px] p-[12px] bg-red-50 border border-red-200 rounded text-red-700 text-[13px]">
+            {submitError}
           </div>
-        </div>
-
-        {/* Progress Steps */}
-        <div className="bg-white border-b border-[rgba(0,0,0,0.08)]">
-          <div className="max-w-[1000px] mx-auto px-[32px] py-[20px]">
-            <div className="flex items-center justify-between">
-              {[
-                { num: 1, label: "Basic Info" },
-                { num: 2, label: "Details" },
-                { num: 3, label: "Pricing" },
-                { num: 4, label: "Photos & Amenities" },
-              ].map((step, index) => (
-                <div key={step.num} className="flex items-center flex-1">
-                  <div className="flex items-center gap-[12px]">
-                    <div className={`w-[40px] h-[40px] rounded-full flex items-center justify-center font-bold text-[16px] ${
-                      currentStep === step.num
-                        ? "bg-brand-primary text-white"
-                        : currentStep > step.num
-                        ? "bg-accent-blue text-white"
-                        : "bg-neutral-light-gray text-neutral-gray"
-                    }`}>
-                      {currentStep > step.num ? <Check className="w-[20px] h-[20px]" /> : step.num}
-                    </div>
-                    <span className={`text-[14px] font-semibold ${
-                      currentStep >= step.num ? "text-neutral-black" : "text-neutral-gray"
-                    }`}>
-                      {step.label}
-                    </span>
-                  </div>
-                  {index < 3 && (
-                    <div className={`flex-1 h-[2px] mx-[16px] ${
-                      currentStep > step.num ? "bg-accent-blue" : "bg-neutral-light-gray"
-                    }`} />
-                  )}
-                </div>
-              ))}
-            </div>
+        )}
+        {sectionError && (
+          <div className="mb-[20px] p-[12px] bg-amber-50 border border-amber-200 rounded text-amber-800 text-[13px]">
+            {sectionError}
           </div>
-        </div>
+        )}
+        {uploadError && (
+          <div className="mb-[20px] p-[12px] bg-red-50 border border-red-200 rounded text-red-700 text-[13px]">
+            {uploadError}
+          </div>
+        )}
+        <p className="mb-[14px] text-[12px] text-[#5A7380]">Fields marked with <span className="text-[#C0392B]">*</span> are required.</p>
+        {currentSection === 1 && (
+          <div className="w-full">
+            <h1 className="text-[32px] leading-[1.1] font-bold text-neutral-black tracking-[-0.02em]">Create your listing</h1>
 
-        {/* Form Content */}
-        <div className="max-w-[1000px] mx-auto px-[32px] py-[32px]">
-          {error && (
-            <div className="mb-[16px] p-[12px] rounded-[10px] bg-red-50 text-red-700 text-[14px] font-semibold">
-              {error}
+            <div className="mt-[30px]">
+              <h2 className="text-[22px] leading-[1.2] font-semibold text-[#12303B] tracking-[-0.01em]">Property</h2>
+
+              <div className="mt-[16px] space-y-[18px]">
+                <div>
+                  <label className="block text-[12px] text-[#5A7380] mb-[6px]">What kind of place are you listing?*</label>
+                  <div className="relative">
+                    <select value={kind} onChange={(e) => setKind(e.target.value)} className="w-full h-[44px] bg-transparent border-0 border-b border-[rgba(0,0,0,0.30)] text-[20px] leading-[1] text-[#1A1A1A] appearance-none pr-[28px] focus:outline-none focus:border-brand-primary">
+                      <option value="">Select kind</option>
+                      {kinds.map((item) => (
+                        <option key={item} value={item}>
+                          {item}
+                        </option>
+                      ))}
+                    </select>
+                    <ChevronDown className="pointer-events-none absolute right-[2px] top-1/2 -translate-y-1/2 w-[18px] h-[18px] text-[#5A7380]" />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-[12px] text-[#5A7380] mb-[6px]">What type of property is this?*</label>
+                  <div className="relative">
+                    <select value={propertyType} onChange={(e) => setPropertyType(e.target.value)} className="w-full h-[44px] bg-transparent border-0 border-b border-[rgba(0,0,0,0.30)] text-[20px] leading-[1] text-[#1A1A1A] appearance-none pr-[28px] focus:outline-none focus:border-brand-primary">
+                      <option value="">Select type</option>
+                      {propertyTypes.map((item) => (
+                        <option key={item} value={item}>
+                          {item}
+                        </option>
+                      ))}
+                    </select>
+                    <ChevronDown className="pointer-events-none absolute right-[2px] top-1/2 -translate-y-1/2 w-[18px] h-[18px] text-[#5A7380]" />
+                  </div>
+                </div>
+              </div>
             </div>
-          )}
-          {isLoading && (
-            <div className="mb-[16px] p-[12px] rounded-[10px] bg-neutral-light-gray text-neutral-gray text-[14px] font-semibold">
-              Loading listing...
-            </div>
-          )}
-          <div className="bg-white rounded-[12px] border border-[rgba(0,0,0,0.08)] p-[32px]">
-            {/* Step 1: Basic Info */}
-            {currentStep === 1 && (
-              <div className="space-y-[24px]">
+
+            <div className="mt-[34px]">
+              <h2 className="text-[22px] leading-[1.2] font-semibold text-[#12303B] tracking-[-0.01em]">Address</h2>
+
+              <div className="mt-[14px] space-y-[18px]">
                 <div>
-                  <label className="block text-[14px] font-semibold text-neutral-black mb-[8px]">
-                    Property Type *
-                  </label>
-                  <div className="grid grid-cols-4 gap-[12px]">
-                    {[
-                      { type: "apartment" as PropertyType, label: "Apartment" },
-                      { type: "studio" as PropertyType, label: "Studio" },
-                      { type: "house" as PropertyType, label: "House" },
-                      { type: "room" as PropertyType, label: "Room" },
-                    ].map((option) => (
-                      <button
-                        key={option.type}
-                        onClick={() => setPropertyType(option.type)}
-                        className={`p-[16px] rounded-[10px] border-2 text-[14px] font-semibold transition-all ${
-                          propertyType === option.type
-                            ? "border-brand-primary bg-brand-light text-brand-primary"
-                            : "border-[rgba(0,0,0,0.08)] bg-white text-neutral-gray hover:border-brand-primary"
-                        }`}
-                      >
-                        <Home className="w-[24px] h-[24px] mx-auto mb-[8px]" />
-                        {option.label}
-                      </button>
-                    ))}
+                  <label className="block text-[12px] text-[#5A7380] mb-[6px]">City, country*</label>
+                  <div className="flex items-center gap-[8px]">
+                    <input value={cityCountry} onChange={(e) => setCityCountry(e.target.value)} className="w-full h-[44px] bg-transparent border-0 border-b border-[rgba(0,0,0,0.30)] text-[20px] text-[#1A1A1A] placeholder:text-[#8A8A8A] focus:outline-none focus:border-brand-primary" placeholder="Rotterdam, Netherlands" />
+                    <InfoTooltip text="Enter city and country for your listing" />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-[14px] font-semibold text-neutral-black mb-[8px]">
-                    Property Title *
-                  </label>
-                  <input
-                    type="text"
-                    value={title}
-                    onChange={(e) => setTitle(e.target.value)}
-                    placeholder="e.g., Modern 2BR Apartment in City Center"
-                    className="w-full px-[16px] py-[12px] bg-neutral-light-gray rounded-[10px] text-[14px] text-neutral-black placeholder:text-neutral-gray border-2 border-transparent focus:border-brand-primary focus:outline-none transition-colors"
-                  />
+                  <label className="block text-[12px] text-[#5A7380] mb-[6px]">Street, house number*</label>
+                  <input value={streetHouse} onChange={(e) => setStreetHouse(e.target.value)} className="w-full h-[44px] bg-transparent border-0 border-b border-[rgba(0,0,0,0.30)] text-[20px] text-[#1A1A1A] placeholder:text-[#8A8A8A] focus:outline-none focus:border-brand-primary" placeholder="Mathenesserlaan 22" />
                 </div>
 
-                <div>
-                  <label className="block text-[14px] font-semibold text-neutral-black mb-[8px]">
-                    Description *
-                  </label>
-                  <textarea
-                    value={description}
-                    onChange={(e) => setDescription(e.target.value)}
-                    placeholder="Describe your property, highlight key features, nearby amenities..."
-                    rows={6}
-                    className="w-full px-[16px] py-[12px] bg-neutral-light-gray rounded-[10px] text-[14px] text-neutral-black placeholder:text-neutral-gray border-2 border-transparent focus:border-brand-primary focus:outline-none transition-colors resize-none"
-                  />
-                  <p className="text-[12px] text-neutral-gray mt-[4px]">
-                    {description.length} / 1000 characters
-                  </p>
-                </div>
-              </div>
-            )}
-
-            {/* Step 2: Details */}
-            {currentStep === 2 && (
-              <div className="space-y-[24px]">
-                <div>
-                  <label className="block text-[14px] font-semibold text-neutral-black mb-[8px]">
-                    Street Address *
-                  </label>
-                  <input
-                    type="text"
-                    value={address}
-                    onChange={(e) => setAddress(e.target.value)}
-                    placeholder="Enter street address"
-                    className="w-full px-[16px] py-[12px] bg-neutral-light-gray rounded-[10px] text-[14px] text-neutral-black placeholder:text-neutral-gray border-2 border-transparent focus:border-brand-primary focus:outline-none transition-colors"
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-[16px]">
-                  <div>
-                    <label className="block text-[14px] font-semibold text-neutral-black mb-[8px]">
-                      City *
-                    </label>
-                    <input
-                      type="text"
-                      value={city}
-                      onChange={(e) => setCity(e.target.value)}
-                      placeholder="e.g., Berlin"
-                      className="w-full px-[16px] py-[12px] bg-neutral-light-gray rounded-[10px] text-[14px] text-neutral-black placeholder:text-neutral-gray border-2 border-transparent focus:border-brand-primary focus:outline-none transition-colors"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-[14px] font-semibold text-neutral-black mb-[8px]">
-                      Postal Code *
-                    </label>
-                    <input
-                      type="text"
-                      value={postalCode}
-                      onChange={(e) => setPostalCode(e.target.value)}
-                      placeholder="e.g., 10115"
-                      className="w-full px-[16px] py-[12px] bg-neutral-light-gray rounded-[10px] text-[14px] text-neutral-black placeholder:text-neutral-gray border-2 border-transparent focus:border-brand-primary focus:outline-none transition-colors"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-3 gap-[16px]">
-                  <div>
-                    <label className="block text-[14px] font-semibold text-neutral-black mb-[8px]">
-                      Bedrooms
-                    </label>
-                    <div className="flex items-center gap-[12px]">
-                      <button
-                        onClick={() => setBedrooms(Math.max(0, bedrooms - 1))}
-                        className="w-[40px] h-[40px] rounded-[8px] bg-neutral-light-gray text-neutral-black font-bold hover:bg-[rgba(0,0,0,0.08)] transition-colors"
-                      >
-                        −
-                      </button>
-                      <div className="flex-1 text-center">
-                        <div className="text-[20px] font-bold text-neutral-black">{bedrooms}</div>
-                      </div>
-                      <button
-                        onClick={() => setBedrooms(bedrooms + 1)}
-                        className="w-[40px] h-[40px] rounded-[8px] bg-brand-primary text-white font-bold hover:bg-brand-primary-dark transition-colors"
-                      >
-                        +
-                      </button>
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-[14px] font-semibold text-neutral-black mb-[8px]">
-                      Bathrooms
-                    </label>
-                    <div className="flex items-center gap-[12px]">
-                      <button
-                        onClick={() => setBathrooms(Math.max(1, bathrooms - 1))}
-                        className="w-[40px] h-[40px] rounded-[8px] bg-neutral-light-gray text-neutral-black font-bold hover:bg-[rgba(0,0,0,0.08)] transition-colors"
-                      >
-                        −
-                      </button>
-                      <div className="flex-1 text-center">
-                        <div className="text-[20px] font-bold text-neutral-black">{bathrooms}</div>
-                      </div>
-                      <button
-                        onClick={() => setBathrooms(bathrooms + 1)}
-                        className="w-[40px] h-[40px] rounded-[8px] bg-brand-primary text-white font-bold hover:bg-brand-primary-dark transition-colors"
-                      >
-                        +
-                      </button>
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-[14px] font-semibold text-neutral-black mb-[8px]">
-                      Area (m²) *
-                    </label>
-                    <input
-                      type="number"
-                      value={area}
-                      onChange={(e) => setArea(e.target.value)}
-                      placeholder="75"
-                      className="w-full px-[16px] py-[12px] bg-neutral-light-gray rounded-[10px] text-[14px] text-neutral-black placeholder:text-neutral-gray border-2 border-transparent focus:border-brand-primary focus:outline-none transition-colors"
-                    />
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Step 3: Pricing */}
-            {currentStep === 3 && (
-              <div className="space-y-[24px]">
-                <div className="grid grid-cols-2 gap-[16px]">
-                  <div>
-                    <label className="block text-[14px] font-semibold text-neutral-black mb-[8px]">
-                      Monthly Rent (€) *
-                    </label>
-                    <div className="relative">
-                      <DollarSign className="absolute left-[16px] top-[50%] -translate-y-1/2 w-[18px] h-[18px] text-neutral-gray" />
-                      <input
-                        type="number"
-                        value={monthlyRent}
-                        onChange={(e) => setMonthlyRent(e.target.value)}
-                        placeholder="1850"
-                        className="w-full pl-[44px] pr-[16px] py-[12px] bg-neutral-light-gray rounded-[10px] text-[14px] text-neutral-black placeholder:text-neutral-gray border-2 border-transparent focus:border-brand-primary focus:outline-none transition-colors"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-[14px] font-semibold text-neutral-black mb-[8px]">
-                      Security Deposit (€) *
-                    </label>
-                    <div className="relative">
-                      <DollarSign className="absolute left-[16px] top-[50%] -translate-y-1/2 w-[18px] h-[18px] text-neutral-gray" />
-                      <input
-                        type="number"
-                        value={deposit}
-                        onChange={(e) => setDeposit(e.target.value)}
-                        placeholder="1850"
-                        className="w-full pl-[44px] pr-[16px] py-[12px] bg-neutral-light-gray rounded-[10px] text-[14px] text-neutral-black placeholder:text-neutral-gray border-2 border-transparent focus:border-brand-primary focus:outline-none transition-colors"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-[16px]">
-                  <div>
-                    <label className="block text-[14px] font-semibold text-neutral-black mb-[8px]">
-                      Available From *
-                    </label>
-                    <div className="relative">
-                      <Calendar className="absolute left-[16px] top-[50%] -translate-y-1/2 w-[18px] h-[18px] text-neutral-gray" />
-                      <input
-                        type="date"
-                        value={availableFrom}
-                        onChange={(e) => setAvailableFrom(e.target.value)}
-                        className="w-full pl-[44px] pr-[16px] py-[12px] bg-neutral-light-gray rounded-[10px] text-[14px] text-neutral-black placeholder:text-neutral-gray border-2 border-transparent focus:border-brand-primary focus:outline-none transition-colors"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-[14px] font-semibold text-neutral-black mb-[8px]">
-                      Minimum Stay (months)
-                    </label>
-                    <div className="flex items-center gap-[12px]">
-                      <button
-                        onClick={() => setMinStay(Math.max(1, minStay - 1))}
-                        className="w-[40px] h-[40px] rounded-[8px] bg-neutral-light-gray text-neutral-black font-bold hover:bg-[rgba(0,0,0,0.08)] transition-colors"
-                      >
-                        −
-                      </button>
-                      <div className="flex-1 text-center">
-                        <div className="text-[20px] font-bold text-neutral-black">{minStay}</div>
-                      </div>
-                      <button
-                        onClick={() => setMinStay(minStay + 1)}
-                        className="w-[40px] h-[40px] rounded-[8px] bg-brand-primary text-white font-bold hover:bg-brand-primary-dark transition-colors"
-                      >
-                        +
-                      </button>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="bg-brand-light rounded-[10px] p-[16px] border border-brand-primary">
-                  <div className="flex items-start gap-[12px]">
-                    <div className="w-[40px] h-[40px] rounded-full bg-brand-primary flex items-center justify-center flex-shrink-0">
-                      <DollarSign className="w-[20px] h-[20px] text-white" />
-                    </div>
-                    <div className="flex-1">
-                      <h4 className="text-[14px] font-bold text-neutral-black mb-[4px]">
-                        Utilities & Additional Costs
-                      </h4>
-                      <p className="text-[13px] text-neutral-gray mb-[12px]">
-                        Specify if utilities are included or add them as additional costs
-                      </p>
-                      <div className="flex items-center gap-[12px]">
-                        <label className="flex items-center gap-[8px] cursor-pointer">
-                          <input
-                            type="checkbox"
-                            checked={utilitiesIncluded}
-                            onChange={(e) => setUtilitiesIncluded(e.target.checked)}
-                            className="w-[18px] h-[18px] accent-brand-primary"
-                          />
-                          <span className="text-[13px] text-neutral-black">Utilities Included</span>
-                        </label>
-                        <label className="flex items-center gap-[8px] cursor-pointer">
-                          <input
-                            type="checkbox"
-                            checked={registrationPossible}
-                            onChange={(e) => setRegistrationPossible(e.target.checked)}
-                            className="w-[18px] h-[18px] accent-brand-primary"
-                          />
-                          <span className="text-[13px] text-neutral-black">Registration Possible</span>
-                        </label>
-                      </div>
-
-                      {utilitiesIncluded && (
-                        <div className="mt-[12px]">
-                          <label className="block text-[12px] font-semibold text-neutral-black mb-[6px]">
-                            Utilities cost (€)
-                          </label>
-                          <input
-                            type="number"
-                            min={0}
-                            step={0.01}
-                            value={utilitiesCost}
-                            onChange={(e) => setUtilitiesCost(e.target.value)}
-                            placeholder="e.g. 150"
-                            className="w-full px-[16px] py-[12px] bg-neutral-light-gray rounded-[10px] text-[14px] text-neutral-black placeholder:text-neutral-gray border-2 border-transparent focus:border-brand-primary focus:outline-none transition-colors"
-                          />
-                          <p className="text-[12px] text-neutral-gray mt-[6px]">
-                            This value is shown to tenants in the application cost summary.
-                          </p>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Step 4: Photos & Amenities */}
-            {currentStep === 4 && (
-              <div className="space-y-[24px]">
-                <div>
-                  <label className="block text-[14px] font-semibold text-neutral-black mb-[8px]">
-                    Property Photos
-                  </label>
-                  <div className="grid grid-cols-3 gap-[16px]">
-                    {uploadedImages.map((img, index) => (
-                      <div key={index} className="relative aspect-[4/3] rounded-[10px] overflow-hidden group">
-                        <img src={img} alt={`Upload ${index + 1}`} className="w-full h-full object-contain object-center bg-[#F3F4F6]" />
-                        <button
-                          onClick={() => removeImage(index)}
-                          className="absolute top-[8px] right-[8px] w-[32px] h-[32px] bg-neutral-black/70 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                        >
-                          <X className="w-[18px] h-[18px] text-white" />
-                        </button>
-                      </div>
-                    ))}
-                    {uploadedImages.length < 10 && (
-                      <label className="aspect-[4/3] rounded-[10px] border-2 border-dashed border-[rgba(0,0,0,0.16)] bg-neutral-light-gray flex flex-col items-center justify-center cursor-pointer hover:border-brand-primary hover:bg-brand-light transition-all">
-                        <Upload className="w-[32px] h-[32px] text-neutral-gray mb-[8px]" />
-                        <span className="text-[13px] font-medium text-neutral-gray">Upload Photo</span>
+                {streetHouse.trim().length > 0 && isMultiUnitProperty && (
+                  <div className="pt-[18px] max-w-[980px]">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-[16px]">
+                      <div>
+                        <label className="block text-[12px] text-[#5A7380] mb-[6px]">Apartment number</label>
                         <input
-                          type="file"
-                          onChange={(event) => {
-                            void handleImageUpload(event);
-                          }}
-                          className="hidden"
-                          accept="image/*"
-                          multiple
+                          value={apartmentNumber}
+                          onChange={(e) => setApartmentNumber(e.target.value)}
+                          className="w-full h-[44px] bg-white border border-[rgba(15,61,73,0.35)] px-[12px] text-[20px] text-[#1A1A1A] focus:outline-none focus:border-brand-primary"
                         />
-                      </label>
-                    )}
+                      </div>
+
+                      <div>
+                        <label className="block text-[12px] text-[#5A7380] mb-[6px]">Floor number</label>
+                        <input
+                          value={floorNumber}
+                          onChange={(e) => setFloorNumber(e.target.value)}
+                          className="w-full h-[44px] bg-white border border-[rgba(15,61,73,0.35)] px-[12px] text-[20px] text-[#1A1A1A] focus:outline-none focus:border-brand-primary"
+                        />
+
+                        <label className="mt-[10px] inline-flex items-center gap-[8px] cursor-pointer text-[12px] text-[#12303B]">
+                          <input
+                            type="checkbox"
+                            checked={isGroundFloor}
+                            onChange={(e) => setIsGroundFloor(e.target.checked)}
+                            className="w-[14px] h-[14px] accent-brand-primary"
+                          />
+                          <span>Ground floor</span>
+                        </label>
+                      </div>
+                    </div>
                   </div>
-                  <p className="text-[12px] text-neutral-gray mt-[8px]">
-                    Upload up to 10 photos. First photo will be the cover image.
+                )}
+
+                {streetHouse.trim().length > 0 && (
+                  <div className="pt-[18px] max-w-[980px]">
+                    <label className="block text-[12px] text-[#5A7380] mb-[6px]">Rental registration number</label>
+                    <input
+                      value={rentalRegistrationNumber}
+                      onChange={(e) => setRentalRegistrationNumber(e.target.value)}
+                      className="w-full h-[44px] bg-transparent border-0 border-b border-[rgba(0,0,0,0.30)] text-[20px] text-[#1A1A1A] focus:outline-none focus:border-brand-primary"
+                      placeholder=""
+                    />
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="mt-[36px]">
+              <h2 className="text-[22px] leading-[1.2] font-semibold text-[#12303B] tracking-[-0.01em]">Pricing and availability</h2>
+
+              <div className="mt-[14px] space-y-[18px]">
+                <div>
+                  <label className="block text-[12px] text-[#5A7380] mb-[6px]">Available from*</label>
+                  <div className="relative">
+                    <button
+                      type="button"
+                      onClick={() => setIsAvailableFromPickerOpen((prev) => !prev)}
+                      className="w-full h-[40px] flex items-center justify-between bg-transparent border-0 border-b border-[rgba(0,0,0,0.30)] text-[16px] text-[#1A1A1A] focus:outline-none focus:border-brand-primary"
+                    >
+                      <span>
+                        {parseAvailableFromDate()?.toLocaleDateString("en-GB", {
+                          day: "numeric",
+                          month: "short",
+                          year: "numeric",
+                        }) ?? "Select date"}
+                      </span>
+                      <ChevronDown className="w-[16px] h-[16px] text-[#5A7380]" />
+                    </button>
+                    <DateOnlyPicker
+                      isOpen={isAvailableFromPickerOpen}
+                      onClose={() => setIsAvailableFromPickerOpen(false)}
+                      selectedDate={parseAvailableFromDate()}
+                      onDateChange={(date) => {
+                        setAvailableFrom(toDateInputValue(date));
+                        setSectionError(null);
+                      }}
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-[16px]">
+                  <div>
+                    <label className="block text-[12px] text-[#5A7380] mb-[6px]">Monthly rent*</label>
+                      <input type="number" min="1" step="0.01" value={monthlyRent} onChange={(e) => setMonthlyRent(e.target.value)} className="w-full h-[44px] bg-transparent border-0 border-b border-[rgba(0,0,0,0.30)] text-[20px] text-[#1A1A1A] placeholder:text-[#8A8A8A] focus:outline-none focus:border-brand-primary" placeholder="0" />
+                  </div>
+
+                  <div>
+                    <label className="block text-[12px] text-[#5A7380] mb-[6px]">Currency*</label>
+                    <div className="flex items-center gap-[8px]">
+                      <div className="relative w-full">
+                        <select value={currency} onChange={(e) => setCurrency(e.target.value)} className="w-full h-[44px] bg-transparent border-0 border-b border-[rgba(0,0,0,0.30)] text-[20px] leading-[1] text-[#1A1A1A] appearance-none pr-[28px] focus:outline-none focus:border-brand-primary">
+                          <option value="">Select currency</option>
+                          {currencies.map((item) => (
+                            <option key={item} value={item}>
+                              {item}
+                            </option>
+                          ))}
+                        </select>
+                        <ChevronDown className="pointer-events-none absolute right-[2px] top-1/2 -translate-y-1/2 w-[18px] h-[18px] text-[#5A7380]" />
+                      </div>
+                      <InfoTooltip text="Select the currency tenants will pay in" />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-[10px] bg-brand-primary-light border border-[rgba(8,145,178,0.25)] px-[14px] py-[12px]">
+                  <InfoTooltip text="Complete KYC to unlock all supported currencies" iconClassName="w-[16px] h-[16px] text-brand-primary cursor-help" />
+                  <p className="text-[13px] leading-[1.4] text-[#104A58]">
+                    Complete KYC to choose from any of our supported currencies. <button type="button" className="underline font-semibold">Go to KYC</button>
                   </p>
-                  {isUploadingImages && (
-                    <p className="text-[12px] text-neutral-gray mt-[4px]">Uploading images...</p>
-                  )}
                 </div>
 
+                <div className="flex items-start gap-[8px] text-[#5A7380]">
+                  <InfoTooltip text="Advanced pricing can be configured in later steps" iconClassName="w-[14px] h-[14px] mt-[2px] cursor-help" />
+                  <p className="text-[12px] leading-[1.5]">In the later steps, you can choose advanced price to set different rates for different months.</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-[36px]">
+              <h2 className="text-[22px] leading-[1.2] font-semibold text-[#12303B] tracking-[-0.01em]">Rental period</h2>
+
+              <div className="mt-[14px] grid grid-cols-1 md:grid-cols-2 gap-[16px]">
                 <div>
-                  <label className="block text-[14px] font-semibold text-neutral-black mb-[12px]">
-                    Amenities
-                  </label>
-                  <div className="grid grid-cols-3 gap-[12px]">
-                    {amenities.map((amenity) => {
-                      const Icon = amenity.icon;
-                      return (
-                        <button
-                          key={amenity.id}
-                          onClick={() => toggleAmenity(amenity.id)}
-                          className={`flex items-center gap-[12px] p-[12px] rounded-[10px] border-2 text-[14px] font-medium transition-all ${
-                            selectedAmenities.includes(amenity.id)
-                              ? "border-brand-primary bg-brand-light text-brand-primary"
-                              : "border-[rgba(0,0,0,0.08)] bg-white text-neutral-gray hover:border-brand-primary"
-                          }`}
-                        >
-                          <Icon className="w-[20px] h-[20px]" />
-                          {amenity.label}
-                        </button>
-                      );
-                    })}
+                  <label className="block text-[12px] text-[#5A7380] mb-[6px]">Minimum rental period</label>
+                  <div className="relative">
+                    <select value={minimumRentalPeriod} onChange={(e) => setMinimumRentalPeriod(e.target.value)} className="w-full h-[44px] bg-transparent border-0 border-b border-[rgba(0,0,0,0.30)] text-[20px] leading-[1] text-[#1A1A1A] appearance-none pr-[28px] focus:outline-none focus:border-brand-primary">
+                      {minRentalOptions.map((item) => (
+                        <option key={item} value={item}>
+                          {item}
+                        </option>
+                      ))}
+                    </select>
+                    <ChevronDown className="pointer-events-none absolute right-[2px] top-1/2 -translate-y-1/2 w-[18px] h-[18px] text-[#5A7380]" />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-[14px] font-semibold text-neutral-black mb-[12px]">
-                    House Rules
-                  </label>
-                  <div className="grid grid-cols-3 gap-[12px]">
-                    {houseRules.map((rule) => {
-                      const Icon = rule.icon;
-                      return (
-                        <button
-                          key={rule.id}
-                          onClick={() => toggleRule(rule.id)}
-                          className={`flex items-center gap-[12px] p-[12px] rounded-[10px] border-2 text-[14px] font-medium transition-all ${
-                            selectedRules.includes(rule.id)
-                              ? "border-accent-blue bg-accent-blue-light text-accent-blue"
-                              : "border-[rgba(0,0,0,0.08)] bg-white text-neutral-gray hover:border-accent-blue"
-                          }`}
-                        >
-                          <Icon className="w-[20px] h-[20px]" />
-                          {rule.label}
-                        </button>
-                      );
-                    })}
+                  <label className="block text-[12px] text-[#5A7380] mb-[6px]">Maximum rental period</label>
+                  <div className="relative">
+                    <select value={maximumRentalPeriod} onChange={(e) => setMaximumRentalPeriod(e.target.value)} className="w-full h-[44px] bg-transparent border-0 border-b border-[rgba(0,0,0,0.30)] text-[20px] leading-[1] text-[#1A1A1A] appearance-none pr-[28px] focus:outline-none focus:border-brand-primary">
+                      {maxRentalOptions.map((item) => (
+                        <option key={item} value={item}>
+                          {item}
+                        </option>
+                      ))}
+                    </select>
+                    <ChevronDown className="pointer-events-none absolute right-[2px] top-1/2 -translate-y-1/2 w-[18px] h-[18px] text-[#5A7380]" />
                   </div>
                 </div>
               </div>
-            )}
-          </div>
+            </div>
 
-          {/* Navigation Buttons */}
-          <div className="flex items-center justify-between mt-[24px]">
-            <button
-              onClick={() => currentStep > 1 && setCurrentStep(currentStep - 1)}
-              disabled={currentStep === 1}
-              className="px-[24px] py-[12px] bg-white text-neutral-black font-semibold rounded-[10px] border-2 border-[rgba(0,0,0,0.08)] hover:border-brand-primary disabled:opacity-40 disabled:cursor-not-allowed transition-all"
-            >
-              Back
-            </button>
+            <div className="mt-[34px] flex items-center justify-between gap-[12px]">
+              <button
+                type="button"
+                onClick={() => navigate("/landlord/dashboard")}
+                className="h-[40px] px-[16px] border border-[rgba(0,0,0,0.16)] bg-white text-[#12303B] text-[11px] font-semibold hover:bg-neutral-light-gray transition-colors"
+              >
+                BACK
+              </button>
 
-            <div className="flex items-center gap-[12px]">
-              {currentStep < 4 ? (
-                <button
-                  onClick={() => canProceed() && setCurrentStep(currentStep + 1)}
-                  disabled={!canProceed()}
-                  className="px-[32px] py-[12px] bg-brand-primary text-white font-semibold rounded-[10px] hover:bg-brand-primary-dark disabled:bg-neutral-gray disabled:cursor-not-allowed transition-colors"
-                >
-                  Continue
-                </button>
-              ) : (
-                <button
-                  onClick={() => {
-                    if (!isSaving && !isUploadingImages) {
-                      void saveListing("active");
-                    }
-                  }}
-                  disabled={isSaving || isLoading || isUploadingImages || !hasRequiredPublishFields()}
-                  className="px-[32px] py-[12px] bg-accent-blue text-white font-semibold rounded-[10px] hover:bg-accent-blue-dark disabled:bg-neutral-gray disabled:cursor-not-allowed transition-colors"
-                >
-                  {isSaving ? "Saving..." : isEditMode ? "Update Listing" : "Publish Listing"}
-                </button>
-              )}
+              <button
+                type="button"
+                onClick={() => {
+                  if (validateSectionOrShowError(1)) {
+                    setCurrentSection(2);
+                  }
+                }}
+                className="h-[40px] px-[16px] bg-brand-primary text-white text-[11px] font-semibold hover:bg-brand-primary-dark transition-colors"
+              >
+                NEXT
+              </button>
             </div>
           </div>
+        )}
+
+        {currentSection === 2 && (
+          <div className="w-full">
+            <h1 className="text-[32px] leading-[1.08] font-bold text-[#12303B] tracking-[-0.02em]">Space Overview</h1>
+
+            <div className="mt-[30px] space-y-[24px]">
+              <div>
+                <label className="block text-[12px] text-[#5A7380] mb-[8px]">Property size m2*</label>
+                <input type="number" min="1" step="0.1" value={propertySize} onChange={(e) => setPropertySize(e.target.value)} className="w-full h-[46px] bg-transparent border-0 border-b border-[rgba(0,0,0,0.28)] text-[22px] leading-[1] text-[#1A1A1A] focus:outline-none focus:border-brand-primary" />
+              </div>
+
+              <div>
+                <label className="block text-[12px] text-[#5A7380] mb-[8px]">Suitable for how many? *</label>
+                <input type="number" min="1" step="1" value={suitablePeopleCount} onChange={(e) => setSuitablePeopleCount(e.target.value)} className="w-full h-[46px] bg-transparent border-0 border-b border-[rgba(0,0,0,0.28)] text-[22px] leading-[1] text-[#1A1A1A] focus:outline-none focus:border-brand-primary" />
+                <p className="text-[18px] mt-[8px] text-[#4A6673]">How many people can live in this space (room, studio, apartment, etc.)?</p>
+              </div>
+
+              <div>
+                <label className="block text-[12px] text-[#5A7380] mb-[8px]">Description *</label>
+                <textarea value={spaceDescription} onChange={(e) => setSpaceDescription(e.target.value)} className="w-full h-[150px] resize-none bg-[#F2F2F3] border border-[rgba(0,0,0,0.10)] p-[16px] text-[20px] leading-[1.24] text-[#1A1A1A] placeholder:text-[#9B9B9B] focus:outline-none focus:border-brand-primary" placeholder="Write down anything else you would like to mention about the property (such as distances to nearby shops, information about tenants, conditions etc.)" />
+              </div>
+
+              <div>
+                <label className="block text-[12px] text-[#5A7380] mb-[8px]">Number of bedrooms *</label>
+                <div className="relative">
+                  <select value={bedroomsCount} onChange={(e) => setBedroomsCount(e.target.value)} className="w-full h-[46px] bg-transparent border-0 border-b border-[rgba(0,0,0,0.28)] text-[22px] leading-[1] text-[#1A1A1A] appearance-none pr-[36px] focus:outline-none focus:border-brand-primary">
+                    {bedroomsOptions.map((item) => (
+                      <option key={item} value={item}>
+                        {item}
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown className="pointer-events-none absolute right-[4px] top-1/2 -translate-y-1/2 w-[22px] h-[22px] text-[#5A7380]" />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[12px] text-[#5A7380] mb-[10px]">Bedroom furnished *</label>
+                <YesNoRadioGroup name="bedroom-furnished" value={bedroomFurnished} onChange={setBedroomFurnished} />
+              </div>
+
+              <div>
+                <label className="block text-[12px] text-[#5A7380] mb-[10px]">Lock on bedroom</label>
+                <YesNoRadioGroup name="lock-on-bedroom" value={lockOnBedroom} onChange={setLockOnBedroom} />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {currentSection === 3 && (
+          <div className="w-full">
+            <h1 className="text-[32px] leading-[1.08] font-bold text-[#12303B] tracking-[-0.02em]">Areas</h1>
+
+            <div className="mt-[20px] space-y-[20px]">
+              <div>
+                <label className="block text-[12px] text-[#5A7380] mb-[8px]">Kitchen*</label>
+                <TernaryRadioGroup name="kitchen" value={kitchen} onChange={setKitchen} />
+              </div>
+
+              <div>
+                <label className="block text-[12px] text-[#5A7380] mb-[8px]">Toilet*</label>
+                <TernaryRadioGroup name="toilet" value={toilet} onChange={setToilet} />
+              </div>
+
+              <div>
+                <label className="block text-[12px] text-[#5A7380] mb-[6px]">Bathroom</label>
+                <div className="relative">
+                  <select value={bathroom} onChange={(e) => setBathroom(e.target.value)} className="w-full h-[44px] bg-transparent border-0 border-b border-[rgba(0,0,0,0.20)] text-[20px] leading-[1] text-[#1A1A1A] appearance-none pr-[28px] focus:outline-none">
+                    {bathroomOptions.map((item) => (
+                      <option key={item} value={item}>
+                        {item}
+                      </option>
+                    ))}
+                  </select>
+                  <div className="absolute left-0 right-0 bottom-0 h-[4px] bg-[rgba(0,0,0,0.18)]"></div>
+                  <div className="absolute left-0 bottom-0 h-[4px] w-[38%] bg-[#0F3D49]"></div>
+                  <ChevronDown className="pointer-events-none absolute right-[2px] top-1/2 -translate-y-1/2 w-[18px] h-[18px] text-[#5A7380]" />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[12px] text-[#5A7380] mb-[6px]">Number of bathrooms</label>
+                <div className="relative">
+                  <select value={bathroomsCount} onChange={(e) => setBathroomsCount(e.target.value)} className="w-full h-[44px] bg-transparent border-0 border-b border-[rgba(0,0,0,0.20)] text-[20px] leading-[1] text-[#1A1A1A] appearance-none pr-[28px] focus:outline-none">
+                    {bathroomsCountOptions.map((item) => (
+                      <option key={item} value={item}>
+                        {item}
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown className="pointer-events-none absolute right-[2px] top-1/2 -translate-y-1/2 w-[18px] h-[18px] text-[#5A7380]" />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[12px] text-[#5A7380] mb-[8px]">Living room</label>
+                <TernaryRadioGroup name="living-room" value={livingRoom} onChange={setLivingRoom} />
+              </div>
+
+              <div>
+                <label className="block text-[12px] text-[#5A7380] mb-[8px]">Balcony/Terrace</label>
+                <TernaryRadioGroup name="balcony-terrace" value={balconyTerrace} onChange={setBalconyTerrace} />
+              </div>
+
+              <div>
+                <label className="block text-[12px] text-[#5A7380] mb-[8px]">Garden</label>
+                <TernaryRadioGroup name="garden" value={garden} onChange={setGarden} />
+              </div>
+
+              <div>
+                <label className="block text-[12px] text-[#5A7380] mb-[8px]">Basement</label>
+                <TernaryRadioGroup name="basement" value={basement} onChange={setBasement} />
+              </div>
+
+              <div>
+                <label className="block text-[12px] text-[#5A7380] mb-[8px]">Parking</label>
+                <TernaryRadioGroup name="parking" value={parking} onChange={setParking} />
+              </div>
+
+              <div>
+                <label className="block text-[12px] text-[#5A7380] mb-[8px]">Wheelchair accessible</label>
+                <YesNoRadioGroup name="wheelchair" value={wheelchairAccessible} onChange={setWheelchairAccessible} />
+              </div>
+
+              <div>
+                <label className="block text-[12px] text-[#5A7380] mb-[8px]">Elevator</label>
+                <YesNoRadioGroup name="elevator" value={elevator} onChange={setElevator} />
+              </div>
+
+              <div>
+                <label className="block text-[12px] text-[#5A7380] mb-[8px]">Allergy friendly</label>
+                <YesNoRadioGroup name="allergy" value={allergyFriendly} onChange={setAllergyFriendly} />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {currentSection === 4 && (
+          <div className="w-full">
+
+            <h1 className="text-[32px] leading-[1.08] font-bold text-[#12303B] tracking-[-0.02em]">Amenities</h1>
+
+            <div className="mt-[18px] space-y-[18px]">
+              <div>
+                <label className="block text-[12px] text-[#5A7380] mb-[8px]">Bed*</label>
+                <YesNoRadioGroup name="amenity-bed" value={bedAmenity} onChange={setBedAmenity} />
+              </div>
+
+              <div>
+                <label className="block text-[12px] text-[#5A7380] mb-[8px]">WiFi*</label>
+                <YesNoRadioGroup name="amenity-wifi" value={wifiAmenity} onChange={setWifiAmenity} />
+              </div>
+
+              <div>
+                <label className="block text-[12px] text-[#5A7380] mb-[8px]">Desk</label>
+                <YesNoRadioGroup name="amenity-desk" value={deskAmenity} onChange={setDeskAmenity} />
+              </div>
+
+              <div>
+                <label className="block text-[12px] text-[#5A7380] mb-[8px]">Closet</label>
+                <YesNoRadioGroup name="amenity-closet" value={closetAmenity} onChange={setClosetAmenity} />
+              </div>
+
+              <div>
+                <label className="block text-[12px] text-[#5A7380] mb-[8px]">TV</label>
+                <YesNoRadioGroup name="amenity-tv" value={tvAmenity} onChange={setTvAmenity} />
+              </div>
+
+              <div>
+                <label className="block text-[12px] text-[#5A7380] mb-[8px]">Washing machine</label>
+                <YesNoRadioGroup name="amenity-washing-machine" value={washingMachineAmenity} onChange={setWashingMachineAmenity} />
+              </div>
+
+              <div>
+                <label className="block text-[12px] text-[#5A7380] mb-[8px]">Dryer</label>
+                <YesNoRadioGroup name="amenity-dryer" value={dryerAmenity} onChange={setDryerAmenity} />
+              </div>
+
+              <div>
+                <label className="block text-[12px] text-[#5A7380] mb-[8px]">Dishwasher</label>
+                <YesNoRadioGroup name="amenity-dishwasher" value={dishwasherAmenity} onChange={setDishwasherAmenity} />
+              </div>
+
+              <div>
+                <label className="block text-[12px] text-[#5A7380] mb-[8px]">Kitchenware</label>
+                <TernaryRadioGroup name="amenity-kitchenware" value={kitchenwareAmenity} onChange={setKitchenwareAmenity} />
+              </div>
+
+              <div>
+                <label className="block text-[12px] text-[#5A7380] mb-[6px]">Heating</label>
+                <div className="relative max-w-[440px]">
+                  <select value={heatingAmenity} onChange={(e) => setHeatingAmenity(e.target.value)} className="w-full h-[42px] bg-transparent border-0 border-b border-[rgba(0,0,0,0.20)] text-[20px] leading-[1] text-[#1A1A1A] appearance-none pr-[28px] focus:outline-none">
+                    {heatingOptions.map((item) => (
+                      <option key={item} value={item}>
+                        {item}
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown className="pointer-events-none absolute right-[2px] top-1/2 -translate-y-1/2 w-[18px] h-[18px] text-[#5A7380]" />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[12px] text-[#5A7380] mb-[8px]">Air conditioning</label>
+                <YesNoRadioGroup name="amenity-air-conditioning" value={airConditioningAmenity} onChange={setAirConditioningAmenity} />
+              </div>
+
+              <div>
+                <label className="block text-[12px] text-[#5A7380] mb-[6px]">Flooring</label>
+                <div className="relative max-w-[440px]">
+                  <select value={flooringAmenity} onChange={(e) => setFlooringAmenity(e.target.value)} className="w-full h-[42px] bg-transparent border-0 border-b border-[rgba(0,0,0,0.20)] text-[20px] leading-[1] text-[#1A1A1A] appearance-none pr-[28px] focus:outline-none">
+                    {flooringOptions.map((item) => (
+                      <option key={item} value={item}>
+                        {item}
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown className="pointer-events-none absolute right-[2px] top-1/2 -translate-y-1/2 w-[18px] h-[18px] text-[#5A7380]" />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[12px] text-[#5A7380] mb-[8px]">Living room furniture</label>
+                <YesNoRadioGroup name="amenity-living-room-furniture" value={livingRoomFurnitureAmenity} onChange={setLivingRoomFurnitureAmenity} />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {currentSection === 5 && (
+          <div className="w-full" ref={costMenusRef}>
+
+            <h1 className="text-[22px] leading-[1.08] font-bold text-[#12303B] tracking-[-0.02em]">Rental conditions</h1>
+
+            <div className="mt-[16px]">
+              <p className="text-[12px] font-semibold text-[#12303B] mb-[8px]">How rent is calculated</p>
+
+              <div className="space-y-[10px] max-w-[620px]">
+                <label className={`block border p-[12px] cursor-pointer ${rentCalculation === "daily" ? "border-[#0F3D49] bg-[#F8FBFC]" : "border-[rgba(0,0,0,0.16)] bg-[#F7F7F9]"}`}>
+                  <div className="flex items-start gap-[8px]">
+                    <input type="radio" name="rent-calc" checked={rentCalculation === "daily"} onChange={() => setRentCalculation("daily")} className="mt-[2px] w-[14px] h-[14px] accent-brand-primary" />
+                    <div>
+                      <p className="text-[12px] font-semibold text-[#12303B]">Daily basis</p>
+                      <p className="text-[11px] text-[#35515D] mt-[4px]">For day/month where tenant does not stay for the full duration (1st till end move-in or move-out month).</p>
+                    </div>
+                  </div>
+                </label>
+
+                <label className={`block border p-[12px] cursor-pointer ${rentCalculation === "half-monthly" ? "border-[#0F3D49] bg-[#F8FBFC]" : "border-[rgba(0,0,0,0.16)] bg-[#F7F7F9]"}`}>
+                  <div className="flex items-start gap-[8px]">
+                    <input type="radio" name="rent-calc" checked={rentCalculation === "half-monthly"} onChange={() => setRentCalculation("half-monthly")} className="mt-[2px] w-[14px] h-[14px] accent-brand-primary" />
+                    <div>
+                      <p className="text-[12px] font-semibold text-[#12303B]">Half-monthly basis</p>
+                      <p className="text-[11px] text-[#35515D] mt-[4px]">If tenant stays 14 nights or fewer in that month, they pay half month rent. If more, full month applies.</p>
+                    </div>
+                  </div>
+                </label>
+
+                <label className={`block border p-[12px] cursor-pointer ${rentCalculation === "monthly" ? "border-[#0F3D49] bg-[#F8FBFC]" : "border-[rgba(0,0,0,0.16)] bg-[#F7F7F9]"}`}>
+                  <div className="flex items-start gap-[8px]">
+                    <input type="radio" name="rent-calc" checked={rentCalculation === "monthly"} onChange={() => setRentCalculation("monthly")} className="mt-[2px] w-[14px] h-[14px] accent-brand-primary" />
+                    <div>
+                      <p className="text-[12px] font-semibold text-[#12303B]">Monthly basis</p>
+                      <p className="text-[11px] text-[#35515D] mt-[4px]">Tenant always pays full month rent, regardless of move-in or move-out dates.</p>
+                    </div>
+                  </div>
+                </label>
+              </div>
+            </div>
+
+            <div className="mt-[16px]">
+              <p className="text-[12px] font-semibold text-[#12303B] mb-[8px]">Cancellation Policy</p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-[10px] max-w-[620px]">
+                <label className={`border p-[12px] cursor-pointer ${cancellationPolicy === "strict" ? "border-[#0F3D49] bg-[#F8FBFC]" : "border-[rgba(0,0,0,0.16)] bg-[#F7F7F9]"}`}>
+                  <div className="flex items-start gap-[8px]">
+                    <input type="radio" name="cancel-policy" checked={cancellationPolicy === "strict"} onChange={() => setCancellationPolicy("strict")} className="mt-[2px] w-[14px] h-[14px] accent-brand-primary" />
+                    <div>
+                      <p className="text-[12px] font-semibold text-[#12303B]">Strict cancellation</p>
+                      <ul className="mt-[6px] text-[11px] text-[#35515D] list-disc pl-[14px] space-y-[3px]">
+                        <li>Within 24 hours of confirmation: Full refund of first month</li>
+                        <li>After 24 hours: No refund</li>
+                      </ul>
+                    </div>
+                  </div>
+                </label>
+
+                <label className={`border p-[12px] cursor-pointer ${cancellationPolicy === "flexible" ? "border-[#0F3D49] bg-[#F8FBFC]" : "border-[rgba(0,0,0,0.16)] bg-[#F7F7F9]"}`}>
+                  <div className="flex items-start gap-[8px]">
+                    <input type="radio" name="cancel-policy" checked={cancellationPolicy === "flexible"} onChange={() => setCancellationPolicy("flexible")} className="mt-[2px] w-[14px] h-[14px] accent-brand-primary" />
+                    <div>
+                      <p className="text-[12px] font-semibold text-[#12303B]">Flexible cancellation</p>
+                      <ul className="mt-[6px] text-[11px] text-[#35515D] list-disc pl-[14px] space-y-[3px]">
+                        <li>More than 30 days away: Full refund</li>
+                        <li>10 to 7 days away: 50% refund</li>
+                        <li>Less than 7 days away: No refund</li>
+                      </ul>
+                    </div>
+                  </div>
+                </label>
+              </div>
+            </div>
+
+            <div className="mt-[14px] max-w-[760px] border border-[#D7CF8B] bg-[#F3EDB7] px-[12px] py-[10px] relative">
+              <button type="button" className="absolute right-[8px] top-[6px] text-[#7C7444] text-[16px] leading-none">x</button>
+              <p className="text-[13px] font-semibold text-[#4D4728]">Advanced pricing</p>
+              <p className="text-[11px] text-[#5B5634] mt-[2px]">Get ready for the high season by setting custom monthly prices. How it works</p>
+            </div>
+
+            <div className="mt-[14px]">
+              <p className="text-[12px] font-semibold text-[#12303B]">Rent</p>
+              <p className="text-[11px] text-[#35515D] mt-[2px]">Which type of price do you want to set?</p>
+              <div className="flex flex-wrap items-center gap-[14px] mt-[8px] text-[12px] text-[#244A57]">
+                <label className="inline-flex items-center gap-[6px] cursor-pointer">
+                  <input type="radio" name="rent-pricing" checked={rentPricingMode === "basic"} onChange={() => setRentPricingMode("basic")} className="w-[13px] h-[13px] accent-brand-primary" />
+                  <span>Basic price</span>
+                </label>
+                <label className="inline-flex items-center gap-[6px] cursor-pointer">
+                  <input type="radio" name="rent-pricing" checked={rentPricingMode === "advanced"} onChange={() => setRentPricingMode("advanced")} className="w-[13px] h-[13px] accent-brand-primary" />
+                  <span>Advanced price (set monthly rates)</span>
+                </label>
+              </div>
+
+              <div className="mt-[8px] max-w-[180px]">
+                <label className="block text-[10px] text-[#5A7380] mb-[2px]">Monthly rent</label>
+                <input value={monthlyRentDisplay} onChange={(e) => setMonthlyRentDisplay(e.target.value)} className="w-full h-[30px] bg-transparent border-0 border-b border-[rgba(0,0,0,0.35)] text-[16px] text-[#1A1A1A] focus:outline-none focus:border-brand-primary" />
+              </div>
+            </div>
+
+            <div className="mt-[14px]">
+              <p className="text-[12px] font-semibold text-[#12303B]">Utility costs *</p>
+              <p className="text-[11px] text-[#35515D] mt-[2px]">Specify how much utility the tenant will pay per utility, how often, and if the cost is already included in the rent.</p>
+
+              <div className="mt-[8px] border border-[rgba(0,0,0,0.18)] max-w-[760px] overflow-x-auto">
+                <table className="min-w-[720px] w-full text-left text-[11px]">
+                  <thead className="bg-[#F2F3F5] text-[#12303B]">
+                    <tr>
+                      <th className="px-[8px] py-[7px] font-semibold">Type *</th>
+                      <th className="px-[8px] py-[7px] font-semibold">Included in rent?</th>
+                      <th className="px-[8px] py-[7px] font-semibold">How often?</th>
+                      <th className="px-[8px] py-[7px] font-semibold">Estimate or exact?</th>
+                      <th className="px-[8px] py-[7px] font-semibold">Amount</th>
+                      <th className="px-[8px] py-[7px] font-semibold w-[44px]"></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {utilityLines.map((line, index) => (
+                      <tr key={`${line.type}-${index}`} className="border-t border-[rgba(0,0,0,0.14)]">
+                        <td className="px-[8px] py-[6px]">
+                          <select value={line.type} onChange={(e) => updateUtilityLine(index, "type", e.target.value)} className="w-full bg-transparent border-0 border-b border-[rgba(0,0,0,0.20)] h-[24px] focus:outline-none">
+                            {costTypeOptions.map((option) => (
+                              <option key={option} value={option}>{option}</option>
+                            ))}
+                          </select>
+                        </td>
+                        <td className="px-[8px] py-[6px]">
+                          <select value={line.includedInRent} onChange={(e) => updateUtilityLine(index, "includedInRent", e.target.value as CostLine["includedInRent"])} className="w-full bg-transparent border-0 border-b border-[rgba(0,0,0,0.20)] h-[24px] focus:outline-none">
+                            <option value="Included in rent">Included in rent</option>
+                            <option value="Excluded">Excluded</option>
+                          </select>
+                        </td>
+                        <td className="px-[8px] py-[6px]">
+                          <select value={line.frequency} onChange={(e) => updateUtilityLine(index, "frequency", e.target.value as CostLine["frequency"])} className="w-full bg-transparent border-0 border-b border-[rgba(0,0,0,0.20)] h-[24px] focus:outline-none">
+                            <option value="every month">every month</option>
+                            <option value="one-time">one-time</option>
+                          </select>
+                        </td>
+                        <td className="px-[8px] py-[6px]">
+                          <select value={line.estimateType} onChange={(e) => updateUtilityLine(index, "estimateType", e.target.value as CostLine["estimateType"])} className="w-full bg-transparent border-0 border-b border-[rgba(0,0,0,0.20)] h-[24px] focus:outline-none">
+                            <option value="Estimate">Estimate</option>
+                            <option value="Exact">Exact</option>
+                          </select>
+                        </td>
+                        <td className="px-[8px] py-[6px]">
+                          <div className="flex items-center gap-[4px]">
+                            <span>EUR</span>
+                            <input value={line.amount} onChange={(e) => updateUtilityLine(index, "amount", e.target.value)} className="w-[76px] bg-transparent border-0 border-b border-[rgba(0,0,0,0.20)] h-[24px] focus:outline-none" />
+                          </div>
+                        </td>
+                        <td className="px-[8px] py-[6px] text-right">
+                          {line.type === "Broadcasting fee" && (
+                            <button
+                              type="button"
+                              onClick={() => setUtilityLines((prev) => prev.filter((_, i) => i !== index))}
+                              className="text-[#6E7E87] hover:text-[#12303B]"
+                              aria-label="Remove utility cost"
+                            >
+                              <Trash2 className="w-[16px] h-[16px]" />
+                            </button>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              <div className="mt-[6px] relative inline-block">
+                <button
+                  type="button"
+                  onClick={() => setOpenCostMenu((prev) => (prev === "utility" ? null : "utility"))}
+                  className="text-[11px] text-[#12303B] hover:underline"
+                >
+                  + Add New Cost
+                </button>
+                {openCostMenu === "utility" && (
+                  <div className="absolute left-0 mt-[6px] min-w-[240px] bg-white border border-[rgba(0,0,0,0.16)] shadow-[0_8px_18px_rgba(0,0,0,0.14)] z-50 max-h-[320px] overflow-y-auto">
+                    {utilityAddOptions.map((option) => (
+                      <button
+                        key={`utility-add-${option}`}
+                        type="button"
+                        onClick={() => {
+                          setUtilityLines((prev) => [
+                            ...prev,
+                            { type: option, includedInRent: "Included in rent", frequency: "every month", estimateType: "Estimate", amount: "0" },
+                          ]);
+                          setOpenCostMenu(null);
+                        }}
+                        className="w-full text-left px-[10px] py-[8px] text-[12px] text-[#12303B] hover:bg-[#F5F8FA]"
+                      >
+                        {option}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="mt-[14px]">
+              <p className="text-[12px] font-semibold text-[#12303B]">Additional required costs</p>
+              <p className="text-[11px] text-[#35515D] mt-[2px]">Are there other costs the tenant must pay (e.g. membership fees for gym or building services)</p>
+
+              {additionalRequiredLines.length > 0 && (
+                <div className="mt-[8px] border border-[rgba(0,0,0,0.18)] max-w-[760px] overflow-x-auto">
+                  <table className="min-w-[720px] w-full text-left text-[11px]">
+                    <thead className="bg-[#F2F3F5] text-[#12303B]">
+                      <tr>
+                        <th className="px-[8px] py-[7px] font-semibold">Type</th>
+                        <th className="px-[8px] py-[7px] font-semibold">Included in rent?</th>
+                        <th className="px-[8px] py-[7px] font-semibold">How often?</th>
+                        <th className="px-[8px] py-[7px] font-semibold">Amount</th>
+                        <th className="px-[8px] py-[7px] font-semibold w-[44px]"></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {additionalRequiredLines.map((line, index) => (
+                        <tr key={`${line.type}-${index}`} className="border-t border-[rgba(0,0,0,0.14)]">
+                          <td className="px-[8px] py-[6px]">{line.type}</td>
+                          <td className="px-[8px] py-[6px]">
+                            <select
+                              value={line.includedInRent}
+                              onChange={(e) => updateAdditionalRequiredLine(index, "includedInRent", e.target.value as OptionalServiceLine["includedInRent"])}
+                              className="w-full bg-transparent border-0 border-b border-[rgba(0,0,0,0.20)] h-[24px] focus:outline-none"
+                            >
+                              <option value="Included in rent">Included in rent</option>
+                              <option value="Excluded">Excluded</option>
+                            </select>
+                          </td>
+                          <td className="px-[8px] py-[6px]">
+                            <select
+                              value={line.frequency}
+                              onChange={(e) => updateAdditionalRequiredLine(index, "frequency", e.target.value as OptionalServiceLine["frequency"])}
+                              className="w-full bg-transparent border-0 border-b border-[rgba(0,0,0,0.20)] h-[24px] focus:outline-none"
+                            >
+                              <option value="At move-in">At move-in</option>
+                              <option value="every month">every month</option>
+                              <option value="one-time">one-time</option>
+                            </select>
+                          </td>
+                          <td className="px-[8px] py-[6px]">
+                            <div className="flex items-center gap-[4px]">
+                              <span>EUR</span>
+                              <input
+                                value={line.amount}
+                                onChange={(e) => updateAdditionalRequiredLine(index, "amount", e.target.value)}
+                                className="w-[76px] bg-transparent border-0 border-b border-[rgba(0,0,0,0.20)] h-[24px] focus:outline-none"
+                              />
+                            </div>
+                          </td>
+                          <td className="px-[8px] py-[6px] text-right">
+                            <button
+                              type="button"
+                              onClick={() => setAdditionalRequiredLines((prev) => prev.filter((_, i) => i !== index))}
+                              className="text-[#6E7E87] hover:text-[#12303B]"
+                              aria-label="Remove additional required cost"
+                            >
+                              <Trash2 className="w-[16px] h-[16px]" />
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+
+              <div className="mt-[6px] relative inline-block">
+                <button type="button" onClick={() => setOpenCostMenu((prev) => (prev === "required" ? null : "required"))} className="text-[11px] text-[#12303B] hover:underline">+ Add New Cost</button>
+                {openCostMenu === "required" && (
+                  <div className="absolute left-0 mt-[6px] min-w-[220px] bg-white border border-[rgba(0,0,0,0.16)] shadow-[0_8px_18px_rgba(0,0,0,0.14)] z-50">
+                    {additionalRequiredCostOptions.map((option) => (
+                      <button
+                        key={`additional-required-${option}`}
+                        type="button"
+                        onClick={() => {
+                          setAdditionalRequiredLines((prev) => {
+                            if (prev.some((line) => line.type === option)) {
+                              return prev;
+                            }
+
+                            return [...prev, { type: option, includedInRent: "Included in rent", frequency: "At move-in", amount: "0" }];
+                          });
+                          setOpenCostMenu(null);
+                        }}
+                        className="w-full text-left px-[10px] py-[8px] text-[12px] text-[#12303B] hover:bg-[#F5F8FA]"
+                      >
+                        {option}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="mt-[14px]">
+              <p className="text-[12px] font-semibold text-[#12303B]">Optional services</p>
+              <p className="text-[11px] text-[#35515D] mt-[2px]">Besides the costs above, are there optional services the tenant could choose to pay for? E.g. early move-in</p>
+
+              {optionalServiceLines.length > 0 && (
+                <div className="mt-[8px] border border-[rgba(0,0,0,0.18)] max-w-[760px] overflow-x-auto">
+                  <table className="min-w-[720px] w-full text-left text-[11px]">
+                    <thead className="bg-[#F2F3F5] text-[#12303B]">
+                      <tr>
+                        <th className="px-[8px] py-[7px] font-semibold">Type</th>
+                        <th className="px-[8px] py-[7px] font-semibold">Included in rent?</th>
+                        <th className="px-[8px] py-[7px] font-semibold">How often?</th>
+                        <th className="px-[8px] py-[7px] font-semibold">Amount</th>
+                        <th className="px-[8px] py-[7px] font-semibold w-[44px]"></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {optionalServiceLines.map((line, index) => (
+                        <tr key={`${line.type}-${index}`} className="border-t border-[rgba(0,0,0,0.14)]">
+                          <td className="px-[8px] py-[6px]">{line.type}</td>
+                          <td className="px-[8px] py-[6px]">
+                            <select
+                              value={line.includedInRent}
+                              onChange={(e) => updateOptionalServiceLine(index, "includedInRent", e.target.value as OptionalServiceLine["includedInRent"])}
+                              className="w-full bg-transparent border-0 border-b border-[rgba(0,0,0,0.20)] h-[24px] focus:outline-none"
+                            >
+                              <option value="Included in rent">Included in rent</option>
+                              <option value="Excluded">Excluded</option>
+                            </select>
+                          </td>
+                          <td className="px-[8px] py-[6px]">
+                            <select
+                              value={line.frequency}
+                              onChange={(e) => updateOptionalServiceLine(index, "frequency", e.target.value as OptionalServiceLine["frequency"])}
+                              className="w-full bg-transparent border-0 border-b border-[rgba(0,0,0,0.20)] h-[24px] focus:outline-none"
+                            >
+                              <option value="At move-in">At move-in</option>
+                              <option value="every month">every month</option>
+                              <option value="one-time">one-time</option>
+                            </select>
+                          </td>
+                          <td className="px-[8px] py-[6px]">
+                            <div className="flex items-center gap-[4px]">
+                              <span>EUR</span>
+                              <input
+                                value={line.amount}
+                                onChange={(e) => updateOptionalServiceLine(index, "amount", e.target.value)}
+                                className="w-[76px] bg-transparent border-0 border-b border-[rgba(0,0,0,0.20)] h-[24px] focus:outline-none"
+                              />
+                            </div>
+                          </td>
+                          <td className="px-[8px] py-[6px] text-right">
+                            <button
+                              type="button"
+                              onClick={() => setOptionalServiceLines((prev) => prev.filter((_, i) => i !== index))}
+                              className="text-[#6E7E87] hover:text-[#12303B]"
+                              aria-label="Remove optional service"
+                            >
+                              <Trash2 className="w-[16px] h-[16px]" />
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+
+              <div className="mt-[6px] relative inline-block">
+                <button type="button" onClick={() => setOpenCostMenu((prev) => (prev === "optional" ? null : "optional"))} className="text-[11px] text-[#12303B] hover:underline">+ Add New Cost</button>
+                {openCostMenu === "optional" && (
+                  <div className="absolute left-0 mt-[6px] min-w-[260px] bg-white border border-[rgba(0,0,0,0.16)] shadow-[0_8px_18px_rgba(0,0,0,0.14)] z-50 max-h-[260px] overflow-y-auto">
+                    {optionalServicesOptions.map((option) => (
+                      <button
+                        key={`optional-service-${option}`}
+                        type="button"
+                        onClick={() => {
+                          setOptionalServiceLines((prev) => {
+                            if (prev.some((line) => line.type === option)) {
+                              return prev;
+                            }
+
+                            return [...prev, { type: option, includedInRent: "Included in rent", frequency: "At move-in", amount: "0" }];
+                          });
+                          setOpenCostMenu(null);
+                        }}
+                        className="w-full text-left px-[10px] py-[8px] text-[12px] text-[#12303B] hover:bg-[#F5F8FA]"
+                      >
+                        {option}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="mt-[14px]">
+              <p className="text-[12px] font-semibold text-[#12303B]">Deposits</p>
+              <p className="text-[11px] text-[#35515D] mt-[2px]">Are you charging any deposits?</p>
+
+              {depositLines.length > 0 && (
+                <div className="mt-[8px] border border-[rgba(0,0,0,0.18)] max-w-[760px] overflow-x-auto">
+                  <table className="w-full text-left text-[11px]">
+                    <thead className="bg-[#F2F3F5] text-[#12303B]">
+                      <tr>
+                        <th className="px-[8px] py-[7px] font-semibold">Type</th>
+                        <th className="px-[8px] py-[7px] font-semibold">Required/Optional?</th>
+                        <th className="px-[8px] py-[7px] font-semibold">Amount</th>
+                        <th className="px-[8px] py-[7px] font-semibold w-[44px]"></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {depositLines.map((line, index) => (
+                        <tr key={`${line.type}-${index}`} className="border-t border-[rgba(0,0,0,0.14)]">
+                          <td className="px-[8px] py-[6px]">{line.type}</td>
+                          <td className="px-[8px] py-[6px]">
+                            <select
+                              value={line.requirement}
+                              onChange={(e) => updateDepositLine(index, "requirement", e.target.value as DepositLine["requirement"])}
+                              className="w-full bg-transparent border-0 border-b border-[rgba(0,0,0,0.20)] h-[24px] focus:outline-none"
+                            >
+                              <option value="Required">Required</option>
+                              <option value="Optional">Optional</option>
+                            </select>
+                          </td>
+                          <td className="px-[8px] py-[6px]">
+                            <div className="flex items-center gap-[4px]">
+                              <span>EUR</span>
+                              <input
+                                value={line.amount}
+                                onChange={(e) => updateDepositLine(index, "amount", e.target.value)}
+                                className="w-[76px] bg-transparent border-0 border-b border-[rgba(0,0,0,0.20)] h-[24px] focus:outline-none"
+                              />
+                            </div>
+                          </td>
+                          <td className="px-[8px] py-[6px] text-right">
+                            <button
+                              type="button"
+                              onClick={() => setDepositLines((prev) => prev.filter((_, i) => i !== index))}
+                              className="text-[#6E7E87] hover:text-[#12303B]"
+                              aria-label="Remove deposit cost"
+                            >
+                              <Trash2 className="w-[16px] h-[16px]" />
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+
+              <div className="mt-[6px] relative inline-block">
+                <button type="button" onClick={() => setOpenCostMenu((prev) => (prev === "deposit" ? null : "deposit"))} className="text-[11px] text-[#12303B] hover:underline">+ Add New Cost</button>
+                {openCostMenu === "deposit" && (
+                  <div className="absolute left-0 mt-[6px] min-w-[220px] bg-white border border-[rgba(0,0,0,0.16)] shadow-[0_8px_18px_rgba(0,0,0,0.14)] z-50">
+                    {depositOptions.map((option) => (
+                      <button
+                        key={`deposit-${option}`}
+                        type="button"
+                        onClick={() => {
+                          setDepositLines((prev) => {
+                            if (prev.some((line) => line.type === option)) {
+                              return prev;
+                            }
+
+                            return [...prev, { type: option, requirement: "Required", amount: "0" }];
+                          });
+                          setOpenCostMenu(null);
+                        }}
+                        className="w-full text-left px-[10px] py-[8px] text-[12px] text-[#12303B] hover:bg-[#F5F8FA]"
+                      >
+                        {option}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {currentSection === 6 && (
+          <div className="w-full">
+
+            <h1 className="text-[22px] leading-[1.08] font-bold text-[#12303B] tracking-[-0.02em]">Rules and Preferences</h1>
+
+            <div className="mt-[14px] space-y-[16px]">
+              <div>
+                <p className="text-[12px] text-[#12303B] mb-[8px]">Do you prefer tenants have a specific gender?</p>
+                <div className="flex flex-wrap items-center gap-[14px] text-[12px] text-[#244A57]">
+                  <label className="inline-flex items-center gap-[6px] cursor-pointer">
+                    <input type="radio" name="preferred-gender" checked={preferredGender === "male"} onChange={() => setPreferredGender("male")} className="w-[13px] h-[13px] accent-brand-primary" />
+                    <span>Male</span>
+                  </label>
+                  <label className="inline-flex items-center gap-[6px] cursor-pointer">
+                    <input type="radio" name="preferred-gender" checked={preferredGender === "female"} onChange={() => setPreferredGender("female")} className="w-[13px] h-[13px] accent-brand-primary" />
+                    <span>Female</span>
+                  </label>
+                  <label className="inline-flex items-center gap-[6px] cursor-pointer">
+                    <input type="radio" name="preferred-gender" checked={preferredGender === "no-preference"} onChange={() => setPreferredGender("no-preference")} className="w-[13px] h-[13px] accent-brand-primary" />
+                    <span>No Preference</span>
+                  </label>
+                </div>
+                <p className="mt-[6px] text-[10px] text-[#5A7380] max-w-[620px]">This is used together with housemate gender to match your listing in tenant search. Mismatched selections may reduce your listing's visibility.</p>
+              </div>
+
+              <div className="max-w-[340px]">
+                <p className="text-[12px] text-[#12303B] mb-[6px]">What's the minimum age of your preferred tenants?</p>
+                <div className="relative">
+                  <select value={minimumAgePreference} onChange={(e) => setMinimumAgePreference(e.target.value)} className="w-full h-[34px] bg-transparent border-0 border-b border-[rgba(0,0,0,0.20)] text-[18px] leading-[1] text-[#1A1A1A] appearance-none pr-[24px] focus:outline-none">
+                    {agePreferenceOptions.map((option) => (
+                      <option key={option} value={option}>{option}</option>
+                    ))}
+                  </select>
+                  <ChevronDown className="pointer-events-none absolute right-[2px] top-1/2 -translate-y-1/2 w-[16px] h-[16px] text-[#5A7380]" />
+                </div>
+              </div>
+
+              <div className="max-w-[340px]">
+                <p className="text-[12px] text-[#12303B] mb-[6px]">What's the maximum age of your preferred tenants?</p>
+                <div className="relative">
+                  <select value={maximumAgePreference} onChange={(e) => setMaximumAgePreference(e.target.value)} className="w-full h-[34px] bg-transparent border-0 border-b border-[rgba(0,0,0,0.20)] text-[18px] leading-[1] text-[#1A1A1A] appearance-none pr-[24px] focus:outline-none">
+                    {agePreferenceOptions.map((option) => (
+                      <option key={option} value={option}>{option}</option>
+                    ))}
+                  </select>
+                  <ChevronDown className="pointer-events-none absolute right-[2px] top-1/2 -translate-y-1/2 w-[16px] h-[16px] text-[#5A7380]" />
+                </div>
+              </div>
+
+              <div>
+                <p className="text-[12px] text-[#12303B] mb-[8px]">What type of tenants would you prefer?</p>
+                <div className="flex flex-wrap items-center gap-[14px] text-[12px] text-[#244A57]">
+                  <label className="inline-flex items-center gap-[6px] cursor-pointer">
+                    <input type="radio" name="preferred-tenant-type" checked={preferredTenantType === "any"} onChange={() => setPreferredTenantType("any")} className="w-[13px] h-[13px] accent-brand-primary" />
+                    <span>Any</span>
+                  </label>
+                  <label className="inline-flex items-center gap-[6px] cursor-pointer">
+                    <input type="radio" name="preferred-tenant-type" checked={preferredTenantType === "students"} onChange={() => setPreferredTenantType("students")} className="w-[13px] h-[13px] accent-brand-primary" />
+                    <span>Students only</span>
+                  </label>
+                  <label className="inline-flex items-center gap-[6px] cursor-pointer">
+                    <input type="radio" name="preferred-tenant-type" checked={preferredTenantType === "working"} onChange={() => setPreferredTenantType("working")} className="w-[13px] h-[13px] accent-brand-primary" />
+                    <span>Working professionals only</span>
+                  </label>
+                </div>
+              </div>
+
+              <div>
+                <p className="text-[12px] text-[#12303B] mb-[8px]">Are couples allowed to rent your property?</p>
+                <YesNoRadioGroup name="couples-allowed" value={couplesAllowed} onChange={setCouplesAllowed} />
+              </div>
+
+              <div>
+                <p className="text-[12px] text-[#12303B] mb-[8px]">Can tenants register at your property's address? (inschrijven)</p>
+                <YesNoRadioGroup name="registration-possible" value={registrationPossible} onChange={setRegistrationPossible} />
+              </div>
+
+              <div>
+                <p className="text-[12px] text-[#12303B] mb-[8px]">Are your tenants allowed to have pets in your property?</p>
+                <div className="flex flex-wrap items-center gap-[14px] text-[12px] text-[#244A57]">
+                  <label className="inline-flex items-center gap-[6px] cursor-pointer">
+                    <input type="radio" name="pets-policy" checked={petsPolicy === "no"} onChange={() => setPetsPolicy("no")} className="w-[13px] h-[13px] accent-brand-primary" />
+                    <span>No</span>
+                  </label>
+                  <label className="inline-flex items-center gap-[6px] cursor-pointer">
+                    <input type="radio" name="pets-policy" checked={petsPolicy === "yes"} onChange={() => setPetsPolicy("yes")} className="w-[13px] h-[13px] accent-brand-primary" />
+                    <span>Yes</span>
+                  </label>
+                  <label className="inline-flex items-center gap-[6px] cursor-pointer">
+                    <input type="radio" name="pets-policy" checked={petsPolicy === "negotiable"} onChange={() => setPetsPolicy("negotiable")} className="w-[13px] h-[13px] accent-brand-primary" />
+                    <span>Negotiable</span>
+                  </label>
+                </div>
+              </div>
+
+              <div>
+                <p className="text-[12px] text-[#12303B] mb-[8px]">Can your tenants play musical instruments in your property?</p>
+                <div className="flex flex-wrap items-center gap-[14px] text-[12px] text-[#244A57]">
+                  <label className="inline-flex items-center gap-[6px] cursor-pointer">
+                    <input type="radio" name="music-policy" checked={musicPolicy === "no"} onChange={() => setMusicPolicy("no")} className="w-[13px] h-[13px] accent-brand-primary" />
+                    <span>No</span>
+                  </label>
+                  <label className="inline-flex items-center gap-[6px] cursor-pointer">
+                    <input type="radio" name="music-policy" checked={musicPolicy === "yes"} onChange={() => setMusicPolicy("yes")} className="w-[13px] h-[13px] accent-brand-primary" />
+                    <span>Yes</span>
+                  </label>
+                  <label className="inline-flex items-center gap-[6px] cursor-pointer">
+                    <input type="radio" name="music-policy" checked={musicPolicy === "negotiable"} onChange={() => setMusicPolicy("negotiable")} className="w-[13px] h-[13px] accent-brand-primary" />
+                    <span>Negotiable</span>
+                  </label>
+                </div>
+              </div>
+
+              <div>
+                <p className="text-[12px] text-[#12303B] mb-[8px]">Are your tenants allowed to smoke in your property?</p>
+                <div className="flex flex-wrap items-center gap-[14px] text-[12px] text-[#244A57]">
+                  <label className="inline-flex items-center gap-[6px] cursor-pointer">
+                    <input type="radio" name="smoking-policy" checked={smokingPolicy === "no"} onChange={() => setSmokingPolicy("no")} className="w-[13px] h-[13px] accent-brand-primary" />
+                    <span>No</span>
+                  </label>
+                  <label className="inline-flex items-center gap-[6px] cursor-pointer">
+                    <input type="radio" name="smoking-policy" checked={smokingPolicy === "yes"} onChange={() => setSmokingPolicy("yes")} className="w-[13px] h-[13px] accent-brand-primary" />
+                    <span>Yes</span>
+                  </label>
+                  <label className="inline-flex items-center gap-[6px] cursor-pointer">
+                    <input type="radio" name="smoking-policy" checked={smokingPolicy === "negotiable"} onChange={() => setSmokingPolicy("negotiable")} className="w-[13px] h-[13px] accent-brand-primary" />
+                    <span>Negotiable</span>
+                  </label>
+                  <label className="inline-flex items-center gap-[6px] cursor-pointer">
+                    <input type="radio" name="smoking-policy" checked={smokingPolicy === "outside-only"} onChange={() => setSmokingPolicy("outside-only")} className="w-[13px] h-[13px] accent-brand-primary" />
+                    <span>Outside only</span>
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-[30px]">
+              <h2 className="text-[22px] leading-[1.08] font-bold text-[#12303B] tracking-[-0.02em]">Documents from tenant</h2>
+              <p className="mt-[8px] text-[12px] text-[#35515D] max-w-[640px]">Select which documents you need from the tenant to accept their rental application. If you don't select required documents now, you can still ask the tenant for these documents later.</p>
+
+              <div className="mt-[12px] space-y-[14px]">
+                <label className="flex items-start gap-[8px] cursor-pointer">
+                  <input type="checkbox" checked={requireProofOfIdentity} onChange={(e) => setRequireProofOfIdentity(e.target.checked)} className="mt-[2px] w-[14px] h-[14px] accent-brand-primary" />
+                  <span>
+                    <span className="block text-[12px] text-[#12303B]">Proof of identity</span>
+                    <span className="block text-[11px] text-[#5A7380] mt-[3px]">Government-issued ID or passport.</span>
+                  </span>
+                </label>
+
+                <label className="flex items-start gap-[8px] cursor-pointer">
+                  <input type="checkbox" checked={requireProofOfOccupationOrEnrollment} onChange={(e) => setRequireProofOfOccupationOrEnrollment(e.target.checked)} className="mt-[2px] w-[14px] h-[14px] accent-brand-primary" />
+                  <span>
+                    <span className="block text-[12px] text-[#12303B]">Proof of occupation or enrollment</span>
+                    <span className="block text-[11px] text-[#5A7380] mt-[3px]">University enrollment certificate, internship or employment contract.</span>
+                  </span>
+                </label>
+
+                <label className="flex items-start gap-[8px] cursor-pointer">
+                  <input type="checkbox" checked={requireProofOfIncome} onChange={(e) => setRequireProofOfIncome(e.target.checked)} className="mt-[2px] w-[14px] h-[14px] accent-brand-primary" />
+                  <span>
+                    <span className="block text-[12px] text-[#12303B]">Proof of income</span>
+                    <span className="block text-[11px] text-[#5A7380] mt-[3px]">Salary slip or bank statements from the tenant or their sponsor.</span>
+                  </span>
+                </label>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {currentSection === 7 && (
+          <div className="w-full">
+
+            <h1 className="text-[22px] leading-[1.08] font-bold text-[#12303B] tracking-[-0.02em]">Media</h1>
+
+            <div className="mt-[16px]">
+              <h2 className="text-[16px] font-semibold text-[#12303B]">Photos<span className="text-[#C0392B]">*</span></h2>
+              <p className="mt-[4px] text-[11px] text-[#5A7380]">Add stunning photos to your listing. You can add regular photos, 360-degree photos, and floor plans.</p>
+
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                multiple
+                className="hidden"
+                onChange={(e) => {
+                  void handlePhotoUpload(e.target.files);
+                }}
+              />
+
+              <div className="mt-[10px] border border-dashed border-[rgba(0,0,0,0.20)] p-[12px] bg-[#F8F9FA] min-h-[300px]">
+                <div className="grid grid-cols-3 md:grid-cols-4 gap-[8px] bg-[#EEF1F3] p-[8px] min-h-[190px]">
+                  {uploadedMedia.map((item, index) => (
+                    <div key={`${item.url}-${index}`} className="relative h-[95px] bg-white overflow-hidden">
+                      <img src={item.url} alt={`Uploaded listing photo ${index + 1}`} className="w-full h-full object-cover" />
+                      <button
+                        type="button"
+                        onClick={() => setUploadedMedia((prev) => prev.filter((_, i) => i !== index))}
+                        className="absolute top-[4px] right-[4px] w-[22px] h-[22px] bg-white/90 text-[#12303B] text-[13px] leading-none border border-[rgba(0,0,0,0.16)]"
+                        aria-label="Remove photo"
+                      >
+                        x
+                      </button>
+                    </div>
+                  ))}
+                  {Array.from({ length: Math.max(0, 12 - uploadedMedia.length) }).map((_, index) => (
+                    <div key={`placeholder-${index}`} className="h-[95px] bg-white/55"></div>
+                  ))}
+                </div>
+                <div className="-mt-[86px] h-[86px] flex flex-col items-center justify-center">
+                  <button
+                    type="button"
+                    disabled={isUploadingPhotos}
+                    onClick={() => fileInputRef.current?.click()}
+                    className="h-[34px] px-[14px] border border-[#0F3D49] bg-white text-[10px] font-semibold text-[#12303B] hover:bg-[#F3F7F9] disabled:opacity-60 disabled:cursor-not-allowed"
+                  >
+                    {isUploadingPhotos ? "UPLOADING..." : "UPLOAD PHOTOS"}
+                  </button>
+                  <p className="mt-[7px] text-[12px] text-[#35515D]">Add up to 10 photos</p>
+                </div>
+              </div>
+
+              <div className="mt-[8px] flex items-center gap-[6px] text-[11px] text-[#5A7380]">
+                <InfoTooltip text="Use JPG or PNG images under 12MB" iconClassName="w-[12px] h-[12px] cursor-help" />
+                <span>Use JPG or PNG images with a file size less than 12MB.</span>
+              </div>
+            </div>
+
+            <div className="mt-[28px]">
+              <h2 className="text-[16px] font-semibold text-[#12303B]">Permissions<span className="text-[#C0392B]">*</span></h2>
+              <label className="mt-[8px] inline-flex items-center gap-[8px] cursor-pointer text-[12px] text-[#244A57]">
+                <input
+                  type="checkbox"
+                  checked={agreedToTerms}
+                  onChange={(e) => setAgreedToTerms(e.target.checked)}
+                  className="w-[13px] h-[13px] accent-brand-primary"
+                />
+                <span>
+                  I agree with the <a href="#" className="underline text-[#12303B]">HousingAnywhere terms &amp; conditions</a>
+                </span>
+              </label>
+            </div>
+          </div>
+        )}
         </div>
       </div>
+
+      {currentSection > 1 && (
+        <div className="fixed left-0 right-0 bottom-0 z-40 bg-[#F7F7F9] border-t border-[rgba(0,0,0,0.12)]">
+          <div className="h-[6px] bg-[rgba(0,0,0,0.16)]">
+            <div
+              className="h-full bg-[#0F3D49] transition-[width] duration-200"
+              style={{ width: `${completionPercentage}%` }}
+            ></div>
+          </div>
+
+          <div className="px-[20px] md:px-[28px] py-[14px] flex items-center justify-end gap-[12px]">
+            <button
+              type="button"
+              onClick={() => setCurrentSection((currentSection - 1) as 1 | 2 | 3 | 4 | 5 | 6 | 7)}
+              className="h-[40px] px-[16px] border border-[rgba(0,0,0,0.16)] bg-white text-[#12303B] text-[11px] font-semibold hover:bg-neutral-light-gray transition-colors"
+            >
+              BACK
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                if (currentSection === 7) {
+                  handleSubmitListing();
+                  return;
+                }
+
+                if (!validateSectionOrShowError(currentSection)) {
+                  return;
+                }
+
+                if (currentSection < 7) {
+                  setCurrentSection((currentSection + 1) as 1 | 2 | 3 | 4 | 5 | 6 | 7);
+                }
+              }}
+              disabled={isSubmitting}
+              className="h-[40px] px-[16px] bg-brand-primary text-white text-[11px] font-semibold hover:bg-brand-primary-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isSubmitting ? "PUBLISHING..." : currentSection === 7 ? "PUBLISH" : "NEXT"}
+            </button>
+          </div>
+        </div>
+      )}
     </LandlordPortalLayout>
   );
 }
+

@@ -20,26 +20,125 @@ const upload = multer({
 
 const listingStatusSchema = z.enum(["active", "draft", "inactive"]);
 
+// Nested schemas
+const bathroomStructureSchema = z.object({
+  count: z.number().int().nonnegative(),
+  type: z.enum(["none", "private", "male", "female", "mixed"]).default("private"),
+});
+
+const amenitiesSchema = z.object({
+  bed: z.boolean().default(false),
+  wifi: z.boolean().default(false),
+  desk: z.boolean().default(false),
+  closet: z.boolean().default(false),
+  tv: z.boolean().default(false),
+  washingMachine: z.boolean().default(false),
+  dryer: z.boolean().default(false),
+  dishwasher: z.boolean().default(false),
+  kitchenware: z.enum(["no", "shared", "private"]).default("private"),
+  heating: z.enum(["central-heating", "electric", "gas", "district-heating", "floor-heating"]).default("central-heating"),
+  airConditioning: z.boolean().default(false),
+  flooring: z.enum(["laminate", "carpet", "stone", "wood", "plastic", "other"]).default("laminate"),
+  livingRoomFurniture: z.boolean().default(false),
+});
+
+const utilitySchema = z.object({
+  type: z.string(),
+  frequency: z.enum(["monthly", "quarterly", "yearly"]).default("monthly"),
+  included: z.boolean().default(false),
+  amount: z.number().nonnegative().default(0),
+});
+
+const depositSchema = z.object({
+  type: z.string(),
+  requirement: z.string(),
+  amount: z.number().nonnegative(),
+});
+
+const optionalServiceSchema = z.object({
+  type: z.string(),
+  category: z.string(),
+  frequency: z.enum(["monthly", "one-time"]).default("monthly"),
+  amount: z.number().nonnegative(),
+});
+
+const mediaSchema = z.object({
+  url: z.string().min(1),
+  type: z.enum(["photo", "360", "floor-plan"]).default("photo"),
+  order: z.number().default(0),
+});
+
 const listingWriteSchema = z.object({
-  propertyType: z.enum(["apartment", "studio", "house", "room"]),
-  title: z.string().min(1),
-  description: z.string().min(1).max(2000),
+  // Section 1: Property Type & Address
+  kind: z.enum(["entire-place", "private-room", "shared-room"]),
+  propertyType: z.enum(["house", "apartment", "building"]),
   address: z.string().min(1),
   city: z.string().min(1),
-  postalCode: z.string().min(1),
-  bedrooms: z.number().int().nonnegative(),
-  bathrooms: z.number().int().min(1),
-  area: z.number().positive(),
-  monthlyRent: z.number().nonnegative(),
-  deposit: z.number().nonnegative(),
+  country: z.string().optional().default("Netherlands"),
+  apartmentNumber: z.string().optional(),
+  floorNumber: z.string().optional(),
+  isGroundFloor: z.boolean().optional().default(false),
+  rentalRegistrationNumber: z.string().optional(),
+
+  // Section 1: Rental Dates & Pricing
   availableFrom: z.string().datetime({ offset: true }).or(z.string().date()),
-  minStay: z.number().int().min(1),
-  utilitiesIncluded: z.boolean().optional().default(false),
-  utilitiesCost: z.number().nonnegative().optional().default(0),
+  monthlyRent: z.number().nonnegative(),
+  currency: z.enum(["EUR", "USD", "GBP"]).optional().default("EUR"),
+  minimumRentalPeriod: z.number().int().min(1),
+  maximumRentalPeriod: z.number().int().optional(),
+
+  // Section 2: Space
+  propertySize: z.number().positive(),
+  suitablePeopleCount: z.number().int().positive().optional().default(1),
+  spaceDescription: z.string().min(1).max(2000),
+  bedroomsCount: z.number().int().nonnegative(),
+  bedroomFurnished: z.boolean().optional().default(false),
+  lockOnBedroom: z.boolean().optional().default(false),
+
+  // Section 3: Areas
+  kitchen: z.enum(["no", "shared", "private"]).optional().default("private"),
+  toilet: z.enum(["no", "shared", "private"]).optional().default("private"),
+  bathroomStructure: bathroomStructureSchema.optional(),
+  livingRoom: z.enum(["no", "shared", "private"]).optional().default("private"),
+  balconyTerrace: z.enum(["no", "shared", "private"]).optional().default("no"),
+  garden: z.enum(["no", "shared", "private"]).optional().default("no"),
+  basement: z.enum(["no", "shared", "private"]).optional().default("no"),
+  parking: z.enum(["no", "shared", "private"]).optional().default("no"),
+  wheelchairAccessible: z.boolean().optional().default(false),
+  elevator: z.boolean().optional().default(false),
+  allergyFriendly: z.boolean().optional().default(false),
+
+  // Section 4: Amenities
+  amenities: amenitiesSchema.optional(),
+
+  // Section 5: Rental Conditions & Costs
+  rentCalculation: z.enum(["daily", "half-monthly", "monthly"]).optional().default("monthly"),
+  cancellationPolicy: z.enum(["strict", "flexible"]).optional().default("flexible"),
+  utilities: z.array(utilitySchema).optional().default([]),
+  deposits: z.array(depositSchema).optional().default([]),
+  optionalServices: z.array(optionalServiceSchema).optional().default([]),
+
+  // Section 6: Tenant Preferences & Rules
+  preferredGender: z.enum(["male", "female", "no-preference"]).optional().default("no-preference"),
+  minimumAgePreference: z.number().int().optional(),
+  maximumAgePreference: z.number().int().optional(),
+  preferredTenantType: z.enum(["any", "students", "working"]).optional().default("any"),
+  couplesAllowed: z.boolean().optional().default(true),
   registrationPossible: z.boolean().optional().default(false),
-  amenities: z.array(z.string()).optional().default([]),
+  petsPolicy: z.enum(["no", "yes", "negotiable"]).optional().default("negotiable"),
+  musicPolicy: z.enum(["no", "yes", "negotiable"]).optional().default("negotiable"),
+  smokingPolicy: z.enum(["no", "yes", "negotiable", "outside-only"]).optional().default("no"),
+  requireProofOfIdentity: z.boolean().optional().default(false),
+  requireProofOfOccupation: z.boolean().optional().default(false),
+  requireProofOfIncome: z.boolean().optional().default(false),
+
+  // Section 7: Media & Permissions
+  media: z.array(mediaSchema).optional().default([]),
+  agreedToTerms: z.string().or(z.date()).optional(),
   houseRules: z.array(z.string()).optional().default([]),
-  images: z.array(z.string().min(1)).optional().default([]),
+
+  // Metadata
+  title: z.string().min(1),
   status: listingStatusSchema.optional().default("draft"),
 });
 
@@ -48,54 +147,70 @@ const listingQuerySchema = z.object({
   city: z.string().optional(),
 });
 
-function toListingResponse(listing: {
-  _id: unknown;
-  propertyType: string;
-  title: string;
-  description: string;
-  address: string;
-  city: string;
-  postalCode: string;
-  bedrooms: number;
-  bathrooms: number;
-  area: number;
-  price: number;
-  deposit: number;
-  availableFrom: Date;
-  minStay: number;
-  utilitiesIncluded: boolean;
-  utilitiesCost: number;
-  registrationPossible: boolean;
-  amenities: string[];
-  houseRules: string[];
-  images: string[];
-  status: "active" | "draft" | "inactive";
-  views: number;
-  inquiries: number;
-  createdAt: Date;
-  updatedAt: Date;
-}, options?: { landlord?: { id: string; name: string; initials: string } }) {
+function toListingResponse(listing: any, options?: { landlord?: { id: string; name: string; initials: string } }) {
   return {
     id: String(listing._id),
+    // Section 1
+    kind: listing.kind,
     propertyType: listing.propertyType,
-    title: listing.title,
-    description: listing.description,
     address: listing.address,
     city: listing.city,
-    postalCode: listing.postalCode,
-    bedrooms: listing.bedrooms,
-    bathrooms: listing.bathrooms,
-    area: listing.area,
-    monthlyRent: listing.price,
-    deposit: listing.deposit,
+    country: listing.country,
+    apartmentNumber: listing.apartmentNumber,
+    floorNumber: listing.floorNumber,
+    isGroundFloor: listing.isGroundFloor,
+    rentalRegistrationNumber: listing.rentalRegistrationNumber,
     availableFrom: listing.availableFrom,
-    minStay: listing.minStay,
-    utilitiesIncluded: listing.utilitiesIncluded,
-    utilitiesCost: listing.utilitiesCost,
-    registrationPossible: listing.registrationPossible,
+    monthlyRent: listing.monthlyRent,
+    currency: listing.currency,
+    minimumRentalPeriod: listing.minimumRentalPeriod,
+    maximumRentalPeriod: listing.maximumRentalPeriod,
+    // Section 2
+    propertySize: listing.propertySize,
+    suitablePeopleCount: listing.suitablePeopleCount,
+    spaceDescription: listing.spaceDescription,
+    bedroomsCount: listing.bedroomsCount,
+    bedroomFurnished: listing.bedroomFurnished,
+    lockOnBedroom: listing.lockOnBedroom,
+    // Section 3
+    kitchen: listing.kitchen,
+    toilet: listing.toilet,
+    bathroomStructure: listing.bathroomStructure,
+    livingRoom: listing.livingRoom,
+    balconyTerrace: listing.balconyTerrace,
+    garden: listing.garden,
+    basement: listing.basement,
+    parking: listing.parking,
+    wheelchairAccessible: listing.wheelchairAccessible,
+    elevator: listing.elevator,
+    allergyFriendly: listing.allergyFriendly,
+    // Section 4
     amenities: listing.amenities,
+    // Section 5
+    rentCalculation: listing.rentCalculation,
+    cancellationPolicy: listing.cancellationPolicy,
+    utilities: listing.utilities,
+    deposits: listing.deposits,
+    optionalServices: listing.optionalServices,
+    // Section 6
+    preferredGender: listing.preferredGender,
+    minimumAgePreference: listing.minimumAgePreference,
+    maximumAgePreference: listing.maximumAgePreference,
+    preferredTenantType: listing.preferredTenantType,
+    couplesAllowed: listing.couplesAllowed,
+    registrationPossible: listing.registrationPossible,
+    petsPolicy: listing.petsPolicy,
+    musicPolicy: listing.musicPolicy,
+    smokingPolicy: listing.smokingPolicy,
+    requireProofOfIdentity: listing.requireProofOfIdentity,
+    requireProofOfOccupation: listing.requireProofOfOccupation,
+    requireProofOfIncome: listing.requireProofOfIncome,
+    // Section 7
+    media: listing.media,
+    agreedToTerms: listing.agreedToTerms,
     houseRules: listing.houseRules,
-    images: listing.images,
+    // Metadata
+    title: listing.title,
     status: listing.status,
     views: listing.views,
     inquiries: listing.inquiries,
@@ -247,25 +362,59 @@ router.post("/", async (req, res) => {
   const input = parsed.data;
   const listing = await ListingModel.create({
     landlordId: req.user!.sub,
+    kind: input.kind,
     propertyType: input.propertyType,
-    title: input.title,
-    description: input.description,
     address: input.address,
     city: input.city,
-    postalCode: input.postalCode,
-    bedrooms: input.bedrooms,
-    bathrooms: input.bathrooms,
-    area: input.area,
-    price: input.monthlyRent,
-    deposit: input.deposit,
+    country: input.country,
+    apartmentNumber: input.apartmentNumber,
+    floorNumber: input.floorNumber,
+    isGroundFloor: input.isGroundFloor,
+    rentalRegistrationNumber: input.rentalRegistrationNumber,
     availableFrom: new Date(input.availableFrom),
-    minStay: input.minStay,
-    utilitiesIncluded: input.utilitiesIncluded,
-    utilitiesCost: input.utilitiesIncluded ? input.utilitiesCost : 0,
+    monthlyRent: input.monthlyRent,
+    currency: input.currency,
+    minimumRentalPeriod: input.minimumRentalPeriod,
+    maximumRentalPeriod: input.maximumRentalPeriod,
+    propertySize: input.propertySize,
+    suitablePeopleCount: input.suitablePeopleCount,
+    spaceDescription: input.spaceDescription,
+    bedroomsCount: input.bedroomsCount,
+    bedroomFurnished: input.bedroomFurnished,
+    lockOnBedroom: input.lockOnBedroom,
+    kitchen: input.kitchen,
+    toilet: input.toilet,
+    bathroomStructure: input.bathroomStructure || { count: 1, type: "private" },
+    livingRoom: input.livingRoom,
+    balconyTerrace: input.balconyTerrace,
+    garden: input.garden,
+    basement: input.basement,
+    parking: input.parking,
+    wheelchairAccessible: input.wheelchairAccessible,
+    elevator: input.elevator,
+    allergyFriendly: input.allergyFriendly,
+    amenities: input.amenities || {},
+    rentCalculation: input.rentCalculation,
+    cancellationPolicy: input.cancellationPolicy,
+    utilities: input.utilities,
+    deposits: input.deposits,
+    optionalServices: input.optionalServices,
+    preferredGender: input.preferredGender,
+    minimumAgePreference: input.minimumAgePreference,
+    maximumAgePreference: input.maximumAgePreference,
+    preferredTenantType: input.preferredTenantType,
+    couplesAllowed: input.couplesAllowed,
     registrationPossible: input.registrationPossible,
-    amenities: input.amenities,
+    petsPolicy: input.petsPolicy,
+    musicPolicy: input.musicPolicy,
+    smokingPolicy: input.smokingPolicy,
+    requireProofOfIdentity: input.requireProofOfIdentity,
+    requireProofOfOccupation: input.requireProofOfOccupation,
+    requireProofOfIncome: input.requireProofOfIncome,
+    media: input.media,
+    agreedToTerms: input.agreedToTerms ? new Date(input.agreedToTerms) : null,
     houseRules: input.houseRules,
-    images: input.images,
+    title: input.title,
     status: input.status,
   });
 
@@ -287,28 +436,83 @@ router.patch("/:id([0-9a-fA-F]{24})", async (req, res) => {
     return;
   }
 
+  // Section 1
+  if (updates.kind !== undefined) listing.kind = updates.kind;
   if (updates.propertyType !== undefined) listing.propertyType = updates.propertyType;
-  if (updates.title !== undefined) listing.title = updates.title;
-  if (updates.description !== undefined) listing.description = updates.description;
   if (updates.address !== undefined) listing.address = updates.address;
   if (updates.city !== undefined) listing.city = updates.city;
-  if (updates.postalCode !== undefined) listing.postalCode = updates.postalCode;
-  if (updates.bedrooms !== undefined) listing.bedrooms = updates.bedrooms;
-  if (updates.bathrooms !== undefined) listing.bathrooms = updates.bathrooms;
-  if (updates.area !== undefined) listing.area = updates.area;
-  if (updates.monthlyRent !== undefined) listing.price = updates.monthlyRent;
-  if (updates.deposit !== undefined) listing.deposit = updates.deposit;
+  if (updates.country !== undefined) listing.country = updates.country;
+  if (updates.apartmentNumber !== undefined) listing.apartmentNumber = updates.apartmentNumber;
+  if (updates.floorNumber !== undefined) listing.floorNumber = updates.floorNumber;
+  if (updates.isGroundFloor !== undefined) listing.isGroundFloor = updates.isGroundFloor;
+  if (updates.rentalRegistrationNumber !== undefined) listing.rentalRegistrationNumber = updates.rentalRegistrationNumber;
   if (updates.availableFrom !== undefined) listing.availableFrom = new Date(updates.availableFrom);
-  if (updates.minStay !== undefined) listing.minStay = updates.minStay;
-  if (updates.utilitiesIncluded !== undefined) listing.utilitiesIncluded = updates.utilitiesIncluded;
-  if (updates.utilitiesCost !== undefined) listing.utilitiesCost = updates.utilitiesCost;
-  if (updates.registrationPossible !== undefined) listing.registrationPossible = updates.registrationPossible;
+  if (updates.monthlyRent !== undefined) listing.monthlyRent = updates.monthlyRent;
+  if (updates.currency !== undefined) listing.currency = updates.currency;
+  if (updates.minimumRentalPeriod !== undefined) listing.minimumRentalPeriod = updates.minimumRentalPeriod;
+  if (updates.maximumRentalPeriod !== undefined) listing.maximumRentalPeriod = updates.maximumRentalPeriod;
+  
+  // Section 2
+  if (updates.propertySize !== undefined) listing.propertySize = updates.propertySize;
+  if (updates.suitablePeopleCount !== undefined) listing.suitablePeopleCount = updates.suitablePeopleCount;
+  if (updates.spaceDescription !== undefined) listing.spaceDescription = updates.spaceDescription;
+  if (updates.bedroomsCount !== undefined) listing.bedroomsCount = updates.bedroomsCount;
+  if (updates.bedroomFurnished !== undefined) listing.bedroomFurnished = updates.bedroomFurnished;
+  if (updates.lockOnBedroom !== undefined) listing.lockOnBedroom = updates.lockOnBedroom;
+  
+  // Section 3
+  if (updates.kitchen !== undefined) listing.kitchen = updates.kitchen;
+  if (updates.toilet !== undefined) listing.toilet = updates.toilet;
+  if (updates.bathroomStructure !== undefined) listing.bathroomStructure = updates.bathroomStructure;
+  if (updates.livingRoom !== undefined) listing.livingRoom = updates.livingRoom;
+  if (updates.balconyTerrace !== undefined) listing.balconyTerrace = updates.balconyTerrace;
+  if (updates.garden !== undefined) listing.garden = updates.garden;
+  if (updates.basement !== undefined) listing.basement = updates.basement;
+  if (updates.parking !== undefined) listing.parking = updates.parking;
+  if (updates.wheelchairAccessible !== undefined) listing.wheelchairAccessible = updates.wheelchairAccessible;
+  if (updates.elevator !== undefined) listing.elevator = updates.elevator;
+  if (updates.allergyFriendly !== undefined) listing.allergyFriendly = updates.allergyFriendly;
+  
+  // Section 4
   if (updates.amenities !== undefined) listing.amenities = updates.amenities;
+  
+  // Section 5
+  if (updates.rentCalculation !== undefined) listing.rentCalculation = updates.rentCalculation;
+  if (updates.cancellationPolicy !== undefined) listing.cancellationPolicy = updates.cancellationPolicy;
+  if (updates.utilities !== undefined) {
+    (listing as any).utilities = updates.utilities;
+  }
+  if (updates.deposits !== undefined) {
+    (listing as any).deposits = updates.deposits;
+  }
+  if (updates.optionalServices !== undefined) {
+    (listing as any).optionalServices = updates.optionalServices;
+  }
+  
+  // Section 6
+  if (updates.preferredGender !== undefined) listing.preferredGender = updates.preferredGender;
+  if (updates.minimumAgePreference !== undefined) listing.minimumAgePreference = updates.minimumAgePreference;
+  if (updates.maximumAgePreference !== undefined) listing.maximumAgePreference = updates.maximumAgePreference;
+  if (updates.preferredTenantType !== undefined) listing.preferredTenantType = updates.preferredTenantType;
+  if (updates.couplesAllowed !== undefined) listing.couplesAllowed = updates.couplesAllowed;
+  if (updates.registrationPossible !== undefined) listing.registrationPossible = updates.registrationPossible;
+  if (updates.petsPolicy !== undefined) listing.petsPolicy = updates.petsPolicy;
+  if (updates.musicPolicy !== undefined) listing.musicPolicy = updates.musicPolicy;
+  if (updates.smokingPolicy !== undefined) listing.smokingPolicy = updates.smokingPolicy;
+  if (updates.requireProofOfIdentity !== undefined) listing.requireProofOfIdentity = updates.requireProofOfIdentity;
+  if (updates.requireProofOfOccupation !== undefined) listing.requireProofOfOccupation = updates.requireProofOfOccupation;
+  if (updates.requireProofOfIncome !== undefined) listing.requireProofOfIncome = updates.requireProofOfIncome;
+  
+  // Section 7
+  if (updates.media !== undefined) {
+    (listing as any).media = updates.media;
+  }
+  if (updates.agreedToTerms !== undefined) listing.agreedToTerms = updates.agreedToTerms ? new Date(updates.agreedToTerms) : null;
   if (updates.houseRules !== undefined) listing.houseRules = updates.houseRules;
-  if (updates.images !== undefined) listing.images = updates.images;
+  
+  // Metadata
+  if (updates.title !== undefined) listing.title = updates.title;
   if (updates.status !== undefined) listing.status = updates.status;
-
-  if (!listing.utilitiesIncluded) listing.utilitiesCost = 0;
 
   await listing.save();
 

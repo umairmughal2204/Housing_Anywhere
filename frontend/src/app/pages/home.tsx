@@ -38,6 +38,12 @@ interface HomeListing {
   utilitiesIncluded: boolean;
 }
 
+type ApiHomeListing = Partial<HomeListing> & {
+  media?: Array<{ url?: string }>;
+  propertySize?: number;
+  bedroomsCount?: number;
+};
+
 interface FavoriteListing {
   id: string;
   title: string;
@@ -49,6 +55,11 @@ interface FavoriteListing {
   availableFrom: string;
 }
 
+type ApiFavoriteListing = Partial<FavoriteListing> & {
+  media?: Array<{ url?: string }>;
+  images?: string[];
+};
+
 interface CitySuggestion {
   name: string;
   country: string;
@@ -59,6 +70,42 @@ interface CitySuggestion {
 interface ListingCitySuggestion {
   city: string;
   images?: string[];
+  media?: Array<{ url?: string }>;
+}
+
+function normalizeHomeListing(raw: ApiHomeListing): HomeListing {
+  const mediaImages = Array.isArray(raw.media)
+    ? raw.media.map((item) => item?.url).filter((url): url is string => Boolean(url))
+    : [];
+
+  return {
+    id: raw.id ?? "",
+    title: raw.title ?? "Untitled listing",
+    area: raw.area ?? raw.propertySize ?? 0,
+    bedrooms: raw.bedrooms ?? raw.bedroomsCount ?? 0,
+    monthlyRent: raw.monthlyRent ?? 0,
+    images: Array.isArray(raw.images) ? raw.images : mediaImages,
+    availableFrom: raw.availableFrom ?? new Date().toISOString(),
+    createdAt: raw.createdAt ?? new Date().toISOString(),
+    utilitiesIncluded: raw.utilitiesIncluded ?? false,
+  };
+}
+
+function normalizeFavoriteListing(raw: ApiFavoriteListing): FavoriteListing {
+  const mediaImages = Array.isArray(raw.media)
+    ? raw.media.map((item) => item?.url).filter((url): url is string => Boolean(url))
+    : [];
+
+  return {
+    id: raw.id ?? "",
+    title: raw.title ?? "Untitled listing",
+    city: raw.city ?? "",
+    area: raw.area ?? 0,
+    bedrooms: raw.bedrooms ?? 0,
+    monthlyRent: raw.monthlyRent ?? 0,
+    image: raw.image ?? mediaImages[0] ?? raw.images?.[0] ?? "",
+    availableFrom: raw.availableFrom ?? new Date().toISOString(),
+  };
 }
 
 const cities: CitySuggestion[] = [
@@ -130,7 +177,7 @@ function buildCitySuggestions(listings: ListingCitySuggestion[]) {
 
     const key = normalizedCity.toLowerCase();
     const existing = suggestionMap.get(key);
-    const listingImage = listing.images?.[0];
+    const listingImage = listing.images?.[0] ?? listing.media?.[0]?.url;
 
     if (existing) {
       existing.liveProperties += 1;
@@ -341,8 +388,8 @@ export function Home() {
           throw new Error("Failed to load recommendations");
         }
 
-        const payload = (await response.json()) as { recommendations: HomeListing[] };
-        setRecommendations(payload.recommendations);
+        const payload = (await response.json()) as { recommendations: ApiHomeListing[] };
+        setRecommendations((payload.recommendations ?? []).map(normalizeHomeListing));
       } catch (error) {
         if (!isAbortError(error)) {
           setRecommendations([]);
@@ -364,8 +411,8 @@ export function Home() {
           throw new Error("Failed to load home listings");
         }
 
-        const payload = (await response.json()) as { listings: HomeListing[] };
-        setRecentlyViewed(payload.listings);
+        const payload = (await response.json()) as { listings: ApiHomeListing[] };
+        setRecentlyViewed((payload.listings ?? []).map(normalizeHomeListing));
       } catch (error) {
         if (!isAbortError(error)) {
           setRecentlyViewed([]);
@@ -387,8 +434,8 @@ export function Home() {
           throw new Error("Failed to load favorites");
         }
 
-        const payload = (await response.json()) as { favorites: FavoriteListing[] };
-        setFavorites(payload.favorites);
+        const payload = (await response.json()) as { favorites: ApiFavoriteListing[] };
+        setFavorites((payload.favorites ?? []).map(normalizeFavoriteListing));
       } catch (error) {
         if (!isAbortError(error)) {
           setFavorites([]);
@@ -453,8 +500,9 @@ export function Home() {
 
   const MAX_CARD_PREVIEW_IMAGES = 5;
 
-  const getListingCardImages = (listingId: string, images: string[]) => {
-    return images.slice(0, MAX_CARD_PREVIEW_IMAGES);
+  const getListingCardImages = (_listingId: string, images: string[] | undefined) => {
+    const safeImages = Array.isArray(images) ? images : [];
+    return safeImages.slice(0, MAX_CARD_PREVIEW_IMAGES);
   };
 
   const moveListingImage = (listingId: string, direction: "prev" | "next", images: string[]) => {

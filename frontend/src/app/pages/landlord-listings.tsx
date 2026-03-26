@@ -19,7 +19,7 @@ import {
 import { ImageWithFallback } from "../components/figma/ImageWithFallback";
 import { API_BASE } from "../config";
 
-type ListingStatus = "active" | "draft" | "inactive";
+type ListingStatus = "active" | "inactive";
 type ActiveInactiveStatus = "active" | "inactive";
 
 interface Listing {
@@ -29,7 +29,6 @@ interface Listing {
   description: string;
   address: string;
   city: string;
-  postalCode: string;
   monthlyRent: number;
   deposit: number;
   bedrooms: number;
@@ -47,6 +46,46 @@ interface Listing {
   inquiries: number;
   createdAt: string;
   updatedAt: string;
+}
+
+type ApiListing = Partial<Listing> & {
+  media?: Array<{ url?: string }>;
+  deposits?: Array<{ amount?: number }>;
+  bedroomsCount?: number;
+  bathroomStructure?: { count?: number };
+  propertySize?: number;
+};
+
+function normalizeListing(raw: ApiListing): Listing {
+  const mediaImages = Array.isArray(raw.media)
+    ? raw.media.map((item) => item?.url).filter((url): url is string => Boolean(url))
+    : [];
+
+  return {
+    id: raw.id ?? "",
+    propertyType: raw.propertyType ?? "apartment",
+    title: raw.title ?? "Untitled listing",
+    description: raw.description ?? "",
+    address: raw.address ?? "",
+    city: raw.city ?? "",
+    monthlyRent: raw.monthlyRent ?? 0,
+    deposit: raw.deposit ?? raw.deposits?.[0]?.amount ?? 0,
+    bedrooms: raw.bedrooms ?? raw.bedroomsCount ?? 0,
+    bathrooms: raw.bathrooms ?? raw.bathroomStructure?.count ?? 0,
+    area: raw.area ?? raw.propertySize ?? 0,
+    images: Array.isArray(raw.images) ? raw.images : mediaImages,
+    availableFrom: raw.availableFrom ?? new Date().toISOString(),
+    minStay: raw.minStay ?? 1,
+    utilitiesIncluded: raw.utilitiesIncluded ?? false,
+    registrationPossible: raw.registrationPossible ?? false,
+    amenities: Array.isArray(raw.amenities) ? raw.amenities : [],
+    houseRules: Array.isArray(raw.houseRules) ? raw.houseRules : [],
+    status: raw.status === "active" ? "active" : "inactive",
+    views: raw.views ?? 0,
+    inquiries: raw.inquiries ?? 0,
+    createdAt: raw.createdAt ?? new Date().toISOString(),
+    updatedAt: raw.updatedAt ?? new Date().toISOString(),
+  };
 }
 
 export function LandlordListings() {
@@ -85,8 +124,8 @@ export function LandlordListings() {
           throw new Error(payload.message ?? "Failed to load listings");
         }
 
-        const payload = (await response.json()) as { listings: Listing[] };
-        setListings(payload.listings);
+        const payload = (await response.json()) as { listings: ApiListing[] };
+        setListings((payload.listings ?? []).map(normalizeListing));
       } catch (err) {
         setError(err instanceof Error ? err.message : "Failed to load listings");
       } finally {
@@ -308,15 +347,13 @@ export function LandlordListings() {
                       <span className={`px-[10px] py-[4px] text-[11px] font-bold uppercase tracking-[0.05em] ${
                         listing.status === "active"
                           ? "bg-accent-blue/10 text-accent-blue"
-                          : listing.status === "draft"
-                          ? "bg-yellow-100 text-yellow-700"
                           : "bg-neutral-gray/10 text-neutral-gray"
                       }`}>
-                        {listing.status === "active" ? "Active" : listing.status === "draft" ? "Draft" : "Inactive"}
+                        {listing.status === "active" ? "Active" : "Inactive"}
                       </span>
                       <button
                       onClick={() => { void handleStatusToggle(listing.id, listing.status); }}
-                      disabled={updatingStatusId === listing.id || listing.status === "draft"}
+                      disabled={updatingStatusId === listing.id}
                       className={`inline-flex items-center gap-[6px] px-[14px] py-[7px] text-[13px] font-semibold border transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
                         listing.status === "active"
                           ? "border-[#D03A2B]/40 text-[#D03A2B] bg-[#FFF5F3] hover:bg-[#FFE8E4]"

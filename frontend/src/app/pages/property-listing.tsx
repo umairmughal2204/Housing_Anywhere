@@ -41,7 +41,6 @@ interface ListingDetails {
   description: string;
   address: string;
   city: string;
-  postalCode: string;
   bedrooms: number;
   bathrooms: number;
   area: number;
@@ -58,6 +57,65 @@ interface ListingDetails {
     id: string;
     name: string;
     initials: string;
+  };
+}
+
+type ApiListingDetails = Partial<ListingDetails> & {
+  media?: Array<{ url?: string }>;
+  deposits?: Array<{ amount?: number }>;
+  utilities?: Array<{ included?: boolean }>;
+  amenities?: Record<string, unknown> | string[];
+  bedroomsCount?: number;
+  bathroomStructure?: { count?: number };
+  propertySize?: number;
+  minimumRentalPeriod?: number;
+  spaceDescription?: string;
+  propertyType?: string;
+};
+
+function normalizeListingDetails(raw: ApiListingDetails): ListingDetails {
+  const mediaImages = Array.isArray(raw.media)
+    ? raw.media.map((item) => item?.url).filter((url): url is string => Boolean(url))
+    : [];
+
+  const amenities = Array.isArray(raw.amenities)
+    ? raw.amenities
+    : raw.amenities && typeof raw.amenities === "object"
+    ? Object.entries(raw.amenities)
+        .filter(([, value]) => value === true)
+        .map(([key]) => key)
+    : [];
+
+  const normalizedPropertyType: ListingDetails["propertyType"] =
+    raw.propertyType === "apartment" ||
+    raw.propertyType === "studio" ||
+    raw.propertyType === "house" ||
+    raw.propertyType === "room"
+      ? raw.propertyType
+      : raw.propertyType === "building"
+      ? "apartment"
+      : "room";
+
+  return {
+    id: raw.id ?? "",
+    propertyType: normalizedPropertyType,
+    title: raw.title ?? "Listing unavailable",
+    description: raw.description ?? raw.spaceDescription ?? "",
+    address: raw.address ?? "",
+    city: raw.city ?? "",
+    bedrooms: raw.bedrooms ?? raw.bedroomsCount ?? 0,
+    bathrooms: raw.bathrooms ?? raw.bathroomStructure?.count ?? 0,
+    area: raw.area ?? raw.propertySize ?? 0,
+    monthlyRent: raw.monthlyRent ?? 0,
+    deposit: raw.deposit ?? raw.deposits?.[0]?.amount ?? 0,
+    availableFrom: raw.availableFrom ?? new Date().toISOString(),
+    minStay: raw.minStay ?? raw.minimumRentalPeriod ?? 1,
+    utilitiesIncluded: raw.utilitiesIncluded ?? (raw.utilities?.some((u) => Boolean(u?.included)) ?? false),
+    registrationPossible: raw.registrationPossible ?? false,
+    amenities,
+    houseRules: Array.isArray(raw.houseRules) ? raw.houseRules : [],
+    images: Array.isArray(raw.images) ? raw.images : mediaImages,
+    landlord: raw.landlord,
   };
 }
 
@@ -102,8 +160,8 @@ export function PropertyListing() {
           return;
         }
 
-        const payload = (await response.json()) as { listing: ListingDetails };
-        setListing(payload.listing);
+        const payload = (await response.json()) as { listing: ApiListingDetails };
+        setListing(normalizeListingDetails(payload.listing));
         setListingError("");
         setIsListingUnavailable(false);
       } catch {

@@ -136,8 +136,8 @@ router.get("/", requireAuth, async (req, res) => {
           title: listing?.title ?? "Listing unavailable",
           address: listing?.address ?? "",
           city: listing?.city ?? "",
-          image: listing?.images?.[0] ?? "",
-          monthlyRent: listing?.price ?? 0,
+          image: listing?.media?.[0]?.url ?? "",
+          monthlyRent: listing?.monthlyRent ?? 0,
         },
         otherUser: {
           id: otherId,
@@ -192,8 +192,8 @@ router.get("/:id([0-9a-fA-F]{24})", requireAuth, async (req, res) => {
         title: listing?.title ?? "Listing unavailable",
         address: listing?.address ?? "",
         city: listing?.city ?? "",
-        image: listing?.images?.[0] ?? "",
-        monthlyRent: listing?.price ?? 0,
+        image: listing?.media?.[0]?.url ?? (listing as any)?.images?.[0] ?? "",
+        monthlyRent: listing?.monthlyRent ?? (listing as any)?.price ?? 0,
       },
       otherUser: {
         id: otherId,
@@ -227,7 +227,7 @@ router.get("/:id([0-9a-fA-F]{24})/messages", requireAuth, async (req, res) => {
     return;
   }
 
-  const filter: Record<string, unknown> = { conversationId: new Types.ObjectId(conversationId) };
+  const filter: Record<string, any> = { conversationId: new Types.ObjectId(conversationId) };
   if (before) {
     filter["createdAt"] = { $lt: new Date(before) };
   }

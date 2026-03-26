@@ -97,26 +97,30 @@ function toRecommendedListing(listing: {
   title: string;
   city: string;
   address: string;
-  area: number;
-  bedrooms: number;
-  price: number;
+  propertySize?: number;
+  bedroomsCount?: number;
+  monthlyRent?: number;
   availableFrom: Date;
-  images: string[];
+  media?: Array<{ url: string }>;
+  images?: string[];
   createdAt: Date;
-  utilitiesIncluded?: boolean;
+  utilities?: Array<{ included: boolean }>;
+  area?: number;
+  bedrooms?: number;
+  price?: number;
 }) {
   return {
     id: String(listing._id),
     title: listing.title,
     city: listing.city,
     address: listing.address,
-    area: listing.area,
-    bedrooms: listing.bedrooms,
-    monthlyRent: listing.price,
+    area: listing.propertySize ?? listing.area ?? 0,
+    bedrooms: listing.bedroomsCount ?? listing.bedrooms ?? 0,
+    monthlyRent: listing.monthlyRent ?? listing.price ?? 0,
     availableFrom: listing.availableFrom,
-    images: listing.images,
+    images: listing.media?.map(m => m.url) ?? listing.images ?? [],
     createdAt: listing.createdAt,
-    utilitiesIncluded: listing.utilitiesIncluded ?? false,
+    utilitiesIncluded: listing.utilities?.some(u => u.included) ?? false,
   };
 }
 
@@ -428,11 +432,11 @@ router.get("/me/favorites", requireAuth, async (req, res) => {
       title: listing!.title,
       city: listing!.city,
       address: listing!.address,
-      monthlyRent: listing!.price,
-      bedrooms: listing!.bedrooms,
-      area: listing!.area,
+      monthlyRent: listing!.monthlyRent,
+      bedrooms: listing!.bedroomsCount,
+      area: listing!.propertySize,
       availableFrom: listing!.availableFrom,
-      image: listing!.images?.[0] ?? "",
+      image: listing!.media?.[0]?.url ?? "",
       status: listing!.status,
     })),
   });

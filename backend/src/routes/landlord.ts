@@ -98,12 +98,12 @@ router.get("/dashboard", requireAuth, requireRole("landlord"), async (req, res) 
 
   const monthlyRevenue = approvedListings.reduce((sum, listingIdValue) => {
     const listing = listingMap.get(listingIdValue);
-    return sum + (listing?.price ?? 0);
+    return sum + (listing?.monthlyRent ?? 0);
   }, 0);
 
   const monthlyRevenueLastMonth = approvedListingsLastMonth.reduce((sum, listingIdValue) => {
     const listing = listingMap.get(listingIdValue);
-    return sum + (listing?.price ?? 0);
+    return sum + (listing?.monthlyRent ?? 0);
   }, 0);
 
   const occupancyRate = activeListings > 0 ? Math.round((approvedListings.length / activeListings) * 100) : 0;

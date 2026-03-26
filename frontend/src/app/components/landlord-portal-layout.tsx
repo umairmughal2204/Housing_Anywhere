@@ -19,9 +19,15 @@ import { changeSiteLanguage, getSavedLanguageLabel, SUPPORTED_LANGUAGES } from "
 
 interface LandlordPortalLayoutProps {
   children: React.ReactNode;
+  headerLeadingAction?: React.ReactNode;
+  hideSidebar?: boolean;
 }
 
-export function LandlordPortalLayout({ children }: LandlordPortalLayoutProps) {
+export function LandlordPortalLayout({
+  children,
+  headerLeadingAction,
+  hideSidebar = false,
+}: LandlordPortalLayoutProps) {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, logout } = useAuth();
@@ -223,6 +229,8 @@ export function LandlordPortalLayout({ children }: LandlordPortalLayoutProps) {
 
           {/* Right: Actions */}
           <div className="flex items-center gap-[16px]">
+            {headerLeadingAction}
+
             {/* Language */}
             <div className="relative" ref={languageDropdownRef}>
               <button
@@ -434,47 +442,46 @@ export function LandlordPortalLayout({ children }: LandlordPortalLayoutProps) {
       )}
 
       <div className="flex">
-        {/* Sidebar Navigation - Desktop Only */}
-        <aside className="hidden md:block w-[240px] bg-white border-r border-[rgba(0,0,0,0.08)] min-h-[calc(100vh-73px)] sticky top-[73px]">
-          <nav className="py-[24px]">
-            {navigation.map((item) => {
-              const Icon = item.icon;
-              return (
-                <Link
-                  key={item.name}
-                  to={item.href}
-                  className={`flex items-center gap-[12px] px-[24px] py-[12px] text-[14px] font-medium transition-colors ${
-                    isActive(item.href)
-                      ? "bg-brand-light text-brand-primary border-l-[4px] border-brand-primary"
-                      : "text-neutral-gray hover:bg-neutral-light-gray border-l-[4px] border-transparent"
-                  }`}
-                >
-                  <Icon className="w-[20px] h-[20px]" />
-                  {item.name}
-                  {item.name === "Messages" && (
-                    unreadMessages > 0 ? (
-                      <span className="ml-auto bg-brand-primary text-white text-[12px] font-bold px-[6px] py-[2px] rounded-full">
-                        {unreadMessages > 99 ? "99+" : unreadMessages}
-                      </span>
-                    ) : null
-                  )}
-                </Link>
-              );
-            })}
-          </nav>
+        {!hideSidebar && (
+          <aside className="hidden md:block w-[240px] bg-white border-r border-[rgba(0,0,0,0.08)] min-h-[calc(100vh-73px)] sticky top-[73px]">
+            <nav className="py-[24px]">
+              {navigation.map((item) => {
+                const Icon = item.icon;
+                return (
+                  <Link
+                    key={item.name}
+                    to={item.href}
+                    className={`flex items-center gap-[12px] px-[24px] py-[12px] text-[14px] font-medium transition-colors ${
+                      isActive(item.href)
+                        ? "bg-brand-light text-brand-primary border-l-[4px] border-brand-primary"
+                        : "text-neutral-gray hover:bg-neutral-light-gray border-l-[4px] border-transparent"
+                    }`}
+                  >
+                    <Icon className="w-[20px] h-[20px]" />
+                    {item.name}
+                    {item.name === "Messages" && (
+                      unreadMessages > 0 ? (
+                        <span className="ml-auto bg-brand-primary text-white text-[12px] font-bold px-[6px] py-[2px] rounded-full">
+                          {unreadMessages > 99 ? "99+" : unreadMessages}
+                        </span>
+                      ) : null
+                    )}
+                  </Link>
+                );
+              })}
+            </nav>
 
-          {/* Quick Actions */}
-          <div className="px-[24px] py-[16px] border-t border-[rgba(0,0,0,0.08)]">
-            <Link
-              to="/landlord/listings/add"
-              className="block w-full px-[16px] py-[10px] bg-brand-primary text-white text-[14px] font-bold text-center hover:bg-brand-primary-dark transition-colors"
-            >
-              + Add Listing
-            </Link>
-          </div>
-        </aside>
+            <div className="px-[24px] py-[16px] border-t border-[rgba(0,0,0,0.08)]">
+              <Link
+                to="/landlord/listings/add"
+                className="block w-full px-[16px] py-[10px] bg-brand-primary text-white text-[14px] font-bold text-center hover:bg-brand-primary-dark transition-colors"
+              >
+                + Add Listing
+              </Link>
+            </div>
+          </aside>
+        )}
 
-        {/* Main Content */}
         <main className="flex-1 min-h-[calc(100vh-73px)]">
           {children}
         </main>

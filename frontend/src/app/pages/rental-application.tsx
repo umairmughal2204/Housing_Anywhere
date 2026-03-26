@@ -17,6 +17,37 @@ interface ListingSummary {
   utilitiesCost: number;
 }
 
+type ApiListingSummary = Partial<ListingSummary> & {
+  media?: Array<{ url?: string }>;
+  deposits?: Array<{ amount?: number }>;
+  utilities?: Array<{ included?: boolean; amount?: number }>;
+};
+
+function normalizeListingSummary(raw: ApiListingSummary): ListingSummary {
+  const mediaImages = Array.isArray(raw.media)
+    ? raw.media.map((item) => item?.url).filter((url): url is string => Boolean(url))
+    : [];
+
+  const utilities = Array.isArray(raw.utilities) ? raw.utilities : [];
+  const derivedUtilitiesIncluded = utilities.some((utility) => Boolean(utility?.included));
+  const derivedUtilitiesCost = utilities
+    .filter((utility) => !utility?.included)
+    .reduce((sum, utility) => sum + (utility?.amount ?? 0), 0);
+
+  return {
+    id: raw.id ?? "",
+    title: raw.title ?? "Listing unavailable",
+    city: raw.city ?? "",
+    address: raw.address ?? "",
+    monthlyRent: raw.monthlyRent ?? 0,
+    deposit: raw.deposit ?? raw.deposits?.[0]?.amount ?? 0,
+    availableFrom: raw.availableFrom ?? new Date().toISOString(),
+    images: Array.isArray(raw.images) ? raw.images : mediaImages,
+    utilitiesIncluded: raw.utilitiesIncluded ?? derivedUtilitiesIncluded,
+    utilitiesCost: raw.utilitiesCost ?? derivedUtilitiesCost,
+  };
+}
+
 const COUNTRY_CODE_OPTIONS = [
   { value: "NL +31", label: "Netherlands (+31)" },
   { value: "DE +49", label: "Germany (+49)" },
@@ -296,8 +327,8 @@ export function RentalApplication() {
           return;
         }
 
-        const payload = (await response.json()) as { listing: ListingSummary };
-        setListing(payload.listing);
+        const payload = (await response.json()) as { listing: ApiListingSummary };
+        setListing(normalizeListingSummary(payload.listing));
         setListingError("");
         setIsListingUnavailable(false);
       } catch {

@@ -36,6 +36,44 @@ interface ListingItem {
   images: string[];
 }
 
+type ApiListingItem = Partial<ListingItem> & {
+  media?: Array<{ url?: string }>;
+  propertySize?: number;
+  bedroomsCount?: number;
+  minimumRentalPeriod?: number;
+  propertyType?: string;
+};
+
+function normalizeListingItem(raw: ApiListingItem): ListingItem {
+  const mediaImages = Array.isArray(raw.media)
+    ? raw.media.map((item) => item?.url).filter((url): url is string => Boolean(url))
+    : [];
+
+  const normalizedPropertyType: ListingItem["propertyType"] =
+    raw.propertyType === "apartment" ||
+    raw.propertyType === "studio" ||
+    raw.propertyType === "house" ||
+    raw.propertyType === "room"
+      ? raw.propertyType
+      : raw.propertyType === "building"
+      ? "apartment"
+      : "apartment";
+
+  return {
+    id: raw.id ?? "",
+    title: raw.title ?? "Untitled listing",
+    city: raw.city ?? "",
+    address: raw.address ?? "",
+    area: raw.area ?? raw.propertySize ?? 0,
+    bedrooms: raw.bedrooms ?? raw.bedroomsCount ?? 0,
+    monthlyRent: raw.monthlyRent ?? 0,
+    availableFrom: raw.availableFrom ?? new Date().toISOString(),
+    minStay: raw.minStay ?? raw.minimumRentalPeriod ?? 1,
+    propertyType: normalizedPropertyType,
+    images: Array.isArray(raw.images) ? raw.images : mediaImages,
+  };
+}
+
 type SortOption = "recommended" | "most-recent" | "lowest-price" | "highest-price" | "landlord-rating";
 
 const PROPERTY_TYPES: Array<ListingItem["propertyType"]> = ["apartment", "studio", "house", "room"];
@@ -596,8 +634,8 @@ export function SearchResults() {
           throw new Error("Failed to load listings");
         }
 
-        const payload = (await response.json()) as { listings: ListingItem[] };
-        setProperties(payload.listings);
+        const payload = (await response.json()) as { listings: ApiListingItem[] };
+        setProperties((payload.listings ?? []).map(normalizeListingItem));
       } catch {
         setProperties([]);
       } finally {
@@ -793,8 +831,9 @@ export function SearchResults() {
 
   const MAX_CARD_PREVIEW_IMAGES = 5;
 
-  const getListingCardImages = (listingId: string, images: string[]) => {
-    return images.slice(0, MAX_CARD_PREVIEW_IMAGES);
+  const getListingCardImages = (_listingId: string, images: string[] | undefined) => {
+    const safeImages = Array.isArray(images) ? images : [];
+    return safeImages.slice(0, MAX_CARD_PREVIEW_IMAGES);
   };
 
   const moveListingImage = (listingId: string, direction: "prev" | "next", images: string[]) => {
