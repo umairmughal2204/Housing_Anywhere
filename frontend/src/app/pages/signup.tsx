@@ -200,7 +200,7 @@ export function Signup() {
               disabled={!agreeToTerms || isLoading}
               className={`w-full py-[16px] font-bold transition-colors ${
                 agreeToTerms && !isLoading
-                  ? "bg-brand-primary text-white hover:bg-brand-primary-dark"
+                  ? "bg-brand-primary text-white hover:bg-brand-primary-dark hover:cursor-pointer"
                   : "bg-[#EDEDED] text-neutral-gray cursor-not-allowed"
               }`}
             >
