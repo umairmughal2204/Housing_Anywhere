@@ -145,7 +145,7 @@ export function Login() {
             <button
               type="submit"
               disabled={isLoading || isAuthLoading}
-              className="w-full bg-brand-primary text-white py-[16px] font-bold hover:bg-brand-primary-dark transition-colors"
+              className="w-full bg-brand-primary text-white py-[16px] font-bold hover:bg-brand-primary-dark hover:cursor-pointer disabled:cursor-not-allowed transition-colors"
             >
               {isLoading || isAuthLoading ? "Logging in..." : "Log in"}
             </button>
