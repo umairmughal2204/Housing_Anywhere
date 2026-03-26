@@ -104,6 +104,104 @@ interface UploadedMediaItem {
   type: "photo";
 }
 
+interface ApiListing {
+  kind?: string;
+  propertyType?: string;
+  city?: string;
+  country?: string;
+  address?: string;
+  apartmentNumber?: string;
+  floorNumber?: string;
+  isGroundFloor?: boolean;
+  rentalRegistrationNumber?: string;
+  availableFrom?: string;
+  monthlyRent?: number;
+  currency?: string;
+  minimumRentalPeriod?: number;
+  maximumRentalPeriod?: number;
+  propertySize?: number;
+  suitablePeopleCount?: number;
+  spaceDescription?: string;
+  bedroomsCount?: number;
+  bedroomFurnished?: boolean;
+  lockOnBedroom?: boolean;
+  kitchen?: TernaryArea;
+  toilet?: TernaryArea;
+  bathroomStructure?: { count?: number; type?: string };
+  livingRoom?: TernaryArea;
+  balconyTerrace?: TernaryArea;
+  garden?: TernaryArea;
+  basement?: TernaryArea;
+  parking?: TernaryArea;
+  wheelchairAccessible?: boolean;
+  elevator?: boolean;
+  allergyFriendly?: boolean;
+  amenities?: {
+    bed?: boolean;
+    wifi?: boolean;
+    desk?: boolean;
+    closet?: boolean;
+    tv?: boolean;
+    washingMachine?: boolean;
+    dryer?: boolean;
+    dishwasher?: boolean;
+    kitchenware?: TernaryArea;
+    heating?: string;
+    airConditioning?: boolean;
+    flooring?: string;
+    livingRoomFurniture?: boolean;
+  };
+  rentCalculation?: "daily" | "half-monthly" | "monthly";
+  cancellationPolicy?: "strict" | "flexible";
+  utilities?: Array<{ type?: string; included?: boolean; frequency?: string; amount?: number }>;
+  deposits?: Array<{ type?: string; requirement?: string; amount?: number }>;
+  optionalServices?: Array<{ type?: string; frequency?: string; amount?: number }>;
+  preferredGender?: "male" | "female" | "no-preference";
+  minimumAgePreference?: number;
+  maximumAgePreference?: number;
+  preferredTenantType?: "any" | "students" | "working";
+  couplesAllowed?: boolean;
+  registrationPossible?: boolean;
+  petsPolicy?: "no" | "yes" | "negotiable";
+  musicPolicy?: "no" | "yes" | "negotiable";
+  smokingPolicy?: "no" | "yes" | "negotiable" | "outside-only";
+  requireProofOfIdentity?: boolean;
+  requireProofOfOccupation?: boolean;
+  requireProofOfIncome?: boolean;
+  media?: Array<{ url?: string; type?: string }>;
+  agreedToTerms?: string;
+  status?: "active" | "draft" | "inactive";
+}
+
+const kindToUiValue: Record<string, string> = {
+  "entire-place": "Entire place",
+  "private-room": "Private room",
+  "shared-room": "Shared room",
+};
+
+const propertyTypeToUiValue: Record<string, string> = {
+  house: "House",
+  apartment: "Apartment",
+  building: "Building",
+};
+
+const heatingToUiValue: Record<string, string> = {
+  "central-heating": "Central heating",
+  electric: "Electric",
+  gas: "Gas",
+  "district-heating": "District heating",
+  "floor-heating": "Floor heating",
+};
+
+const flooringToUiValue: Record<string, string> = {
+  laminate: "Laminate",
+  carpet: "Carpet",
+  stone: "Stone",
+  wood: "Wood",
+  plastic: "Plastic",
+  other: "Other",
+};
+
 function TernaryRadioGroup({
   name,
   value,
@@ -265,8 +363,10 @@ export function LandlordAddListing() {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoadingListing, setIsLoadingListing] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [sectionError, setSectionError] = useState<string | null>(null);
+  const [listingStatus, setListingStatus] = useState<"active" | "inactive">("active");
 
   const { id: listingId } = useParams();
   const isEditMode = !!listingId;
@@ -294,6 +394,191 @@ export function LandlordAddListing() {
   const updateDepositLine = <K extends keyof DepositLine>(index: number, key: K, value: DepositLine[K]) => {
     setDepositLines((prev) => prev.map((line, i) => (i === index ? { ...line, [key]: value } : line)));
   };
+
+  useEffect(() => {
+    if (!isEditMode || !listingId) {
+      return;
+    }
+
+    const token = localStorage.getItem("authToken");
+    if (!token) {
+      setSubmitError("Please log in to edit your listing");
+      return;
+    }
+
+    const toDateValue = (input?: string) => {
+      if (!input) {
+        return "";
+      }
+      const parsed = new Date(input);
+      if (Number.isNaN(parsed.getTime())) {
+        return "";
+      }
+      const year = parsed.getFullYear();
+      const month = `${parsed.getMonth() + 1}`.padStart(2, "0");
+      const day = `${parsed.getDate()}`.padStart(2, "0");
+      return `${year}-${month}-${day}`;
+    };
+
+    const mapMonthsToOption = (months?: number, fallback: string) => {
+      if (!months || months < 1) {
+        return fallback;
+      }
+      return months === 1 ? "1 month" : `${months} months`;
+    };
+
+    const loadListingForEdit = async () => {
+      setIsLoadingListing(true);
+      setSubmitError(null);
+
+      try {
+        const response = await fetch(`${apiBase}/api/listings/mine/${listingId}`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (!response.ok) {
+          const payload = (await response.json()) as { message?: string };
+          throw new Error(payload.message ?? "Failed to load listing for edit");
+        }
+
+        const payload = (await response.json()) as { listing?: ApiListing };
+        const listing = payload.listing;
+        if (!listing) {
+          throw new Error("Listing data is missing");
+        }
+
+        setKind(kindToUiValue[listing.kind ?? ""] ?? "");
+        setPropertyType(propertyTypeToUiValue[listing.propertyType ?? ""] ?? "");
+        setCityCountry(`${listing.city ?? ""}, ${listing.country ?? "Netherlands"}`.replace(/^,\s*/, "").trim());
+        setStreetHouse(listing.address ?? "");
+        setApartmentNumber(listing.apartmentNumber ?? "");
+        setFloorNumber(listing.floorNumber ?? "");
+        setIsGroundFloor(Boolean(listing.isGroundFloor));
+        setRentalRegistrationNumber(listing.rentalRegistrationNumber ?? "");
+        setAvailableFrom(toDateValue(listing.availableFrom));
+        setMonthlyRent(listing.monthlyRent !== undefined ? String(listing.monthlyRent) : "");
+        setCurrency(listing.currency ?? "EUR");
+        setMinimumRentalPeriod(mapMonthsToOption(listing.minimumRentalPeriod, "No minimum"));
+        setMaximumRentalPeriod(
+          listing.maximumRentalPeriod && listing.maximumRentalPeriod > 0
+            ? mapMonthsToOption(listing.maximumRentalPeriod, "No maximum")
+            : "No maximum"
+        );
+
+        setPropertySize(listing.propertySize !== undefined ? String(listing.propertySize) : "");
+        setSuitablePeopleCount(listing.suitablePeopleCount !== undefined ? String(listing.suitablePeopleCount) : "1");
+        setSpaceDescription(listing.spaceDescription ?? "");
+        setBedroomsCount(
+          listing.bedroomsCount === undefined
+            ? "Select"
+            : listing.bedroomsCount === 0
+            ? "Studio"
+            : listing.bedroomsCount >= 8
+            ? "8+"
+            : String(listing.bedroomsCount)
+        );
+        setBedroomFurnished(listing.bedroomFurnished ? "yes" : "no");
+        setLockOnBedroom(listing.lockOnBedroom ? "yes" : "no");
+
+        setKitchen(listing.kitchen ?? "no");
+        setToilet(listing.toilet ?? "no");
+        setBathroom(listing.bathroomStructure?.type ? listing.bathroomStructure.type[0].toUpperCase() + listing.bathroomStructure.type.slice(1) : "Select");
+        setBathroomsCount(
+          listing.bathroomStructure?.count === undefined
+            ? "Select"
+            : listing.bathroomStructure.count === 0
+            ? "None"
+            : listing.bathroomStructure.count >= 3
+            ? "3+"
+            : String(listing.bathroomStructure.count)
+        );
+        setLivingRoom(listing.livingRoom ?? "no");
+        setBalconyTerrace(listing.balconyTerrace ?? "no");
+        setGarden(listing.garden ?? "no");
+        setBasement(listing.basement ?? "no");
+        setParking(listing.parking ?? "no");
+        setWheelchairAccessible(listing.wheelchairAccessible ? "yes" : "no");
+        setElevator(listing.elevator ? "yes" : "no");
+        setAllergyFriendly(listing.allergyFriendly ? "yes" : "no");
+
+        setBedAmenity(listing.amenities?.bed ? "yes" : "no");
+        setWifiAmenity(listing.amenities?.wifi ? "yes" : "no");
+        setDeskAmenity(listing.amenities?.desk ? "yes" : "no");
+        setClosetAmenity(listing.amenities?.closet ? "yes" : "no");
+        setTvAmenity(listing.amenities?.tv ? "yes" : "no");
+        setWashingMachineAmenity(listing.amenities?.washingMachine ? "yes" : "no");
+        setDryerAmenity(listing.amenities?.dryer ? "yes" : "no");
+        setDishwasherAmenity(listing.amenities?.dishwasher ? "yes" : "no");
+        setKitchenwareAmenity(listing.amenities?.kitchenware ?? "no");
+        setHeatingAmenity(heatingToUiValue[listing.amenities?.heating ?? ""] ?? "Select");
+        setAirConditioningAmenity(listing.amenities?.airConditioning ? "yes" : "no");
+        setFlooringAmenity(flooringToUiValue[listing.amenities?.flooring ?? ""] ?? "Select");
+        setLivingRoomFurnitureAmenity(listing.amenities?.livingRoomFurniture ? "yes" : "no");
+
+        setRentCalculation(listing.rentCalculation ?? "daily");
+        setCancellationPolicy(listing.cancellationPolicy ?? "flexible");
+        setUtilityLines(
+          listing.utilities?.length
+            ? listing.utilities.map((line) => ({
+                type: line.type ?? "Other",
+                includedInRent: line.included ? "Included in rent" : "Excluded",
+                frequency: line.frequency === "one-time" ? "one-time" : "every month",
+                estimateType: "Estimate",
+                amount: String(line.amount ?? 0),
+              }))
+            : []
+        );
+        setDepositLines(
+          listing.deposits?.map((line) => ({
+            type: line.type ?? "Security deposit",
+            requirement: line.requirement === "Optional" ? "Optional" : "Required",
+            amount: String(line.amount ?? 0),
+          })) ?? []
+        );
+        setOptionalServiceLines(
+          listing.optionalServices?.map((line) => ({
+            type: line.type ?? "Other optional costs",
+            includedInRent: "Excluded",
+            frequency: line.frequency === "monthly" ? "every month" : "one-time",
+            amount: String(line.amount ?? 0),
+          })) ?? []
+        );
+
+        setPreferredGender(listing.preferredGender ?? "no-preference");
+        setMinimumAgePreference(listing.minimumAgePreference ? String(listing.minimumAgePreference) : "No preference");
+        setMaximumAgePreference(listing.maximumAgePreference ? String(listing.maximumAgePreference) : "No preference");
+        setPreferredTenantType(listing.preferredTenantType ?? "any");
+        setCouplesAllowed(listing.couplesAllowed ? "yes" : "no");
+        setRegistrationPossible(listing.registrationPossible ? "yes" : "no");
+        setPetsPolicy(listing.petsPolicy ?? "no");
+        setMusicPolicy(listing.musicPolicy ?? "no");
+        setSmokingPolicy(listing.smokingPolicy ?? "no");
+        setRequireProofOfIdentity(Boolean(listing.requireProofOfIdentity));
+        setRequireProofOfOccupationOrEnrollment(Boolean(listing.requireProofOfOccupation));
+        setRequireProofOfIncome(Boolean(listing.requireProofOfIncome));
+
+        setUploadedMedia(
+          (listing.media ?? [])
+            .filter((item) => item.url)
+            .map((item) => ({
+              url: item.url as string,
+              type: "photo" as const,
+            }))
+        );
+
+        setAgreedToTerms(Boolean(listing.agreedToTerms));
+        setListingStatus(listing.status === "inactive" ? "inactive" : "active");
+      } catch (error) {
+        setSubmitError(error instanceof Error ? error.message : "Failed to load listing for edit");
+      } finally {
+        setIsLoadingListing(false);
+      }
+    };
+
+    void loadListingForEdit();
+  }, [apiBase, isEditMode, listingId]);
 
   const handlePhotoUpload = async (files: FileList | null) => {
     if (!files || files.length === 0) {
@@ -514,7 +799,7 @@ export function LandlordAddListing() {
         })),
         agreedToTerms: agreedToTerms ? new Date().toISOString() : undefined,
         title: `${propertyType} in ${cityCountry}`,
-        status: "active",
+        status: listingStatus,
       };
 
       const token = localStorage.getItem("authToken");
@@ -586,6 +871,11 @@ export function LandlordAddListing() {
         {submitError && (
           <div className="mb-[20px] p-[12px] bg-red-50 border border-red-200 rounded text-red-700 text-[13px]">
             {submitError}
+          </div>
+        )}
+        {isEditMode && isLoadingListing && (
+          <div className="mb-[20px] p-[12px] bg-slate-50 border border-slate-200 rounded text-slate-700 text-[13px]">
+            Loading listing details...
           </div>
         )}
         {sectionError && (
