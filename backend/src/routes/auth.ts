@@ -4,6 +4,7 @@ import multer from "multer";
 import fs from "fs/promises";
 import path from "path";
 import { z } from "zod";
+import { OAuth2Client } from "google-auth-library";
 import { Types } from "mongoose";
 import { UserModel } from "../models/User.js";
 import { ListingModel } from "../models/Listing.js";
@@ -11,6 +12,7 @@ import { RentalApplicationModel } from "../models/RentalApplication.js";
 import { ConversationModel } from "../models/Conversation.js";
 import { ListingInteractionModel } from "../models/ListingInteraction.js";
 import { signAccessToken } from "../utils/jwt.js";
+import { env } from "../config/env.js";
 import { requireAuth } from "../middleware/auth.js";
 
 const router = Router();
@@ -34,6 +36,14 @@ const loginSchema = z.object({
   email: z.string().email(),
   password: z.string().min(6),
 });
+
+const googleAuthSchema = z.object({
+  credential: z.string().min(1),
+});
+
+const googleClient = env.GOOGLE_CLIENT_ID
+  ? new OAuth2Client(env.GOOGLE_CLIENT_ID)
+  : null;
 
 const landlordProfileSchema = z.object({
   businessType: z.enum(["individual", "dealer", "agency"]),
@@ -66,7 +76,7 @@ const contactUpdateSchema = z.object({
 });
 
 const passwordUpdateSchema = z.object({
-  currentPassword: z.string().min(1),
+  currentPassword: z.string().min(1).optional(),
   newPassword: z.string().min(8),
 });
 
@@ -150,6 +160,7 @@ function toAuthUser(user: {
   emailVerified?: boolean;
   phoneVerified?: boolean;
   profilePictureUrl?: string | null;
+  passwordHash?: string | null;
 }) {
   return {
     id: user._id.toString(),
@@ -173,6 +184,7 @@ function toAuthUser(user: {
     emailVerified: user.emailVerified ?? false,
     phoneVerified: user.phoneVerified ?? false,
     profilePictureUrl: user.profilePictureUrl,
+    hasPassword: Boolean(user.passwordHash),
   };
 }
 
@@ -195,6 +207,7 @@ router.post("/signup", async (req, res) => {
   const user = await UserModel.create({
     email: email.toLowerCase(),
     passwordHash,
+    authProvider: "local",
     firstName,
     lastName,
     role,
@@ -228,6 +241,11 @@ router.post("/login", async (req, res) => {
     return;
   }
 
+  if (!user.passwordHash) {
+    res.status(401).json({ message: "This account uses Google sign-in" });
+    return;
+  }
+
   const isValid = await bcrypt.compare(password, user.passwordHash);
   if (!isValid) {
     res.status(401).json({ message: "Invalid credentials" });
@@ -244,6 +262,80 @@ router.post("/login", async (req, res) => {
     token,
     user: toAuthUser(user),
   });
+});
+
+router.post("/google", async (req, res) => {
+  const parsed = googleAuthSchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ message: "Invalid input", errors: parsed.error.flatten() });
+    return;
+  }
+
+  if (!googleClient || !env.GOOGLE_CLIENT_ID) {
+    res.status(503).json({ message: "Google sign-in is not configured" });
+    return;
+  }
+
+  try {
+    const ticket = await googleClient.verifyIdToken({
+      idToken: parsed.data.credential,
+      audience: env.GOOGLE_CLIENT_ID,
+    });
+
+    const payload = ticket.getPayload();
+    if (!payload?.email || !payload.email_verified) {
+      res.status(401).json({ message: "Google account email is not verified" });
+      return;
+    }
+
+    const email = payload.email.toLowerCase();
+    const googleId = payload.sub;
+    const fallbackName = (payload.name ?? "").trim();
+    const firstName = (payload.given_name ?? fallbackName.split(" ")[0] ?? "User").trim() || "User";
+    const lastName = (payload.family_name ?? fallbackName.split(" ").slice(1).join(" ") ?? "").trim() || "Google";
+
+    let user = await UserModel.findOne({ email });
+    if (!user) {
+      user = await UserModel.create({
+        email,
+        firstName,
+        lastName,
+        role: "tenant",
+        isLandlord: false,
+        authProvider: "google",
+        googleId,
+        emailVerified: true,
+        profilePictureUrl: payload.picture,
+      });
+    } else {
+      const updates: Record<string, unknown> = {};
+      if (!user.googleId) {
+        updates.googleId = googleId;
+      }
+      if (!user.profilePictureUrl && payload.picture) {
+        updates.profilePictureUrl = payload.picture;
+      }
+      if (!user.emailVerified) {
+        updates.emailVerified = true;
+      }
+      if (Object.keys(updates).length > 0) {
+        user = await UserModel.findByIdAndUpdate(user._id, { $set: updates }, { new: true }) ?? user;
+      }
+    }
+
+    const token = signAccessToken({
+      sub: user._id.toString(),
+      role: user.role,
+      email: user.email,
+    });
+
+    res.json({
+      token,
+      user: toAuthUser(user),
+    });
+  } catch {
+    res.status(401).json({ message: "Invalid Google credential" });
+  }
 });
 
 router.get("/me", requireAuth, async (req, res) => {
@@ -380,10 +472,17 @@ router.patch("/me/password", requireAuth, async (req, res) => {
     return;
   }
 
-  const isCurrentPasswordValid = await bcrypt.compare(parsed.data.currentPassword, user.passwordHash);
-  if (!isCurrentPasswordValid) {
-    res.status(401).json({ message: "Current password is incorrect" });
-    return;
+  if (user.passwordHash) {
+    if (!parsed.data.currentPassword) {
+      res.status(400).json({ message: "Current password is required" });
+      return;
+    }
+
+    const isCurrentPasswordValid = await bcrypt.compare(parsed.data.currentPassword, user.passwordHash);
+    if (!isCurrentPasswordValid) {
+      res.status(401).json({ message: "Current password is incorrect" });
+      return;
+    }
   }
 
   const passwordHash = await bcrypt.hash(parsed.data.newPassword, 10);

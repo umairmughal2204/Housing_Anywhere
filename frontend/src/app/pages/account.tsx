@@ -95,6 +95,7 @@ export function Account() {
   const [isSavingPassword, setIsSavingPassword] = useState(false);
   const [isUploadingPicture, setIsUploadingPicture] = useState(false);
   const [isDeletingAccount, setIsDeletingAccount] = useState(false);
+  const requiresCurrentPassword = user?.hasPassword ?? true;
 
   useEffect(() => {
     if (!user) {
@@ -258,8 +259,13 @@ export function Account() {
     setPasswordStatus(null);
     setPasswordError(null);
 
-    if (!currentPassword || !newPassword || !confirmPassword) {
-      setPasswordError("All password fields are required.");
+    if (!newPassword || !confirmPassword) {
+      setPasswordError("New password and confirm password are required.");
+      return;
+    }
+
+    if (requiresCurrentPassword && !currentPassword) {
+      setPasswordError("Current password is required.");
       return;
     }
 
@@ -276,7 +282,7 @@ export function Account() {
     setIsSavingPassword(true);
 
     try {
-      await changePassword(currentPassword, newPassword);
+      await changePassword(newPassword, requiresCurrentPassword ? currentPassword : undefined);
       setPasswordStatus("Password updated successfully.");
       setCurrentPassword("");
       setNewPassword("");
@@ -801,16 +807,23 @@ export function Account() {
               {activeTab === "password" && (
                 <div>
                   <h2 className="text-[#1A1A1A] text-[20px] font-bold mb-[24px]">Change password</h2>
+                  {!requiresCurrentPassword ? (
+                    <p className="text-[#6B6B6B] text-[13px] mb-[16px]">
+                      You signed up with Google. Set a password here if you also want to log in with email and password.
+                    </p>
+                  ) : null}
                   <form className="space-y-[24px]" onSubmit={handlePasswordSubmit}>
-                    <div>
-                      <label className="block text-[#1A1A1A] text-[13px] font-semibold mb-[8px]">Current password</label>
-                      <input
-                        type="password"
-                        value={currentPassword}
-                        onChange={(e) => setCurrentPassword(e.target.value)}
-                        className="w-full px-[12px] py-[10px] border border-[rgba(0,0,0,0.16)] text-[#1A1A1A] text-[14px] focus:outline-none focus:border-[#0066CC]"
-                      />
-                    </div>
+                    {requiresCurrentPassword ? (
+                      <div>
+                        <label className="block text-[#1A1A1A] text-[13px] font-semibold mb-[8px]">Current password</label>
+                        <input
+                          type="password"
+                          value={currentPassword}
+                          onChange={(e) => setCurrentPassword(e.target.value)}
+                          className="w-full px-[12px] py-[10px] border border-[rgba(0,0,0,0.16)] text-[#1A1A1A] text-[14px] focus:outline-none focus:border-[#0066CC]"
+                        />
+                      </div>
+                    ) : null}
                     <div>
                       <label className="block text-[#1A1A1A] text-[13px] font-semibold mb-[8px]">New password</label>
                       <input

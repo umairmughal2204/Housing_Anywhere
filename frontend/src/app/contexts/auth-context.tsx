@@ -18,6 +18,7 @@ interface User {
   firstName: string;
   lastName: string;
   name: string;
+  hasPassword?: boolean;
   profilePictureUrl?: string;
   role: "tenant" | "landlord";
   isLandlord: boolean;
@@ -60,12 +61,14 @@ interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
+  loginWithGoogle: (credential: string) => Promise<void>;
   signup: (data: SignupData) => Promise<void>;
+  signupWithGoogle: (credential: string) => Promise<void>;
   logout: () => void;
   registerAsLandlord: (profileData: LandlordProfile) => Promise<void>;
   updateProfile: (data: ProfileUpdateData) => Promise<void>;
   updateContactDetails: (data: ContactUpdateData) => Promise<void>;
-  changePassword: (currentPassword: string, newPassword: string) => Promise<void>;
+  changePassword: (newPassword: string, currentPassword?: string) => Promise<void>;
   uploadProfilePicture: (file: File) => Promise<void>;
   deleteAccount: () => Promise<void>;
 }
@@ -193,6 +196,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     saveUser(payload.user);
   };
 
+  const authenticateWithGoogle = async (credential: string) => {
+    const response = await fetch(`${API_BASE}/api/auth/google`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ credential }),
+    });
+
+    if (!response.ok) {
+      const error = (await response.json()) as { message?: string };
+      throw new Error(error.message ?? "Google signup failed");
+    }
+
+    const payload = (await response.json()) as AuthResponse;
+    localStorage.setItem("authToken", payload.token);
+    saveUser(payload.user);
+  };
+
+  const signupWithGoogle = async (credential: string) => {
+    await authenticateWithGoogle(credential);
+  };
+
+  const loginWithGoogle = async (credential: string) => {
+    await authenticateWithGoogle(credential);
+  };
+
   const logout = () => {
     localStorage.removeItem("user");
     localStorage.removeItem("authToken");
@@ -273,7 +303,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     saveUser(payload.user);
   };
 
-  const changePassword = async (currentPassword: string, newPassword: string) => {
+  const changePassword = async (newPassword: string, currentPassword?: string) => {
     const token = localStorage.getItem("authToken");
     if (!token) {
       throw new Error("You must be logged in");
@@ -350,7 +380,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isAuthenticated: !!user,
         isLoading,
         login,
+        loginWithGoogle,
         signup,
+        signupWithGoogle,
         logout,
         registerAsLandlord,
         updateProfile,

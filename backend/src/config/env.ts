@@ -8,6 +8,7 @@ const envSchema = z.object({
   PORT: z.coerce.number().default(4000),
   JWT_SECRET: z.string().min(8),
   CLIENT_ORIGIN: z.string().default("http://localhost:5173"),
+  GOOGLE_CLIENT_ID: z.string().min(1).optional(),
 });
 
 const parsed = envSchema.safeParse(process.env);

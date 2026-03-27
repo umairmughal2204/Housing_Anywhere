@@ -3,6 +3,68 @@ import { useState } from "react";
 import { Mail, Lock, Eye, EyeOff, User, AlertCircle } from "lucide-react";
 import { useAuth } from "../contexts/auth-context";
 
+const GOOGLE_SCRIPT_ID = "google-identity-service";
+
+function hasGoogleIdentity() {
+  const google = (window as {
+    google?: {
+      accounts?: {
+        id?: unknown;
+      };
+    };
+  }).google;
+
+  return Boolean(google?.accounts?.id);
+}
+
+function loadGoogleIdentityScript() {
+  return new Promise<void>((resolve, reject) => {
+    if (typeof window === "undefined") {
+      reject(new Error("Google sign-up is only available in the browser"));
+      return;
+    }
+
+    if (hasGoogleIdentity()) {
+      resolve();
+      return;
+    }
+
+    const existingScript = document.getElementById(GOOGLE_SCRIPT_ID);
+    if (existingScript) {
+      existingScript.addEventListener(
+        "load",
+        () => {
+          if (hasGoogleIdentity()) {
+            resolve();
+            return;
+          }
+
+          reject(new Error("Google sign-up script loaded but Google Identity is unavailable"));
+        },
+        { once: true }
+      );
+      existingScript.addEventListener("error", () => reject(new Error("Failed to load Google SDK")), { once: true });
+      return;
+    }
+
+    const script = document.createElement("script");
+    script.id = GOOGLE_SCRIPT_ID;
+    script.src = "https://accounts.google.com/gsi/client";
+    script.async = true;
+    script.defer = true;
+    script.onload = () => {
+      if (hasGoogleIdentity()) {
+        resolve();
+        return;
+      }
+
+      reject(new Error("Google sign-up script loaded but Google Identity is unavailable"));
+    };
+    script.onerror = () => reject(new Error("Failed to load Google SDK"));
+    document.head.appendChild(script);
+  });
+}
+
 export function Signup() {
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -12,9 +74,80 @@ export function Signup() {
   const [agreeToTerms, setAgreeToTerms] = useState(false);
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
 
-  const { signup } = useAuth();
+  const { signup, signupWithGoogle } = useAuth();
   const navigate = useNavigate();
+
+  const handleGoogleSignup = async () => {
+    setError("");
+    setIsGoogleLoading(true);
+
+    try {
+      const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+      if (!googleClientId) {
+        throw new Error("Google sign-up is not configured");
+      }
+
+      await loadGoogleIdentityScript();
+
+      const google = (window as {
+        google?: {
+          accounts?: {
+            id?: {
+              initialize: (config: {
+                client_id: string;
+                callback: (response: { credential?: string }) => void;
+              }) => void;
+              prompt: () => void;
+            };
+          };
+        };
+      }).google;
+
+      if (!google?.accounts?.id) {
+        throw new Error("Google sign-up is unavailable right now");
+      }
+
+      const credential = await new Promise<string>((resolve, reject) => {
+        let settled = false;
+
+        const timeout = window.setTimeout(() => {
+          if (!settled) {
+            settled = true;
+            reject(new Error("Google sign-up timed out. Please try again."));
+          }
+        }, 30000);
+
+        google.accounts.id.initialize({
+          client_id: googleClientId,
+          callback: (response) => {
+            if (settled) {
+              return;
+            }
+            settled = true;
+            window.clearTimeout(timeout);
+
+            if (!response.credential) {
+              reject(new Error("No Google credential received"));
+              return;
+            }
+
+            resolve(response.credential);
+          },
+        });
+
+        google.accounts.id.prompt();
+      });
+
+      await signupWithGoogle(credential);
+      navigate("/");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Google sign-up failed. Please try again.");
+    } finally {
+      setIsGoogleLoading(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -217,7 +350,12 @@ export function Signup() {
 
           {/* Social Signup */}
           <div className="space-y-[12px]">
-            <button className="w-full flex items-center justify-center gap-[12px] border border-[rgba(0,0,0,0.16)] py-[12px] text-neutral-black text-[14px] font-semibold hover:bg-neutral-light-gray transition-colors">
+            <button
+              type="button"
+              onClick={handleGoogleSignup}
+              disabled={isGoogleLoading}
+              className="w-full flex items-center justify-center gap-[12px] border border-[rgba(0,0,0,0.16)] py-[12px] text-neutral-black text-[14px] font-semibold hover:bg-neutral-light-gray hover:cursor-pointer disabled:cursor-not-allowed transition-colors"
+            >
               <svg className="w-[20px] h-[20px]" viewBox="0 0 20 20">
                 <path
                   d="M19.6 10.227c0-.709-.064-1.39-.182-2.045H10v3.868h5.382a4.6 4.6 0 01-1.996 3.018v2.51h3.232c1.891-1.742 2.982-4.305 2.982-7.35z"
@@ -236,7 +374,7 @@ export function Signup() {
                   fill="#EA4335"
                 />
               </svg>
-              Continue with Google
+              {isGoogleLoading ? "Connecting to Google..." : "Continue with Google"}
             </button>
             <button className="w-full flex items-center justify-center gap-[12px] border border-[rgba(0,0,0,0.16)] py-[12px] text-neutral-black text-[14px] font-semibold hover:bg-neutral-light-gray transition-colors">
               <svg className="w-[20px] h-[20px]" viewBox="0 0 20 20" fill="#1877F2">
