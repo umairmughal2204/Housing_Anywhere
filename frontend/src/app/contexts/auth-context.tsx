@@ -64,6 +64,8 @@ interface AuthContextType {
   loginWithGoogle: (credential: string) => Promise<void>;
   signup: (data: SignupData) => Promise<void>;
   signupWithGoogle: (credential: string) => Promise<void>;
+  requestPasswordReset: (email: string) => Promise<void>;
+  resetPasswordWithToken: (token: string, newPassword: string) => Promise<void>;
   logout: () => void;
   registerAsLandlord: (profileData: LandlordProfile) => Promise<void>;
   updateProfile: (data: ProfileUpdateData) => Promise<void>;
@@ -246,6 +248,48 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const loginWithGoogle = async (credential: string) => {
     await authenticateWithGoogle(credential);
+  };
+
+  const requestPasswordReset = async (email: string) => {
+    const response = await fetch(`${API_BASE}/api/auth/forgot-password`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ email }),
+    });
+
+    if (!response.ok) {
+      let errorMessage = "Failed to send reset email";
+      try {
+        const error = (await response.json()) as { message?: string };
+        errorMessage = error.message ?? errorMessage;
+      } catch {
+        // Keep fallback message when non-JSON errors are returned.
+      }
+      throw new Error(errorMessage);
+    }
+  };
+
+  const resetPasswordWithToken = async (token: string, newPassword: string) => {
+    const response = await fetch(`${API_BASE}/api/auth/reset-password`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ token, newPassword }),
+    });
+
+    if (!response.ok) {
+      let errorMessage = "Failed to reset password";
+      try {
+        const error = (await response.json()) as { message?: string };
+        errorMessage = error.message ?? errorMessage;
+      } catch {
+        // Keep fallback message when non-JSON errors are returned.
+      }
+      throw new Error(errorMessage);
+    }
   };
 
   const logout = () => {
@@ -433,6 +477,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         loginWithGoogle,
         signup,
         signupWithGoogle,
+        requestPasswordReset,
+        resetPasswordWithToken,
         logout,
         registerAsLandlord,
         updateProfile,

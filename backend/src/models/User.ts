@@ -37,6 +37,8 @@ const userSchema = new Schema(
     phoneVerified: { type: Boolean, required: true, default: false },
     profilePictureUrl: { type: String, required: false, trim: true },
     passwordHash: { type: String, required: false },
+    passwordResetTokenHash: { type: String, required: false },
+    passwordResetExpiresAt: { type: Date, required: false },
     authProvider: { type: String, enum: ["local", "google"], required: true, default: "local" },
     googleId: { type: String, required: false, unique: true, sparse: true },
     role: { type: String, enum: ["tenant", "landlord"], required: true, default: "tenant" },

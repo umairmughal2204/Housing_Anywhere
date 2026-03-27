@@ -1,5 +1,6 @@
 import { Router } from "express";
 import bcrypt from "bcryptjs";
+import crypto from "crypto";
 import multer from "multer";
 import fs from "fs/promises";
 import path from "path";
@@ -12,6 +13,7 @@ import { RentalApplicationModel } from "../models/RentalApplication.js";
 import { ConversationModel } from "../models/Conversation.js";
 import { ListingInteractionModel } from "../models/ListingInteraction.js";
 import { signAccessToken } from "../utils/jwt.js";
+import { canSendEmails, sendPasswordResetEmail } from "../utils/mailer.js";
 import { env } from "../config/env.js";
 import { requireAuth } from "../middleware/auth.js";
 
@@ -39,6 +41,15 @@ const loginSchema = z.object({
 
 const googleAuthSchema = z.object({
   credential: z.string().min(1),
+});
+
+const forgotPasswordSchema = z.object({
+  email: z.string().email(),
+});
+
+const resetPasswordSchema = z.object({
+  token: z.string().min(1),
+  newPassword: z.string().min(8),
 });
 
 const googleClient = env.GOOGLE_CLIENT_ID
@@ -137,6 +148,10 @@ function toRecommendedListing(listing: {
 function sortListingsByReferenceOrder<T extends { _id: unknown }>(listings: T[], orderedIds: string[]) {
   const listingById = new Map(listings.map((listing) => [String(listing._id), listing]));
   return orderedIds.map((id) => listingById.get(id)).filter(Boolean) as T[];
+}
+
+function hashResetToken(token: string) {
+  return crypto.createHash("sha256").update(token).digest("hex");
 }
 
 function toAuthUser(user: {
@@ -262,6 +277,78 @@ router.post("/login", async (req, res) => {
     token,
     user: toAuthUser(user),
   });
+});
+
+router.post("/forgot-password", async (req, res) => {
+  const parsed = forgotPasswordSchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ message: "Invalid email format" });
+    return;
+  }
+
+  if (!canSendEmails()) {
+    res.status(503).json({ message: "Email service is not configured" });
+    return;
+  }
+
+  const email = parsed.data.email.toLowerCase();
+  const user = await UserModel.findOne({ email });
+
+  if (!user) {
+    res.status(404).json({ message: "No account found with this email" });
+    return;
+  }
+
+  const rawToken = crypto.randomBytes(32).toString("hex");
+  const tokenHash = hashResetToken(rawToken);
+  const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
+
+  user.passwordResetTokenHash = tokenHash;
+  user.passwordResetExpiresAt = expiresAt;
+  await user.save();
+
+  const resetLink = `${env.PASSWORD_RESET_URL_BASE.replace(/\/$/, "")}/reset-password?token=${encodeURIComponent(rawToken)}`;
+
+  try {
+    await sendPasswordResetEmail(user.email, user.firstName, resetLink);
+  } catch (error) {
+    console.error("[Forgot Password Email Error]", {
+      timestamp: new Date().toISOString(),
+      email,
+      error: error instanceof Error ? error.message : String(error),
+    });
+    res.status(500).json({ message: "Could not send reset email. Please try again." });
+    return;
+  }
+
+  res.json({ message: "Password reset email sent" });
+});
+
+router.post("/reset-password", async (req, res) => {
+  const parsed = resetPasswordSchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ message: "Invalid input", errors: parsed.error.flatten() });
+    return;
+  }
+
+  const tokenHash = hashResetToken(parsed.data.token);
+
+  const user = await UserModel.findOne({
+    passwordResetTokenHash: tokenHash,
+    passwordResetExpiresAt: { $gt: new Date() },
+  });
+
+  if (!user) {
+    res.status(400).json({ message: "Reset token is invalid or has expired" });
+    return;
+  }
+
+  user.passwordHash = await bcrypt.hash(parsed.data.newPassword, 10);
+  user.passwordResetTokenHash = undefined;
+  user.passwordResetExpiresAt = undefined;
+  await user.save();
+
+  res.json({ message: "Password has been reset successfully" });
 });
 
 router.post("/google", async (req, res) => {

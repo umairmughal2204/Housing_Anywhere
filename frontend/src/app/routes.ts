@@ -20,6 +20,8 @@ import { Pricing } from "./pages/pricing";
 import { Help } from "./pages/help";
 import { Login } from "./pages/login";
 import { Signup } from "./pages/signup";
+import { ForgotPassword } from "./pages/forgot-password";
+import { ResetPassword } from "./pages/reset-password";
 import { Landlord } from "./pages/landlord";
 import { Payments } from "./pages/payments";
 import { Account } from "./pages/account";
@@ -41,6 +43,16 @@ export const router = createBrowserRouter([
   {
     path: "/signup",
     Component: Signup,
+    ErrorBoundary,
+  },
+  {
+    path: "/forgot-password",
+    Component: ForgotPassword,
+    ErrorBoundary,
+  },
+  {
+    path: "/reset-password",
+    Component: ResetPassword,
     ErrorBoundary,
   },
   {
