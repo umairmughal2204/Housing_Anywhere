@@ -333,7 +333,12 @@ router.post("/google", async (req, res) => {
       token,
       user: toAuthUser(user),
     });
-  } catch {
+  } catch (error) {
+    console.error("[Google Auth Error]", {
+      timestamp: new Date().toISOString(),
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+    });
     res.status(401).json({ message: "Invalid Google credential" });
   }
 });

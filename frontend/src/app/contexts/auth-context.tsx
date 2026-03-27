@@ -161,6 +161,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     }
 
+    if (response.status === 401 && !response.url.includes("/api/auth/login")) {
+      logout();
+      throw new Error("Session expired, please log in again");
+    }
+
     if (!response.ok) {
       let errorMessage = "Login failed";
       try {
@@ -186,6 +191,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       body: JSON.stringify(data),
     });
 
+    if (response.status === 401) {
+      logout();
+      throw new Error("Session expired, please log in again");
+    }
+
     if (!response.ok) {
       const error = (await response.json()) as { message?: string };
       throw new Error(error.message ?? "Signup failed");
@@ -205,9 +215,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       body: JSON.stringify({ credential }),
     });
 
+    if (response.status === 429) {
+      throw new Error("Too many attempts. Please wait a few minutes before trying again.");
+    }
+
+    if (response.status === 401) {
+      logout();
+      throw new Error("Session expired, please log in again");
+    }
+
     if (!response.ok) {
-      const error = (await response.json()) as { message?: string };
-      throw new Error(error.message ?? "Google signup failed");
+      let errorMessage = "Google authentication failed";
+      try {
+        const error = (await response.json()) as { message?: string };
+        errorMessage = error.message ?? errorMessage;
+      } catch {
+        errorMessage = `Request failed with status ${response.status}`;
+      }
+      throw new Error(errorMessage);
     }
 
     const payload = (await response.json()) as AuthResponse;
@@ -244,6 +269,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       body: JSON.stringify(profileData),
     });
 
+    if (response.status === 401) {
+      logout();
+      throw new Error("Session expired, please log in again");
+    }
+
     if (!response.ok) {
       const error = (await response.json()) as { message?: string };
       throw new Error(error.message ?? "Failed to register landlord profile");
@@ -269,6 +299,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       body: JSON.stringify(data),
     });
 
+    if (response.status === 401) {
+      logout();
+      throw new Error("Session expired, please log in again");
+    }
+
     if (!response.ok) {
       const error = (await response.json()) as { message?: string };
       throw new Error(error.message ?? "Failed to update profile");
@@ -292,6 +327,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       },
       body: JSON.stringify(data),
     });
+
+    if (response.status === 401) {
+      logout();
+      throw new Error("Session expired, please log in again");
+    }
 
     if (!response.ok) {
       const error = (await response.json()) as { message?: string };
@@ -318,6 +358,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       body: JSON.stringify({ currentPassword, newPassword }),
     });
 
+    if (response.status === 401) {
+      logout();
+      throw new Error("Session expired, please log in again");
+    }
+
     if (!response.ok) {
       const error = (await response.json()) as { message?: string };
       throw new Error(error.message ?? "Failed to update password");
@@ -340,6 +385,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       },
       body: formData,
     });
+
+    if (response.status === 401) {
+      logout();
+      throw new Error("Session expired, please log in again");
+    }
 
     if (!response.ok) {
       const error = (await response.json()) as { message?: string };
