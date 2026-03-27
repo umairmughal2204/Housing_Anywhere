@@ -37,10 +37,12 @@ const signupSchema = z.object({
 const loginSchema = z.object({
   email: z.string().email(),
   password: z.string().min(6),
+  rememberMe: z.boolean().optional().default(false),
 });
 
 const googleAuthSchema = z.object({
   credential: z.string().min(1),
+  rememberMe: z.boolean().optional().default(false),
 });
 
 const forgotPasswordSchema = z.object({
@@ -248,7 +250,7 @@ router.post("/login", async (req, res) => {
     return;
   }
 
-  const { email, password } = parsed.data;
+  const { email, password, rememberMe } = parsed.data;
   const user = await UserModel.findOne({ email: email.toLowerCase() });
 
   if (!user) {
@@ -267,11 +269,14 @@ router.post("/login", async (req, res) => {
     return;
   }
 
-  const token = signAccessToken({
-    sub: user._id.toString(),
-    role: user.role,
-    email: user.email,
-  });
+  const token = signAccessToken(
+    {
+      sub: user._id.toString(),
+      role: user.role,
+      email: user.email,
+    },
+    rememberMe ? "10d" : "1d"
+  );
 
   res.json({
     token,
@@ -410,11 +415,14 @@ router.post("/google", async (req, res) => {
       }
     }
 
-    const token = signAccessToken({
-      sub: user._id.toString(),
-      role: user.role,
-      email: user.email,
-    });
+    const token = signAccessToken(
+      {
+        sub: user._id.toString(),
+        role: user.role,
+        email: user.email,
+      },
+      parsed.data.rememberMe ? "10d" : "1d"
+    );
 
     res.json({
       token,

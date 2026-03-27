@@ -7,8 +7,8 @@ export interface JwtPayload {
   email: string;
 }
 
-export function signAccessToken(payload: JwtPayload): string {
-  return jwt.sign(payload, env.JWT_SECRET, { expiresIn: "7d" });
+export function signAccessToken(payload: JwtPayload, expiresIn: "1d" | "10d" = "1d"): string {
+  return jwt.sign(payload, env.JWT_SECRET, { expiresIn });
 }
 
 export function verifyAccessToken(token: string): JwtPayload {

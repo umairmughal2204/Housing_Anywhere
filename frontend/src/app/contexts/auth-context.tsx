@@ -60,8 +60,8 @@ interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  login: (email: string, password: string) => Promise<void>;
-  loginWithGoogle: (credential: string) => Promise<void>;
+  login: (email: string, password: string, rememberMe?: boolean) => Promise<void>;
+  loginWithGoogle: (credential: string, rememberMe?: boolean) => Promise<void>;
   signup: (data: SignupData) => Promise<void>;
   signupWithGoogle: (credential: string) => Promise<void>;
   requestPasswordReset: (email: string) => Promise<void>;
@@ -138,13 +138,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     void bootstrapAuth();
   }, []);
 
-  const login = async (email: string, password: string) => {
+  const login = async (email: string, password: string, rememberMe = false) => {
     const requestInit: RequestInit = {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ email, password }),
+      body: JSON.stringify({ email, password, rememberMe }),
     };
 
     const loginUrl = `${API_BASE}/api/auth/login`;
@@ -208,13 +208,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     saveUser(payload.user);
   };
 
-  const authenticateWithGoogle = async (credential: string) => {
+  const authenticateWithGoogle = async (credential: string, rememberMe = false) => {
     const response = await fetch(`${API_BASE}/api/auth/google`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ credential }),
+      body: JSON.stringify({ credential, rememberMe }),
     });
 
     if (response.status === 429) {
@@ -246,8 +246,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await authenticateWithGoogle(credential);
   };
 
-  const loginWithGoogle = async (credential: string) => {
-    await authenticateWithGoogle(credential);
+  const loginWithGoogle = async (credential: string, rememberMe = false) => {
+    await authenticateWithGoogle(credential, rememberMe);
   };
 
   const requestPasswordReset = async (email: string) => {

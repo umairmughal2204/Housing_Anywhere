@@ -68,6 +68,7 @@ function loadGoogleIdentityScript() {
 export function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [rememberMe, setRememberMe] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -139,7 +140,7 @@ export function Login() {
         google.accounts.id.prompt();
       });
 
-      await loginWithGoogle(credential);
+      await loginWithGoogle(credential, rememberMe);
       navigate(redirect || "/");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Google sign-in failed. Please try again.");
@@ -160,7 +161,7 @@ export function Login() {
     setIsLoading(true);
 
     try {
-      await login(email, password);
+      await login(email, password, rememberMe);
       // Redirect to specified page or home after successful login
       navigate(redirect || "/");
     } catch (err) {
@@ -269,10 +270,12 @@ export function Login() {
               <input
                 type="checkbox"
                 id="remember"
+                checked={rememberMe}
+                onChange={(e) => setRememberMe(e.target.checked)}
                 className="w-[16px] h-[16px] border border-[rgba(0,0,0,0.16)] accent-brand-primary"
               />
               <label htmlFor="remember" className="text-neutral-black text-[14px]">
-                Remember me for 30 days
+                Remember me for 10 days
               </label>
             </div>
 
