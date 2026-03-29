@@ -1,6 +1,6 @@
 import { Link, useParams, useNavigate, useLocation } from "react-router";
 import { useState, useEffect, useMemo } from "react";
-import { ChevronLeft, Info, ChevronDown, Shield, Check, Plus, Upload, FileText, User, GraduationCap, Briefcase, Sparkles, LogOut, Pencil, Heart, CheckCircle2, Calendar, CircleDollarSign, Building2, Eye, Users } from "lucide-react";
+import { ChevronLeft, Info, ChevronDown, Shield, Check, Plus, Upload, FileText, User, GraduationCap, Briefcase, Sparkles, LogOut, Pencil, Heart, CheckCircle2, Calendar, CircleDollarSign, Building2, Eye, Users, Bath, Utensils, Sofa, Bed, Tv, Wifi } from "lucide-react";
 import { DatePicker } from "../components/date-picker";
 import { useAuth } from "../contexts/auth-context";
 import { API_BASE } from "../config";
@@ -1452,25 +1452,25 @@ export function RentalApplication() {
                             <div>
                               <h6 className="text-[15px] font-bold mb-[8px]">Facilities</h6>
                               <ul className="space-y-[6px]">
-                                <li>Shared toilet</li>
-                                <li>Private kitchen</li>
-                                <li>Private living room</li>
+                                <li className="flex items-center gap-[8px]"><Bath className="w-[16px] h-[16px]" />Shared toilet</li>
+                                <li className="flex items-center gap-[8px]"><Utensils className="w-[16px] h-[16px]" />Private kitchen</li>
+                                <li className="flex items-center gap-[8px]"><Sofa className="w-[16px] h-[16px]" />Private living room</li>
                                 <li className="line-through text-[#7A8790]">No parking</li>
                               </ul>
                             </div>
                             <div>
                               <h6 className="text-[15px] font-bold mb-[8px]">Amenities</h6>
                               <ul className="space-y-[6px]">
-                                <li>Bed</li>
-                                <li>Closet</li>
-                                <li>Desk</li>
-                                <li>Dishwasher</li>
-                                <li>Dryer</li>
-                                <li>Bedroom lock</li>
-                                <li>Living room furniture</li>
-                                <li>TV</li>
-                                <li>Washing machine</li>
-                                <li>WiFi</li>
+                                <li className="flex items-center gap-[8px]"><Bed className="w-[16px] h-[16px]" />Bed</li>
+                                <li className="flex items-center gap-[8px]"><User className="w-[16px] h-[16px]" />Closet</li>
+                                <li className="flex items-center gap-[8px]"><FileText className="w-[16px] h-[16px]" />Desk</li>
+                                <li className="flex items-center gap-[8px]"><Utensils className="w-[16px] h-[16px]" />Dishwasher</li>
+                                <li className="flex items-center gap-[8px]"><Sparkles className="w-[16px] h-[16px]" />Dryer</li>
+                                <li className="flex items-center gap-[8px]"><Shield className="w-[16px] h-[16px]" />Bedroom lock</li>
+                                <li className="flex items-center gap-[8px]"><Sofa className="w-[16px] h-[16px]" />Living room furniture</li>
+                                <li className="flex items-center gap-[8px]"><Tv className="w-[16px] h-[16px]" />TV</li>
+                                <li className="flex items-center gap-[8px]"><Upload className="w-[16px] h-[16px]" />Washing machine</li>
+                                <li className="flex items-center gap-[8px]"><Wifi className="w-[16px] h-[16px]" />WiFi</li>
                                 <li className="line-through text-[#7A8790]">No air conditioning</li>
                                 <li className="line-through text-[#7A8790]">Not access friendly</li>
                               </ul>
