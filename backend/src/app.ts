@@ -20,7 +20,7 @@ export function createApp() {
   );
   app.use(express.json({ limit: "1mb" }));
 
-  const authLimiter = rateLimit({
+  const authAttemptLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
     max: 20,
     standardHeaders: true,
@@ -35,7 +35,12 @@ export function createApp() {
     res.json({ ok: true });
   });
 
-  app.use("/api/auth", authLimiter, authRoutes);
+  app.use("/api/auth/login", authAttemptLimiter);
+  app.use("/api/auth/signup", authAttemptLimiter);
+  app.use("/api/auth/google", authAttemptLimiter);
+  app.use("/api/auth/forgot-password", authAttemptLimiter);
+  app.use("/api/auth/reset-password", authAttemptLimiter);
+  app.use("/api/auth", authRoutes);
   app.use("/api/landlord", landlordRoutes);
   app.use("/api/listings", listingsRoutes);
   app.use("/api/rental-applications", rentalApplicationsRoutes);
