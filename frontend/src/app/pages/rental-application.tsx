@@ -1480,16 +1480,97 @@ export function RentalApplication() {
                       </div>
                     )}
 
-                    {["Viewings", "Required documents", "People & housemates", "Additional needs & requests", "Other"].map(topic => (
-                      expandedTopics.includes(topic) && (
-                        <div key={topic} className="border border-[rgba(0,0,0,0.12)] rounded-[6px] p-[20px] mb-[24px]">
-                          <button className="w-full flex items-center justify-between text-left">
-                            <h5 className="text-[#0F2D36] text-[18px] font-bold">{topic} info</h5>
-                            <ChevronDown className="w-[24px] h-[24px] text-[#0F2D36]" />
-                          </button>
+                    {expandedTopics.includes("Viewings") && (
+                      <div className="border border-[rgba(0,0,0,0.12)] rounded-[6px] p-[20px] mb-[24px]">
+                        <button className="w-full flex items-center justify-between text-left">
+                          <h5 className="text-[#0F2D36] text-[18px] font-bold">Viewings info</h5>
+                          <ChevronDown className="w-[24px] h-[24px] text-[#0F2D36]" />
+                        </button>
+                        <div className="mt-[16px] space-y-[12px] text-[#0F2D36] text-[15px] leading-[1.6]">
+                          <p>At HousingAnywhere, in-person viewings are not supported. So everyone has an equal chance to rent, no matter where you are in the world.</p>
+                          <p>To stay safe, always message and pay on HousingAnywhere. This helps us verify everyone's details, and prevents off-platform agreements that could compromise your safety.</p>
+
+                          <div className="pt-[6px]">
+                            <h6 className="text-[15px] font-bold mb-[8px]">Find your next home without a viewing</h6>
+                            <p className="mb-[8px]">To help you make an informed decision, we recommend:</p>
+                            <ul className="space-y-[8px]">
+                              <li className="flex items-start gap-[8px]"><span>•</span><span>Messaging the landlord on HousingAnywhere to ask any questions.</span></li>
+                              <li className="flex items-start gap-[8px]"><span>•</span><span>Requesting more photos, video tours, or floor plans.</span></li>
+                            </ul>
+                          </div>
+
+                          <div className="pt-[6px]">
+                            <h6 className="text-[15px] font-bold mb-[8px]">Your rental is covered by Tenant Protection</h6>
+                            <p className="mb-[8px]">We know that renting without seeing a place in person can feel like a big step. That's why every rental on HousingAnywhere is backed by <button className="text-[#0F2D36] underline underline-offset-[2px] hover:text-[#0A2530]">Tenant Protection</button>.</p>
+                            <ul className="space-y-[8px]">
+                              <li className="flex items-start gap-[8px]"><span>•</span><span>If the place is not as advertised when you move in, you can <button className="text-[#0F2D36] underline underline-offset-[2px] hover:text-[#0A2530]">cancel within 48 hours</button>.</span></li>
+                              <li className="flex items-start gap-[8px]"><span>•</span><span>If your reason for cancelling is covered by our policies, we'll help you find a new place to stay. If needed, we can also provide a temporary hotel stay.</span></li>
+                              <li className="flex items-start gap-[8px]"><span>•</span><span>If we can't find you a suitable home, you'll receive a full refund.</span></li>
+                            </ul>
+                            <p className="mt-[8px]"><span className="mr-[4px]">👉</span>For more details, see our <button className="text-[#0F2D36] underline underline-offset-[2px] hover:text-[#0A2530]">Terms & Conditions</button>, section 15.16.2. Refund eligibility.</p>
+                          </div>
                         </div>
-                      )
-                    ))}
+                      </div>
+                    )}
+
+                    {expandedTopics.includes("Additional needs & requests") && (
+                      <div className="border border-[rgba(0,0,0,0.12)] rounded-[6px] p-[20px] mb-[24px]">
+                        <button className="w-full flex items-center justify-between text-left">
+                          <h5 className="text-[#0F2D36] text-[18px] font-bold">Additional needs & requests info</h5>
+                          <ChevronDown className="w-[24px] h-[24px] text-[#0F2D36]" />
+                        </button>
+                        <div className="mt-[16px] text-[#0F2D36] text-[15px] leading-[1.6]">
+                          <ul className="space-y-[8px]">
+                            <li className="flex items-start gap-[8px]"><span>•</span><span>Pets not allowed</span></li>
+                          </ul>
+                        </div>
+                      </div>
+                    )}
+
+                    {expandedTopics.includes("People & housemates") && (
+                      <div className="border border-[rgba(0,0,0,0.12)] rounded-[6px] p-[20px] mb-[24px]">
+                        <button className="w-full flex items-center justify-between text-left">
+                          <h5 className="text-[#0F2D36] text-[18px] font-bold">People & housemates info</h5>
+                          <ChevronDown className="w-[24px] h-[24px] text-[#0F2D36]" />
+                        </button>
+                        <div className="mt-[16px] text-[#0F2D36] text-[15px] leading-[1.6] space-y-[14px]">
+                          <div>
+                            <h6 className="text-[15px] font-bold mb-[6px]">Who can rent this place</h6>
+                          </div>
+                          <div>
+                            <h6 className="text-[15px] font-bold mb-[6px]">Who you'll be living with</h6>
+                            <ul className="space-y-[8px]">
+                              <li className="flex items-start gap-[8px]"><span>•</span><span>Number of housemates: 0</span></li>
+                            </ul>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {expandedTopics.includes("Required documents") && (
+                      <div className="border border-[rgba(0,0,0,0.12)] rounded-[6px] p-[20px] mb-[24px]">
+                        <button className="w-full flex items-center justify-between text-left">
+                          <h5 className="text-[#0F2D36] text-[18px] font-bold">Required documents info</h5>
+                          <ChevronDown className="w-[24px] h-[24px] text-[#0F2D36]" />
+                        </button>
+                        <div className="mt-[16px] text-[#0F2D36] text-[15px] leading-[1.6]">
+                          <p className="mb-[10px]">The landlord needs these documents to confirm your rental. We'll always ask your consent before sharing them with a new verified landlord.</p>
+                          <ul className="space-y-[8px]">
+                            <li className="flex items-start gap-[8px]"><span>•</span><span>Proof of identity — Government-issued ID or passport.</span></li>
+                            <li className="flex items-start gap-[8px]"><span>•</span><span>Proof of enrollment or occupation — University enrollment certificate, internship or employment contract.</span></li>
+                          </ul>
+                        </div>
+                      </div>
+                    )}
+
+                    {expandedTopics.includes("Other") && (
+                      <div className="border border-[rgba(0,0,0,0.12)] rounded-[6px] p-[20px] mb-[24px]">
+                        <button className="w-full flex items-center justify-between text-left">
+                          <h5 className="text-[#0F2D36] text-[18px] font-bold">Other info</h5>
+                          <ChevronDown className="w-[24px] h-[24px] text-[#0F2D36]" />
+                        </button>
+                      </div>
+                    )}
 
                     {/* Info Box */}
                     <div className="bg-[#E8EEF4] rounded-[6px] p-[16px] mb-[24px]">
