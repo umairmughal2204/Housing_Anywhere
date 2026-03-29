@@ -1,9 +1,10 @@
 import { Header } from "../components/header";
 import { Footer } from "../components/footer";
-import { User, FileText, Mail, Key, Bell, Camera, Plus, Trash2 } from "lucide-react";
+import { User, FileText, Mail, Key, Bell, Plus, Trash2 } from "lucide-react";
 import { ChangeEvent, FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router";
 import { useAuth } from "../contexts/auth-context";
+import { UserAvatar } from "../components/user-avatar";
 
 type TabType = "profile" | "documents" | "contact" | "password" | "notifications";
 type Gender = "male" | "female" | "other";
@@ -405,17 +406,12 @@ export function Account() {
                       onChange={handleProfilePictureSelect}
                     />
                     <div className="flex items-center gap-[16px] mb-[32px]">
-                      <div className="w-[80px] h-[80px] bg-[#E0E0E0] rounded-full flex items-center justify-center overflow-hidden">
-                        {user?.profilePictureUrl ? (
-                          <img
-                            src={user.profilePictureUrl}
-                            alt="Profile"
-                            className="w-full h-full object-cover"
-                          />
-                        ) : (
-                          <Camera className="w-[32px] h-[32px] text-[#6B6B6B]" />
-                        )}
-                      </div>
+                      <UserAvatar
+                        name={user?.name}
+                        profilePictureUrl={user?.profilePictureUrl}
+                        sizeClassName="w-[80px] h-[80px]"
+                        textClassName="text-[#1A1A1A] text-[28px] font-bold bg-[#E0E0E0]"
+                      />
                       <button
                         type="button"
                         onClick={() => profilePictureInputRef.current?.click()}

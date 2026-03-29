@@ -16,6 +16,7 @@ import { useAuth } from "../contexts/auth-context";
 import { useEffect, useRef, useState } from "react";
 import { API_BASE } from "../config";
 import { changeSiteLanguage, getSavedLanguageLabel, SUPPORTED_LANGUAGES } from "../utils/translate";
+import { UserAvatar } from "./user-avatar";
 
 interface LandlordPortalLayoutProps {
   children: React.ReactNode;
@@ -162,15 +163,6 @@ export function LandlordPortalLayout({
     setSelectedLanguage(pendingLanguage.label);
     changeSiteLanguage(pendingLanguage.code);
     setPendingLanguage(null);
-  };
-
-  const getUserInitials = () => {
-    if (!user) return "L";
-    const nameParts = user.name.split(" ");
-    if (nameParts.length >= 2) {
-      return `${nameParts[0].charAt(0)}${nameParts[1].charAt(0)}`.toUpperCase();
-    }
-    return user.name.charAt(0).toUpperCase();
   };
 
   const notificationCount = unreadMessages + pendingApplications;
@@ -333,13 +325,12 @@ export function LandlordPortalLayout({
                 onClick={() => setShowUserMenu(!showUserMenu)}
                 className="flex items-center gap-[12px] p-[8px] hover:bg-neutral-light-gray transition-colors"
               >
-                <div className="w-[32px] h-[32px] bg-brand-primary rounded-full flex items-center justify-center text-white text-[14px] font-bold">
-                  {user?.profilePictureUrl ? (
-                    <img src={user.profilePictureUrl} alt="User" className="w-full h-full rounded-full object-cover" />
-                  ) : (
-                    getUserInitials()
-                  )}
-                </div>
+                <UserAvatar
+                  name={user?.name}
+                  profilePictureUrl={user?.profilePictureUrl}
+                  sizeClassName="w-[32px] h-[32px]"
+                  textClassName="text-white text-[14px] font-bold bg-brand-primary"
+                />
                 {user && (
                   <div className="hidden md:block text-left">
                     <div className="text-neutral-black text-[14px] font-bold">{user?.name}</div>

@@ -2,6 +2,7 @@ import { Link, useNavigate } from "react-router";
 import { Globe, MessageCircle, Heart, User, CreditCard, HelpCircle, Settings, LogOut, TrendingUp, LayoutDashboard, FileText } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { useAuth } from "../contexts/auth-context";
+import { UserAvatar } from "./user-avatar";
 import { changeSiteLanguage, getSavedLanguageLabel, SUPPORTED_LANGUAGES } from "../utils/translate";
 import { API_BASE } from "../config";
 
@@ -31,16 +32,6 @@ export function Header() {
     setSelectedLanguage(pendingLanguage.label);
     changeSiteLanguage(pendingLanguage.code);
     setPendingLanguage(null);
-  };
-
-  // Get user initials
-  const getUserInitials = () => {
-    if (!user) return "U";
-    const nameParts = user.name.split(" ");
-    if (nameParts.length >= 2) {
-      return `${nameParts[0].charAt(0)}${nameParts[1].charAt(0)}`.toUpperCase();
-    }
-    return user.name.charAt(0).toUpperCase();
   };
 
   // Close dropdown when clicking outside
@@ -247,11 +238,12 @@ export function Header() {
                 onClick={() => setShowDropdown(!showDropdown)}
                 className="w-[40px] h-[40px] bg-neutral-gray rounded-full flex items-center justify-center text-white text-[16px] font-semibold hover:bg-neutral-black transition-colors"
               >
-                {user?.profilePictureUrl ? (
-                  <img src={user.profilePictureUrl} alt="User" className="w-full h-full rounded-full object-cover" />
-                ) : (
-                  getUserInitials()
-                )}
+                <UserAvatar
+                  name={user?.name}
+                  profilePictureUrl={user?.profilePictureUrl}
+                  sizeClassName="w-full h-full"
+                  textClassName="text-white text-[16px] font-semibold bg-neutral-gray"
+                />
               </button>
 
               {/* Dropdown Menu */}
@@ -260,13 +252,12 @@ export function Header() {
                   {/* User Info */}
                   <div className="p-[16px] border-b border-neutral">
                     <div className="flex items-center gap-[12px]">
-                      <div className="w-[48px] h-[48px] bg-neutral-gray rounded-full flex items-center justify-center text-white text-[20px] font-semibold">
-                        {user?.profilePictureUrl ? (
-                          <img src={user.profilePictureUrl} alt="User" className="w-full h-full rounded-full object-cover" />
-                        ) : (
-                          getUserInitials()
-                        )}
-                      </div>
+                      <UserAvatar
+                        name={user?.name}
+                        profilePictureUrl={user?.profilePictureUrl}
+                        sizeClassName="w-[48px] h-[48px]"
+                        textClassName="text-white text-[20px] font-semibold bg-neutral-gray"
+                      />
                       <div>
                         <div className="text-neutral-black text-[14px] font-bold">{user?.name}</div>
                         <div className="text-neutral-gray text-[12px]">{user?.email}</div>
