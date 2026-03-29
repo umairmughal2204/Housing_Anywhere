@@ -1,6 +1,7 @@
-import { Link, useParams, useNavigate } from "react-router";
-import { useState, useEffect } from "react";
-import { ChevronLeft, Info, ChevronDown, Shield, Check, Plus, Upload, FileText, User, LogOut } from "lucide-react";
+import { Link, useParams, useNavigate, useLocation } from "react-router";
+import { useState, useEffect, useMemo } from "react";
+import { ChevronLeft, Info, ChevronDown, Shield, Check, Plus, Upload, FileText, User, GraduationCap, Briefcase, Sparkles, LogOut, Pencil, Heart, CheckCircle2, Calendar, CircleDollarSign, Building2, Eye, Users } from "lucide-react";
+import { DatePicker } from "../components/date-picker";
 import { useAuth } from "../contexts/auth-context";
 import { API_BASE } from "../config";
 
@@ -9,18 +10,39 @@ interface ListingSummary {
   title: string;
   city: string;
   address: string;
+  country?: string;
   monthlyRent: number;
   deposit: number;
   availableFrom: string;
   images: string[];
   utilitiesIncluded: boolean;
   utilitiesCost: number;
+  utilities: Array<{ type: string; included: boolean; amount: number }>;
+  landlordName: string;
+  landlordProfilePicture: string;
+  minStay: number;
+  maxStay?: number;
+  requireProofOfIdentity: boolean;
+  requireProofOfOccupation: boolean;
+  requireProofOfIncome: boolean;
 }
 
 type ApiListingSummary = Partial<ListingSummary> & {
   media?: Array<{ url?: string }>;
   deposits?: Array<{ amount?: number }>;
-  utilities?: Array<{ included?: boolean; amount?: number }>;
+  utilities?: Array<{ type?: string; included?: boolean; amount?: number }>;
+  minimumRentalPeriod?: number;
+  maximumRentalPeriod?: number;
+  landlord?: {
+    name?: string;
+    profilePicture?: string;
+    profileImage?: string;
+    avatar?: string;
+    image?: string;
+  };
+  requireProofOfIdentity?: boolean;
+  requireProofOfOccupation?: boolean;
+  requireProofOfIncome?: boolean;
 };
 
 function normalizeListingSummary(raw: ApiListingSummary): ListingSummary {
@@ -29,6 +51,11 @@ function normalizeListingSummary(raw: ApiListingSummary): ListingSummary {
     : [];
 
   const utilities = Array.isArray(raw.utilities) ? raw.utilities : [];
+  const normalizedUtilities = utilities.map((utility) => ({
+    type: utility?.type ?? "Utility",
+    included: Boolean(utility?.included),
+    amount: utility?.amount ?? 0,
+  }));
   const derivedUtilitiesIncluded = utilities.some((utility) => Boolean(utility?.included));
   const derivedUtilitiesCost = utilities
     .filter((utility) => !utility?.included)
@@ -39,28 +66,44 @@ function normalizeListingSummary(raw: ApiListingSummary): ListingSummary {
     title: raw.title ?? "Listing unavailable",
     city: raw.city ?? "",
     address: raw.address ?? "",
+    country: raw.country,
     monthlyRent: raw.monthlyRent ?? 0,
     deposit: raw.deposit ?? raw.deposits?.[0]?.amount ?? 0,
     availableFrom: raw.availableFrom ?? new Date().toISOString(),
     images: Array.isArray(raw.images) ? raw.images : mediaImages,
     utilitiesIncluded: raw.utilitiesIncluded ?? derivedUtilitiesIncluded,
     utilitiesCost: raw.utilitiesCost ?? derivedUtilitiesCost,
+    utilities: normalizedUtilities,
+    landlordName: raw.landlord?.name ?? "Landlord",
+    landlordProfilePicture:
+      raw.landlord?.profilePicture ?? raw.landlord?.profileImage ?? raw.landlord?.avatar ?? raw.landlord?.image ?? "",
+    minStay: Math.max(1, raw.minStay ?? raw.minimumRentalPeriod ?? 1),
+    maxStay: raw.maxStay ?? raw.maximumRentalPeriod,
+    requireProofOfIdentity: Boolean(raw.requireProofOfIdentity),
+    requireProofOfOccupation: Boolean(raw.requireProofOfOccupation),
+    requireProofOfIncome: Boolean(raw.requireProofOfIncome),
   };
 }
 
-const COUNTRY_CODE_OPTIONS = [
-  { value: "NL +31", label: "Netherlands (+31)" },
-  { value: "DE +49", label: "Germany (+49)" },
-  { value: "FR +33", label: "France (+33)" },
-  { value: "ES +34", label: "Spain (+34)" },
-  { value: "IT +39", label: "Italy (+39)" },
-  { value: "GB +44", label: "United Kingdom (+44)" },
-  { value: "US +1", label: "United States (+1)" },
-  { value: "PK +92", label: "Pakistan (+92)" },
-  { value: "IN +91", label: "India (+91)" },
-  { value: "TR +90", label: "Turkey (+90)" },
-  { value: "CN +86", label: "China (+86)" },
-];
+function addMonthsClamped(date: Date, months: number) {
+  const year = date.getFullYear();
+  const month = date.getMonth() + months;
+  const day = date.getDate();
+  const maxDayInTarget = new Date(year, month + 1, 0).getDate();
+  return new Date(year, month, Math.min(day, maxDayInTarget));
+}
+
+function monthStart(date: Date) {
+  return new Date(date.getFullYear(), date.getMonth(), 1);
+}
+
+function monthEnd(date: Date) {
+  return new Date(date.getFullYear(), date.getMonth() + 1, 0);
+}
+
+function formatDateLabel(date: Date) {
+  return date.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
+}
 
 const TENANT_PROTECTION_RATE = 0.1;
 const TENANT_PROTECTION_FEE_CAP = 250;
@@ -68,9 +111,13 @@ const TENANT_PROTECTION_FEE_CAP = 250;
 export function RentalApplication() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const { user, logout } = useAuth();
   const apiBase = API_BASE;
   const [currentStep, setCurrentStep] = useState(1);
+  const [showAskQuestionForm, setShowAskQuestionForm] = useState(false);
+  const [expandedTopics, setExpandedTopics] = useState<string[]>([]);
+  const [questionText, setQuestionText] = useState("");
   const [listing, setListing] = useState<ListingSummary | null>(null);
   const [isLoadingListing, setIsLoadingListing] = useState(true);
   const [listingError, setListingError] = useState("");
@@ -78,6 +125,25 @@ export function RentalApplication() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState("");
   const [stepOneError, setStepOneError] = useState("");
+  const [showLandlordMore, setShowLandlordMore] = useState(false);
+  const [isProtectionExpanded, setIsProtectionExpanded] = useState(false);
+  const [isDatePickerModalOpen, setIsDatePickerModalOpen] = useState(false);
+  const [selectedStartDate, setSelectedStartDate] = useState<Date | null>(null);
+  const [selectedEndDate, setSelectedEndDate] = useState<Date | null>(null);
+  const [isMoveInAvailabilityChecked, setIsMoveInAvailabilityChecked] = useState(false);
+  const searchParams = useMemo(() => new URLSearchParams(location.search), [location.search]);
+  const statePayload = (location.state ?? {}) as {
+    selectedStartDate?: string | null;
+    selectedEndDate?: string | null;
+    isMoveInAvailabilityChecked?: boolean;
+  };
+  const incomingStartDateIso = searchParams.get("moveIn") ?? statePayload.selectedStartDate;
+  const incomingEndDateIso = searchParams.get("moveOut") ?? statePayload.selectedEndDate;
+  const incomingAvailabilityRaw =
+    searchParams.get("available") ??
+    (typeof statePayload.isMoveInAvailabilityChecked === "boolean"
+      ? statePayload.isMoveInAvailabilityChecked
+      : null);
   
   // Dropdown states
   const [isLanguageOpen, setIsLanguageOpen] = useState(false);
@@ -87,8 +153,6 @@ export function RentalApplication() {
   // Form states
   const [dateOfBirth, setDateOfBirth] = useState({ day: "", month: "", year: "" });
   const [gender, setGender] = useState<"male" | "female" | "other" | null>(null);
-  const [countryCode, setCountryCode] = useState("NL +31");
-  const [mobileNumber, setMobileNumber] = useState("");
   const [profilePicture, setProfilePicture] = useState<File | null>(null);
   const [profilePicturePreview, setProfilePicturePreview] = useState<string | null>(null);
   const [moveInCount, setMoveInCount] = useState(1);
@@ -103,7 +167,6 @@ export function RentalApplication() {
   const [supportingMessage, setSupportingMessage] = useState(
     "Hi, I'm interested in renting your place. I'd love to connect, and hope to hear from you soon."
   );
-  const [showMorePayments, setShowMorePayments] = useState(false);
   
   // Document states
   const [idVerified, setIdVerified] = useState(false);
@@ -114,6 +177,76 @@ export function RentalApplication() {
   const tenantProtectionFee = listing
     ? Math.min(listing.monthlyRent * TENANT_PROTECTION_RATE, TENANT_PROTECTION_FEE_CAP)
     : 0;
+  const landlordInitials = (listing?.landlordName ?? "Landlord")
+    .split(" ")
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase() ?? "")
+    .join("") || "L";
+  const landlordFirstName =
+    (listing?.landlordName ?? "Robin")
+      .split(" ")
+      .map((part) => part.trim())
+      .find(Boolean) || "Robin";
+  const requiresIdentityProof = Boolean(listing?.requireProofOfIdentity);
+  const requiresOccupationProof = Boolean(listing?.requireProofOfOccupation);
+  const requiresIncomeProof = Boolean(listing?.requireProofOfIncome);
+  const documentsRequiredCount = [requiresIdentityProof, requiresOccupationProof, requiresIncomeProof].filter(Boolean).length;
+  const hasRequiredDocuments =
+    (!requiresIdentityProof || idVerified) &&
+    (!requiresOccupationProof || Boolean(employmentProof)) &&
+    (!requiresIncomeProof || Boolean(incomeProof));
+
+  const isAskQuestionMode = currentStep === 1 && showAskQuestionForm;
+
+  const selectedRangeLabel =
+    selectedStartDate && selectedEndDate
+      ? `${formatDateLabel(selectedStartDate)} - ${formatDateLabel(selectedEndDate)}`
+      : "Move in - Move out";
+
+  const rentBreakdownRows = (() => {
+    if (!listing || !selectedStartDate || !selectedEndDate || selectedEndDate < selectedStartDate) {
+      return [] as Array<{ label: string; value: string; amount: number; original?: string }>;
+    }
+
+    const rows: Array<{ label: string; value: string; amount: number; original?: string }> = [];
+    const monthlyRent = listing.monthlyRent;
+    let cursor = new Date(selectedStartDate);
+
+    while (cursor <= selectedEndDate) {
+      const periodStart = new Date(cursor);
+      const monthLastDay = monthEnd(periodStart);
+      const periodEnd = monthLastDay < selectedEndDate ? monthLastDay : new Date(selectedEndDate);
+
+      const daysInMonth = monthLastDay.getDate();
+      const occupiedDays = Math.floor((periodEnd.getTime() - periodStart.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+
+      let value = monthlyRent;
+      let original: string | undefined;
+      if (occupiedDays < daysInMonth) {
+        value = (monthlyRent / daysInMonth) * occupiedDays;
+        original = `\u20AC${monthlyRent.toFixed(2)}`;
+      }
+
+      rows.push({
+        label: `${formatDateLabel(periodStart)} - ${formatDateLabel(periodEnd)}`,
+        value: `\u20AC${value.toFixed(2)}`,
+        amount: value,
+        original,
+      });
+
+      cursor = new Date(periodEnd);
+      cursor.setDate(cursor.getDate() + 1);
+    }
+
+    return rows;
+  })();
+  const rentForSelectedPeriod =
+    rentBreakdownRows.length > 0
+      ? rentBreakdownRows.reduce((sum, row) => sum + row.amount, 0)
+      : listing?.monthlyRent ?? 0;
+  const rentLineLabel = selectedStartDate && selectedEndDate ? "Rent for selected period" : "First month's rent";
+  const totalAmount = rentForSelectedPeriod + tenantProtectionFee;
 
   const getStepOneValidationError = () => {
     const day = Number(dateOfBirth.day);
@@ -136,15 +269,6 @@ export function RentalApplication() {
 
     if (!gender) {
       return "Please select your gender.";
-    }
-
-    if (!countryCode) {
-      return "Please select a country code.";
-    }
-
-    const digitsOnlyPhone = mobileNumber.replace(/\D/g, "");
-    if (digitsOnlyPhone.length < 6 || digitsOnlyPhone.length > 15) {
-      return "Please enter a valid mobile number (6-15 digits).";
     }
 
     if (!occupation) {
@@ -201,7 +325,8 @@ export function RentalApplication() {
 
     const token = localStorage.getItem("authToken");
     if (!token) {
-      navigate(`/login?returnTo=/property/${id}/apply`);
+      const returnTo = `${location.pathname}${location.search}`;
+      navigate(`/login?returnTo=${encodeURIComponent(returnTo)}`);
       return;
     }
 
@@ -222,8 +347,6 @@ export function RentalApplication() {
           listingId: id,
           dateOfBirth,
           gender,
-          countryCode,
-          mobileNumber,
           moveInCount,
           withPets,
           occupation,
@@ -234,6 +357,9 @@ export function RentalApplication() {
           employerName,
           income,
           supportingMessage,
+          moveInDate: selectedStartDate ? selectedStartDate.toISOString() : null,
+          moveOutDate: selectedEndDate ? selectedEndDate.toISOString() : null,
+          moveInAvailabilityConfirmed: isMoveInAvailabilityChecked,
           idVerified,
           shareDocuments,
         })
@@ -328,7 +454,34 @@ export function RentalApplication() {
         }
 
         const payload = (await response.json()) as { listing: ApiListingSummary };
-        setListing(normalizeListingSummary(payload.listing));
+        const normalized = normalizeListingSummary(payload.listing);
+        setListing(normalized);
+
+        const incomingStartDate = incomingStartDateIso ? new Date(incomingStartDateIso) : null;
+        const incomingEndDate = incomingEndDateIso ? new Date(incomingEndDateIso) : null;
+        const hasIncomingDates =
+          incomingStartDate &&
+          incomingEndDate &&
+          !Number.isNaN(incomingStartDate.getTime()) &&
+          !Number.isNaN(incomingEndDate.getTime()) &&
+          incomingEndDate >= incomingStartDate;
+
+        const availableDate = new Date(normalized.availableFrom);
+
+        if (hasIncomingDates) {
+          // Keep the exact period chosen on property listing for a consistent flow.
+          setSelectedStartDate(incomingStartDate);
+          setSelectedEndDate(incomingEndDate);
+        } else if (!Number.isNaN(availableDate.getTime())) {
+          setSelectedStartDate(availableDate);
+          setSelectedEndDate(addMonthsClamped(availableDate, normalized.minStay));
+        }
+
+        if (typeof incomingAvailabilityRaw === "boolean") {
+          setIsMoveInAvailabilityChecked(incomingAvailabilityRaw);
+        } else {
+          setIsMoveInAvailabilityChecked(incomingAvailabilityRaw === "1" || incomingAvailabilityRaw === "true");
+        }
         setListingError("");
         setIsListingUnavailable(false);
       } catch {
@@ -341,7 +494,47 @@ export function RentalApplication() {
     };
 
     void loadListing();
-  }, [apiBase, id]);
+  }, [apiBase, id, incomingAvailabilityRaw, incomingEndDateIso, incomingStartDateIso]);
+
+  const handleDateRangeChange = (nextStart: Date | null, nextEnd: Date | null) => {
+    if (!listing || !nextStart || !nextEnd) {
+      return;
+    }
+
+    const minMoveOut = monthStart(addMonthsClamped(nextStart, listing.minStay));
+    if (nextEnd < minMoveOut) {
+      return;
+    }
+
+    if (listing.maxStay && nextEnd > monthEnd(addMonthsClamped(nextStart, listing.maxStay))) {
+      return;
+    }
+
+    setSelectedStartDate(nextStart);
+    setSelectedEndDate(nextEnd);
+
+    const nextParams = new URLSearchParams(location.search);
+    nextParams.set("moveIn", nextStart.toISOString());
+    nextParams.set("moveOut", nextEnd.toISOString());
+    nextParams.set("available", isMoveInAvailabilityChecked ? "1" : "0");
+    navigate(
+      {
+        pathname: location.pathname,
+        search: `?${nextParams.toString()}`,
+      },
+      {
+        replace: true,
+        state: {
+          ...statePayload,
+          selectedStartDate: nextStart.toISOString(),
+          selectedEndDate: nextEnd.toISOString(),
+          isMoveInAvailabilityChecked,
+        },
+      }
+    );
+
+    setIsDatePickerModalOpen(false);
+  };
 
   useEffect(() => {
     return () => {
@@ -361,7 +554,7 @@ export function RentalApplication() {
             className="flex items-center gap-[8px] text-neutral-black hover:text-brand-primary transition-colors"
           >
             <ChevronLeft className="w-[16px] h-[16px]" />
-            <span className="text-[14px] font-semibold">Back to listing</span>
+            <span className="text-[15px] font-semibold">Back to listing</span>
           </button>
 
           <Link to="/" className="flex items-center gap-[8px]">
@@ -392,32 +585,32 @@ export function RentalApplication() {
                 }}
                 className="w-[40px] h-[40px] bg-neutral-light-gray rounded-full flex items-center justify-center hover:bg-neutral transition-colors"
               >
-                <span className="text-neutral-black text-[14px] font-bold">
+                <span className="text-neutral-black text-[15px] font-bold">
                   {selectedLanguage === "English" ? "EN" : 
-                   selectedLanguage === "Español" ? "ES" :
-                   selectedLanguage === "Français" ? "FR" :
+                   selectedLanguage === "EspaÃ±ol" ? "ES" :
+                   selectedLanguage === "FranÃ§ais" ? "FR" :
                    selectedLanguage === "Deutsch" ? "DE" :
                    selectedLanguage === "Italiano" ? "IT" :
                    selectedLanguage === "Nederlands" ? "NL" :
-                   selectedLanguage === "Português" ? "PT" :
+                   selectedLanguage === "PortuguÃªs" ? "PT" :
                    selectedLanguage === "Polski" ? "PL" :
-                   selectedLanguage === "Türkçe" ? "TR" :
-                   selectedLanguage === "中文" ? "ZH" :
-                   selectedLanguage === "日本語" ? "JA" :
-                   selectedLanguage === "한국어" ? "KO" : "EN"}
+                   selectedLanguage === "TÃ¼rkÃ§e" ? "TR" :
+                   selectedLanguage === "ä¸­æ–‡" ? "ZH" :
+                   selectedLanguage === "æ—¥æœ¬èªž" ? "JA" :
+                   selectedLanguage === "í•œêµ­ì–´" ? "KO" : "EN"}
                 </span>
               </button>
               
               {isLanguageOpen && (
                 <div className="absolute right-0 top-[48px] bg-white border border-neutral shadow-lg min-w-[160px] z-50">
-                  {["English", "Español", "Français", "Deutsch", "Italiano", "Nederlands", "Português", "Polski", "Türkçe", "中文", "日本語", "한국어"].map((lang) => (
+                  {["English", "EspaÃ±ol", "FranÃ§ais", "Deutsch", "Italiano", "Nederlands", "PortuguÃªs", "Polski", "TÃ¼rkÃ§e", "ä¸­æ–‡", "æ—¥æœ¬èªž", "í•œêµ­ì–´"].map((lang) => (
                     <button
                       key={lang}
                       onClick={() => {
                         setSelectedLanguage(lang);
                         setIsLanguageOpen(false);
                       }}
-                      className={`w-full px-[16px] py-[12px] text-left text-[14px] hover:bg-neutral-light-gray transition-colors ${
+                      className={`w-full px-[16px] py-[12px] text-left text-[15px] hover:bg-neutral-light-gray transition-colors ${
                         selectedLanguage === lang ? "bg-neutral-light-gray font-semibold text-brand-primary" : "text-neutral-black"
                       }`}
                     >
@@ -437,7 +630,7 @@ export function RentalApplication() {
                 }}
                 className="w-[40px] h-[40px] bg-brand-primary rounded-full flex items-center justify-center hover:bg-brand-primary-dark transition-colors"
               >
-                <span className="text-white text-[14px] font-bold">
+                <span className="text-white text-[15px] font-bold">
                   {user?.name ? user.name.charAt(0).toUpperCase() : "U"}
                 </span>
               </button>
@@ -445,7 +638,7 @@ export function RentalApplication() {
               {isUserMenuOpen && (
                 <div className="absolute right-0 top-[48px] bg-white border border-neutral shadow-lg min-w-[200px] z-50">
                   <div className="px-[16px] py-[12px] border-b border-neutral">
-                    <p className="text-neutral-black text-[14px] font-bold">{user?.name || "User"}</p>
+                    <p className="text-neutral-black text-[15px] font-bold">{user?.name || "User"}</p>
                     <p className="text-neutral-gray text-[12px]">{user?.email || "user@example.com"}</p>
                   </div>
                   <button
@@ -453,7 +646,7 @@ export function RentalApplication() {
                       navigate("/account");
                       setIsUserMenuOpen(false);
                     }}
-                    className="w-full px-[16px] py-[12px] text-left text-[14px] text-neutral-black hover:bg-neutral-light-gray transition-colors flex items-center gap-[8px]"
+                    className="w-full px-[16px] py-[12px] text-left text-[15px] text-neutral-black hover:bg-neutral-light-gray transition-colors flex items-center gap-[8px]"
                   >
                     <User className="w-[16px] h-[16px]" />
                     My Account
@@ -463,7 +656,7 @@ export function RentalApplication() {
                       navigate("/favorites");
                       setIsUserMenuOpen(false);
                     }}
-                    className="w-full px-[16px] py-[12px] text-left text-[14px] text-neutral-black hover:bg-neutral-light-gray transition-colors flex items-center gap-[8px]"
+                    className="w-full px-[16px] py-[12px] text-left text-[15px] text-neutral-black hover:bg-neutral-light-gray transition-colors flex items-center gap-[8px]"
                   >
                     <Check className="w-[16px] h-[16px]" />
                     My Favorites
@@ -473,7 +666,7 @@ export function RentalApplication() {
                       navigate("/tenant/inbox");
                       setIsUserMenuOpen(false);
                     }}
-                    className="w-full px-[16px] py-[12px] text-left text-[14px] text-neutral-black hover:bg-neutral-light-gray transition-colors flex items-center gap-[8px]"
+                    className="w-full px-[16px] py-[12px] text-left text-[15px] text-neutral-black hover:bg-neutral-light-gray transition-colors flex items-center gap-[8px]"
                   >
                     <Info className="w-[16px] h-[16px]" />
                     My Messages
@@ -484,7 +677,7 @@ export function RentalApplication() {
                         logout();
                         navigate("/login");
                       }}
-                      className="w-full px-[16px] py-[12px] text-left text-[14px] text-neutral-black hover:bg-neutral-light-gray transition-colors flex items-center gap-[8px]"
+                      className="w-full px-[16px] py-[12px] text-left text-[15px] text-neutral-black hover:bg-neutral-light-gray transition-colors flex items-center gap-[8px]"
                     >
                       <LogOut className="w-[16px] h-[16px]" />
                       Log out
@@ -516,19 +709,96 @@ export function RentalApplication() {
                   logout();
                   navigate("/signup?role=tenant");
                 }}
-                className="px-[20px] py-[12px] bg-brand-primary text-white text-[14px] font-semibold hover:bg-brand-primary-dark transition-colors"
+                className="px-[20px] py-[12px] bg-brand-primary text-white text-[15px] font-semibold hover:bg-brand-primary-dark transition-colors"
               >
                 Create a tenant account
               </button>
               <button
                 onClick={() => navigate(`/property/${id}`)}
-                className="px-[20px] py-[12px] border border-[rgba(0,0,0,0.16)] text-[#1A1A1A] text-[14px] font-semibold hover:bg-[#F7F7F9] transition-colors"
+                className="px-[20px] py-[12px] border border-[rgba(0,0,0,0.16)] text-[#1A1A1A] text-[15px] font-semibold hover:bg-[#F7F7F9] transition-colors"
               >
                 Back to listing
               </button>
             </div>
           </div>
         </div>
+      )}
+
+      {!user?.isLandlord && isLoadingListing && (
+        <>
+          <div className="bg-neutral-light-gray border-b border-[rgba(0,0,0,0.08)]">
+            <div className="max-w-[1200px] mx-auto px-[32px] py-[32px]">
+              <div className="animate-pulse">
+                <div className="h-[2px] w-full bg-[rgba(0,0,0,0.08)] mb-[16px]" />
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-[12px]">
+                    <div className="w-[32px] h-[32px] rounded-full bg-[#E8EDF2]" />
+                    <div className="h-[14px] w-[170px] rounded-[4px] bg-[#E8EDF2]" />
+                  </div>
+                  <div className="flex items-center gap-[12px]">
+                    <div className="w-[32px] h-[32px] rounded-full bg-[#E8EDF2]" />
+                    <div className="h-[14px] w-[120px] rounded-[4px] bg-[#E8EDF2]" />
+                  </div>
+                  <div className="flex items-center gap-[12px]">
+                    <div className="w-[32px] h-[32px] rounded-full bg-[#E8EDF2]" />
+                    <div className="h-[14px] w-[140px] rounded-[4px] bg-[#E8EDF2]" />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="max-w-[1200px] mx-auto px-[32px] pt-[48px] pb-[48px]">
+            <div className="animate-pulse flex gap-[64px]">
+              <div className="flex-[2] space-y-[26px]">
+                <div>
+                  <div className="h-[34px] w-[58%] rounded-[4px] bg-[#E8EDF2] mb-[14px]" />
+                  <div className="h-[14px] w-[92%] rounded-[4px] bg-[#E8EDF2] mb-[8px]" />
+                  <div className="h-[14px] w-[80%] rounded-[4px] bg-[#E8EDF2]" />
+                </div>
+
+                <div className="border border-[rgba(0,0,0,0.08)] bg-white p-[22px]">
+                  <div className="h-[24px] w-[180px] rounded-[4px] bg-[#E8EDF2] mb-[18px]" />
+                  <div className="grid grid-cols-3 gap-[12px] mb-[14px]">
+                    <div className="h-[42px] rounded-[4px] bg-[#E8EDF2]" />
+                    <div className="h-[42px] rounded-[4px] bg-[#E8EDF2]" />
+                    <div className="h-[42px] rounded-[4px] bg-[#E8EDF2]" />
+                  </div>
+                  <div className="h-[42px] w-[280px] rounded-[4px] bg-[#E8EDF2]" />
+                </div>
+
+                <div className="border border-[rgba(0,0,0,0.08)] bg-white p-[22px]">
+                  <div className="h-[24px] w-[230px] rounded-[4px] bg-[#E8EDF2] mb-[16px]" />
+                  <div className="h-[44px] w-full rounded-[4px] bg-[#E8EDF2] mb-[10px]" />
+                  <div className="h-[44px] w-[65%] rounded-[4px] bg-[#E8EDF2]" />
+                </div>
+
+                <div className="border border-[rgba(0,0,0,0.08)] bg-white p-[22px]">
+                  <div className="h-[24px] w-[180px] rounded-[4px] bg-[#E8EDF2] mb-[12px]" />
+                  <div className="h-[140px] w-full rounded-[6px] bg-[#E8EDF2] mb-[12px]" />
+                  <div className="h-[60px] w-full rounded-[6px] bg-[#E8EDF2]" />
+                </div>
+              </div>
+
+              <div className="flex-[1]">
+                <div className="sticky top-[100px] space-y-[12px]">
+                  <div className="border border-[rgba(15,45,54,0.14)] rounded-[6px] bg-white p-[16px]">
+                    <div className="h-[84px] w-full rounded-[8px] bg-[#E8EDF2] mb-[12px]" />
+                    <div className="h-[16px] w-[72%] rounded-[4px] bg-[#E8EDF2] mb-[8px]" />
+                    <div className="h-[16px] w-[56%] rounded-[4px] bg-[#E8EDF2] mb-[16px]" />
+                    <div className="h-[42px] w-full rounded-[6px] bg-[#E8EDF2]" />
+                  </div>
+
+                  <div className="border border-[rgba(15,45,54,0.14)] rounded-[6px] bg-white p-[16px]">
+                    <div className="h-[18px] w-[52%] rounded-[4px] bg-[#E8EDF2] mb-[10px]" />
+                    <div className="h-[14px] w-[92%] rounded-[4px] bg-[#E8EDF2] mb-[6px]" />
+                    <div className="h-[14px] w-[85%] rounded-[4px] bg-[#E8EDF2]" />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </>
       )}
 
       {!user?.isLandlord && !isLoadingListing && !listing && (
@@ -546,13 +816,13 @@ export function RentalApplication() {
             <div className="flex items-center gap-[12px]">
               <button
                 onClick={() => navigate("/tenant/applications")}
-                className="px-[20px] py-[12px] bg-brand-primary text-white text-[14px] font-semibold hover:bg-brand-primary-dark transition-colors"
+                className="px-[20px] py-[12px] bg-brand-primary text-white text-[15px] font-semibold hover:bg-brand-primary-dark transition-colors"
               >
                 View my applications
               </button>
               <button
                 onClick={() => navigate("/")}
-                className="px-[20px] py-[12px] border border-[rgba(0,0,0,0.16)] text-[#1A1A1A] text-[14px] font-semibold hover:bg-[#F7F7F9] transition-colors"
+                className="px-[20px] py-[12px] border border-[rgba(0,0,0,0.16)] text-[#1A1A1A] text-[15px] font-semibold hover:bg-[#F7F7F9] transition-colors"
               >
                 Browse other homes
               </button>
@@ -564,6 +834,7 @@ export function RentalApplication() {
       {!user?.isLandlord && listing && (
       <>
       {/* Progress Steps */}
+      {!isAskQuestionMode && (
       <div className="bg-neutral-light-gray border-b border-[rgba(0,0,0,0.08)]">
         <div className="max-w-[1200px] mx-auto px-[32px] py-[32px]">
           <div className="flex items-center justify-between relative">
@@ -581,9 +852,9 @@ export function RentalApplication() {
                   currentStep >= 1 ? "bg-brand-primary text-white" : "bg-white border-[2px] border-[rgba(0,0,0,0.08)] text-neutral-gray"
                 }`}
               >
-                {currentStep > 1 ? <Check className="w-[16px] h-[16px]" /> : <span className="font-bold text-[14px]">1</span>}
+                {currentStep > 1 ? <Check className="w-[16px] h-[16px]" /> : <span className="font-bold text-[15px]">1</span>}
               </div>
-              <span className={`text-[14px] font-semibold bg-neutral-light-gray px-[8px] ${currentStep >= 1 ? "text-neutral-black" : "text-neutral-gray"}`}>
+              <span className={`text-[15px] font-semibold bg-neutral-light-gray px-[8px] ${currentStep >= 1 ? "text-neutral-black" : "text-neutral-gray"}`}>
                 {currentStep === 1 ? "Review application" : "Fill in rental application"}
               </span>
             </div>
@@ -595,9 +866,9 @@ export function RentalApplication() {
                   currentStep >= 2 ? "bg-brand-primary text-white" : "bg-white border-[2px] border-[rgba(0,0,0,0.08)] text-neutral-gray"
                 }`}
               >
-                {currentStep > 2 ? <Check className="w-[16px] h-[16px]" /> : <span className="font-bold text-[14px]">2</span>}
+                {currentStep > 2 ? <Check className="w-[16px] h-[16px]" /> : <span className="font-bold text-[15px]">2</span>}
               </div>
-              <span className={`text-[14px] font-semibold bg-neutral-light-gray px-[8px] ${currentStep >= 2 ? "text-neutral-black" : "text-neutral-gray"}`}>
+              <span className={`text-[15px] font-semibold bg-neutral-light-gray px-[8px] ${currentStep >= 2 ? "text-neutral-black" : "text-neutral-gray"}`}>
                 Add documents
               </span>
             </div>
@@ -609,29 +880,38 @@ export function RentalApplication() {
                   currentStep >= 3 ? "bg-brand-primary text-white" : "bg-white border-[2px] border-[rgba(0,0,0,0.08)] text-neutral-gray"
                 }`}
               >
-                <span className="font-bold text-[14px]">3</span>
+                <span className="font-bold text-[15px]">3</span>
               </div>
-              <span className={`text-[14px] font-semibold bg-neutral-light-gray px-[8px] ${currentStep >= 3 ? "text-neutral-black" : "text-neutral-gray"}`}>
+              <span className={`text-[15px] font-semibold bg-neutral-light-gray px-[8px] ${currentStep >= 3 ? "text-neutral-black" : "text-neutral-gray"}`}>
                 Submit application
               </span>
             </div>
           </div>
         </div>
       </div>
+      )}
 
       {/* Main Content */}
-      <div className="max-w-[1200px] mx-auto px-[32px] py-[48px]">
+      <div className={`max-w-[1200px] mx-auto px-[32px] pt-[48px] ${currentStep === 1 && !showAskQuestionForm ? "pb-[180px]" : "pb-[48px]"}`}>
         <div className="flex gap-[64px]">
           {/* Left Column */}
           <div className="flex-[2]">
             {/* STEP 1: Fill in rental application */}
             {currentStep === 1 && (
-              <>
+              <div className="pb-[180px]">
+                {!showAskQuestionForm && (<>
                 <h1 className="text-[#1A1A1A] text-[32px] font-bold tracking-[-0.02em] mb-[16px]">
                   Fill in your rental application in 5 minutes
                 </h1>
                 <p className="text-[#6B6B6B] text-[15px] leading-[1.6] mb-[32px]">
-                  Confirm your details and introduce yourself to EasyRent — we'll save your info for future applications.
+                  Confirm your details and introduce yourself to {landlordFirstName} - we'll save your info for future applications. Not quite ready to apply?{" "}
+                  <button
+                    type="button"
+                    onClick={() => setShowAskQuestionForm(true)}
+                    className="text-[#0F2D36] underline underline-offset-[4px] decoration-[1px] hover:text-[#0A2530] transition-colors cursor-pointer"
+                  >
+                    Ask {landlordFirstName} a question.
+                  </button>
                 </p>
 
                 {/* About You Section */}
@@ -639,12 +919,12 @@ export function RentalApplication() {
                   <h2 className="text-[#1A1A1A] text-[24px] font-bold mb-[24px]">About you</h2>
 
                   <div className="mb-[24px]">
-                    <label className="block text-[#1A1A1A] text-[14px] font-semibold mb-[8px]">Date of birth*</label>
+                    <label className="block text-[#1A1A1A] text-[15px] font-semibold mb-[8px]">Date of birth*</label>
                     <div className="grid grid-cols-3 gap-[16px]">
                       <select
                         value={dateOfBirth.day}
                         onChange={(e) => setDateOfBirth({ ...dateOfBirth, day: e.target.value })}
-                        className="px-[16px] py-[12px] border border-[rgba(0,0,0,0.16)] text-[#1A1A1A] text-[14px] bg-white"
+                        className="px-[16px] py-[12px] border border-[rgba(0,0,0,0.16)] text-[#1A1A1A] text-[15px] bg-white"
                       >
                         <option value="">Day</option>
                         {Array.from({ length: 31 }, (_, i) => i + 1).map((day) => (
@@ -654,7 +934,7 @@ export function RentalApplication() {
                       <select
                         value={dateOfBirth.month}
                         onChange={(e) => setDateOfBirth({ ...dateOfBirth, month: e.target.value })}
-                        className="px-[16px] py-[12px] border border-[rgba(0,0,0,0.16)] text-[#1A1A1A] text-[14px] bg-white"
+                        className="px-[16px] py-[12px] border border-[rgba(0,0,0,0.16)] text-[#1A1A1A] text-[15px] bg-white"
                       >
                         <option value="">Month</option>
                         {["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"].map((month, idx) => (
@@ -664,7 +944,7 @@ export function RentalApplication() {
                       <select
                         value={dateOfBirth.year}
                         onChange={(e) => setDateOfBirth({ ...dateOfBirth, year: e.target.value })}
-                        className="px-[16px] py-[12px] border border-[rgba(0,0,0,0.16)] text-[#1A1A1A] text-[14px] bg-white"
+                        className="px-[16px] py-[12px] border border-[rgba(0,0,0,0.16)] text-[#1A1A1A] text-[15px] bg-white"
                       >
                         <option value="">Year</option>
                         {Array.from({ length: 80 }, (_, i) => 2010 - i).map((year) => (
@@ -675,13 +955,13 @@ export function RentalApplication() {
                   </div>
 
                   <div className="mb-[24px]">
-                    <label className="block text-[#1A1A1A] text-[14px] font-semibold mb-[8px]">Gender*</label>
+                    <label className="block text-[#1A1A1A] text-[15px] font-semibold mb-[8px]">Gender*</label>
                     <div className="flex items-center gap-[12px]">
                       {[
-                        { value: "male", label: "♂ Male" },
-                        { value: "female", label: "♀ Female" },
-                        { value: "other", label: "⚥ Other" }
-                      ].map(({ value, label }) => (
+                        { value: "male", label: "Male", symbol: "♂" },
+                        { value: "female", label: "Female", symbol: "♀" },
+                        { value: "other", label: "Other", symbol: "⚧" }
+                      ].map(({ value, label, symbol }) => (
                         <button
                           key={value}
                           onClick={() => setGender(value as any)}
@@ -689,7 +969,8 @@ export function RentalApplication() {
                             gender === value ? "border-brand-primary bg-brand-light" : "border-[rgba(0,0,0,0.16)] bg-white hover:bg-neutral-light-gray"
                           }`}
                         >
-                          <span className={`text-[14px] font-semibold ${gender === value ? "text-brand-primary" : "text-neutral-black"}`}>
+                          <span className={`inline-flex items-center gap-[8px] text-[15px] font-semibold ${gender === value ? "text-brand-primary" : "text-neutral-black"}`}>
+                            <span className="text-[22px] leading-none" aria-hidden="true">{symbol}</span>
                             {label}
                           </span>
                         </button>
@@ -698,44 +979,8 @@ export function RentalApplication() {
                   </div>
 
                   <div className="mb-[24px]">
-                    <label className="block text-[#1A1A1A] text-[14px] font-semibold mb-[8px]">Mobile number*</label>
-                    <div className="grid grid-cols-3 gap-[16px]">
-                      <div className="col-span-1">
-                        <select
-                          value={countryCode}
-                          onChange={(e) => setCountryCode(e.target.value)}
-                          className="w-full px-[16px] py-[12px] border border-[rgba(0,0,0,0.16)] text-[#1A1A1A] text-[14px]"
-                        >
-                          {COUNTRY_CODE_OPTIONS.map((option) => (
-                            <option key={option.value} value={option.value}>
-                              {option.label}
-                            </option>
-                          ))}
-                        </select>
-                        <span className="block text-[#6B6B6B] text-[12px] mt-[4px]">Country code</span>
-                      </div>
-                      <div className="col-span-2">
-                        <input
-                          type="tel"
-                          value={mobileNumber}
-                          onChange={(e) => {
-                            const next = e.target.value.replace(/[^0-9]/g, "").slice(0, 15);
-                            setMobileNumber(next);
-                          }}
-                          placeholder="Mobile number"
-                          inputMode="numeric"
-                          pattern="[0-9]{6,15}"
-                          maxLength={15}
-                          className="w-full px-[16px] py-[12px] border border-[rgba(0,0,0,0.16)] text-[#1A1A1A] text-[14px]"
-                        />
-                        <span className="block text-[#6B6B6B] text-[12px] mt-[4px]">Mobile number</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="mb-[24px]">
                     <div className="flex items-center gap-[8px] mb-[8px]">
-                      <label className="text-[#1A1A1A] text-[14px] font-semibold">Profile picture (Optional)</label>
+                      <label className="text-[#1A1A1A] text-[15px] font-semibold">Profile picture (Optional)</label>
                       <span className="relative group inline-flex items-center">
                         <Info className="w-[14px] h-[14px] text-[#6B6B6B]" />
                         <span className="pointer-events-none absolute bottom-[calc(100%+8px)] left-1/2 -translate-x-1/2 w-[230px] bg-neutral-black text-white text-[11px] leading-[1.4] px-[10px] py-[8px] opacity-0 group-hover:opacity-100 transition-opacity z-20">
@@ -786,7 +1031,7 @@ export function RentalApplication() {
                   <h2 className="text-[#1A1A1A] text-[24px] font-bold mb-[24px]">Who'll be living here</h2>
 
                   <div className="mb-[24px]">
-                    <label className="block text-[#1A1A1A] text-[14px] font-semibold mb-[8px]">How many people will move in?*</label>
+                    <label className="block text-[#1A1A1A] text-[15px] font-semibold mb-[8px]">How many people will move in?*</label>
                     <div className="flex items-center gap-[12px]">
                       {[1, 2, 3].map((count) => (
                         <button
@@ -806,7 +1051,7 @@ export function RentalApplication() {
 
                   <div className="mb-[24px]">
                     <div className="flex items-center justify-between">
-                      <label className="text-[#1A1A1A] text-[14px] font-semibold">With pet(s)</label>
+                      <label className="text-[#1A1A1A] text-[15px] font-semibold">With pet(s)</label>
                       <button
                         onClick={() => setWithPets(!withPets)}
                         className={`relative w-[48px] h-[24px] rounded-full transition-colors ${
@@ -826,18 +1071,18 @@ export function RentalApplication() {
                 {/* Occupation and Finances */}
                 <div className="mb-[48px]">
                   <h2 className="text-[#1A1A1A] text-[24px] font-bold mb-[16px]">Occupation and finances</h2>
-                  <p className="text-[#6B6B6B] text-[14px] mb-[24px]">
+                  <p className="text-[#6B6B6B] text-[15px] mb-[24px]">
                     We may ask more questions depending on your occupation.
                   </p>
 
                   <div className="mb-[24px]">
-                    <label className="block text-[#1A1A1A] text-[14px] font-semibold mb-[8px]">Occupation*</label>
+                    <label className="block text-[#1A1A1A] text-[15px] font-semibold mb-[8px]">Occupation*</label>
                     <div className="flex items-center gap-[12px]">
                       {[
-                        { value: "student", label: "🎓 Student" },
-                        { value: "professional", label: "💼 Working professional" },
-                        { value: "other", label: "✨ Other" }
-                      ].map(({ value, label }) => (
+                        { value: "student", label: "Student", icon: GraduationCap },
+                        { value: "professional", label: "Working professional", icon: Briefcase },
+                        { value: "other", label: "Other", icon: Sparkles }
+                      ].map(({ value, label, icon: Icon }) => (
                         <button
                           key={value}
                           onClick={() => setOccupation(value as any)}
@@ -845,7 +1090,8 @@ export function RentalApplication() {
                             occupation === value ? "border-brand-primary bg-brand-light" : "border-[rgba(0,0,0,0.16)] bg-white hover:bg-neutral-light-gray"
                           }`}
                         >
-                          <span className={`text-[14px] font-semibold ${occupation === value ? "text-brand-primary" : "text-neutral-black"}`}>
+                          <span className={`inline-flex items-center gap-[8px] text-[15px] font-semibold ${occupation === value ? "text-brand-primary" : "text-neutral-black"}`}>
+                            <Icon className="w-[16px] h-[16px]" />
                             {label}
                           </span>
                         </button>
@@ -857,13 +1103,13 @@ export function RentalApplication() {
                   {occupation === "student" && (
                     <>
                       <div className="mb-[24px]">
-                        <label className="block text-[#1A1A1A] text-[14px] font-semibold mb-[8px]">University name</label>
+                        <label className="block text-[#1A1A1A] text-[15px] font-semibold mb-[8px]">University name</label>
                         <input
                           type="text"
                           value={universityName}
                           onChange={(e) => setUniversityName(e.target.value)}
                           placeholder="PUCIT"
-                          className="w-full px-[16px] py-[12px] border border-[rgba(0,0,0,0.16)] text-[#1A1A1A] text-[14px]"
+                          className="w-full px-[16px] py-[12px] border border-[rgba(0,0,0,0.16)] text-[#1A1A1A] text-[15px]"
                         />
                         <div className="flex items-center gap-[8px] mt-[8px] bg-[#F7F7F9] px-[12px] py-[8px]">
                           <span className="relative group inline-flex items-center">
@@ -879,7 +1125,7 @@ export function RentalApplication() {
                       </div>
 
                       <div className="mb-[24px]">
-                        <label className="block text-[#1A1A1A] text-[14px] font-semibold mb-[8px]">What is your visa status?</label>
+                        <label className="block text-[#1A1A1A] text-[15px] font-semibold mb-[8px]">What is your visa status?</label>
                         <div className="grid grid-cols-2 gap-[12px]">
                           {[
                             { value: "no_visa", label: "I don't need a visa" },
@@ -894,14 +1140,14 @@ export function RentalApplication() {
                                 visaStatus === value ? "border-[#FF4B27] bg-[#FFF5F3]" : "border-[rgba(0,0,0,0.16)] bg-white hover:bg-[#F7F7F9]"
                               }`}
                             >
-                              <span className="text-[#1A1A1A] text-[14px]">{label}</span>
+                              <span className="text-[#1A1A1A] text-[15px]">{label}</span>
                             </button>
                           ))}
                         </div>
                       </div>
 
                       <div className="mb-[24px]">
-                        <label className="block text-[#1A1A1A] text-[14px] font-semibold mb-[8px]">
+                        <label className="block text-[#1A1A1A] text-[15px] font-semibold mb-[8px]">
                           How are you planning to pay for rent?
                         </label>
                         <div className="space-y-[12px]">
@@ -924,14 +1170,21 @@ export function RentalApplication() {
                                 }}
                                 className="w-[20px] h-[20px] border-[2px] border-[rgba(0,0,0,0.16)] rounded-none"
                               />
-                              <span className="text-[#1A1A1A] text-[14px]">{label}</span>
+                              <span className="text-[#1A1A1A] text-[15px]">{label}</span>
                             </label>
                           ))}
+                        </div>
+
+                        <div className="mt-[12px] flex items-start gap-[12px] rounded-[6px] bg-[#EEF3F7] px-[16px] py-[14px]">
+                          <Info className="w-[22px] h-[22px] text-[#0F2D36] mt-[2px] shrink-0" />
+                          <p className="text-[#0F2D36] text-[15px] leading-[1.55]">
+                            We recommend sharing details about your financial situation in your supporting message below. You can add supporting documents in the next step.
+                          </p>
                         </div>
                       </div>
 
                       <div className="mb-[24px]">
-                        <label className="block text-[#1A1A1A] text-[14px] font-semibold mb-[8px]">
+                        <label className="block text-[#1A1A1A] text-[15px] font-semibold mb-[8px]">
                           Estimate how much money you'll have each month
                         </label>
                         <p className="text-[#6B6B6B] text-[13px] mb-[8px] leading-[1.6]">
@@ -939,7 +1192,7 @@ export function RentalApplication() {
                           situation, so they feel confident renting to you.
                         </p>
                         <div className="relative">
-                          <span className="absolute left-[16px] top-1/2 -translate-y-1/2 text-[#6B6B6B] text-[14px]">€</span>
+                          <span className="absolute left-[16px] top-1/2 -translate-y-1/2 text-[#6B6B6B] text-[15px]">{"\u20AC"}</span>
                           <input
                             type="number"
                             value={monthlyBudget}
@@ -947,8 +1200,15 @@ export function RentalApplication() {
                             placeholder=""
                             min={0}
                             step="1"
-                            className="w-[250px] pl-[32px] pr-[16px] py-[12px] border border-[rgba(0,0,0,0.16)] text-[#1A1A1A] text-[14px]"
+                            className="w-[250px] pl-[32px] pr-[16px] py-[12px] border border-[rgba(0,0,0,0.16)] text-[#1A1A1A] text-[15px]"
                           />
+                        </div>
+
+                        <div className="mt-[12px] flex items-start gap-[12px] rounded-[6px] bg-[#EEF3F7] px-[16px] py-[12px]">
+                          <Info className="w-[22px] h-[22px] text-[#0F2D36] mt-[2px] shrink-0" />
+                          <p className="text-[#0F2D36] text-[15px] leading-[1.5]">
+                            You can add proof of income in the next step.
+                          </p>
                         </div>
                       </div>
                     </>
@@ -958,20 +1218,20 @@ export function RentalApplication() {
                   {occupation === "professional" && (
                     <>
                       <div className="mb-[24px]">
-                        <label className="block text-[#1A1A1A] text-[14px] font-semibold mb-[8px]">Employer's name</label>
+                        <label className="block text-[#1A1A1A] text-[15px] font-semibold mb-[8px]">Employer's name</label>
                         <input
                           type="text"
                           value={employerName}
                           onChange={(e) => setEmployerName(e.target.value)}
                           placeholder=""
-                          className="w-full px-[16px] py-[12px] border border-[rgba(0,0,0,0.16)] text-[#1A1A1A] text-[14px]"
+                          className="w-full px-[16px] py-[12px] border border-[rgba(0,0,0,0.16)] text-[#1A1A1A] text-[15px]"
                         />
                       </div>
 
                       <div className="mb-[24px]">
-                        <label className="block text-neutral-black text-[14px] font-semibold mb-[8px]">Your income</label>
+                        <label className="block text-neutral-black text-[15px] font-semibold mb-[8px]">Your income</label>
                         <div className="relative">
-                          <span className="absolute left-[16px] top-1/2 -translate-y-1/2 text-neutral-gray text-[14px]">€</span>
+                          <span className="absolute left-[16px] top-1/2 -translate-y-1/2 text-neutral-gray text-[15px]">{"\u20AC"}</span>
                           <input
                             type="number"
                             value={income}
@@ -979,13 +1239,20 @@ export function RentalApplication() {
                             placeholder=""
                             min={0}
                             step="1"
-                            className="w-[250px] pl-[32px] pr-[16px] py-[12px] border border-[rgba(0,0,0,0.16)] text-neutral-black text-[14px]"
+                            className="w-[250px] pl-[32px] pr-[16px] py-[12px] border border-[rgba(0,0,0,0.16)] text-neutral-black text-[15px]"
                           />
+                        </div>
+
+                        <div className="mt-[12px] flex items-start gap-[12px] rounded-[6px] bg-[#EEF3F7] px-[16px] py-[12px]">
+                          <Info className="w-[22px] h-[22px] text-[#0F2D36] mt-[2px] shrink-0" />
+                          <p className="text-[#0F2D36] text-[15px] leading-[1.5]">
+                            You can add proof of income in the next step.
+                          </p>
                         </div>
                       </div>
 
                       <div className="mb-[24px]">
-                        <label className="block text-neutral-black text-[14px] font-semibold mb-[8px]">What is your visa status?</label>
+                        <label className="block text-neutral-black text-[15px] font-semibold mb-[8px]">What is your visa status?</label>
                         <div className="grid grid-cols-2 gap-[12px]">
                           {[
                             { value: "no_visa", label: "I don't need a visa" },
@@ -1000,7 +1267,7 @@ export function RentalApplication() {
                                 visaStatus === value ? "border-brand-primary bg-brand-light" : "border-[rgba(0,0,0,0.16)] bg-white hover:bg-neutral-light-gray"
                               }`}
                             >
-                              <span className="text-neutral-black text-[14px]">{label}</span>
+                              <span className="text-neutral-black text-[15px]">{label}</span>
                             </button>
                           ))}
                         </div>
@@ -1015,172 +1282,417 @@ export function RentalApplication() {
 
                   <div className="mb-[24px]">
                     <div className="flex items-center gap-[8px] mb-[8px]">
-                      <label className="text-[#1A1A1A] text-[14px] font-semibold">
-                        Introduce yourself to EasyRent!
+                      <label className="text-[#1A1A1A] text-[15px] font-semibold">
+                        Introduce yourself to {landlordFirstName}*
                       </label>
                       <span className="relative group inline-flex items-center">
-                        <Info className="w-[14px] h-[14px] text-[#6B6B6B]" />
+                        <Info className="w-[14px] h-[14px] text-[#94A3AE]" />
                         <span className="pointer-events-none absolute bottom-[calc(100%+8px)] left-1/2 -translate-x-1/2 w-[240px] bg-neutral-black text-white text-[11px] leading-[1.4] px-[10px] py-[8px] opacity-0 group-hover:opacity-100 transition-opacity z-20">
                           Share your background, move-in plan, and why you would be a great tenant.
                         </span>
                       </span>
                     </div>
-                    <textarea
-                      value={supportingMessage}
-                      onChange={(e) => setSupportingMessage(e.target.value)}
-                      placeholder="Introduce yourself and mention why you are a good tenant"
-                      rows={4}
-                      maxLength={2000}
-                      className="w-full px-[16px] py-[12px] border border-[rgba(0,0,0,0.16)] text-[#1A1A1A] text-[14px] leading-[1.6] resize-none"
-                    />
-                    <p className="text-[#6B6B6B] text-[12px] mt-[6px]">{supportingMessage.trim().length}/2000</p>
+                    <div className="relative">
+                      <textarea
+                        value={supportingMessage}
+                        onChange={(e) => setSupportingMessage(e.target.value)}
+                        placeholder="Introduce yourself and mention why you are a good tenant"
+                        rows={4}
+                        maxLength={2000}
+                        className="w-full px-[18px] py-[14px] pr-[84px] border border-[#0F2D36] rounded-[6px] text-[#0F2D36] text-[15px] leading-[1.55] resize-none"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setSupportingMessage("")}
+                        className="absolute right-[16px] bottom-[16px] text-[#0F2D36] text-[15px] hover:text-[#0A2530] transition-colors"
+                      >
+                        Clear
+                      </button>
+                    </div>
+
+                    <div className="mt-[16px] rounded-[6px] bg-[#EEF3F7] px-[16px] py-[14px] flex items-start gap-[12px]">
+                      <Info className="w-[22px] h-[22px] text-[#0F2D36] mt-[2px] shrink-0" />
+                      <p className="text-[#0F2D36] text-[15px] leading-[1.55]">
+                        Viewings aren't possible, but you can ask the landlord for video tours, floor plans, and more. When you message and pay on EasyRent, you're covered by Tenant Protection. <button type="button" className="underline underline-offset-[4px] hover:text-[#0A2530] transition-colors cursor-pointer">How you're protected</button>
+                      </p>
+                    </div>
                   </div>
                 </div>
+                </>)}
 
-                <button
-                  onClick={handleContinue}
-                  className="w-full font-bold py-[16px] transition-colors text-[16px] bg-brand-primary text-white hover:bg-brand-primary-dark"
-                >
-                  Continue
-                </button>
-                {stepOneError && <p className="text-brand-primary text-[14px] mt-[12px]">{stepOneError}</p>}
-              </>
+                {showAskQuestionForm && (
+                  <div>
+                    <h3 className="text-[#1A1A1A] text-[32px] font-bold mb-[12px]">Ask {landlordFirstName} a question</h3>
+                    <p className="text-[#6B6B6B] text-[15px] leading-[1.6] mb-[8px]">
+                      Landlords can take a few days to respond. If you love this place and your question isn't a dealbreaker, you may want to move quickly.{" "}
+                      <button
+                        type="button"
+                        onClick={() => setShowAskQuestionForm(false)}
+                        className="text-[#0F2D36] underline underline-offset-[4px] decoration-[1px] hover:text-[#0A2530] transition-colors cursor-pointer"
+                      >
+                        Apply to rent.
+                      </button>
+                    </p>
+                    <h4 className="text-[#1A1A1A] text-[18px] font-bold mb-[16px] mt-[24px]">What's your question about?</h4>
+                    <div className="grid grid-cols-2 gap-[16px] mb-[24px]">
+                      {[
+                        { label: "Dates & duration", icon: Calendar },
+                        { label: "Price & payments", icon: CircleDollarSign },
+                        { label: "Property details & amenities", icon: Building2 },
+                        { label: "Viewings", icon: Eye },
+                        { label: "Required documents", icon: FileText },
+                        { label: "People & housemates", icon: Users },
+                        { label: "Additional needs & requests", icon: Heart },
+                        { label: "Other", icon: Sparkles }
+                      ].map(({ label, icon: Icon }) => {
+                        const isExpanded = expandedTopics.includes(label);
+                        return (
+                          <button
+                            key={label}
+                            onClick={() => {
+                              setExpandedTopics(prevTopics =>
+                                prevTopics.includes(label)
+                                  ? prevTopics.filter(t => t !== label)
+                                  : [...prevTopics, label]
+                              );
+                            }}
+                            className={`px-[16px] py-[14px] rounded-[6px] border transition-all flex items-start gap-[10px] ${isExpanded ? "border-[#3B73D9] bg-[#E9F0FF]" : "border-[rgba(15,45,54,0.18)] bg-white hover:bg-[#F7F7F9]"}`}
+                          >
+                            <Icon className={`w-[19px] h-[19px] shrink-0 mt-[2px] ${isExpanded ? "text-[#3B73D9]" : "text-[#0F2D36]"}`} />
+                            <span className={`text-[15px] font-semibold text-left ${isExpanded ? "text-[#3B73D9]" : "text-[#0F2D36]"}`}>{label}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    {/* Topic Content */}
+                    {expandedTopics.includes("Dates & duration") && (
+                      <div className="border border-[rgba(0,0,0,0.12)] rounded-[6px] p-[20px] mb-[24px]">
+                        <button className="w-full flex items-center justify-between text-left">
+                          <h5 className="text-[#0F2D36] text-[18px] font-bold">Dates & duration info</h5>
+                          <ChevronDown className="w-[24px] h-[24px] text-[#0F2D36]" />
+                        </button>
+                        <div className="mt-[16px] space-y-[12px]">
+                          <div className="flex items-start gap-[8px]">
+                            <span className="text-[#0F2D36] text-[15px]">•</span>
+                            <span className="text-[#0F2D36] text-[15px]">Available from: {listing?.availableFrom ? new Date(listing.availableFrom).toLocaleDateString('en-GB', { day: 'numeric', month: 'long' }) : "TBD"}</span>
+                          </div>
+                          <div className="flex items-start gap-[8px]">
+                            <span className="text-[#0F2D36] text-[15px]">•</span>
+                            <span className="text-[#0F2D36] text-[15px]">Minimum stay: {listing?.minStay} {listing?.minStay === 1 ? "month" : "months"}</span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {expandedTopics.includes("Price & payments") && (
+                      <div className="border border-[rgba(0,0,0,0.12)] rounded-[6px] p-[20px] mb-[24px]">
+                        <button className="w-full flex items-center justify-between text-left">
+                          <h5 className="text-[#0F2D36] text-[18px] font-bold">Price & payments info</h5>
+                          <ChevronDown className="w-[24px] h-[24px] text-[#0F2D36]" />
+                        </button>
+                        <div className="mt-[16px] space-y-[16px] text-[#0F2D36] text-[15px] leading-[1.6]">
+                          <div className="space-y-[12px]">
+                            <div className="flex items-start gap-[8px]">
+                              <span className="text-[15px]">•</span>
+                              <span>To protect your money, always pay on HousingAnywhere. We'll transfer your first month's rent to the landlord 48 hours after you move in. If the place isn't as advertised, you're covered by <button className="text-[#0F2D36] underline underline-offset-[2px] hover:text-[#0A2530]">Tenant Protection</button>.</span>
+                            </div>
+                            <div className="flex items-start gap-[8px]">
+                              <span className="text-[15px]">•</span>
+                              <span>This listing's rent is calculated on a daily basis. For the first and last months of your stay, you'll only pay for the exact number of nights you stay — just like a hotel. For all other months, you'll pay the full month's rent. We call this a Daily contract type.</span>
+                            </div>
+                          </div>
+
+                          <div className="border-t border-[rgba(0,0,0,0.12)] pt-[16px]">
+                            <p className="mb-[12px]">To confirm your rental, you'll need to pay one month's rent in full. Any excess rent you pay for the first month will be subtracted from the next month's rent.</p>
+                          </div>
+
+                          <div className="border-t border-[rgba(0,0,0,0.12)] pt-[16px]">
+                            <h6 className="text-[15px] font-bold mb-[12px]">Additional fees and charges from landlords</h6>
+                            <p className="mb-[12px]">Landlords may have additional fees due after your rental is confirmed on HousingAnywhere. We found references to the following fees in the listing description. Please message the landlord to confirm any fees and agree on payment terms.</p>
+                            <ul className="space-y-[8px]">
+                              <li className="flex items-start gap-[8px]">
+                                <span className="text-[15px]">•</span>
+                                <span>Security deposit: €{listing?.deposit.toFixed(2) ?? "TBD"}</span>
+                              </li>
+                              <li className="flex items-start gap-[8px]">
+                                <span className="text-[15px]">•</span>
+                                <span>Landlord administration fee: €490.00</span>
+                              </li>
+                              <li className="flex items-start gap-[8px]">
+                                <span className="text-[15px]">•</span>
+                                <span>Utilities: €0.00</span>
+                              </li>
+                              <li className="flex items-start gap-[8px]">
+                                <span className="text-[15px]">•</span>
+                                <span>Cleaning fee: €0.00</span>
+                              </li>
+                            </ul>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {expandedTopics.includes("Property details & amenities") && (
+                      <div className="border border-[rgba(0,0,0,0.12)] rounded-[6px] p-[20px] mb-[24px]">
+                        <button className="w-full flex items-center justify-between text-left">
+                          <h5 className="text-[#0F2D36] text-[18px] font-bold">Property details & amenities info</h5>
+                          <ChevronDown className="w-[24px] h-[24px] text-[#0F2D36]" />
+                        </button>
+                        <div className="mt-[16px] space-y-[18px] text-[#0F2D36] text-[15px] leading-[1.6]">
+                          <ul className="space-y-[8px]">
+                            <li className="flex items-start gap-[8px]"><span>•</span><span>{listing?.title || "Private room in apartment (1 bedroom)"}</span></li>
+                            <li className="flex items-start gap-[8px]"><span>•</span><span>Bedroom: 13 m²</span></li>
+                            <li className="flex items-start gap-[8px]"><span>•</span><span>Property: 13 m²</span></li>
+                            <li className="flex items-start gap-[8px]"><span>•</span><span>Furnished</span></li>
+                            <li className="flex items-start gap-[8px]"><span>•</span><span>Space for 0 people</span></li>
+                          </ul>
+
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-[24px] pt-[4px]">
+                            <div>
+                              <h6 className="text-[15px] font-bold mb-[8px]">Facilities</h6>
+                              <ul className="space-y-[6px]">
+                                <li>Shared toilet</li>
+                                <li>Private kitchen</li>
+                                <li>Private living room</li>
+                                <li className="line-through text-[#7A8790]">No parking</li>
+                              </ul>
+                            </div>
+                            <div>
+                              <h6 className="text-[15px] font-bold mb-[8px]">Amenities</h6>
+                              <ul className="space-y-[6px]">
+                                <li>Bed</li>
+                                <li>Closet</li>
+                                <li>Desk</li>
+                                <li>Dishwasher</li>
+                                <li>Dryer</li>
+                                <li>Bedroom lock</li>
+                                <li>Living room furniture</li>
+                                <li>TV</li>
+                                <li>Washing machine</li>
+                                <li>WiFi</li>
+                                <li className="line-through text-[#7A8790]">No air conditioning</li>
+                                <li className="line-through text-[#7A8790]">Not access friendly</li>
+                              </ul>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {["Viewings", "Required documents", "People & housemates", "Additional needs & requests", "Other"].map(topic => (
+                      expandedTopics.includes(topic) && (
+                        <div key={topic} className="border border-[rgba(0,0,0,0.12)] rounded-[6px] p-[20px] mb-[24px]">
+                          <button className="w-full flex items-center justify-between text-left">
+                            <h5 className="text-[#0F2D36] text-[18px] font-bold">{topic} info</h5>
+                            <ChevronDown className="w-[24px] h-[24px] text-[#0F2D36]" />
+                          </button>
+                        </div>
+                      )
+                    ))}
+
+                    {/* Info Box */}
+                    <div className="bg-[#E8EEF4] rounded-[6px] p-[16px] mb-[24px]">
+                      <p className="text-[#0F2D36] text-[14px] leading-[1.6]">
+                        <span className="font-bold">Get your foot in the door 👉🏠</span> — If this answered your question, you can{" "}
+                        <button
+                          type="button"
+                          onClick={() => setShowAskQuestionForm(false)}
+                          className="text-[#0F2D36] underline underline-offset-[4px] decoration-[1px] hover:text-[#0A2530] transition-colors cursor-pointer"
+                        >
+                          apply to rent
+                        </button>
+                        . Your application will go straight to the top of the landlord's inbox!
+                      </p>
+                    </div>
+
+                    {/* Question Textarea */}
+                    <h4 className="text-[#0F2D36] text-[16px] font-bold mb-[12px]">What's your question about?</h4>
+                    <div className="mb-[16px]">
+                      <textarea
+                        value={questionText}
+                        onChange={(e) => setQuestionText(e.target.value)}
+                        placeholder="Ask away, world traveller..."
+                        className="w-full px-[16px] py-[14px] border border-[rgba(0,0,0,0.16)] rounded-[6px] text-[#0F2D36] text-[15px] leading-[1.6] resize-none"
+                        rows={6}
+                      />
+                      <div className="flex justify-end mt-[8px]">
+                        <button
+                          type="button"
+                          onClick={() => setQuestionText("")}
+                          className="text-[#0F2D36] text-[15px] underline underline-offset-[4px] hover:text-[#0A2530] transition-colors"
+                        >
+                          Clear
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Send Button */}
+                    <button
+                      type="button"
+                      disabled={!questionText.trim()}
+                      className={`px-[24px] py-[12px] rounded-[6px] font-semibold text-[15px] transition-colors ${
+                        questionText.trim()
+                          ? "bg-brand-primary text-white hover:bg-brand-primary-dark"
+                          : "bg-[#E0E8EF] text-[#8A969C] cursor-not-allowed"
+                      }`}
+                    >
+                      Send question
+                    </button>
+                  </div>
+                )}
+              </div>
             )}
 
             {/* STEP 2: Add documents */}
             {currentStep === 2 && (
               <>
-                <h1 className="text-[#1A1A1A] text-[32px] font-bold tracking-[-0.02em] mb-[16px]">
-                  Upload required documents
+                <h1 className="text-[#0F2D36] text-[38px] md:text-[32px] font-bold tracking-[-0.02em] mb-[6px]">
+                  Add documents to stand out
                 </h1>
-                <p className="text-[#6B6B6B] text-[15px] leading-[1.6] mb-[32px]">
-                  Upload all required documents below. These files will be shown to the landlord in the dashboard rental requests section.
+                <p className="text-[#0F2D36] text-[15px] leading-[1.55] mb-[4px]">
+                  Show {landlordFirstName} you're committed to renting this place. {documentsRequiredCount > 0 ? `This property requires ${documentsRequiredCount} document${documentsRequiredCount > 1 ? "s" : ""} from the landlord settings.` : "No mandatory documents are configured for this property."} <button type="button" className="underline underline-offset-[3px] hover:text-[#0A2530] transition-colors">About document security</button>
+                </p>
+                <p className="text-[#6B7A84] text-[13px] leading-[1.5] mb-[18px]">
+                  Max. file size: 7MB | Accepted formats: pdf, png, jpg, jpeg | Multiple uploads possible
                 </p>
 
-                <div className="bg-[#F7F7F9] border border-[rgba(0,0,0,0.08)] p-[20px] mb-[24px]">
-                  <h2 className="text-[#1A1A1A] text-[20px] font-bold mb-[10px]">Required documents</h2>
-                  <ul className="space-y-[6px] text-[#1A1A1A] text-[14px]">
-                    <li>1. Government ID (passport/national ID)</li>
-                    <li>2. Proof of income (salary slip or bank statement)</li>
-                    <li>3. Enrollment or employment proof</li>
-                  </ul>
-                </div>
+                <div className="space-y-[12px]">
+                  {requiresIdentityProof && (
+                  <div className="rounded-[6px] border border-[rgba(15,45,54,0.14)] bg-white px-[18px] py-[16px]">
+                    <div className="flex items-start justify-between gap-[12px] mb-[12px]">
+                      <p className="text-[#0F2D36] text-[28px] md:text-[30px] font-bold leading-[1.15]">
+                        ID verification <span className="text-[12px] font-semibold text-[#6C7785]">Powered by <span className="text-[#635BFF]">stripe</span></span>
+                      </p>
+                      <span className="inline-flex items-center rounded-full bg-[#B80F3D] px-[10px] py-[2px] text-white text-[12px] font-semibold">
+                        {idVerified ? "Done" : "To-do"}
+                      </span>
+                    </div>
 
-                <div className="mb-[20px]">
-                  <h2 className="text-[#1A1A1A] text-[22px] font-bold mb-[12px]">1. Government ID (required)</h2>
-                  <div className="border-[2px] border-dashed border-[rgba(0,0,0,0.16)] p-[24px] text-center">
-                    {enrollmentProof ? (
-                      <div className="flex items-center gap-[12px] justify-center">
-                        <FileText className="w-[24px] h-[24px] text-accent-blue" />
-                        <span className="text-neutral-black text-[14px] font-semibold">{enrollmentProof.name}</span>
-                        <button onClick={() => setEnrollmentProof(null)} className="text-brand-primary hover:underline text-[14px]">
-                          Remove
-                        </button>
+                    <div className="space-y-[10px] mb-[14px]">
+                      <div className="flex items-start gap-[10px]">
+                        <FileText className="w-[18px] h-[18px] text-[#0F2D36] mt-[2px] shrink-0" />
+                        <p className="text-[#0F2D36] text-[15px] leading-[1.45]"><span className="font-semibold">We'll check</span><br />Your government-issued photo ID against a selfie.</p>
                       </div>
-                    ) : (
-                      <>
-                        <Upload className="w-[42px] h-[42px] text-neutral-gray mx-auto mb-[12px]" />
-                        <p className="text-neutral-black text-[14px] font-semibold mb-[8px]">Upload passport or national ID</p>
-                        <label className="bg-brand-primary text-white px-[20px] py-[10px] font-semibold inline-block cursor-pointer hover:bg-brand-primary-dark transition-colors">
-                          Upload ID document
-                          <input
-                            type="file"
-                            accept=".pdf,.png,.jpg,.jpeg"
-                            onChange={(e) => e.target.files && handleFileUpload(e.target.files[0], "enrollment")}
-                            className="hidden"
-                          />
-                        </label>
-                      </>
-                    )}
-                  </div>
-                </div>
-
-                <div className="mb-[20px]">
-                  <h2 className="text-[#1A1A1A] text-[22px] font-bold mb-[12px]">2. Proof of income (required)</h2>
-                  <div className="border-[2px] border-dashed border-[rgba(0,0,0,0.16)] p-[24px] text-center">
-                    {incomeProof ? (
-                      <div className="flex items-center gap-[12px] justify-center">
-                        <FileText className="w-[24px] h-[24px] text-accent-blue" />
-                        <span className="text-neutral-black text-[14px] font-semibold">{incomeProof.name}</span>
-                        <button onClick={() => setIncomeProof(null)} className="text-brand-primary hover:underline text-[14px]">
-                          Remove
-                        </button>
+                      <div className="flex items-start gap-[10px]">
+                        <Check className="w-[18px] h-[18px] text-[#0F2D36] mt-[2px] shrink-0" />
+                        <p className="text-[#0F2D36] text-[15px] leading-[1.45]"><span className="font-semibold">You'll receive</span><br />A Verified ID badge to boost your chances of renting.</p>
                       </div>
-                    ) : (
-                      <>
-                        <Upload className="w-[42px] h-[42px] text-neutral-gray mx-auto mb-[12px]" />
-                        <p className="text-neutral-black text-[14px] font-semibold mb-[8px]">Upload salary slip or bank statement</p>
-                        <label className="bg-brand-primary text-white px-[20px] py-[10px] font-semibold inline-block cursor-pointer hover:bg-brand-primary-dark transition-colors">
-                          Upload income proof
-                          <input
-                            type="file"
-                            accept=".pdf,.png,.jpg,.jpeg"
-                            onChange={(e) => e.target.files && handleFileUpload(e.target.files[0], "income")}
-                            className="hidden"
-                          />
-                        </label>
-                      </>
-                    )}
-                  </div>
-                </div>
+                      <div className="flex items-start gap-[10px]">
+                        <User className="w-[18px] h-[18px] text-[#0F2D36] mt-[2px] shrink-0" />
+                        <p className="text-[#0F2D36] text-[15px] leading-[1.45]"><span className="font-semibold">Landlords will see</span><br />Your new badge. And your ID, once you choose to share it with them.</p>
+                      </div>
+                    </div>
 
-                <div className="mb-[28px]">
-                  <h2 className="text-[#1A1A1A] text-[22px] font-bold mb-[12px]">3. Enrollment or employment proof (required)</h2>
-                  <div className="border-[2px] border-dashed border-[rgba(0,0,0,0.16)] p-[24px] text-center">
+                    <button
+                      type="button"
+                      onClick={() => setIdVerified(true)}
+                      className="h-[42px] px-[16px] rounded-[4px] border border-[rgba(15,45,54,0.22)] bg-[#F7FAFC] text-[#0F2D36] text-[15px] font-semibold hover:bg-[#EEF3F7] transition-colors"
+                    >
+                      {idVerified ? "Identity confirmed" : "Confirm my identity"}
+                    </button>
+                  </div>
+                  )}
+
+                  {requiresOccupationProof && (
+                  <div className="rounded-[6px] border border-[rgba(15,45,54,0.14)] bg-white px-[18px] py-[16px]">
+                    <div className="flex items-start justify-between gap-[12px] mb-[8px]">
+                      <p className="text-[#0F2D36] text-[33px] md:text-[30px] font-bold leading-[1.15]">Proof of enrollment or occupation</p>
+                      <span className="inline-flex items-center rounded-full bg-[#B80F3D] px-[10px] py-[2px] text-white text-[12px] font-semibold">
+                        {employmentProof ? "Done" : "To-do"}
+                      </span>
+                    </div>
+                    <p className="text-[#0F2D36] text-[15px] leading-[1.5] mb-[12px]">University enrollment certificate, internship or employment contract.</p>
                     {employmentProof ? (
-                      <div className="flex items-center gap-[12px] justify-center">
-                        <FileText className="w-[24px] h-[24px] text-accent-blue" />
-                        <span className="text-neutral-black text-[14px] font-semibold">{employmentProof.name}</span>
-                        <button onClick={() => setEmploymentProof(null)} className="text-brand-primary hover:underline text-[14px]">
-                          Remove
-                        </button>
+                      <div className="flex items-center gap-[12px] flex-wrap">
+                        <span className="text-[#0F2D36] text-[15px] font-semibold">{employmentProof.name}</span>
+                        <button type="button" onClick={() => setEmploymentProof(null)} className="text-[#0F2D36] text-[13px] underline hover:text-[#0A2530]">Remove</button>
                       </div>
                     ) : (
-                      <>
-                        <Upload className="w-[42px] h-[42px] text-neutral-gray mx-auto mb-[12px]" />
-                        <p className="text-neutral-black text-[14px] font-semibold mb-[8px]">Upload enrollment card or employment letter</p>
-                        <label className="bg-brand-primary text-white px-[20px] py-[10px] font-semibold inline-block cursor-pointer hover:bg-brand-primary-dark transition-colors">
-                          Upload supporting proof
-                          <input
-                            type="file"
-                            accept=".pdf,.png,.jpg,.jpeg"
-                            onChange={(e) => e.target.files && handleFileUpload(e.target.files[0], "employment")}
-                            className="hidden"
-                          />
-                        </label>
-                      </>
+                      <label className="inline-flex items-center h-[38px] px-[14px] rounded-[4px] border border-[rgba(15,45,54,0.22)] bg-[#F7FAFC] text-[#0F2D36] text-[15px] font-semibold cursor-pointer hover:bg-[#EEF3F7] transition-colors">
+                        Upload
+                        <input
+                          type="file"
+                          accept=".pdf,.png,.jpg,.jpeg"
+                          onChange={(e) => e.target.files && handleFileUpload(e.target.files[0], "employment")}
+                          className="hidden"
+                        />
+                      </label>
                     )}
                   </div>
+                  )}
+
+                  {requiresIncomeProof && (
+                  <div className="rounded-[6px] border border-[rgba(15,45,54,0.14)] bg-white px-[18px] py-[16px]">
+                    <div className="flex items-start justify-between gap-[12px] mb-[8px]">
+                      <p className="text-[#0F2D36] text-[33px] md:text-[30px] font-bold leading-[1.15]">Proof of income</p>
+                      <span className="inline-flex items-center rounded-full bg-[#B80F3D] px-[10px] py-[2px] text-white text-[12px] font-semibold">
+                        {incomeProof ? "Done" : "To-do"}
+                      </span>
+                    </div>
+                    <p className="text-[#0F2D36] text-[15px] leading-[1.5] mb-[12px]">Salary slip or bank statements from the tenant or their sponsor.</p>
+                    {incomeProof ? (
+                      <div className="flex items-center gap-[12px] flex-wrap">
+                        <span className="text-[#0F2D36] text-[15px] font-semibold">{incomeProof.name}</span>
+                        <button type="button" onClick={() => setIncomeProof(null)} className="text-[#0F2D36] text-[13px] underline hover:text-[#0A2530]">Remove</button>
+                      </div>
+                    ) : (
+                      <label className="inline-flex items-center h-[38px] px-[14px] rounded-[4px] border border-[rgba(15,45,54,0.22)] bg-[#F7FAFC] text-[#0F2D36] text-[15px] font-semibold cursor-pointer hover:bg-[#EEF3F7] transition-colors">
+                        Upload
+                        <input
+                          type="file"
+                          accept=".pdf,.png,.jpg,.jpeg"
+                          onChange={(e) => e.target.files && handleFileUpload(e.target.files[0], "income")}
+                          className="hidden"
+                        />
+                      </label>
+                    )}
+                  </div>
+                  )}
                 </div>
 
-                <div className="mb-[32px] bg-[#F7F7F9] p-[14px]">
+                <div className="mt-[18px] mb-[18px] bg-white px-[2px]">
                   <label className="flex items-start gap-[12px] cursor-pointer">
                     <input
                       type="checkbox"
                       checked={shareDocuments}
                       onChange={(e) => setShareDocuments(e.target.checked)}
-                      className="w-[20px] h-[20px] border-[2px] border-[rgba(0,0,0,0.16)] rounded-none mt-[2px]"
+                      className="w-[18px] h-[18px] border border-[rgba(0,0,0,0.2)] rounded-[2px] mt-[2px]"
                     />
-                    <span className="text-[#1A1A1A] text-[14px] leading-[1.6]">
-                      I confirm these uploaded documents can be shared with the landlord for rental request review.
+                    <span className="text-[#1A1A1A] text-[15px] leading-[1.6]">
+                      I agree to share these documents only with {landlordFirstName}, in accordance with HousingAnywhere's <button type="button" className="underline hover:text-[#0A2530]">Terms &amp; Conditions</button> and <button type="button" className="underline hover:text-[#0A2530]">Privacy Policy</button>.
                     </span>
                   </label>
                 </div>
 
-                <button
-                  onClick={() => {
-                    setIdVerified(Boolean(enrollmentProof));
-                    handleContinue();
-                  }}
-                  disabled={!shareDocuments || !enrollmentProof || !employmentProof || !incomeProof}
-                  className={`w-full font-bold py-[16px] transition-colors text-[16px] ${
-                    shareDocuments && enrollmentProof && employmentProof && incomeProof
-                      ? "bg-brand-primary text-white hover:bg-brand-primary-dark"
-                      : "bg-[#EDEDED] text-neutral-gray cursor-not-allowed"
-                  }`}
-                >
-                  Continue to review
-                </button>
+                <div className="flex items-center gap-[12px]">
+                  <button
+                    onClick={() => {
+                      if (!requiresIdentityProof) {
+                        setIdVerified(false);
+                      }
+                      handleContinue();
+                    }}
+                    disabled={!shareDocuments || !hasRequiredDocuments}
+                    className={`h-[44px] px-[22px] rounded-[4px] font-semibold transition-colors text-[16px] ${
+                      shareDocuments && hasRequiredDocuments
+                        ? "bg-brand-primary text-white hover:bg-brand-primary-dark"
+                        : "bg-[#EDEDED] text-[#8A969C] cursor-not-allowed"
+                    }`}
+                  >
+                    Share and continue
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setCurrentStep(3);
+                      window.scrollTo(0, 0);
+                    }}
+                    className="h-[44px] px-[18px] rounded-[4px] border border-[rgba(15,45,54,0.24)] bg-[#F3F6F9] text-[#0F2D36] text-[16px] font-semibold hover:bg-[#E9EEF3] transition-colors"
+                  >
+                    I'll do it later
+                  </button>
+                </div>
               </>
             )}
 
@@ -1199,20 +1711,14 @@ export function RentalApplication() {
                   <h2 className="text-[#1A1A1A] text-[20px] font-bold mb-[16px]">Personal Information</h2>
                   <div className="space-y-[12px]">
                     <div className="flex items-center justify-between">
-                      <span className="text-[#6B6B6B] text-[14px]">Date of birth</span>
-                      <span className="text-[#1A1A1A] text-[14px] font-semibold">
+                      <span className="text-[#6B6B6B] text-[15px]">Date of birth</span>
+                      <span className="text-[#1A1A1A] text-[15px] font-semibold">
                         {dateOfBirth.day}/{dateOfBirth.month}/{dateOfBirth.year}
                       </span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-[#6B6B6B] text-[14px]">Gender</span>
-                      <span className="text-[#1A1A1A] text-[14px] font-semibold capitalize">{gender || "Not specified"}</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-[#6B6B6B] text-[14px]">Mobile number</span>
-                      <span className="text-[#1A1A1A] text-[14px] font-semibold">
-                        {countryCode} {mobileNumber}
-                      </span>
+                      <span className="text-[#6B6B6B] text-[15px]">Gender</span>
+                      <span className="text-[#1A1A1A] text-[15px] font-semibold capitalize">{gender || "Not specified"}</span>
                     </div>
                   </div>
                 </div>
@@ -1222,12 +1728,12 @@ export function RentalApplication() {
                   <h2 className="text-[#1A1A1A] text-[20px] font-bold mb-[16px]">Living Arrangement</h2>
                   <div className="space-y-[12px]">
                     <div className="flex items-center justify-between">
-                      <span className="text-[#6B6B6B] text-[14px]">Number of people moving in</span>
-                      <span className="text-[#1A1A1A] text-[14px] font-semibold">{moveInCount}</span>
+                      <span className="text-[#6B6B6B] text-[15px]">Number of people moving in</span>
+                      <span className="text-[#1A1A1A] text-[15px] font-semibold">{moveInCount}</span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-[#6B6B6B] text-[14px]">With pets</span>
-                      <span className="text-[#1A1A1A] text-[14px] font-semibold">{withPets ? "Yes" : "No"}</span>
+                      <span className="text-[#6B6B6B] text-[15px]">With pets</span>
+                      <span className="text-[#1A1A1A] text-[15px] font-semibold">{withPets ? "Yes" : "No"}</span>
                     </div>
                   </div>
                 </div>
@@ -1237,19 +1743,19 @@ export function RentalApplication() {
                   <h2 className="text-[#1A1A1A] text-[20px] font-bold mb-[16px]">Occupation & Finances</h2>
                   <div className="space-y-[12px]">
                     <div className="flex items-center justify-between">
-                      <span className="text-[#6B6B6B] text-[14px]">Occupation</span>
-                      <span className="text-[#1A1A1A] text-[14px] font-semibold capitalize">{occupation || "Not specified"}</span>
+                      <span className="text-[#6B6B6B] text-[15px]">Occupation</span>
+                      <span className="text-[#1A1A1A] text-[15px] font-semibold capitalize">{occupation || "Not specified"}</span>
                     </div>
                     {occupation === "student" && universityName && (
                       <>
                         <div className="flex items-center justify-between">
-                          <span className="text-[#6B6B6B] text-[14px]">University</span>
-                          <span className="text-[#1A1A1A] text-[14px] font-semibold">{universityName}</span>
+                          <span className="text-[#6B6B6B] text-[15px]">University</span>
+                          <span className="text-[#1A1A1A] text-[15px] font-semibold">{universityName}</span>
                         </div>
                         {monthlyBudget && (
                           <div className="flex items-center justify-between">
-                            <span className="text-[#6B6B6B] text-[14px]">Monthly budget</span>
-                            <span className="text-[#1A1A1A] text-[14px] font-semibold">€{monthlyBudget}</span>
+                            <span className="text-[#6B6B6B] text-[15px]">Monthly budget</span>
+                            <span className="text-[#1A1A1A] text-[15px] font-semibold">{"\u20AC"}{monthlyBudget}</span>
                           </div>
                         )}
                       </>
@@ -1258,22 +1764,22 @@ export function RentalApplication() {
                       <>
                         {employerName && (
                           <div className="flex items-center justify-between">
-                            <span className="text-[#6B6B6B] text-[14px]">Employer</span>
-                            <span className="text-[#1A1A1A] text-[14px] font-semibold">{employerName}</span>
+                            <span className="text-[#6B6B6B] text-[15px]">Employer</span>
+                            <span className="text-[#1A1A1A] text-[15px] font-semibold">{employerName}</span>
                           </div>
                         )}
                         {income && (
                           <div className="flex items-center justify-between">
-                            <span className="text-[#6B6B6B] text-[14px]">Income</span>
-                            <span className="text-[#1A1A1A] text-[14px] font-semibold">€{income}</span>
+                            <span className="text-[#6B6B6B] text-[15px]">Income</span>
+                            <span className="text-[#1A1A1A] text-[15px] font-semibold">{"\u20AC"}{income}</span>
                           </div>
                         )}
                       </>
                     )}
                     {visaStatus && (
                       <div className="flex items-center justify-between">
-                        <span className="text-[#6B6B6B] text-[14px]">Visa status</span>
-                        <span className="text-[#1A1A1A] text-[14px] font-semibold">
+                        <span className="text-[#6B6B6B] text-[15px]">Visa status</span>
+                        <span className="text-[#1A1A1A] text-[15px] font-semibold">
                           {visaStatus === "no_visa" && "No visa needed"}
                           {visaStatus === "approved" && "Visa approved"}
                           {visaStatus === "in_progress" && "In progress"}
@@ -1289,33 +1795,34 @@ export function RentalApplication() {
                   <h2 className="text-neutral-black text-[20px] font-bold mb-[16px]">Documents</h2>
                   <div className="space-y-[12px]">
                     <div className="flex items-center justify-between">
-                      <span className="text-neutral-gray text-[14px]">Government ID</span>
-                      <span className={`text-[14px] font-semibold ${idVerified ? "text-accent-blue" : "text-neutral-gray"}`}>
-                        {idVerified ? "✓ Uploaded" : "Missing"}
+                      <span className="text-neutral-gray text-[15px]">Government ID</span>
+                      <span className={`inline-flex items-center gap-[6px] text-[15px] font-semibold ${idVerified ? "text-accent-blue" : "text-neutral-gray"}`}>
+                        {idVerified && <CheckCircle2 className="w-[15px] h-[15px]" />}
+                        {idVerified ? "Uploaded" : "Missing"}
                       </span>
                     </div>
                     {enrollmentProof && (
                       <div className="flex items-center justify-between">
-                        <span className="text-neutral-gray text-[14px]">Government ID file</span>
-                        <span className="text-accent-blue text-[14px] font-semibold">✓ Uploaded</span>
+                        <span className="text-neutral-gray text-[15px]">Government ID file</span>
+                        <span className="inline-flex items-center gap-[6px] text-accent-blue text-[15px] font-semibold"><CheckCircle2 className="w-[15px] h-[15px]" />Uploaded</span>
                       </div>
                     )}
                     {employmentProof && (
                       <div className="flex items-center justify-between">
-                        <span className="text-neutral-gray text-[14px]">Enrollment or employment proof</span>
-                        <span className="text-accent-blue text-[14px] font-semibold">✓ Uploaded</span>
+                        <span className="text-neutral-gray text-[15px]">Enrollment or employment proof</span>
+                        <span className="inline-flex items-center gap-[6px] text-accent-blue text-[15px] font-semibold"><CheckCircle2 className="w-[15px] h-[15px]" />Uploaded</span>
                       </div>
                     )}
                     {incomeProof && (
                       <div className="flex items-center justify-between">
-                        <span className="text-neutral-gray text-[14px]">Income proof</span>
-                        <span className="text-accent-blue text-[14px] font-semibold">✓ Uploaded</span>
+                        <span className="text-neutral-gray text-[15px]">Income proof</span>
+                        <span className="inline-flex items-center gap-[6px] text-accent-blue text-[15px] font-semibold"><CheckCircle2 className="w-[15px] h-[15px]" />Uploaded</span>
                       </div>
                     )}
                     {profilePicture && (
                       <div className="flex items-center justify-between">
-                        <span className="text-neutral-gray text-[14px]">Profile picture</span>
-                        <span className="text-accent-blue text-[14px] font-semibold">✓ Uploaded</span>
+                        <span className="text-neutral-gray text-[15px]">Profile picture</span>
+                        <span className="inline-flex items-center gap-[6px] text-accent-blue text-[15px] font-semibold"><CheckCircle2 className="w-[15px] h-[15px]" />Uploaded</span>
                       </div>
                     )}
                   </div>
@@ -1324,7 +1831,7 @@ export function RentalApplication() {
                 {/* Supporting Message */}
                 <div className="bg-neutral-light-gray p-[24px] mb-[32px]">
                   <h2 className="text-neutral-black text-[20px] font-bold mb-[16px]">Supporting Message</h2>
-                  <p className="text-neutral-black text-[14px] leading-[1.6]">{supportingMessage}</p>
+                  <p className="text-neutral-black text-[15px] leading-[1.6]">{supportingMessage}</p>
                 </div>
 
                 <button
@@ -1334,7 +1841,7 @@ export function RentalApplication() {
                 >
                   {isSubmitting ? "Submitting..." : "Submit application"}
                 </button>
-                {submitError && <p className="text-brand-primary text-[14px] mt-[12px]">{submitError}</p>}
+                {submitError && <p className="text-brand-primary text-[15px] mt-[12px]">{submitError}</p>}
               </>
             )}
           </div>
@@ -1342,165 +1849,286 @@ export function RentalApplication() {
           {/* Right Column - Property & Payment Summary */}
           <div className="flex-[1]">
             <div className="sticky top-[100px]">
-              {/* Property Card */}
-              <div className="border border-[rgba(0,0,0,0.08)] p-[16px] mb-[24px]">
-                <div className="relative mb-[12px]">
-                  <img src={listing?.images?.[0] || "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800&q=80"} alt="Property" className="w-full h-[120px] object-cover" />
-                  <div className="absolute bottom-[8px] right-[8px] w-[32px] h-[32px] bg-brand-primary rounded-full flex items-center justify-center">
-                    <span className="text-white text-[12px] font-bold">S</span>
-                  </div>
-                </div>
-
-                <h3 className="text-neutral-black text-[18px] font-bold mb-[4px]">{listing?.title ?? "Listing"}</h3>
-                <p className="text-neutral-gray text-[13px] mb-[8px]">{listing ? `${listing.address}, ${listing.city}` : ""}</p>
-                <p className="text-neutral-gray text-[13px] mb-[8px]">Published by EasyRent</p>
-
-                <div className="bg-neutral-light-gray px-[12px] py-[8px]">
-                  <p className="text-neutral-black text-[13px] font-semibold mb-[2px]">Rental period</p>
-                  <div className="flex items-center gap-[4px]">
-                    <p className="text-neutral-black text-[13px]">
-                      {listing?.availableFrom ? new Date(listing.availableFrom).toLocaleDateString("en-GB") : "Date pending"}
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Payment to HousingAnywhere */}
-              <div className="border border-[rgba(0,0,0,0.08)] p-[16px] mb-[16px]">
-                <div className="flex items-center gap-[12px] mb-[16px]">
-                  <div className="w-[24px] h-[24px] bg-[#1A1A1A] rounded-full flex items-center justify-center">
-                    <span className="text-white text-[10px] font-bold">Y</span>
-                  </div>
-                  <svg className="w-[16px] h-[16px] text-neutral-gray" viewBox="0 0 16 16" fill="none">
-                    <path d="M2 8H14M14 8L10 4M14 8L10 12" stroke="currentColor" strokeWidth="1.5" />
-                  </svg>
-                  <div className="w-[24px] h-[24px] bg-brand-primary flex items-center justify-center">
-                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                      <path d="M7 1L2 4.5V10.5H5V7.5H9V10.5H12V4.5L7 1Z" fill="white" stroke="white" strokeWidth="1" />
-                    </svg>
-                  </div>
-                  <span className="text-neutral-black text-[13px] font-bold">EasyRent</span>
-                </div>
-
-                <p className="text-neutral-black text-[13px] font-semibold mb-[16px]">
-                  Pay this now to secure your place.
-                </p>
-
-                <div className="space-y-[12px] mb-[16px]">
-                  <div className="flex items-center justify-between">
-                    <span className="text-neutral-gray text-[14px]">First month's rent</span>
-                    <span className="text-neutral-black text-[14px] font-semibold">€{(listing?.monthlyRent ?? 0).toFixed(2)}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-[4px]">
-                      <span className="text-neutral-gray text-[14px]">Tenant Protection fee</span>
-                      <span className="relative group inline-flex items-center">
-                        <Info className="w-[12px] h-[12px] text-neutral-gray" />
-                        <span className="pointer-events-none absolute bottom-[calc(100%+8px)] left-1/2 -translate-x-1/2 w-[220px] bg-neutral-black text-white text-[11px] leading-[1.4] px-[10px] py-[8px] opacity-0 group-hover:opacity-100 transition-opacity z-20">
-                          Tenant Protection fee is 10% of monthly rent, capped at €250. It covers payment security and move-in support.
-                        </span>
-                      </span>
+              <div className="rounded-[6px] bg-white overflow-hidden">
+                <div className="px-[12px] py-[12px] flex items-start gap-[12px] bg-white">
+                  <div className="relative w-[86px] h-[86px] shrink-0">
+                    <div className="w-[86px] h-[86px] rounded-[8px] overflow-hidden border border-[rgba(15,45,54,0.16)] bg-[#EAF2FF]">
+                      <img
+                        src={listing?.images?.[0] || "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800&q=80"}
+                        alt="Property"
+                        className="w-full h-full object-cover"
+                      />
                     </div>
-                    <span className="text-neutral-black text-[14px] font-semibold">€{tenantProtectionFee.toFixed(2)}</span>
-                  </div>
-                </div>
 
-                <div className="flex items-center justify-between pt-[16px] border-t border-[rgba(0,0,0,0.08)] mb-[12px]">
-                  <span className="text-[#1A1A1A] text-[16px] font-bold">Total</span>
-                  <span className="text-[#1A1A1A] text-[20px] font-bold">
-                    €{(listing ? listing.monthlyRent + tenantProtectionFee : 0).toFixed(2)}
-                  </span>
-                </div>
-
-                <div className="flex items-center gap-[6px] bg-[#F7F7F9] px-[12px] py-[8px]">
-                  <Shield className="w-[14px] h-[14px] text-[#0066CC]" />
-                  <span className="text-[#1A1A1A] text-[12px]">
-                    Covered by Tenant Protection.{" "}
-                    <button className="text-[#0066CC] underline hover:no-underline">Learn more</button>
-                  </span>
-                </div>
-              </div>
-
-              {/* Payment to Landlord */}
-              <div className="border border-[rgba(0,0,0,0.08)] p-[16px] mb-[16px]">
-                <div className="flex items-center gap-[12px] mb-[16px]">
-                  <div className="w-[24px] h-[24px] bg-neutral-black rounded-full flex items-center justify-center">
-                    <span className="text-white text-[10px] font-bold">Y</span>
-                  </div>
-                  <svg className="w-[16px] h-[16px] text-neutral-gray" viewBox="0 0 16 16" fill="none">
-                    <path d="M2 8H14M14 8L10 4M14 8L10 12" stroke="currentColor" strokeWidth="1.5" />
-                  </svg>
-                  <div className="w-[24px] h-[24px] bg-brand-primary rounded-full flex items-center justify-center">
-                    <span className="text-white text-[10px] font-bold">S</span>
-                  </div>
-                  <span className="text-neutral-black text-[13px] font-bold">Sental</span>
-                </div>
-
-                <p className="text-neutral-gray text-[13px] mb-[16px]">
-                  Future rental costs to the landlord. You'll pay these directly, per your contract.
-                </p>
-
-                <div className="space-y-[12px]">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-[4px]">
-                      <span className="text-neutral-gray text-[14px]">Security deposit</span>
-                      <span className="text-neutral-gray text-[12px]">before move-in</span>
-                      <span className="relative group inline-flex items-center">
-                        <Info className="w-[12px] h-[12px] text-neutral-gray" />
-                        <span className="pointer-events-none absolute bottom-[calc(100%+8px)] left-1/2 -translate-x-1/2 w-[250px] bg-neutral-black text-white text-[11px] leading-[1.4] px-[10px] py-[8px] opacity-0 group-hover:opacity-100 transition-opacity z-20">
-                          This refundable amount is held by the landlord and may be returned after move-out, based on contract terms.
-                        </span>
-                      </span>
+                    <div className="absolute right-[-10px] bottom-[-10px] w-[30px] h-[30px] rounded-full overflow-hidden border-2 border-white shadow-[0_4px_10px_rgba(0,0,0,0.18)] bg-[#EAF2FF]">
+                      {listing?.landlordProfilePicture ? (
+                        <img
+                          src={listing.landlordProfilePicture}
+                          alt="Profile"
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full bg-[#12303B] text-white text-[11px] font-bold flex items-center justify-center">
+                          {landlordInitials}
+                        </div>
+                      )}
                     </div>
-                    <span className="text-neutral-black text-[14px] font-semibold">€{(listing?.deposit ?? 0).toFixed(2)}</span>
                   </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-neutral-gray text-[14px]">Utilities</span>
-                    <span className="text-neutral-black text-[14px] font-semibold">
-                      {listing?.utilitiesIncluded
-                        ? listing.utilitiesCost > 0
-                          ? `€${listing.utilitiesCost.toFixed(2)}`
-                          : "Included"
-                        : "Not included"}
-                    </span>
+                  <div className="min-w-0">
+                    <h3 className="text-[#0F2D36] text-[22px] leading-[1.1] font-bold truncate">{listing?.title ?? "Listing"}</h3>
+                    <p className="text-[#596E76] text-[15px] mt-[4px]">{listing?.city}{listing?.country ? `, ${listing.country}` : ""}</p>
+                    <p className="text-[#0F2D36] text-[18px] mt-[10px]">Published by {listing?.landlordName ?? "Landlord"}</p>
                   </div>
+                </div>
 
-                  {showMorePayments && (
-                    <div className="flex items-center justify-between">
-                      <span className="text-neutral-gray text-[14px]">Monthly rent (from month 2)</span>
-                      <span className="text-neutral-black text-[14px] font-semibold">€{(listing?.monthlyRent ?? 0).toFixed(2)}</span>
+                <div className="px-[12px] py-[12px] flex flex-col">
+                  <p className="text-[#0F2D36] text-[20px] font-bold mb-[8px]">Rental period</p>
+                  {currentStep === 1 ? (
+                    <button
+                      type="button"
+                      onClick={() => setIsDatePickerModalOpen(true)}
+                      className="inline-flex items-center gap-[8px] text-[#0F2D36] text-[40px] md:text-[16px] leading-[1.2] underline decoration-dotted underline-offset-[8px] cursor-pointer hover:text-[#0A2530] hover:underline-offset-[10px] transition-all duration-150"
+                    >
+                      {selectedRangeLabel}
+                      <Pencil className="w-[16px] h-[16px]" />
+                    </button>
+                  ) : (
+                    <div className="inline-flex items-center gap-[8px] text-[#0F2D36] text-[40px] md:text-[16px] leading-[1.2]">
+                      {selectedRangeLabel}
                     </div>
                   )}
-                </div>
 
-                <button
-                  onClick={() => setShowMorePayments(!showMorePayments)}
-                  className="flex items-center gap-[4px] text-neutral-black text-[13px] font-semibold mt-[12px] hover:text-brand-primary transition-colors"
-                >
-                  View {showMorePayments ? "less" : "more"}
-                  <ChevronDown className={`w-[14px] h-[14px] transition-transform ${showMorePayments ? "rotate-180" : ""}`} />
-                </button>
-              </div>
+                  <div className={`mt-[14px] pt-[14px] ${currentStep === 1 ? "order-1" : "order-2"}`}>
+                    <p className="text-[#001F33] text-[44px] md:text-[16px] leading-[1.2] font-bold mb-[10px]">
+                      You <span className="text-[#8DA0AB]">-&gt;</span>{" "}
+                      <span className="inline-flex items-center gap-[8px]">
+                        <span className="w-[24px] h-[24px] rounded-full overflow-hidden border border-[rgba(15,45,54,0.18)] bg-[#EAF2FF]">
+                          {listing?.landlordProfilePicture ? (
+                            <img
+                              src={listing.landlordProfilePicture}
+                              alt="Landlord"
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <span className="w-full h-full bg-[#12303B] text-white text-[10px] font-bold flex items-center justify-center">
+                              {landlordInitials}
+                            </span>
+                          )}
+                        </span>
+                        <span>{listing?.landlordName ?? "Landlord"}</span>
+                      </span>
+                    </p>
+                    <p className="text-[#0F2D36] text-[36px] md:text-[16px] leading-[1.45] mb-[14px]">
+                      Future rental costs to the landlord. You'll pay these directly, per your contract.
+                    </p>
 
-              {/* Tenant Protection Info */}
-              <div className="bg-[#F7F9FC] border border-[#0066CC] p-[16px]">
-                <div className="flex items-center gap-[8px] mb-[12px]">
-                  <Shield className="w-[18px] h-[18px] text-[#0066CC]" />
-                  <span className="text-[#1A1A1A] text-[14px] font-bold">Covered by Tenant Protection</span>
+                    <div className="space-y-[10px] pb-[12px]">
+                      <div className="flex items-center justify-between gap-[12px]">
+                        <p className="text-[#0F2D36] text-[38px] md:text-[16px] leading-[1.2] flex items-center gap-[6px]">
+                          Security deposit <span className="text-[#8194A0]">before move-in</span>
+                          <Info className="w-[14px] h-[14px] text-[#8194A0]" />
+                        </p>
+                        <p className="text-[#0F2D36] text-[38px] md:text-[16px] leading-[1.2] font-semibold">{"\u20AC"}{(listing?.deposit ?? 0).toFixed(2)}</p>
+                      </div>
+                      <div className="flex items-center justify-between gap-[12px]">
+                        <p className="text-[#0F2D36] text-[38px] md:text-[16px] leading-[1.2]">Utilities</p>
+                        <p className="text-[#0F2D36] text-[38px] md:text-[16px] leading-[1.2] font-semibold">
+                          {listing?.utilitiesIncluded
+                            ? listing.utilitiesCost > 0
+                              ? `\u20AC${listing.utilitiesCost.toFixed(2)}`
+                              : "\u20AC0.00"
+                            : "Not included"}
+                        </p>
+                      </div>
+
+                      {showLandlordMore && (
+                        <>
+                          {listing.utilities.map((utility) => (
+                            <div key={utility.type} className="flex items-center justify-between gap-[12px] pl-[16px]">
+                              <p className="text-[#0F2D36] text-[34px] md:text-[16px] leading-[1.2]">{utility.type}</p>
+                              <p className="text-[#8194A0] text-[34px] md:text-[16px] leading-[1.2] inline-flex items-center gap-[6px]">
+                                {utility.included && <Check className="w-[14px] h-[14px] text-[#0E7A48]" />}
+                                {utility.included ? "Included" : `\u20AC${utility.amount.toFixed(2)}`}
+                              </p>
+                            </div>
+                          ))}
+
+                          <div className="pt-[4px]">
+                            <p className="text-[#0F2D36] text-[34px] md:text-[16px] leading-[1.2] mb-[6px]">Rent</p>
+                            <div className="space-y-[6px] pl-[16px]">
+                              {rentBreakdownRows.map((row, index) => (
+                                <div key={row.label} className="flex items-center justify-between gap-[12px]">
+                                  <p className="text-[#0F2D36] text-[32px] md:text-[16px] leading-[1.2]">{row.label}</p>
+                                  <p className="text-[#0F2D36] text-[32px] md:text-[16px] leading-[1.2] font-semibold inline-flex items-center gap-[6px]">
+                                    {row.original && (
+                                      <span className="inline-flex items-center gap-[6px]">
+                                        <span className="relative inline-flex items-center group">
+                                          <Info className="w-[14px] h-[14px] text-[#6B7F88]" />
+                                          <span className="pointer-events-none absolute right-0 top-[calc(100%+8px)] z-[30] w-[320px] rounded-[6px] bg-[#0F2D36] px-[10px] py-[8px] text-[12px] leading-[1.4] font-medium text-white opacity-0 shadow-[0_10px_28px_rgba(0,0,0,0.28)] transition-opacity duration-150 group-hover:opacity-100">
+                                            {index === 0
+                                              ? "To rent the place, you pay the first month's rent upfront."
+                                              : "This listing's rent is calculated on a daily basis. For the first and last months of your stay, you'll only pay for the exact number of nights in your rental period - just like a hotel. To confirm your rental, you'll need to pay one month's rent in full. Any excess rent you pay for the first month will be subtracted from the next month's rent."}
+                                          </span>
+                                        </span>
+                                        <span className="text-[#9CA9B2] line-through">{row.original}</span>
+                                      </span>
+                                    )}
+                                    <span>{row.value}</span>
+                                  </p>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        </>
+                      )}
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => setShowLandlordMore((prev) => !prev)}
+                      className="inline-flex items-center gap-[6px] text-[#0F2D36] text-[34px] md:text-[16px] leading-[1.2] font-semibold underline decoration-dotted underline-offset-[8px] cursor-pointer hover:text-[#0A2530] hover:underline-offset-[10px] transition-all duration-150"
+                    >
+                      View {showLandlordMore ? "less" : "more"}
+                      <ChevronDown className={`w-[16px] h-[16px] transition-transform ${showLandlordMore ? "rotate-180" : ""}`} />
+                    </button>
+
+                    <div className="mt-[12px] border border-[rgba(15,45,54,0.12)] rounded-[6px] p-[28px] bg-[#E9EEF4]">
+                      <h4 className="text-[#264991] text-[16px] leading-[1.25] font-bold mb-[12px] flex items-center gap-[10px]">
+                        <Heart className="w-[22px] h-[22px]" />
+                        Covered by Tenant Protection
+                      </h4>
+                      <p className="text-[#274A93] text-[15px] leading-[1.6] mb-[16px] max-w-[420px]">
+                        You're guaranteed a stress-free move-in or your money back.
+                      </p>
+
+                      {isProtectionExpanded && (
+                        <div className="space-y-[18px] mb-[18px]">
+                          <div className="flex items-start gap-[10px]">
+                            <CheckCircle2 className="w-[22px] h-[22px] text-[#264991] mt-[2px] shrink-0" />
+                            <div>
+                              <p className="text-[#264991] text-[16px] font-bold mb-[4px]">Protection against the unexpected</p>
+                              <p className="text-[#274A93] text-[15px] leading-[1.6]">
+                                If the landlord cancels last minute or delays your move-in, you'll get help finding another place or a temporary hotel stay.
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className="flex items-start gap-[10px]">
+                            <CheckCircle2 className="w-[22px] h-[22px] text-[#264991] mt-[2px] shrink-0" />
+                            <div>
+                              <p className="text-[#264991] text-[16px] font-bold mb-[4px]">Quick support</p>
+                              <p className="text-[#274A93] text-[15px] leading-[1.6]">
+                                If something goes wrong with your rental, we can help make it right.
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className="flex items-start gap-[10px]">
+                            <CheckCircle2 className="w-[22px] h-[22px] text-[#264991] mt-[2px] shrink-0" />
+                            <div>
+                              <p className="text-[#264991] text-[16px] font-bold mb-[4px]">Move-in with confidence</p>
+                              <p className="text-[#274A93] text-[15px] leading-[1.6]">
+                                We keep your payment safe until you move in. If the place doesn't match the description, you'll get a refund.
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      <button
+                        type="button"
+                        onClick={() => setIsProtectionExpanded((prev) => !prev)}
+                        className="text-[#264991] text-[15px] font-medium underline decoration-dotted underline-offset-[4px] flex items-center gap-[6px] hover:text-[#1D3F85] transition-colors cursor-pointer"
+                      >
+                        How you're protected
+                        <ChevronDown className={`w-[14px] h-[14px] transition-transform ${isProtectionExpanded ? "rotate-180" : ""}`} />
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className={`mt-[14px] pt-[14px] ${currentStep === 1 ? "order-2" : "order-1"}`}>
+                    <p className="text-[#001F33] text-[44px] md:text-[16px] leading-[1.2] font-bold mb-[8px]">You <span className="text-[#8DA0AB]">-&gt;</span> EasyRent</p>
+                    <p className="text-[#0F2D36] text-[36px] md:text-[16px] leading-[1.45] mb-[14px]">Pay this now to secure your place.</p>
+
+                    <div className="space-y-[10px] pb-[12px]">
+                      <div className="flex items-center justify-between gap-[12px]">
+                        <p className="text-[#0F2D36] text-[38px] md:text-[16px] leading-[1.2]">{rentLineLabel}</p>
+                        <p className="text-[#0F2D36] text-[38px] md:text-[16px] leading-[1.2] font-semibold">{"\u20AC"}{rentForSelectedPeriod.toFixed(2)}</p>
+                      </div>
+                      <div className="flex items-center justify-between gap-[12px]">
+                        <p className="text-[#0F2D36] text-[38px] md:text-[16px] leading-[1.2] flex items-center gap-[6px]">
+                          Tenant Protection fee
+                          <Info className="w-[14px] h-[14px]" />
+                        </p>
+                        <p className="text-[#0F2D36] text-[38px] md:text-[16px] leading-[1.2] font-semibold">{"\u20AC"}{tenantProtectionFee.toFixed(2)}</p>
+                      </div>
+                    </div>
+
+                    <div className="mt-[8px] rounded-[6px] bg-[#E8EEF4] p-[12px]">
+                      <div className="flex items-center justify-between gap-[12px] mb-[8px]">
+                        <p className="text-[#0F2D36] text-[20px] font-bold">Total</p>
+                        <p className="text-[#0F2D36] text-[20px] font-bold">{"\u20AC"}{totalAmount.toFixed(2)}</p>
+                      </div>
+                      <p className="text-[#264991] text-[15px] leading-[1.45] flex items-center gap-[6px]">
+                        <Shield className="w-[14px] h-[14px]" />
+                        Covered by Tenant Protection.
+                        <button type="button" className="underline decoration-dotted underline-offset-[4px] hover:text-[#1D3F85] transition-colors cursor-pointer">Learn more</button>
+                      </p>
+                    </div>
+                  </div>
                 </div>
-                <p className="text-[#1A1A1A] text-[13px] leading-[1.6] mb-[12px]">
-                  You're guaranteed a stress-free move-in or your money back.
-                </p>
-                <button className="flex items-center gap-[4px] text-[#0066CC] text-[13px] font-semibold hover:underline">
-                  How you're protected
-                  <ChevronDown className="w-[12px] h-[12px]" />
-                </button>
               </div>
             </div>
           </div>
         </div>
       </div>
+
+      {currentStep === 1 && !showAskQuestionForm && (
+        <div className="fixed left-0 right-0 bottom-0 z-40 bg-[#F7F7F9] border-t border-[rgba(0,0,0,0.12)]">
+          <div className="max-w-[1200px] mx-auto px-[32px] py-[14px]">
+            <button
+              onClick={handleContinue}
+              className="w-full max-w-[620px] font-semibold py-[13px] transition-colors text-[15px] bg-brand-primary text-white hover:bg-brand-primary-dark"
+            >
+              Continue
+            </button>
+            {stepOneError && <p className="text-brand-primary text-[15px] mt-[10px]">{stepOneError}</p>}
+          </div>
+        </div>
+      )}
       </>
+      )}
+
+      {isDatePickerModalOpen && listing && (
+        <div className="fixed inset-0 z-[95]">
+          <button
+            type="button"
+            aria-label="Close date picker"
+            onClick={() => setIsDatePickerModalOpen(false)}
+            className="absolute inset-0 bg-black/30"
+          />
+
+          <div className="relative z-[1] mx-auto mt-[12px] md:mt-[22px] w-[94vw] max-w-[980px]">
+            <DatePicker
+              isOpen={isDatePickerModalOpen}
+              onClose={() => setIsDatePickerModalOpen(false)}
+              startDate={selectedStartDate}
+              endDate={selectedEndDate}
+              onDateChange={handleDateRangeChange}
+              moveInAvailableChecked={isMoveInAvailabilityChecked}
+              onMoveInAvailableChange={setIsMoveInAvailabilityChecked}
+              onClearSelection={() => {
+                setSelectedStartDate(null);
+                setSelectedEndDate(null);
+              }}
+              initializeFromSelection
+              isModal
+              minStayMonths={Math.max(1, listing.minStay || 1)}
+              maxStayMonths={listing.maxStay}
+              availableFrom={new Date(listing.availableFrom)}
+            />
+          </div>
+        </div>
       )}
     </div>
   );
