@@ -41,6 +41,9 @@ const fallbackPropertyImages = [
   "https://images.unsplash.com/photo-1730789442056-76dbcaab7dd7?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxmdXJuaXNoZWQlMjBhcGFydG1lbnQlMjBsaXZpbmclMjBzcGFjZXxlbnwxfHx8fDE3NzMwODk1NjR8MA&ixlib=rb-4.1.0&q=80&w=1080",
 ];
 
+const TENANT_PROTECTION_RATE = 0.1;
+const TENANT_PROTECTION_FEE_CAP = 250;
+
 interface ListingDetails {
   id: string;
   propertyType: "apartment" | "studio" | "house" | "room";
@@ -684,7 +687,10 @@ export function PropertyListing() {
     return null;
   }, [listing]);
 
-  const tenantProtectionFee = tenantProtectionService?.amount ?? 0;
+  const calculatedTenantProtectionFee = listing
+    ? Math.min(listing.monthlyRent * TENANT_PROTECTION_RATE, TENANT_PROTECTION_FEE_CAP)
+    : 0;
+  const tenantProtectionFee = tenantProtectionService?.amount ?? calculatedTenantProtectionFee;
   const rentForSelectedPeriod = (() => {
     if (!listing || !selectedStartDate || !selectedEndDate || selectedEndDate < selectedStartDate) {
       return listing?.monthlyRent ?? 0;
@@ -1475,8 +1481,8 @@ export function PropertyListing() {
                     </p>
                   </div>
                   <div className="flex flex-col gap-[8px] shrink-0">
-                    <button className="px-[14px] py-[8px] border border-[rgba(0,0,0,0.16)] text-[#0F2D36] text-[14px] font-semibold bg-[#F3F7FB] hover:bg-[#EAF1F8]">View French contract</button>
-                    <button className="px-[14px] py-[8px] border border-[rgba(0,0,0,0.16)] text-[#0F2D36] text-[14px] font-semibold bg-[#F3F7FB] hover:bg-[#EAF1F8]">View English translation</button>
+                    {/* <button className="px-[14px] py-[8px] border border-[rgba(0,0,0,0.16)] text-[#0F2D36] text-[14px] font-semibold bg-[#F3F7FB] hover:bg-[#EAF1F8]">View French contract</button>
+                    <button className="px-[14px] py-[8px] border border-[rgba(0,0,0,0.16)] text-[#0F2D36] text-[14px] font-semibold bg-[#F3F7FB] hover:bg-[#EAF1F8]">View English translation</button> */}
                   </div>
                 </div>
               </div>
@@ -1732,9 +1738,9 @@ export function PropertyListing() {
                 <p className="text-[#173743] text-[14px] leading-[1.55] mb-[16px] max-w-[420px]">
                   Easily review and sign your rental agreement online. Secure, fast, and hassle-free.
                 </p>
-                <button className="text-[#0F2D36] text-[14px] font-medium underline decoration-dotted underline-offset-[4px] hover:text-[#0A2530] transition-colors cursor-pointer">
+                {/* <button className="text-[#0F2D36] text-[14px] font-medium underline decoration-dotted underline-offset-[4px] hover:text-[#0A2530] transition-colors cursor-pointer">
                   Learn more
-                </button>
+                </button> */}
               </div>
             </div>
           </div>

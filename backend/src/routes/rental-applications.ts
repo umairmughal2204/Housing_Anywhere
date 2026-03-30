@@ -42,8 +42,40 @@ const rentalApplicationSchema = z.object({
   employerName: z.string().optional().default(""),
   income: z.string().optional().default(""),
   supportingMessage: z.string().min(1).max(2000),
+  moveInDate: z.string().datetime().nullable().optional(),
+  moveOutDate: z.string().datetime().nullable().optional(),
+  moveInAvailabilityConfirmed: z.boolean().optional().default(false),
   idVerified: z.boolean().default(false),
   shareDocuments: z.boolean().default(false),
+  billingAddress: z
+    .object({
+      firstName: z.string().optional().default(""),
+      lastName: z.string().optional().default(""),
+      country: z.string().optional().default(""),
+      street: z.string().optional().default(""),
+      apartmentNumber: z.string().optional().default(""),
+      city: z.string().optional().default(""),
+      stateProvince: z.string().optional().default(""),
+      postalCode: z.string().optional().default(""),
+      confirmed: z.boolean().optional().default(false),
+    })
+    .optional(),
+  paymentDetails: z
+    .object({
+      method: z.enum(["card", "ideal", "bancontact"]).optional().default("card"),
+      cardNumber: z.string().optional().default(""),
+      expiryDate: z.string().optional().default(""),
+      cardholderName: z.string().optional().default(""),
+      isPaid: z.boolean().optional().default(false),
+      paidAmount: z.number().min(0).optional().default(0),
+      currency: z.string().optional().default("EUR"),
+      addRentGuarantee: z.boolean().optional().default(false),
+      rentGuaranteeFee: z.number().min(0).optional().default(0),
+      tenantProtectionFee: z.number().min(0).optional().default(0),
+      rentForSelectedPeriod: z.number().min(0).optional().default(0),
+      totalAmount: z.number().min(0).optional().default(0),
+    })
+    .optional(),
 });
 
 const updateStatusSchema = z.object({
@@ -160,6 +192,9 @@ router.post(
       ? [input.dateOfBirth.day, input.dateOfBirth.month, input.dateOfBirth.year].filter(Boolean).join("/")
       : "";
 
+    const normalizedCard = (input.paymentDetails?.cardNumber ?? "").replace(/\s+/g, "");
+    const cardLast4 = normalizedCard.length >= 4 ? normalizedCard.slice(-4) : "";
+
     const created = await RentalApplicationModel.create({
       listingId: listing._id,
       landlordId: listing.landlordId,
@@ -178,8 +213,36 @@ router.post(
       employerName: input.employerName,
       income: input.income,
       supportingMessage: input.supportingMessage,
+      moveInDate: input.moveInDate ? new Date(input.moveInDate) : undefined,
+      moveOutDate: input.moveOutDate ? new Date(input.moveOutDate) : undefined,
+      moveInAvailabilityConfirmed: input.moveInAvailabilityConfirmed,
       idVerified: input.idVerified,
       shareDocuments: input.shareDocuments,
+      billingAddress: {
+        firstName: input.billingAddress?.firstName ?? "",
+        lastName: input.billingAddress?.lastName ?? "",
+        country: input.billingAddress?.country ?? "",
+        street: input.billingAddress?.street ?? "",
+        apartmentNumber: input.billingAddress?.apartmentNumber ?? "",
+        city: input.billingAddress?.city ?? "",
+        stateProvince: input.billingAddress?.stateProvince ?? "",
+        postalCode: input.billingAddress?.postalCode ?? "",
+        confirmed: input.billingAddress?.confirmed ?? false,
+      },
+      paymentDetails: {
+        method: input.paymentDetails?.method ?? "card",
+        cardLast4,
+        expiryDate: input.paymentDetails?.expiryDate ?? "",
+        cardholderName: input.paymentDetails?.cardholderName ?? "",
+        isPaid: input.paymentDetails?.isPaid ?? false,
+        paidAmount: input.paymentDetails?.paidAmount ?? 0,
+        currency: input.paymentDetails?.currency ?? "EUR",
+        addRentGuarantee: input.paymentDetails?.addRentGuarantee ?? false,
+        rentGuaranteeFee: input.paymentDetails?.rentGuaranteeFee ?? 0,
+        tenantProtectionFee: input.paymentDetails?.tenantProtectionFee ?? 0,
+        rentForSelectedPeriod: input.paymentDetails?.rentForSelectedPeriod ?? 0,
+        totalAmount: input.paymentDetails?.totalAmount ?? 0,
+      },
       documents,
     });
 
@@ -282,6 +345,26 @@ router.get("/landlord", requireAuth, requireRole("landlord"), async (req, res) =
         occupation: item.occupation,
         visaStatus: item.visaStatus,
         idVerified: item.idVerified,
+        moveInDate: item.moveInDate ?? null,
+        moveOutDate: item.moveOutDate ?? null,
+        moveInAvailabilityConfirmed: item.moveInAvailabilityConfirmed ?? false,
+        billingAddress: item.billingAddress ?? null,
+        paymentDetails: item.paymentDetails
+          ? {
+              method: item.paymentDetails.method,
+              cardLast4: item.paymentDetails.cardLast4,
+              expiryDate: item.paymentDetails.expiryDate,
+              cardholderName: item.paymentDetails.cardholderName,
+              isPaid: item.paymentDetails.isPaid,
+              paidAmount: item.paymentDetails.paidAmount,
+              currency: item.paymentDetails.currency,
+              addRentGuarantee: item.paymentDetails.addRentGuarantee,
+              rentGuaranteeFee: item.paymentDetails.rentGuaranteeFee,
+              tenantProtectionFee: item.paymentDetails.tenantProtectionFee,
+              rentForSelectedPeriod: item.paymentDetails.rentForSelectedPeriod,
+              totalAmount: item.paymentDetails.totalAmount,
+            }
+          : null,
         documents: (item.documents || []).map((doc) => ({
           id: `${String(item._id)}-${doc.type}-${doc.name}`,
           type: doc.type,
@@ -358,6 +441,26 @@ router.get("/tenant", requireAuth, async (req, res) => {
       listingId: String(item.listingId),
       status: item.status,
       createdAt: item.createdAt,
+      moveInDate: item.moveInDate ?? null,
+      moveOutDate: item.moveOutDate ?? null,
+      moveInAvailabilityConfirmed: item.moveInAvailabilityConfirmed ?? false,
+      billingAddress: item.billingAddress ?? null,
+      paymentDetails: item.paymentDetails
+        ? {
+            method: item.paymentDetails.method,
+            cardLast4: item.paymentDetails.cardLast4,
+            expiryDate: item.paymentDetails.expiryDate,
+            cardholderName: item.paymentDetails.cardholderName,
+            isPaid: item.paymentDetails.isPaid,
+            paidAmount: item.paymentDetails.paidAmount,
+            currency: item.paymentDetails.currency,
+            addRentGuarantee: item.paymentDetails.addRentGuarantee,
+            rentGuaranteeFee: item.paymentDetails.rentGuaranteeFee,
+            tenantProtectionFee: item.paymentDetails.tenantProtectionFee,
+            rentForSelectedPeriod: item.paymentDetails.rentForSelectedPeriod,
+            totalAmount: item.paymentDetails.totalAmount,
+          }
+        : null,
       listing: {
         isAvailable: listingMap.get(String(item.listingId))?.status === "active",
         title: listingMap.get(String(item.listingId))?.title ?? "Listing unavailable",

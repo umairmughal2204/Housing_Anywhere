@@ -1,6 +1,6 @@
 import { Link, useParams, useNavigate, useLocation } from "react-router";
 import { useState, useEffect, useMemo } from "react";
-import { ChevronLeft, Info, ChevronDown, Shield, Check, Plus, Upload, FileText, User, GraduationCap, Briefcase, Sparkles, LogOut, Pencil, Heart, CheckCircle2, Calendar, CircleDollarSign, Building2, Eye, Users, Bath, Utensils, Sofa, Bed, Tv, Wifi } from "lucide-react";
+import { ChevronLeft, Info, ChevronDown, Shield, Check, Plus, Upload, FileText, User, GraduationCap, Briefcase, Sparkles, LogOut, Pencil, Heart, CheckCircle2, Calendar, CircleDollarSign, Building2, Eye, Users, Bath, Utensils, Sofa, Bed, Tv, Wifi, CreditCard } from "lucide-react";
 import { DatePicker } from "../components/date-picker";
 import { useAuth } from "../contexts/auth-context";
 import { API_BASE } from "../config";
@@ -107,6 +107,7 @@ function formatDateLabel(date: Date) {
 
 const TENANT_PROTECTION_RATE = 0.1;
 const TENANT_PROTECTION_FEE_CAP = 250;
+const RENT_GUARANTEE_FEE = 251.54;
 
 export function RentalApplication() {
   const { id } = useParams();
@@ -118,6 +119,23 @@ export function RentalApplication() {
   const [showAskQuestionForm, setShowAskQuestionForm] = useState(false);
   const [expandedTopics, setExpandedTopics] = useState<string[]>([]);
   const [questionText, setQuestionText] = useState("");
+  const [isSendingQuestion, setIsSendingQuestion] = useState(false);
+  const [questionSendError, setQuestionSendError] = useState("");
+  const [questionSendSuccess, setQuestionSendSuccess] = useState("");
+  const [billingFirstName, setBillingFirstName] = useState("");
+  const [billingLastName, setBillingLastName] = useState("");
+  const [billingCountry, setBillingCountry] = useState("");
+  const [billingStreet, setBillingStreet] = useState("");
+  const [billingApartmentNumber, setBillingApartmentNumber] = useState("");
+  const [billingCity, setBillingCity] = useState("");
+  const [billingStateProvince, setBillingStateProvince] = useState("");
+  const [billingPostalCode, setBillingPostalCode] = useState("");
+  const [billingAddressConfirmed, setBillingAddressConfirmed] = useState(false);
+  const [billingPaymentMethod, setBillingPaymentMethod] = useState<"card" | "ideal" | "bancontact">("card");
+  const [billingCardNumber, setBillingCardNumber] = useState("");
+  const [billingExpiryDate, setBillingExpiryDate] = useState("");
+  const [billingSecurityCode, setBillingSecurityCode] = useState("");
+  const [addRentGuarantee, setAddRentGuarantee] = useState(false);
   const [listing, setListing] = useState<ListingSummary | null>(null);
   const [isLoadingListing, setIsLoadingListing] = useState(true);
   const [listingError, setListingError] = useState("");
@@ -198,6 +216,19 @@ export function RentalApplication() {
     (!requiresIncomeProof || Boolean(incomeProof));
 
   const isAskQuestionMode = currentStep === 1 && showAskQuestionForm;
+  const billingCountryLabel =
+    billingCountry === "NL" ? "Netherlands" :
+    billingCountry === "DE" ? "Germany" :
+    billingCountry === "FR" ? "France" :
+    billingCountry === "PK" ? "Pakistan" : "";
+  const hasBillingAddressDetails = Boolean(
+    billingFirstName.trim() &&
+    billingLastName.trim() &&
+    billingCountry &&
+    billingStreet.trim() &&
+    billingCity.trim()
+  );
+  const canSubmitBilling = billingAddressConfirmed;
 
   const selectedRangeLabel =
     selectedStartDate && selectedEndDate
@@ -246,7 +277,7 @@ export function RentalApplication() {
       ? rentBreakdownRows.reduce((sum, row) => sum + row.amount, 0)
       : listing?.monthlyRent ?? 0;
   const rentLineLabel = selectedStartDate && selectedEndDate ? "Rent for selected period" : "First month's rent";
-  const totalAmount = rentForSelectedPeriod + tenantProtectionFee;
+  const totalAmount = rentForSelectedPeriod + tenantProtectionFee + (addRentGuarantee ? RENT_GUARANTEE_FEE : 0);
 
   const getStepOneValidationError = () => {
     const day = Number(dateOfBirth.day);
@@ -317,6 +348,65 @@ export function RentalApplication() {
       window.scrollTo(0, 0);
     }
   };
+
+  const handleSendQuestion = async () => {
+    const trimmedQuestion = questionText.trim();
+    if (!trimmedQuestion || !id) {
+      return;
+    }
+
+    const token = localStorage.getItem("authToken");
+    if (!token) {
+      const returnTo = `${location.pathname}${location.search}`;
+      navigate(`/login?returnTo=${encodeURIComponent(returnTo)}`);
+      return;
+    }
+
+    setIsSendingQuestion(true);
+    setQuestionSendError("");
+    setQuestionSendSuccess("");
+
+    try {
+      const topics = expandedTopics.length > 0 ? expandedTopics.join(", ") : "General";
+      const messageBody = `Question topic${expandedTopics.length > 1 ? "s" : ""}: ${topics}\n\n${trimmedQuestion}`;
+
+      const conversationResponse = await fetch(`${apiBase}/api/conversations`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ listingId: id }),
+      });
+
+      if (!conversationResponse.ok) {
+        throw new Error("Could not open conversation with landlord.");
+      }
+
+      const conversationPayload = (await conversationResponse.json()) as { conversationId: string };
+
+      const messageResponse = await fetch(`${apiBase}/api/conversations/${conversationPayload.conversationId}/messages`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ body: messageBody }),
+      });
+
+      if (!messageResponse.ok) {
+        const payload = (await messageResponse.json().catch(() => ({}))) as { message?: string };
+        throw new Error(payload.message ?? "Failed to send your question.");
+      }
+
+      setQuestionText("");
+      setQuestionSendSuccess("Your question was sent to the landlord.");
+    } catch (error) {
+      setQuestionSendError(error instanceof Error ? error.message : "Failed to send your question.");
+    } finally {
+      setIsSendingQuestion(false);
+    }
+  };
   
   const handleSubmit = async () => {
     if (!id) {
@@ -362,6 +452,31 @@ export function RentalApplication() {
           moveInAvailabilityConfirmed: isMoveInAvailabilityChecked,
           idVerified,
           shareDocuments,
+          billingAddress: {
+            firstName: billingFirstName,
+            lastName: billingLastName,
+            country: billingCountry,
+            street: billingStreet,
+            apartmentNumber: billingApartmentNumber,
+            city: billingCity,
+            stateProvince: billingStateProvince,
+            postalCode: billingPostalCode,
+            confirmed: billingAddressConfirmed,
+          },
+          paymentDetails: {
+            method: billingPaymentMethod,
+            cardNumber: billingCardNumber,
+            expiryDate: billingExpiryDate,
+            cardholderName: `${billingFirstName} ${billingLastName}`.trim(),
+            isPaid: canSubmitBilling,
+            paidAmount: canSubmitBilling ? totalAmount : 0,
+            currency: "EUR",
+            addRentGuarantee,
+            rentGuaranteeFee: addRentGuarantee ? RENT_GUARANTEE_FEE : 0,
+            tenantProtectionFee,
+            rentForSelectedPeriod,
+            totalAmount,
+          },
         })
       );
 
@@ -834,7 +949,7 @@ export function RentalApplication() {
       {!user?.isLandlord && listing && (
       <>
       {/* Progress Steps */}
-      {!isAskQuestionMode && (
+      {!isAskQuestionMode && currentStep !== 3 && (
       <div className="bg-neutral-light-gray border-b border-[rgba(0,0,0,0.08)]">
         <div className="max-w-[1200px] mx-auto px-[32px] py-[32px]">
           <div className="flex items-center justify-between relative">
@@ -1395,7 +1510,7 @@ export function RentalApplication() {
                           <div className="space-y-[12px]">
                             <div className="flex items-start gap-[8px]">
                               <span className="text-[15px]">•</span>
-                              <span>To protect your money, always pay on HousingAnywhere. We'll transfer your first month's rent to the landlord 48 hours after you move in. If the place isn't as advertised, you're covered by <button className="text-[#0F2D36] underline underline-offset-[2px] hover:text-[#0A2530]">Tenant Protection</button>.</span>
+                              <span>To protect your money, always pay on EasyRent. We'll transfer your first month's rent to the landlord 48 hours after you move in. If the place isn't as advertised, you're covered by <button className="text-[#0F2D36] underline underline-offset-[2px] hover:text-[#0A2530]">Tenant Protection</button>.</span>
                             </div>
                             <div className="flex items-start gap-[8px]">
                               <span className="text-[15px]">•</span>
@@ -1409,7 +1524,7 @@ export function RentalApplication() {
 
                           <div className="border-t border-[rgba(0,0,0,0.12)] pt-[16px]">
                             <h6 className="text-[15px] font-bold mb-[12px]">Additional fees and charges from landlords</h6>
-                            <p className="mb-[12px]">Landlords may have additional fees due after your rental is confirmed on HousingAnywhere. We found references to the following fees in the listing description. Please message the landlord to confirm any fees and agree on payment terms.</p>
+                            <p className="mb-[12px]">Landlords may have additional fees due after your rental is confirmed on EasyRent. We found references to the following fees in the listing description. Please message the landlord to confirm any fees and agree on payment terms.</p>
                             <ul className="space-y-[8px]">
                               <li className="flex items-start gap-[8px]">
                                 <span className="text-[15px]">•</span>
@@ -1487,21 +1602,21 @@ export function RentalApplication() {
                           <ChevronDown className="w-[24px] h-[24px] text-[#0F2D36]" />
                         </button>
                         <div className="mt-[16px] space-y-[12px] text-[#0F2D36] text-[15px] leading-[1.6]">
-                          <p>At HousingAnywhere, in-person viewings are not supported. So everyone has an equal chance to rent, no matter where you are in the world.</p>
-                          <p>To stay safe, always message and pay on HousingAnywhere. This helps us verify everyone's details, and prevents off-platform agreements that could compromise your safety.</p>
+                          <p>At EasyRent, in-person viewings are not supported. So everyone has an equal chance to rent, no matter where you are in the world.</p>
+                          <p>To stay safe, always message and pay on EasyRent. This helps us verify everyone's details, and prevents off-platform agreements that could compromise your safety.</p>
 
                           <div className="pt-[6px]">
                             <h6 className="text-[15px] font-bold mb-[8px]">Find your next home without a viewing</h6>
                             <p className="mb-[8px]">To help you make an informed decision, we recommend:</p>
                             <ul className="space-y-[8px]">
-                              <li className="flex items-start gap-[8px]"><span>•</span><span>Messaging the landlord on HousingAnywhere to ask any questions.</span></li>
+                              <li className="flex items-start gap-[8px]"><span>•</span><span>Messaging the landlord on EasyRent to ask any questions.</span></li>
                               <li className="flex items-start gap-[8px]"><span>•</span><span>Requesting more photos, video tours, or floor plans.</span></li>
                             </ul>
                           </div>
 
                           <div className="pt-[6px]">
                             <h6 className="text-[15px] font-bold mb-[8px]">Your rental is covered by Tenant Protection</h6>
-                            <p className="mb-[8px]">We know that renting without seeing a place in person can feel like a big step. That's why every rental on HousingAnywhere is backed by <button className="text-[#0F2D36] underline underline-offset-[2px] hover:text-[#0A2530]">Tenant Protection</button>.</p>
+                            <p className="mb-[8px]">We know that renting without seeing a place in person can feel like a big step. That's why every rental on EasyRent is backed by <button className="text-[#0F2D36] underline underline-offset-[2px] hover:text-[#0A2530]">Tenant Protection</button>.</p>
                             <ul className="space-y-[8px]">
                               <li className="flex items-start gap-[8px]"><span>•</span><span>If the place is not as advertised when you move in, you can <button className="text-[#0F2D36] underline underline-offset-[2px] hover:text-[#0A2530]">cancel within 48 hours</button>.</span></li>
                               <li className="flex items-start gap-[8px]"><span>•</span><span>If your reason for cancelling is covered by our policies, we'll help you find a new place to stay. If needed, we can also provide a temporary hotel stay.</span></li>
@@ -1611,15 +1726,18 @@ export function RentalApplication() {
                     {/* Send Button */}
                     <button
                       type="button"
-                      disabled={!questionText.trim()}
+                      onClick={handleSendQuestion}
+                      disabled={!questionText.trim() || isSendingQuestion}
                       className={`px-[24px] py-[12px] rounded-[6px] font-semibold text-[15px] transition-colors ${
-                        questionText.trim()
+                        questionText.trim() && !isSendingQuestion
                           ? "bg-brand-primary text-white hover:bg-brand-primary-dark"
                           : "bg-[#E0E8EF] text-[#8A969C] cursor-not-allowed"
                       }`}
                     >
-                      Send question
+                      {isSendingQuestion ? "Sending..." : "Send question"}
                     </button>
+                    {questionSendError && <p className="text-[#B80F3D] text-[14px] mt-[10px]">{questionSendError}</p>}
+                    {questionSendSuccess && <p className="text-[#0E7A48] text-[14px] mt-[10px]">{questionSendSuccess}</p>}
                   </div>
                 )}
               </div>
@@ -1741,7 +1859,7 @@ export function RentalApplication() {
                       className="w-[18px] h-[18px] border border-[rgba(0,0,0,0.2)] rounded-[2px] mt-[2px]"
                     />
                     <span className="text-[#1A1A1A] text-[15px] leading-[1.6]">
-                      I agree to share these documents only with {landlordFirstName}, in accordance with HousingAnywhere's <button type="button" className="underline hover:text-[#0A2530]">Terms &amp; Conditions</button> and <button type="button" className="underline hover:text-[#0A2530]">Privacy Policy</button>.
+                      I agree to share these documents only with {landlordFirstName}, in accordance with EasyRent's <button type="button" className="underline hover:text-[#0A2530]">Terms &amp; Conditions</button> and <button type="button" className="underline hover:text-[#0A2530]">Privacy Policy</button>.
                     </span>
                   </label>
                 </div>
@@ -1780,148 +1898,287 @@ export function RentalApplication() {
             {/* STEP 3: Submit application */}
             {currentStep === 3 && (
               <>
-                <h1 className="text-[#1A1A1A] text-[32px] font-bold tracking-[-0.02em] mb-[16px]">
-                  Review your application
+                <h1 className="text-[#0F2D36] text-[42px] md:text-[38px] font-bold tracking-[-0.02em] mb-[18px]">
+                  Apply to rent {listing?.title ?? "Rue Lépine"}
                 </h1>
-                <p className="text-[#6B6B6B] text-[15px] leading-[1.6] mb-[32px]">
-                  Please review all the details before submitting your rental application.
-                </p>
 
-                {/* Personal Information */}
-                <div className="bg-[#F7F7F9] p-[24px] mb-[24px]">
-                  <h2 className="text-[#1A1A1A] text-[20px] font-bold mb-[16px]">Personal Information</h2>
-                  <div className="space-y-[12px]">
-                    <div className="flex items-center justify-between">
-                      <span className="text-[#6B6B6B] text-[15px]">Date of birth</span>
-                      <span className="text-[#1A1A1A] text-[15px] font-semibold">
-                        {dateOfBirth.day}/{dateOfBirth.month}/{dateOfBirth.year}
-                      </span>
+                <div className="bg-[#E8EEF4] rounded-[6px] px-[22px] py-[18px] mb-[34px]">
+                  <p className="text-[#0F2D36] text-[15px] leading-[1.6]">
+                    <span className="font-bold">Why add payment details?</span> Adding payment details allows you to submit your rental application. {landlordFirstName} has 48 hours to respond. We only charge you if they accept your application and confirm your stay.
+                  </p>
+                </div>
+
+                <h2 className="text-[#0F2D36] text-[40px] md:text-[32px] font-bold mb-[20px]">1. Billing address</h2>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-[12px] mb-[12px]">
+                  <div>
+                    <label className="block text-[#0F2D36] text-[14px] font-semibold mb-[6px]">First name</label>
+                    <input
+                      type="text"
+                      value={billingFirstName}
+                      onChange={(e) => {
+                        setBillingFirstName(e.target.value);
+                        setBillingAddressConfirmed(false);
+                      }}
+                      placeholder="Brand"
+                      className="w-full h-[48px] px-[12px] border border-[rgba(15,45,54,0.34)] rounded-[4px] text-[#0F2D36] text-[15px]"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[#0F2D36] text-[14px] font-semibold mb-[6px]">Last name</label>
+                    <input
+                      type="text"
+                      value={billingLastName}
+                      onChange={(e) => {
+                        setBillingLastName(e.target.value);
+                        setBillingAddressConfirmed(false);
+                      }}
+                      placeholder="Com"
+                      className="w-full h-[48px] px-[12px] border border-[rgba(15,45,54,0.34)] rounded-[4px] text-[#0F2D36] text-[15px]"
+                    />
+                  </div>
+                </div>
+
+                <div className="mb-[26px]">
+                  <label className="block text-[#0F2D36] text-[14px] font-semibold mb-[6px]">Country</label>
+                  <div className="relative">
+                    <select
+                      value={billingCountry}
+                      onChange={(e) => {
+                        setBillingCountry(e.target.value);
+                        setBillingAddressConfirmed(false);
+                      }}
+                      className="w-full h-[48px] px-[12px] pr-[40px] border border-[rgba(15,45,54,0.34)] rounded-[4px] text-[#0F2D36] text-[15px] appearance-none bg-white"
+                    >
+                      <option value="">Select country</option>
+                      <option value="NL">Netherlands</option>
+                      <option value="DE">Germany</option>
+                      <option value="FR">France</option>
+                      <option value="PK">Pakistan</option>
+                    </select>
+                    <ChevronDown className="absolute right-[12px] top-1/2 -translate-y-1/2 w-[16px] h-[16px] text-[#0F2D36] pointer-events-none" />
+                  </div>
+                </div>
+
+                {billingCountry && !billingAddressConfirmed && (
+                  <div className="mb-[26px]">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-[12px] mb-[12px]">
+                      <div>
+                        <label className="block text-[#0F2D36] text-[14px] font-semibold mb-[6px]">Street</label>
+                        <input
+                          type="text"
+                          value={billingStreet}
+                          onChange={(e) => setBillingStreet(e.target.value)}
+                          className="w-full h-[48px] px-[12px] border border-[rgba(15,45,54,0.24)] rounded-[4px] text-[#0F2D36] text-[15px]"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[#0F2D36] text-[14px] font-semibold mb-[6px]">Apartment number</label>
+                        <input
+                          type="text"
+                          value={billingApartmentNumber}
+                          onChange={(e) => setBillingApartmentNumber(e.target.value)}
+                          placeholder="Apt., suite, unit number, etc."
+                          className="w-full h-[48px] px-[12px] border border-[rgba(15,45,54,0.24)] rounded-[4px] text-[#0F2D36] text-[15px]"
+                        />
+                      </div>
                     </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-[#6B6B6B] text-[15px]">Gender</span>
-                      <span className="text-[#1A1A1A] text-[15px] font-semibold capitalize">{gender || "Not specified"}</span>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-[12px] mb-[12px]">
+                      <div>
+                        <label className="block text-[#0F2D36] text-[14px] font-semibold mb-[6px]">City</label>
+                        <input
+                          type="text"
+                          value={billingCity}
+                          onChange={(e) => setBillingCity(e.target.value)}
+                          className="w-full h-[48px] px-[12px] border border-[rgba(15,45,54,0.24)] rounded-[4px] text-[#0F2D36] text-[15px]"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[#0F2D36] text-[14px] font-semibold mb-[6px]">State/Province (optional)</label>
+                        <input
+                          type="text"
+                          value={billingStateProvince}
+                          onChange={(e) => setBillingStateProvince(e.target.value)}
+                          className="w-full h-[48px] px-[12px] border border-[rgba(15,45,54,0.24)] rounded-[4px] text-[#0F2D36] text-[15px]"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-[12px] mb-[14px]">
+                      <div>
+                        <label className="block text-[#0F2D36] text-[14px] font-semibold mb-[6px]">Postal/ZIP code (optional)</label>
+                        <input
+                          type="text"
+                          value={billingPostalCode}
+                          onChange={(e) => setBillingPostalCode(e.target.value)}
+                          className="w-full h-[48px] px-[12px] border border-[rgba(15,45,54,0.24)] rounded-[4px] text-[#0F2D36] text-[15px]"
+                        />
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => setBillingAddressConfirmed(true)}
+                      disabled={!hasBillingAddressDetails}
+                      className={`h-[44px] px-[18px] rounded-[6px] font-semibold text-[15px] transition-colors ${hasBillingAddressDetails ? "bg-brand-primary text-white hover:bg-brand-primary-dark" : "bg-[#E0E8EF] text-[#8A969C] cursor-not-allowed"}`}
+                    >
+                      Confirm
+                    </button>
+                  </div>
+                )}
+
+                {billingAddressConfirmed && (
+                  <div className="mb-[26px] border border-[rgba(15,45,54,0.24)] rounded-[8px] px-[16px] py-[14px] flex items-center justify-between gap-[12px]">
+                    <div className="min-w-0">
+                      <p className="text-[#0F2D36] text-[18px] md:text-[16px] font-bold truncate">{billingFirstName} {billingLastName}</p>
+                      <p className="text-[#0F2D36] text-[18px] md:text-[15px] leading-[1.5] truncate">
+                        {billingStreet}{billingApartmentNumber ? `, ${billingApartmentNumber}` : ""}, {billingCity}{billingStateProvince ? `, ${billingStateProvince}` : ""}{billingPostalCode ? `, ${billingPostalCode}` : ""}, {billingCountryLabel}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setBillingAddressConfirmed(false)}
+                      className="h-[46px] px-[16px] rounded-[6px] border border-[rgba(15,45,54,0.24)] bg-[#F7FAFC] text-[#0F2D36] text-[22px] md:text-[16px] font-semibold hover:bg-[#EEF3F7] transition-colors"
+                    >
+                      Update
+                    </button>
+                  </div>
+                )}
+
+                <div className="h-[1px] bg-[rgba(15,45,54,0.16)] mb-[26px]" />
+
+                <h2 className="text-[#0F2D36] text-[40px] md:text-[32px] font-bold mb-[14px]">2. Payment method</h2>
+                <h3 className="text-[#0F2D36] text-[20px] font-bold mb-[10px]">Payment method</h3>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-[10px] mb-[12px]">
+                  <button
+                    type="button"
+                    onClick={() => setBillingPaymentMethod("card")}
+                    className={`h-[64px] rounded-[4px] border px-[12px] text-left transition-colors ${billingPaymentMethod === "card" ? "border-[#0F2D36] bg-white" : "border-[rgba(15,45,54,0.18)] bg-white"}`}
+                  >
+                    <CreditCard className="w-[16px] h-[16px] mb-[6px] text-[#0F2D36]" />
+                    <p className="text-[#0F2D36] text-[15px] font-medium">Card</p>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setBillingPaymentMethod("ideal")}
+                    className={`h-[64px] rounded-[4px] border px-[12px] text-left transition-colors ${billingPaymentMethod === "ideal" ? "border-[#0F2D36] bg-white" : "border-[rgba(15,45,54,0.18)] bg-white"}`}
+                  >
+                    <p className="text-[#B80F3D] text-[11px] font-bold mb-[6px]">iDEAL</p>
+                    <p className="text-[#0F2D36] text-[15px] font-medium">iDEAL | Wero</p>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setBillingPaymentMethod("bancontact")}
+                    className={`h-[64px] rounded-[4px] border px-[12px] text-left transition-colors ${billingPaymentMethod === "bancontact" ? "border-[#0F2D36] bg-white" : "border-[rgba(15,45,54,0.18)] bg-white"}`}
+                  >
+                    <div className="w-[24px] h-[6px] rounded-[999px] bg-[#0F57B5] mb-[8px]" />
+                    <p className="text-[#0F2D36] text-[15px] font-medium">Bancontact</p>
+                  </button>
+                </div>
+
+                <div className="mb-[10px]">
+                  <label className="block text-[#0F2D36] text-[14px] font-medium mb-[6px]">Card number</label>
+                  <div className="relative">
+                    <input
+                      type="text"
+                      value={billingCardNumber}
+                      onChange={(e) => setBillingCardNumber(e.target.value)}
+                      placeholder="1234 1234 1234 1234"
+                      className="w-full h-[44px] px-[12px] pr-[120px] border border-[rgba(15,45,54,0.24)] rounded-[4px] text-[#0F2D36] text-[15px]"
+                    />
+                    <div className="absolute right-[10px] top-1/2 -translate-y-1/2 flex items-center gap-[4px] text-[10px]">
+                      <span className="px-[4px] py-[1px] rounded bg-[#111827] text-white">MC</span>
+                      <span className="px-[4px] py-[1px] rounded bg-[#1D4ED8] text-white">VISA</span>
+                      <span className="px-[4px] py-[1px] rounded bg-[#0EA5E9] text-white">AMEX</span>
+                      <span className="px-[4px] py-[1px] rounded bg-[#047857] text-white">UNP</span>
                     </div>
                   </div>
                 </div>
 
-                {/* Living Arrangement */}
-                <div className="bg-[#F7F7F9] p-[24px] mb-[24px]">
-                  <h2 className="text-[#1A1A1A] text-[20px] font-bold mb-[16px]">Living Arrangement</h2>
-                  <div className="space-y-[12px]">
-                    <div className="flex items-center justify-between">
-                      <span className="text-[#6B6B6B] text-[15px]">Number of people moving in</span>
-                      <span className="text-[#1A1A1A] text-[15px] font-semibold">{moveInCount}</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-[#6B6B6B] text-[15px]">With pets</span>
-                      <span className="text-[#1A1A1A] text-[15px] font-semibold">{withPets ? "Yes" : "No"}</span>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-[12px] mb-[22px]">
+                  <div>
+                    <label className="block text-[#0F2D36] text-[14px] font-medium mb-[6px]">Expiry date</label>
+                    <input
+                      type="text"
+                      value={billingExpiryDate}
+                      onChange={(e) => setBillingExpiryDate(e.target.value)}
+                      placeholder="MM / YY"
+                      className="w-full h-[44px] px-[12px] border border-[rgba(15,45,54,0.24)] rounded-[4px] text-[#0F2D36] text-[15px]"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[#0F2D36] text-[14px] font-medium mb-[6px]">Security code</label>
+                    <div className="relative">
+                      <input
+                        type="text"
+                        value={billingSecurityCode}
+                        onChange={(e) => setBillingSecurityCode(e.target.value)}
+                        placeholder="CVC"
+                        className="w-full h-[44px] px-[12px] pr-[56px] border border-[rgba(15,45,54,0.24)] rounded-[4px] text-[#0F2D36] text-[15px]"
+                      />
+                      <span className="absolute right-[12px] top-1/2 -translate-y-1/2 text-[#5F7D89] text-[12px] font-semibold">123</span>
                     </div>
                   </div>
                 </div>
 
-                {/* Occupation & Finances */}
-                <div className="bg-[#F7F7F9] p-[24px] mb-[24px]">
-                  <h2 className="text-[#1A1A1A] text-[20px] font-bold mb-[16px]">Occupation & Finances</h2>
-                  <div className="space-y-[12px]">
-                    <div className="flex items-center justify-between">
-                      <span className="text-[#6B6B6B] text-[15px]">Occupation</span>
-                      <span className="text-[#1A1A1A] text-[15px] font-semibold capitalize">{occupation || "Not specified"}</span>
-                    </div>
-                    {occupation === "student" && universityName && (
-                      <>
-                        <div className="flex items-center justify-between">
-                          <span className="text-[#6B6B6B] text-[15px]">University</span>
-                          <span className="text-[#1A1A1A] text-[15px] font-semibold">{universityName}</span>
-                        </div>
-                        {monthlyBudget && (
-                          <div className="flex items-center justify-between">
-                            <span className="text-[#6B6B6B] text-[15px]">Monthly budget</span>
-                            <span className="text-[#1A1A1A] text-[15px] font-semibold">{"\u20AC"}{monthlyBudget}</span>
-                          </div>
-                        )}
-                      </>
-                    )}
-                    {occupation === "professional" && (
-                      <>
-                        {employerName && (
-                          <div className="flex items-center justify-between">
-                            <span className="text-[#6B6B6B] text-[15px]">Employer</span>
-                            <span className="text-[#1A1A1A] text-[15px] font-semibold">{employerName}</span>
-                          </div>
-                        )}
-                        {income && (
-                          <div className="flex items-center justify-between">
-                            <span className="text-[#6B6B6B] text-[15px]">Income</span>
-                            <span className="text-[#1A1A1A] text-[15px] font-semibold">{"\u20AC"}{income}</span>
-                          </div>
-                        )}
-                      </>
-                    )}
-                    {visaStatus && (
-                      <div className="flex items-center justify-between">
-                        <span className="text-[#6B6B6B] text-[15px]">Visa status</span>
-                        <span className="text-[#1A1A1A] text-[15px] font-semibold">
-                          {visaStatus === "no_visa" && "No visa needed"}
-                          {visaStatus === "approved" && "Visa approved"}
-                          {visaStatus === "in_progress" && "In progress"}
-                          {visaStatus === "need_to_apply" && "Need to apply"}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                </div>
+                <div className="h-[1px] bg-[rgba(15,45,54,0.16)] mb-[26px]" />
 
-                {/* Documents */}
-                <div className="bg-neutral-light-gray p-[24px] mb-[24px]">
-                  <h2 className="text-neutral-black text-[20px] font-bold mb-[16px]">Documents</h2>
-                  <div className="space-y-[12px]">
-                    <div className="flex items-center justify-between">
-                      <span className="text-neutral-gray text-[15px]">Government ID</span>
-                      <span className={`inline-flex items-center gap-[6px] text-[15px] font-semibold ${idVerified ? "text-accent-blue" : "text-neutral-gray"}`}>
-                        {idVerified && <CheckCircle2 className="w-[15px] h-[15px]" />}
-                        {idVerified ? "Uploaded" : "Missing"}
-                      </span>
-                    </div>
-                    {enrollmentProof && (
-                      <div className="flex items-center justify-between">
-                        <span className="text-neutral-gray text-[15px]">Government ID file</span>
-                        <span className="inline-flex items-center gap-[6px] text-accent-blue text-[15px] font-semibold"><CheckCircle2 className="w-[15px] h-[15px]" />Uploaded</span>
-                      </div>
-                    )}
-                    {employmentProof && (
-                      <div className="flex items-center justify-between">
-                        <span className="text-neutral-gray text-[15px]">Enrollment or employment proof</span>
-                        <span className="inline-flex items-center gap-[6px] text-accent-blue text-[15px] font-semibold"><CheckCircle2 className="w-[15px] h-[15px]" />Uploaded</span>
-                      </div>
-                    )}
-                    {incomeProof && (
-                      <div className="flex items-center justify-between">
-                        <span className="text-neutral-gray text-[15px]">Income proof</span>
-                        <span className="inline-flex items-center gap-[6px] text-accent-blue text-[15px] font-semibold"><CheckCircle2 className="w-[15px] h-[15px]" />Uploaded</span>
-                      </div>
-                    )}
-                    {profilePicture && (
-                      <div className="flex items-center justify-between">
-                        <span className="text-neutral-gray text-[15px]">Profile picture</span>
-                        <span className="inline-flex items-center gap-[6px] text-accent-blue text-[15px] font-semibold"><CheckCircle2 className="w-[15px] h-[15px]" />Uploaded</span>
-                      </div>
-                    )}
+                <h2 className="text-[#0F2D36] text-[28px] md:text-[24px] font-bold mb-[14px]">3. Increase your chances by up to 42%</h2>
+                <div className="border border-[rgba(15,45,54,0.18)] rounded-[6px] overflow-hidden mb-[28px]">
+                  <div className="h-[24px] bg-[#002D3B] px-[12px] flex items-center">
+                    <span className="text-white text-[13px] font-semibold">Recommended</span>
                   </div>
-                </div>
 
-                {/* Supporting Message */}
-                <div className="bg-neutral-light-gray p-[24px] mb-[32px]">
-                  <h2 className="text-neutral-black text-[20px] font-bold mb-[16px]">Supporting Message</h2>
-                  <p className="text-neutral-black text-[15px] leading-[1.6]">{supportingMessage}</p>
+                  <div className="p-[20px]">
+                    <div className="flex items-start justify-between gap-[12px] mb-[14px]">
+                      <div>
+                        <h3 className="text-[#0F2D36] text-[22px] md:text-[20px] font-bold leading-[1.2]">EasyRent Rent Guarantee</h3>
+                        <p className="text-[#0F2D36] text-[22px] md:text-[20px] font-bold leading-[1.2] mt-[4px]">+€251.54 <span className="text-[16px] md:text-[15px] font-medium">paid once, only if your application is accepted</span></p>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => setAddRentGuarantee((prev) => !prev)}
+                        className={`relative w-[46px] h-[24px] rounded-full transition-colors ${addRentGuarantee ? "bg-[#0F2D36]" : "bg-[#D8DEE3]"}`}
+                        aria-label="Toggle rent guarantee"
+                      >
+                        <span className={`absolute top-[2px] w-[20px] h-[20px] rounded-full bg-white shadow transition-transform ${addRentGuarantee ? "translate-x-[24px]" : "translate-x-[2px]"}`} />
+                      </button>
+                    </div>
+
+                    <div className="h-[1px] bg-[rgba(15,45,54,0.16)] mb-[14px]" />
+
+                    <p className="text-[#0F2D36] text-[15px] leading-[1.6] mb-[12px]">Rent Guarantee is an insurance policy that protects your landlord against unpaid rent and property damages.</p>
+                    <ul className="space-y-[8px] text-[#0F2D36] text-[15px] leading-[1.6] mb-[14px]">
+                      <li className="flex items-start gap-[8px]"><Check className="w-[16px] h-[16px] mt-[3px] shrink-0" /><span>Stand out as a preferred and safe choice.</span></li>
+                      <li className="flex items-start gap-[8px]"><Check className="w-[16px] h-[16px] mt-[3px] shrink-0" /><span>Skip the need for a private guarantor.</span></li>
+                      <li className="flex items-start gap-[8px]"><Check className="w-[16px] h-[16px] mt-[3px] shrink-0" /><span>Add it to your application in just a few taps.</span></li>
+                    </ul>
+
+                    <button type="button" className="text-[#0F2D36] underline underline-offset-[3px] text-[15px] hover:text-[#0A2530]">
+                      How it works
+                    </button>
+                  </div>
                 </div>
 
                 <button
                   onClick={handleSubmit}
-                  disabled={isSubmitting}
-                  className="w-full bg-brand-primary text-white font-bold py-[16px] hover:bg-brand-primary-dark transition-colors text-[16px]"
+                  disabled={isSubmitting || !canSubmitBilling}
+                  className={`w-full font-bold py-[13px] transition-colors text-[16px] rounded-[6px] ${isSubmitting || !canSubmitBilling ? "bg-[#D6DEE5] text-[#90A3B3] cursor-not-allowed" : "bg-brand-primary text-white hover:bg-brand-primary-dark"}`}
                 >
-                  {isSubmitting ? "Submitting..." : "Submit application"}
+                  {isSubmitting ? "Submitting..." : "Submit rental application"}
                 </button>
+
+                {!canSubmitBilling && <p className="text-[#0F2D36] text-[14px] text-center mt-[10px]">Add a billing address first.</p>}
+
+                <div className="mt-[18px] space-y-[10px] text-[#5D7380] text-[14px] leading-[1.65]">
+                  <p>By selecting submit application, you agree to pay {landlordFirstName} if {landlordFirstName} accepts your application and confirms your stay. You can withdraw your application anytime before it's accepted - you won't be charged. After it's accepted, this listing's cancellation policy will apply.</p>
+                  <p>If your application is rejected, this transaction will be automatically canceled and you will be notified. Your payment details are never shared with anyone.</p>
+                  <p>By continuing, you agree to our <button type="button" className="underline underline-offset-[3px] hover:text-[#0A2530]">Terms & Conditions</button> and <button type="button" className="underline underline-offset-[3px] hover:text-[#0A2530]">Privacy Policy</button>.</p>
+                </div>
+
                 {submitError && <p className="text-brand-primary text-[15px] mt-[12px]">{submitError}</p>}
               </>
             )}
@@ -2143,6 +2400,12 @@ export function RentalApplication() {
                         </p>
                         <p className="text-[#0F2D36] text-[38px] md:text-[16px] leading-[1.2] font-semibold">{"\u20AC"}{tenantProtectionFee.toFixed(2)}</p>
                       </div>
+                      {addRentGuarantee && (
+                        <div className="flex items-center justify-between gap-[12px]">
+                          <p className="text-[#0F2D36] text-[38px] md:text-[16px] leading-[1.2]">Rent Guarantee</p>
+                          <p className="text-[#0F2D36] text-[38px] md:text-[16px] leading-[1.2] font-semibold">{"\u20AC"}{RENT_GUARANTEE_FEE.toFixed(2)}</p>
+                        </div>
+                      )}
                     </div>
 
                     <div className="mt-[8px] rounded-[6px] bg-[#E8EEF4] p-[12px]">
@@ -2153,7 +2416,7 @@ export function RentalApplication() {
                       <p className="text-[#264991] text-[15px] leading-[1.45] flex items-center gap-[6px]">
                         <Shield className="w-[14px] h-[14px]" />
                         Covered by Tenant Protection.
-                        <button type="button" className="underline decoration-dotted underline-offset-[4px] hover:text-[#1D3F85] transition-colors cursor-pointer">Learn more</button>
+                        {/* <button type="button" className="underline decoration-dotted underline-offset-[4px] hover:text-[#1D3F85] transition-colors cursor-pointer">Learn more</button> */}
                       </p>
                     </div>
                   </div>
