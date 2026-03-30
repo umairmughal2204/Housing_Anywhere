@@ -1052,13 +1052,6 @@ export function LandlordAddListing() {
                   </div>
                 </div>
 
-                <div className="flex items-center gap-[10px] bg-brand-primary-light border border-[rgba(8,145,178,0.25)] px-[14px] py-[12px]">
-                  <InfoTooltip text="Complete KYC to unlock all supported currencies" iconClassName="w-[16px] h-[16px] text-brand-primary cursor-help" />
-                  <p className="text-[13px] leading-[1.4] text-[#104A58]">
-                    Complete KYC to choose from any of our supported currencies. <button type="button" className="underline font-semibold">Go to KYC</button>
-                  </p>
-                </div>
-
                 <div className="flex items-start gap-[8px] text-[#5A7380]">
                   <InfoTooltip text="Advanced pricing can be configured in later steps" iconClassName="w-[14px] h-[14px] mt-[2px] cursor-help" />
                   <p className="text-[12px] leading-[1.5]">In the later steps, you can choose advanced price to set different rates for different months.</p>
