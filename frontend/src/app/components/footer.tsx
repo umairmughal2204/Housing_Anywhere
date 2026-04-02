@@ -105,32 +105,17 @@ export function Footer() {
                 </Link>
               </li>
               <li>
-                <Link to="/help?topic=careers" className="text-neutral-gray text-[14px] hover:text-brand-primary transition-colors">
-                  Careers
-                </Link>
-              </li>
-              <li>
-                <Link to="/help?topic=press" className="text-neutral-gray text-[14px] hover:text-brand-primary transition-colors">
-                  Press
-                </Link>
-              </li>
-              <li>
-                <Link to="/help?topic=partners" className="text-neutral-gray text-[14px] hover:text-brand-primary transition-colors">
-                  Partners
-                </Link>
-              </li>
-              <li>
-                <Link to="/help?topic=terms" className="text-neutral-gray text-[14px] hover:text-brand-primary transition-colors">
+                <Link to="/help" className="text-neutral-gray text-[14px] hover:text-brand-primary transition-colors">
                   Terms & Conditions
                 </Link>
               </li>
               <li>
-                <Link to="/help?topic=privacy" className="text-neutral-gray text-[14px] hover:text-brand-primary transition-colors">
+                <Link to="/help" className="text-neutral-gray text-[14px] hover:text-brand-primary transition-colors">
                   Privacy policy
                 </Link>
               </li>
               <li>
-                <Link to="/help?topic=cookies" className="text-neutral-gray text-[14px] hover:text-brand-primary transition-colors">
+                <Link to="/help" className="text-neutral-gray text-[14px] hover:text-brand-primary transition-colors">
                   Cookie policy
                 </Link>
               </li>
@@ -161,11 +146,6 @@ export function Footer() {
                   Pay rent online
                 </Link>
               </li>
-              <li>
-                <Link to="/help?topic=tenant-blog" className="text-neutral-gray text-[14px] hover:text-brand-primary transition-colors">
-                  Blog for tenants
-                </Link>
-              </li>
             </ul>
             
             <h4 className="text-neutral-black text-[14px] font-bold mt-[32px] mb-[24px]">Support</h4>
@@ -176,9 +156,9 @@ export function Footer() {
                 </Link>
               </li>
               <li>
-                <a href="mailto:support@easyrent.com" className="text-neutral-gray text-[14px] hover:text-brand-primary transition-colors">
+                <Link to="/help" className="text-neutral-gray text-[14px] hover:text-brand-primary transition-colors">
                   Contact us
-                </a>
+                </Link>
               </li>
             </ul>
           </div>
@@ -210,31 +190,6 @@ export function Footer() {
               <li>
                 <Link to="/payments" className="text-neutral-gray text-[14px] hover:text-brand-primary transition-colors">
                   Collect rent online
-                </Link>
-              </li>
-              <li>
-                <Link to="/help?topic=landlord-guides" className="text-neutral-gray text-[14px] hover:text-brand-primary transition-colors">
-                  How-to guides
-                </Link>
-              </li>
-              <li>
-                <Link to="/landlord" className="text-neutral-gray text-[14px] hover:text-brand-primary transition-colors">
-                  Success stories
-                </Link>
-              </li>
-              <li>
-                <Link to="/help?topic=landlord-blog" className="text-neutral-gray text-[14px] hover:text-brand-primary transition-colors">
-                  Blog for landlords
-                </Link>
-              </li>
-              <li>
-                <Link to="/help?topic=integrations" className="text-neutral-gray text-[14px] hover:text-brand-primary transition-colors">
-                  Integrations
-                </Link>
-              </li>
-              <li>
-                <Link to="/help?topic=sample-contracts" className="text-neutral-gray text-[14px] hover:text-brand-primary transition-colors">
-                  Sample rental contracts
                 </Link>
               </li>
             </ul>

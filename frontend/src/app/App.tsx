@@ -10,6 +10,20 @@ export default function App() {
     initAutoTranslate();
   }, []);
 
+  useEffect(() => {
+    let previousPath = `${router.state.location.pathname}${router.state.location.search}`;
+
+    const unsubscribe = router.subscribe((state) => {
+      const nextPath = `${state.location.pathname}${state.location.search}`;
+      if (nextPath !== previousPath) {
+        window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+        previousPath = nextPath;
+      }
+    });
+
+    return unsubscribe;
+  }, []);
+
   return (
     <AuthProvider>
       <RouterProvider router={router} />
