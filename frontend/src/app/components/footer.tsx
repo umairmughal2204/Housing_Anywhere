@@ -41,7 +41,7 @@ export function Footer() {
           {/* Left Section - Logo, Language, App */}
           <div>
             {/* Logo */}
-            <div className="flex items-center gap-[8px] mb-[32px]">
+            <Link to="/" className="flex items-center gap-[8px] mb-[32px]">
               <div className="w-[32px] h-[32px] bg-brand-primary flex items-center justify-center">
                 <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
                   <path
@@ -57,7 +57,7 @@ export function Footer() {
               <span className="text-neutral-black text-[16px] font-bold">
                 Easy<span className="text-brand-primary">Rent</span>
               </span>
-            </div>
+            </Link>
 
             {/* Language Selector */}
             <div ref={dropdownRef} className="relative">
@@ -100,44 +100,44 @@ export function Footer() {
             <h3 className="text-neutral-black text-[14px] font-bold mb-[24px]">Easyrent</h3>
             <ul className="space-y-[12px]">
               <li>
-                <a href="#" className="text-neutral-gray text-[14px] hover:text-brand-primary transition-colors">
+                <Link to="/how-it-works" className="text-neutral-gray text-[14px] hover:text-brand-primary transition-colors">
                   About
-                </a>
+                </Link>
               </li>
               <li>
-                <a href="#" className="text-neutral-gray text-[14px] hover:text-brand-primary transition-colors">
+                <Link to="/help?topic=careers" className="text-neutral-gray text-[14px] hover:text-brand-primary transition-colors">
                   Careers
-                </a>
+                </Link>
               </li>
               <li>
-                <a href="#" className="text-neutral-gray text-[14px] hover:text-brand-primary transition-colors">
+                <Link to="/help?topic=press" className="text-neutral-gray text-[14px] hover:text-brand-primary transition-colors">
                   Press
-                </a>
+                </Link>
               </li>
               <li>
-                <a href="#" className="text-neutral-gray text-[14px] hover:text-brand-primary transition-colors">
+                <Link to="/help?topic=partners" className="text-neutral-gray text-[14px] hover:text-brand-primary transition-colors">
                   Partners
-                </a>
+                </Link>
               </li>
               <li>
-                <a href="#" className="text-neutral-gray text-[14px] hover:text-brand-primary transition-colors">
+                <Link to="/help?topic=terms" className="text-neutral-gray text-[14px] hover:text-brand-primary transition-colors">
                   Terms & Conditions
-                </a>
+                </Link>
               </li>
               <li>
-                <a href="#" className="text-neutral-gray text-[14px] hover:text-brand-primary transition-colors">
+                <Link to="/help?topic=privacy" className="text-neutral-gray text-[14px] hover:text-brand-primary transition-colors">
                   Privacy policy
-                </a>
+                </Link>
               </li>
               <li>
-                <a href="#" className="text-neutral-gray text-[14px] hover:text-brand-primary transition-colors">
+                <Link to="/help?topic=cookies" className="text-neutral-gray text-[14px] hover:text-brand-primary transition-colors">
                   Cookie policy
-                </a>
+                </Link>
               </li>
               <li>
-                <a href="#" className="text-neutral-gray text-[14px] hover:text-brand-primary transition-colors">
+                <Link to="/listings" className="text-neutral-gray text-[14px] hover:text-brand-primary transition-colors">
                   Sitemap
-                </a>
+                </Link>
               </li>
             </ul>
           </div>
@@ -157,14 +157,14 @@ export function Footer() {
                 </Link>
               </li>
               <li>
-                <a href="#" className="text-neutral-gray text-[14px] hover:text-brand-primary transition-colors">
+                <Link to="/payments" className="text-neutral-gray text-[14px] hover:text-brand-primary transition-colors">
                   Pay rent online
-                </a>
+                </Link>
               </li>
               <li>
-                <a href="#" className="text-neutral-gray text-[14px] hover:text-brand-primary transition-colors">
+                <Link to="/help?topic=tenant-blog" className="text-neutral-gray text-[14px] hover:text-brand-primary transition-colors">
                   Blog for tenants
-                </a>
+                </Link>
               </li>
             </ul>
             
@@ -176,7 +176,7 @@ export function Footer() {
                 </Link>
               </li>
               <li>
-                <a href="#" className="text-neutral-gray text-[14px] hover:text-brand-primary transition-colors">
+                <a href="mailto:support@easyrent.com" className="text-neutral-gray text-[14px] hover:text-brand-primary transition-colors">
                   Contact us
                 </a>
               </li>
@@ -188,14 +188,14 @@ export function Footer() {
             <h3 className="text-neutral-black text-[14px] font-bold mb-[24px]">Landlords</h3>
             <ul className="space-y-[12px]">
               <li>
-                <a href="#" className="text-neutral-gray text-[14px] hover:text-brand-primary transition-colors">
+                <Link to="/how-it-works" className="text-neutral-gray text-[14px] hover:text-brand-primary transition-colors">
                   How it works
-                </a>
+                </Link>
               </li>
               <li>
-                <a href="#" className="text-neutral-gray text-[14px] hover:text-brand-primary transition-colors">
+                <Link to="/pricing" className="text-neutral-gray text-[14px] hover:text-brand-primary transition-colors">
                   Pricing
-                </a>
+                </Link>
               </li>
               <li>
                 <Link to="/landlord" className="text-neutral-gray text-[14px] hover:text-brand-primary transition-colors">
@@ -203,39 +203,39 @@ export function Footer() {
                 </Link>
               </li>
               <li>
-                <a href="#" className="text-neutral-gray text-[14px] hover:text-brand-primary transition-colors">
+                <Link to="/landlord" className="text-neutral-gray text-[14px] hover:text-brand-primary transition-colors">
                   Easyrent Rent Guarantee
-                </a>
+                </Link>
               </li>
               <li>
-                <a href="#" className="text-neutral-gray text-[14px] hover:text-brand-primary transition-colors">
+                <Link to="/payments" className="text-neutral-gray text-[14px] hover:text-brand-primary transition-colors">
                   Collect rent online
-                </a>
+                </Link>
               </li>
               <li>
-                <a href="#" className="text-neutral-gray text-[14px] hover:text-brand-primary transition-colors">
+                <Link to="/help?topic=landlord-guides" className="text-neutral-gray text-[14px] hover:text-brand-primary transition-colors">
                   How-to guides
-                </a>
+                </Link>
               </li>
               <li>
-                <a href="#" className="text-neutral-gray text-[14px] hover:text-brand-primary transition-colors">
+                <Link to="/landlord" className="text-neutral-gray text-[14px] hover:text-brand-primary transition-colors">
                   Success stories
-                </a>
+                </Link>
               </li>
               <li>
-                <a href="#" className="text-neutral-gray text-[14px] hover:text-brand-primary transition-colors">
+                <Link to="/help?topic=landlord-blog" className="text-neutral-gray text-[14px] hover:text-brand-primary transition-colors">
                   Blog for landlords
-                </a>
+                </Link>
               </li>
               <li>
-                <a href="#" className="text-neutral-gray text-[14px] hover:text-brand-primary transition-colors">
+                <Link to="/help?topic=integrations" className="text-neutral-gray text-[14px] hover:text-brand-primary transition-colors">
                   Integrations
-                </a>
+                </Link>
               </li>
               <li>
-                <a href="#" className="text-neutral-gray text-[14px] hover:text-brand-primary transition-colors">
+                <Link to="/help?topic=sample-contracts" className="text-neutral-gray text-[14px] hover:text-brand-primary transition-colors">
                   Sample rental contracts
-                </a>
+                </Link>
               </li>
             </ul>
           </div>
@@ -243,13 +243,17 @@ export function Footer() {
           {/* Social Media Icons - Right Column */}
           <div className="flex flex-col gap-[16px]">
             <a
-              href="#"
+              href="https://www.facebook.com"
+              target="_blank"
+              rel="noreferrer"
               className="w-[40px] h-[40px] border border-[rgba(0,0,0,0.12)] flex items-center justify-center hover:border-brand-primary hover:bg-brand-primary group transition-all"
             >
               <Facebook className="w-[18px] h-[18px] text-neutral-black group-hover:text-white transition-colors" />
             </a>
             <a
-              href="#"
+              href="https://x.com"
+              target="_blank"
+              rel="noreferrer"
               className="w-[40px] h-[40px] border border-[rgba(0,0,0,0.12)] flex items-center justify-center hover:border-brand-primary hover:bg-brand-primary group transition-all"
             >
               <svg className="w-[18px] h-[18px] text-neutral-black group-hover:text-white transition-colors" viewBox="0 0 24 24" fill="currentColor">
@@ -257,19 +261,25 @@ export function Footer() {
               </svg>
             </a>
             <a
-              href="#"
+              href="https://www.linkedin.com"
+              target="_blank"
+              rel="noreferrer"
               className="w-[40px] h-[40px] border border-[rgba(0,0,0,0.12)] flex items-center justify-center hover:border-brand-primary hover:bg-brand-primary group transition-all"
             >
               <Linkedin className="w-[18px] h-[18px] text-neutral-black group-hover:text-white transition-colors" />
             </a>
             <a
-              href="#"
+              href="https://www.youtube.com"
+              target="_blank"
+              rel="noreferrer"
               className="w-[40px] h-[40px] border border-[rgba(0,0,0,0.12)] flex items-center justify-center hover:border-brand-primary hover:bg-brand-primary group transition-all"
             >
               <Youtube className="w-[18px] h-[18px] text-neutral-black group-hover:text-white transition-colors" />
             </a>
             <a
-              href="#"
+              href="https://www.instagram.com"
+              target="_blank"
+              rel="noreferrer"
               className="w-[40px] h-[40px] border border-[rgba(0,0,0,0.12)] flex items-center justify-center hover:border-brand-primary hover:bg-brand-primary group transition-all"
             >
               <Instagram className="w-[18px] h-[18px] text-neutral-black group-hover:text-white transition-colors" />
