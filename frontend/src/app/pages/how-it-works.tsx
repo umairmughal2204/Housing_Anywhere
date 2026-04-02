@@ -1,6 +1,7 @@
 import { Header } from "../components/header";
 import { Footer } from "../components/footer";
 import { Check, Search, Shield, MessageCircle, FileCheck, Clock } from "lucide-react";
+import { Link } from "react-router";
 
 export function HowItWorks() {
   return (
@@ -201,12 +202,18 @@ export function HowItWorks() {
             Join thousands of global citizens finding secure, verified housing.
           </p>
           <div className="flex items-center justify-center gap-[16px]">
-            <button className="px-[32px] py-[16px] bg-brand-primary text-white font-bold hover:bg-brand-primary-dark transition-colors">
+            <Link
+              to="/listings"
+              className="px-[32px] py-[16px] bg-brand-primary text-white font-bold hover:bg-brand-primary-dark transition-colors"
+            >
               Search Properties
-            </button>
-            <button className="px-[32px] py-[16px] border-[2px] border-neutral-black text-neutral-black font-bold hover:bg-neutral-black hover:text-white transition-colors">
+            </Link>
+            <Link
+              to="/landlord"
+              className="px-[32px] py-[16px] border-[2px] border-neutral-black text-neutral-black font-bold hover:bg-neutral-black hover:text-white transition-colors"
+            >
               List Your Property
-            </button>
+            </Link>
           </div>
         </div>
       </section>
