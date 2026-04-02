@@ -295,6 +295,34 @@ function Counter({ value, suffix = "", prefix = "", duration = 2 }: { value: num
   return <span ref={ref}>{prefix}{value.toLocaleString()}{suffix}</span>;
 }
 
+function HomeListingCardSkeleton() {
+  return (
+    <div className="group bg-white">
+      <div className="relative aspect-[4/3] overflow-hidden bg-[#E8EDF2]" />
+      <div className="p-[16px]">
+        <div className="h-[18px] w-[78%] bg-[#E8EDF2] rounded-[4px] mb-[8px]" />
+        <div className="h-[18px] w-[60%] bg-[#E8EDF2] rounded-[4px] mb-[12px]" />
+        <div className="flex items-center gap-[12px] mb-[12px]">
+          <div className="h-[14px] w-[90px] bg-[#E8EDF2] rounded-[4px]" />
+          <div className="h-[14px] w-[110px] bg-[#E8EDF2] rounded-[4px]" />
+        </div>
+        <div className="h-[20px] w-[72%] bg-[#E8EDF2] rounded-[4px] mb-[10px]" />
+        <div className="h-[14px] w-[66%] bg-[#E8EDF2] rounded-[4px]" />
+      </div>
+    </div>
+  );
+}
+
+function HomeListingsSkeletonGrid() {
+  return (
+    <div className="grid grid-cols-3 gap-[24px] animate-pulse" aria-label="Loading listings">
+      {Array.from({ length: 3 }, (_, index) => (
+        <HomeListingCardSkeleton key={index} />
+      ))}
+    </div>
+  );
+}
+
 export function Home() {
   const apiBase = (import.meta as any).env.VITE_API_BASE_URL ?? "http://localhost:4000";
   const [searchCity, setSearchCity] = useState("");
@@ -803,7 +831,7 @@ export function Home() {
             {(activeTab === "recently" || activeTab === "recommendations") && (
               <>
                 {isListingsTabLoading && (
-                  <div className="text-[#6B6B6B] text-[14px] py-[8px]">Loading properties...</div>
+                  <HomeListingsSkeletonGrid />
                 )}
                 {!isListingsTabEmpty && (
                   <div className="grid grid-cols-3 gap-[24px]">
@@ -995,45 +1023,47 @@ export function Home() {
             {activeTab === "favorites" && (
               <>
                 {isLoadingFavorites && (
-                  <div className="text-[#6B6B6B] text-[14px] py-[8px]">Loading favorites...</div>
+                  <HomeListingsSkeletonGrid />
                 )}
-                <div className="grid grid-cols-3 gap-[24px]">
-                  {favorites.map((property) => (
-                    <Link
-                      key={property.id}
-                      to={`/listing/${property.id}`}
-                      className="group bg-white hover:shadow-lg transition-all duration-300"
-                    >
-                      <div className="relative aspect-[4/3] overflow-hidden bg-[#F7F7F9]">
-                        <img
-                          src={property.image || "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800&q=80"}
-                          alt={property.title}
-                          className="w-full h-full object-cover object-center bg-[#F3F4F6]"
-                        />
-                        <div className="absolute bottom-[12px] left-0 right-0 flex items-center justify-center gap-[4px]">
-                          {Array.from({ length: getImageDotCount(property.image ? [property.image] : []) }, (_, index) => (
-                            <div key={index} className={`w-[6px] h-[6px] rounded-full ${index === 0 ? "bg-white" : "bg-white/40"}`} />
-                          ))}
+                {!isLoadingFavorites && (
+                  <div className="grid grid-cols-3 gap-[24px]">
+                    {favorites.map((property) => (
+                      <Link
+                        key={property.id}
+                        to={`/listing/${property.id}`}
+                        className="group bg-white hover:shadow-lg transition-all duration-300"
+                      >
+                        <div className="relative aspect-[4/3] overflow-hidden bg-[#F7F7F9]">
+                          <img
+                            src={property.image || "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800&q=80"}
+                            alt={property.title}
+                            className="w-full h-full object-cover object-center bg-[#F3F4F6]"
+                          />
+                          <div className="absolute bottom-[12px] left-0 right-0 flex items-center justify-center gap-[4px]">
+                            {Array.from({ length: getImageDotCount(property.image ? [property.image] : []) }, (_, index) => (
+                              <div key={index} className={`w-[6px] h-[6px] rounded-full ${index === 0 ? "bg-white" : "bg-white/40"}`} />
+                            ))}
+                          </div>
                         </div>
-                      </div>
-                      <div className="p-[16px]">
-                        <h3 className="text-[#1A1A1A] text-[15px] font-semibold mb-[8px] line-clamp-2">{property.title}</h3>
-                        <div className="flex items-center gap-[12px] mb-[12px] text-[13px] text-[#6B6B6B]">
-                          <div className="flex items-center gap-[4px]"><MapPin className="w-[12px] h-[12px]" /><span>{property.area} m²</span></div>
-                          <div className="flex items-center gap-[4px]"><UserIcon className="w-[12px] h-[12px]" /><span>{property.bedrooms} bedrooms</span></div>
+                        <div className="p-[16px]">
+                          <h3 className="text-[#1A1A1A] text-[15px] font-semibold mb-[8px] line-clamp-2">{property.title}</h3>
+                          <div className="flex items-center gap-[12px] mb-[12px] text-[13px] text-[#6B6B6B]">
+                            <div className="flex items-center gap-[4px]"><MapPin className="w-[12px] h-[12px]" /><span>{property.area} m²</span></div>
+                            <div className="flex items-center gap-[4px]"><UserIcon className="w-[12px] h-[12px]" /><span>{property.bedrooms} bedrooms</span></div>
+                          </div>
+                          <div className="flex items-baseline gap-[4px] mb-[8px]">
+                            <span className="text-[#1A1A1A] text-[18px] font-bold">€{property.monthlyRent}</span>
+                            <span className="text-[#6B6B6B] text-[13px]">/month</span>
+                          </div>
+                          <div className="flex items-center gap-[6px] text-accent-blue text-[12px] font-semibold">
+                            <div className="w-[6px] h-[6px] rounded-full bg-accent-blue" />
+                            Available from {new Date(property.availableFrom).toLocaleDateString("en-GB")}
+                          </div>
                         </div>
-                        <div className="flex items-baseline gap-[4px] mb-[8px]">
-                          <span className="text-[#1A1A1A] text-[18px] font-bold">€{property.monthlyRent}</span>
-                          <span className="text-[#6B6B6B] text-[13px]">/month</span>
-                        </div>
-                        <div className="flex items-center gap-[6px] text-accent-blue text-[12px] font-semibold">
-                          <div className="w-[6px] h-[6px] rounded-full bg-accent-blue" />
-                          Available from {new Date(property.availableFrom).toLocaleDateString("en-GB")}
-                        </div>
-                      </div>
-                    </Link>
-                  ))}
-                </div>
+                      </Link>
+                    ))}
+                  </div>
+                )}
                 {!isLoadingFavorites && favorites.length === 0 && (
                   <div className="text-[#6B6B6B] text-[14px] py-[8px]">You haven't saved any favorites yet. Heart a listing to save it here.</div>
                 )}

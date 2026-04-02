@@ -270,6 +270,21 @@ function InvalidateMapSize({ isExpanded }: { isExpanded: boolean }) {
   return null;
 }
 
+function SearchListingCardSkeleton() {
+  return (
+    <div className="cursor-default">
+      <div className="relative mb-[12px] overflow-hidden bg-[#E8EDF2] h-[220px]" />
+      <div className="space-y-[8px]">
+        <div className="h-[18px] w-[80%] bg-[#E8EDF2] rounded-[4px]" />
+        <div className="h-[16px] w-[42%] bg-[#E8EDF2] rounded-[4px]" />
+        <div className="h-[14px] w-[66%] bg-[#E8EDF2] rounded-[4px]" />
+        <div className="h-[20px] w-[56%] bg-[#E8EDF2] rounded-[4px]" />
+        <div className="h-[14px] w-[60%] bg-[#E8EDF2] rounded-[4px]" />
+      </div>
+    </div>
+  );
+}
+
 export function SearchResults() {
   const { city } = useParams();
   const navigate = useNavigate();
@@ -1385,7 +1400,13 @@ export function SearchResults() {
           {(viewMode === "list" || viewMode === "map") && (
             <div className={viewMode === "map" ? (isMapExpanded ? "" : "grid grid-cols-1 xl:grid-cols-[58%_42%] xl:gap-0 items-start") : ""}>
               <div className={viewMode === "map" ? (isMapExpanded ? "hidden" : "grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-[20px] xl:pr-[24px] xl:border-r xl:border-[rgba(0,0,0,0.10)] xl:max-h-[calc(100vh-140px)] xl:overflow-y-auto xl:overscroll-contain") : "grid grid-cols-4 gap-[24px]"}>
-              {sortedProperties.map((property) => (
+              {isLoading &&
+                Array.from({ length: viewMode === "map" ? 6 : 8 }, (_, index) => (
+                  <div key={`listing-skeleton-${index}`} className="animate-pulse">
+                    <SearchListingCardSkeleton />
+                  </div>
+                ))}
+              {!isLoading && sortedProperties.map((property) => (
                 <div
                   key={property.id}
                   onClick={() => navigate(`/property/${property.id}`)}
@@ -1548,7 +1569,11 @@ export function SearchResults() {
                 <div className={`${isMapExpanded ? "fixed inset-x-0 bottom-0 top-[132px] md:top-[154px] z-[90] flex flex-col" : "xl:sticky xl:top-[76px] xl:-mt-[102px] xl:pl-[24px]"} border border-[rgba(0,0,0,0.08)] overflow-hidden bg-white`}>
                   <div className="relative">
                     <div className={`w-full ${isMapExpanded ? "h-[calc(100vh-206px)] md:h-[calc(100vh-228px)] min-h-[460px]" : "h-[68vh] min-h-[520px] xl:h-[calc(100vh-152px)]"} bg-[#E6EEF5]`}>
-                      {mapPoints.length > 0 ? (
+                      {isLoading ? (
+                        <div className="w-full h-full animate-pulse p-[24px]">
+                          <div className="h-full w-full bg-[#DCE6F0]" />
+                        </div>
+                      ) : mapPoints.length > 0 ? (
                         <MapContainer
                           center={mapPoints[0]}
                           zoom={12}
