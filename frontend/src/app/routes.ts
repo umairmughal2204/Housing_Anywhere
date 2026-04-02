@@ -13,6 +13,7 @@ import { LandlordDashboard } from "./pages/landlord-dashboard";
 import { LandlordAnalytics } from "./pages/landlord-analytics";
 import { LandlordListings } from "./pages/landlord-listings";
 import { LandlordRentals } from "./pages/landlord-rentals";
+import { LandlordCalendar } from "./pages/landlord-calendar";
 import { LandlordRegister } from "./pages/landlord-register";
 import { LandlordAddListing } from "./pages/landlord-add-listing";
 import { HowItWorks } from "./pages/how-it-works";
@@ -93,6 +94,11 @@ export const router = createBrowserRouter([
   {
     path: "/landlord/rentals",
     Component: LandlordRentals,
+    ErrorBoundary,
+  },
+  {
+    path: "/landlord/calendar",
+    Component: LandlordCalendar,
     ErrorBoundary,
   },
   {

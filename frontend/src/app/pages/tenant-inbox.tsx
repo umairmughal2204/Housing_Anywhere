@@ -17,6 +17,7 @@ import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router";
 import { API_BASE } from "../config";
 import { io, type Socket } from "socket.io-client";
+import { getConversationPreview, getConversationSearchableText } from "../components/chat-offer-message";
 
 interface ConversationItem {
   id: string;
@@ -237,7 +238,7 @@ export function TenantInbox() {
       c.otherUser.name.toLowerCase().includes(q) ||
       c.listing.title.toLowerCase().includes(q) ||
       c.listing.address.toLowerCase().includes(q) ||
-      c.lastMessage.toLowerCase().includes(q)
+      getConversationSearchableText(c.lastMessage).toLowerCase().includes(q)
     );
   });
 
@@ -360,7 +361,7 @@ export function TenantInbox() {
                       </div>
 
                       <p className={`text-[17px] leading-[1.5] truncate ${c.unread > 0 ? "text-[#101827] font-semibold" : "text-[#4B5563]"}`}>
-                        {c.lastMessage || "No messages yet - start the conversation"}
+                        {getConversationPreview(c.lastMessage) || "No messages yet - start the conversation"}
                       </p>
 
                       <div className="mt-[10px] flex items-center justify-between">

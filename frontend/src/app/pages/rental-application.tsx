@@ -2029,20 +2029,26 @@ export function RentalApplication() {
                 )}
 
                 {billingAddressConfirmed && (
-                  <div className="mb-[26px] border border-[rgba(15,45,54,0.24)] rounded-[8px] px-[16px] py-[14px] flex items-center justify-between gap-[12px]">
-                    <div className="min-w-0">
-                      <p className="text-[#0F2D36] text-[18px] md:text-[16px] font-bold truncate">{billingFirstName} {billingLastName}</p>
-                      <p className="text-[#0F2D36] text-[18px] md:text-[15px] leading-[1.5] truncate">
-                        {billingStreet}{billingApartmentNumber ? `, ${billingApartmentNumber}` : ""}, {billingCity}{billingStateProvince ? `, ${billingStateProvince}` : ""}{billingPostalCode ? `, ${billingPostalCode}` : ""}, {billingCountryLabel}
-                      </p>
+                  <div className="mb-[26px] border border-[rgba(15,45,54,0.24)] rounded-[8px] px-[16px] py-[14px]">
+                    <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-[12px]">
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-[8px] mb-[4px]">
+                          <CheckCircle2 className="w-[16px] h-[16px] text-[#0E7A48] shrink-0" />
+                          <p className="text-[#0F2D36] text-[15px] font-semibold">Billing address confirmed</p>
+                        </div>
+                        <p className="text-[#0F2D36] text-[16px] font-bold break-words">{billingFirstName} {billingLastName}</p>
+                        <p className="text-[#0F2D36] text-[15px] leading-[1.5] break-words">
+                          {billingStreet}{billingApartmentNumber ? `, ${billingApartmentNumber}` : ""}, {billingCity}{billingStateProvince ? `, ${billingStateProvince}` : ""}{billingPostalCode ? `, ${billingPostalCode}` : ""}, {billingCountryLabel}
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setBillingAddressConfirmed(false)}
+                        className="h-[40px] w-full md:w-auto px-[14px] rounded-[6px] border border-[rgba(15,45,54,0.24)] bg-[#F7FAFC] text-[#0F2D36] text-[14px] font-semibold hover:bg-[#EEF3F7] transition-colors"
+                      >
+                        Update
+                      </button>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => setBillingAddressConfirmed(false)}
-                      className="h-[46px] px-[16px] rounded-[6px] border border-[rgba(15,45,54,0.24)] bg-[#F7FAFC] text-[#0F2D36] text-[22px] md:text-[16px] font-semibold hover:bg-[#EEF3F7] transition-colors"
-                    >
-                      Update
-                    </button>
                   </div>
                 )}
 
@@ -2141,10 +2147,15 @@ export function RentalApplication() {
                       <button
                         type="button"
                         onClick={() => setAddRentGuarantee((prev) => !prev)}
-                        className={`relative w-[46px] h-[24px] rounded-full transition-colors ${addRentGuarantee ? "bg-[#0F2D36]" : "bg-[#D8DEE3]"}`}
+                        className={`inline-flex items-center gap-[10px] ${addRentGuarantee ? "text-[#0E7A48]" : "text-[#6B7F88]"}`}
                         aria-label="Toggle rent guarantee"
+                        role="switch"
+                        aria-checked={addRentGuarantee}
                       >
-                        <span className={`absolute top-[2px] w-[20px] h-[20px] rounded-full bg-white shadow transition-transform ${addRentGuarantee ? "translate-x-[24px]" : "translate-x-[2px]"}`} />
+                        <span className={`relative w-[46px] h-[24px] rounded-full transition-colors ${addRentGuarantee ? "bg-[#0F2D36]" : "bg-[#D8DEE3]"}`}>
+                          <span className={`absolute top-[2px] w-[20px] h-[20px] rounded-full bg-white shadow transition-transform ${addRentGuarantee ? "translate-x-[24px]" : "translate-x-[2px]"}`} />
+                        </span>
+                        <span className="hidden sm:inline text-[13px] font-semibold whitespace-nowrap">{addRentGuarantee ? "Added" : "Add"}</span>
                       </button>
                     </div>
 

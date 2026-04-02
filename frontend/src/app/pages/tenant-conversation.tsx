@@ -4,6 +4,7 @@ import { ChevronLeft, Send, MapPin, Home, Wifi } from "lucide-react";
 import { useAuth } from "../contexts/auth-context";
 import { ImageWithFallback } from "../components/figma/ImageWithFallback";
 import { useConversation } from "../hooks/use-conversation";
+import { buildOfferMessage, ChatMessageBubble, type OfferActionType, type OfferMessagePayload } from "../components/chat-offer-message";
 import { API_BASE } from "../config";
 
 interface ConversationMeta {
@@ -55,7 +56,8 @@ export function TenantConversation() {
   const [inputText, setInputText] = useState("");
   const [isSending, setIsSending] = useState(false);
   const [sendError, setSendError] = useState("");
-  const [applicationStatus, setApplicationStatus] = useState<{ hasApplied: boolean; status: string | null } | null>(null);
+  const [applicationStatus, setApplicationStatus] = useState<{ hasApplied: boolean; applicationId: string | null; status: string | null } | null>(null);
+  const [offerActionInProgress, setOfferActionInProgress] = useState<OfferActionType | null>(null);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
@@ -96,7 +98,7 @@ export function TenantConversation() {
           { headers: { Authorization: `Bearer ${token}` } }
         );
         if (checkRes.ok) {
-          const checkData = (await checkRes.json()) as { hasApplied: boolean; status: string | null };
+          const checkData = (await checkRes.json()) as { hasApplied: boolean; applicationId: string | null; status: string | null };
           setApplicationStatus(checkData);
         }
       } catch {
@@ -151,6 +153,86 @@ export function TenantConversation() {
     setInputText(e.target.value);
     emitTyping();
   };
+
+  const handleOfferAction = useCallback(
+    async (action: OfferActionType, offer: OfferMessagePayload) => {
+      if (!meta || !token || offerActionInProgress !== null) {
+        return;
+      }
+
+      setOfferActionInProgress(action);
+      setSendError("");
+
+      try {
+        if (action === "pay") {
+          await sendMessage(
+            buildOfferMessage({
+              version: 1,
+              kind: "tenant_response",
+              listingTitle: offer.listingTitle,
+              tenantName: user?.name,
+              responseAction: "payment_started",
+              note: "Tenant opened the payment page to continue booking.",
+            })
+          );
+          navigate(`/property/${meta.listingId}/payment`);
+          return;
+        }
+
+        if (action === "decline") {
+          await fetch(`${API_BASE}/api/rental-applications/tenant/respond`, {
+            method: "PATCH",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({ listingId: meta.listingId, decision: "decline" }),
+          });
+
+          await sendMessage(
+            buildOfferMessage({
+              version: 1,
+              kind: "tenant_response",
+              listingTitle: offer.listingTitle,
+              tenantName: user?.name,
+              responseAction: "declined",
+              note: "Tenant declined the invitation to book.",
+            })
+          );
+
+          setApplicationStatus((prev) => (prev ? { ...prev, status: "rejected" } : prev));
+          return;
+        }
+
+        await fetch(`${API_BASE}/api/rental-applications/tenant/respond`, {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ listingId: meta.listingId, decision: "change_dates" }),
+        });
+
+        await sendMessage(
+          buildOfferMessage({
+            version: 1,
+            kind: "tenant_response",
+            listingTitle: offer.listingTitle,
+            tenantName: user?.name,
+            responseAction: "change_dates_requested",
+            note: "Tenant requested a date adjustment.",
+          })
+        );
+
+        setApplicationStatus((prev) => (prev ? { ...prev, status: "pending" } : prev));
+      } catch (err) {
+        setSendError(err instanceof Error ? err.message : "Failed to process this action");
+      } finally {
+        setOfferActionInProgress(null);
+      }
+    },
+    [API_BASE, meta, navigate, offerActionInProgress, sendMessage, token, user?.name]
+  );
 
   // Group messages by date
   const grouped: { date: string; msgs: typeof messages }[] = [];
@@ -291,15 +373,12 @@ export function TenantConversation() {
                         )}
 
                         <div className={`max-w-[65%] flex flex-col ${isMe ? "items-end" : "items-start"}`}>
-                          <div
-                            className={`px-[14px] py-[10px] text-[14px] leading-[1.6] ${
-                              isMe
-                                ? "bg-brand-primary text-white rounded-[14px_14px_4px_14px]"
-                                : "bg-[#F1F1F1] text-[#1A1A1A] rounded-[14px_14px_14px_4px]"
-                            }`}
-                          >
-                            {msg.body}
-                          </div>
+                          <ChatMessageBubble
+                            message={msg}
+                            isMe={isMe}
+                            onOfferAction={isMe ? undefined : handleOfferAction}
+                            actionInProgress={offerActionInProgress}
+                          />
                           <span className="text-[10px] text-[#9B9B9B] mt-[3px] px-[2px]">
                             {formatMsgTime(msg.createdAt)}
                             {isMe && msg.readAt && (

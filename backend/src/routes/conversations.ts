@@ -71,8 +71,8 @@ router.post("/", requireAuth, async (req, res) => {
   const landlordId = resolvedLandlordId ?? String(listing.landlordId);
   const tenantId = resolvedTenantId ?? callerId;
 
-  // Prevent landlord from messaging themselves
-  if (callerRole === "landlord" && landlordId === callerId) {
+  // Prevent self-conversations only (same user as both tenant and landlord)
+  if (tenantId === landlordId) {
     res.status(400).json({ message: "You cannot message your own listing" });
     return;
   }

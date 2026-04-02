@@ -53,6 +53,7 @@ export function LandlordPortalLayout({
     { name: "Dashboard", href: "/landlord/dashboard", icon: LayoutDashboard },
     { name: "Listings", href: "/landlord/listings", icon: Home },
     { name: "Rentals", href: "/landlord/rentals", icon: Calendar },
+    { name: "Calendar", href: "/landlord/calendar", icon: Calendar },
     { name: "Messages", href: "/landlord/inbox", icon: MessageSquare },
   ];
 

@@ -82,6 +82,11 @@ const updateStatusSchema = z.object({
   status: z.enum(["approved", "rejected"]),
 });
 
+const tenantResponseSchema = z.object({
+  listingId: z.string().regex(/^[0-9a-fA-F]{24}$/),
+  decision: z.enum(["decline", "change_dates"]),
+});
+
 function mapDocumentType(fieldname: string): "enrollment" | "employment" | "income" | "profile" | null {
   if (fieldname === "enrollmentProof") return "enrollment";
   if (fieldname === "employmentProof") return "employment";
@@ -309,8 +314,52 @@ router.get("/tenant/check", requireAuth, async (req, res) => {
 
   res.json({
     hasApplied: !!application,
+    applicationId: application ? String(application._id) : null,
     status: application?.status ?? null,
     createdAt: application?.createdAt ?? null,
+  });
+});
+
+router.patch("/tenant/respond", requireAuth, async (req, res) => {
+  if (req.user!.role === "landlord") {
+    res.status(403).json({ message: "Only tenants can respond to invitations." });
+    return;
+  }
+
+  const parsed = tenantResponseSchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ message: "Invalid tenant response payload", errors: parsed.error.flatten() });
+    return;
+  }
+
+  const { listingId, decision } = parsed.data;
+  const tenantId = new Types.ObjectId(req.user!.sub);
+
+  const application = await RentalApplicationModel.findOne({
+    tenantId,
+    listingId: new Types.ObjectId(listingId),
+  }).sort({ createdAt: -1 });
+
+  if (!application) {
+    res.status(404).json({ message: "Rental application not found for this listing." });
+    return;
+  }
+
+  if (decision === "decline") {
+    application.status = "rejected";
+  }
+
+  if (decision === "change_dates" && application.status === "approved") {
+    application.status = "pending";
+  }
+
+  await application.save();
+
+  res.json({
+    application: {
+      id: String(application._id),
+      status: application.status,
+    },
   });
 });
 
@@ -471,6 +520,44 @@ router.get("/tenant", requireAuth, async (req, res) => {
       },
     })),
   });
+});
+
+// Get all landlord bookings for calendar view
+router.get("/landlord/bookings", requireAuth, async (req, res) => {
+  try {
+    if (req.user!.role !== "landlord") {
+      return res.status(403).json({ message: "Only landlords can view bookings" });
+    }
+
+    const landlordId = req.user!.sub;
+
+    // Fetch all rental applications for this landlord
+    const applications = await RentalApplicationModel.find({ landlordId: new Types.ObjectId(landlordId) })
+      .populate("listingId", "title media")
+      .populate("tenantId", "name")
+      .sort({ moveInDate: 1 });
+
+    const bookings = applications
+      .filter((app) => app.moveInDate && app.moveOutDate)
+      .map((app) => {
+        const listing = app.listingId as any;
+        const propertyImage = listing?.media && listing.media.length > 0 ? listing.media[0].url : undefined;
+        return {
+          id: String(app._id),
+          propertyTitle: listing?.title || "Unknown Property",
+          propertyImage,
+          tenantName: (app.tenantId as any)?.name || "Unknown Tenant",
+          moveInDate: app.moveInDate?.toISOString() || "",
+          moveOutDate: app.moveOutDate?.toISOString() || "",
+          status: app.status,
+        };
+      });
+
+    return res.status(200).json({ bookings });
+  } catch (err) {
+    console.error("Error fetching landlord bookings:", err);
+    return res.status(500).json({ message: "Failed to fetch bookings" });
+  }
 });
 
 export default router;

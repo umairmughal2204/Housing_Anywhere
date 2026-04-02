@@ -6,6 +6,7 @@ import { useAuth } from "../contexts/auth-context";
 import { useConversation } from "../hooks/use-conversation";
 import { API_BASE } from "../config";
 import { io, type Socket } from "socket.io-client";
+import { ChatMessageBubble, getConversationPreview, getConversationSearchableText } from "../components/chat-offer-message";
 
 interface ConversationItem {
   id: string;
@@ -163,11 +164,7 @@ function ChatPanel({ conversation, onClose }: ChatPanelProps) {
                     </div>
                   )}
                   <div className={`max-w-[65%] flex flex-col ${isMe ? "items-end" : "items-start"}`}>
-                    <div className={`px-[14px] py-[10px] text-[14px] leading-[1.6] ${
-                      isMe ? "bg-brand-primary text-white rounded-[14px_14px_4px_14px]" : "bg-white text-[#1A1A1A] rounded-[14px_14px_14px_4px] border border-[rgba(0,0,0,0.06)]"
-                    }`}>
-                      {msg.body}
-                    </div>
+                    <ChatMessageBubble message={msg} isMe={isMe} />
                     <span className="text-[10px] text-[#9B9B9B] mt-[3px] px-[2px]">
                       {formatMsgTime(msg.createdAt)}
                       {isMe && msg.readAt && <span className="ml-[4px] text-brand-primary">Read</span>}
@@ -337,7 +334,7 @@ export function LandlordInbox() {
   const filtered = conversations.filter((c) => {
     if (!searchQuery) return true;
     const q = searchQuery.toLowerCase();
-    return c.otherUser.name.toLowerCase().includes(q) || c.listing.title.toLowerCase().includes(q) || c.lastMessage.toLowerCase().includes(q);
+    return c.otherUser.name.toLowerCase().includes(q) || c.listing.title.toLowerCase().includes(q) || getConversationSearchableText(c.lastMessage).toLowerCase().includes(q);
   });
 
   const selectedConversation = conversations.find((c) => c.id === selectedId) ?? null;
@@ -394,7 +391,7 @@ export function LandlordInbox() {
                     </div>
                     <p className="text-[12px] text-[#6B6B6B] truncate mb-[2px]">{c.listing.title}</p>
                     <p className={`text-[12px] truncate ${c.unread > 0 ? "text-[#1A1A1A] font-semibold" : "text-[#9B9B9B]"}`}>
-                      {c.lastMessage || "No messages yet"}
+                      {getConversationPreview(c.lastMessage) || "No messages yet"}
                     </p>
                   </div>
                 </div>
