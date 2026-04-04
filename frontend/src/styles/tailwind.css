@@ -32,6 +32,7 @@
   /* Hover States */
   .hover\:bg-brand-primary-dark:hover { background-color: var(--brand-primary-dark); }
   .hover\:bg-brand-primary:hover { background-color: var(--brand-primary); }
+  .hover\:bg-neutral-black:hover { background-color: var(--neutral-black); }
   .hover\:text-brand-primary:hover { color: var(--brand-primary); }
   .hover\:border-neutral-hover:hover { border-color: var(--neutral-border-hover); }
   
