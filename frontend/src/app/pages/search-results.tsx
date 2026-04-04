@@ -178,6 +178,26 @@ function getImageDotCount(images: string[] | undefined) {
   return Math.max(1, images?.length ?? 0);
 }
 
+function formatCountLabel(count: number, singular: string, plural: string) {
+  return `${count} ${count === 1 ? singular : plural}`;
+}
+
+function formatTypeBreakdown(parts: string[]) {
+  if (parts.length === 0) {
+    return "0 listings";
+  }
+
+  if (parts.length === 1) {
+    return parts[0];
+  }
+
+  if (parts.length === 2) {
+    return `${parts[0]} and ${parts[1]}`;
+  }
+
+  return `${parts.slice(0, -1).join(", ")}, and ${parts[parts.length - 1]}`;
+}
+
 type ListingCoordinates = {
   lat: number;
   lng: number;
@@ -568,6 +588,31 @@ export function SearchResults() {
     return "Price";
   }, [maxPrice, minPrice]);
   const cityLabel = city ? city.charAt(0).toUpperCase() + city.slice(1) : "All cities";
+  const listingTypeBreakdown = useMemo(() => {
+    const counts = filteredProperties.reduce(
+      (accumulator, property) => {
+        accumulator[property.propertyType] += 1;
+        return accumulator;
+      },
+      { apartment: 0, studio: 0, house: 0, room: 0 } as Record<ListingItem["propertyType"], number>,
+    );
+
+    const parts: string[] = [];
+    if (counts.room > 0) {
+      parts.push(formatCountLabel(counts.room, "room", "rooms"));
+    }
+    if (counts.studio > 0) {
+      parts.push(formatCountLabel(counts.studio, "studio", "studios"));
+    }
+    if (counts.apartment > 0) {
+      parts.push(formatCountLabel(counts.apartment, "apartment", "apartments"));
+    }
+    if (counts.house > 0) {
+      parts.push(formatCountLabel(counts.house, "house", "houses"));
+    }
+
+    return formatTypeBreakdown(parts);
+  }, [filteredProperties]);
   const mappedListings = useMemo(() => {
     return sortedProperties
       .map((property) => {
@@ -1336,7 +1381,7 @@ export function SearchResults() {
         <div className="max-w-[1440px] mx-auto px-[32px] py-[24px]">
           <div className="flex items-center justify-between gap-[20px] flex-wrap">
             <h1 className="text-[#1A1A1A] text-[20px] font-semibold">
-              {filteredProperties.length} rooms, studios and apartments for rent in {cityLabel}
+              {filteredProperties.length} listings for rent in {cityLabel} ({listingTypeBreakdown})
             </h1>
 
             <div className="ml-auto flex items-center gap-[10px]">
