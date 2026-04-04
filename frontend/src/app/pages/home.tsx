@@ -60,6 +60,11 @@ type ApiFavoriteListing = Partial<FavoriteListing> & {
   images?: string[];
 };
 
+type FavoritesPayload = {
+  listingIds?: Array<string | number>;
+  favorites?: ApiFavoriteListing[];
+};
+
 interface CitySuggestion {
   name: string;
   country: string;
@@ -106,6 +111,21 @@ function normalizeFavoriteListing(raw: ApiFavoriteListing): FavoriteListing {
     image: raw.image ?? mediaImages[0] ?? raw.images?.[0] ?? "",
     availableFrom: raw.availableFrom ?? new Date().toISOString(),
   };
+}
+
+function extractFavoriteListingIds(payload: FavoritesPayload) {
+  if (Array.isArray(payload.listingIds) && payload.listingIds.length > 0) {
+    return payload.listingIds.map((id) => String(id));
+  }
+
+  if (Array.isArray(payload.favorites) && payload.favorites.length > 0) {
+    return payload.favorites
+      .map((favorite) => favorite.id)
+      .filter((id): id is string => Boolean(id))
+      .map((id) => String(id));
+  }
+
+  return [];
 }
 
 const cities: CitySuggestion[] = [
@@ -382,6 +402,7 @@ export function Home() {
       setRecommendations([]);
       setRecentlyViewed([]);
       setFavorites([]);
+      setFavoriteListingIds(new Set());
       setIsLoadingRecommendations(false);
       setIsLoadingListings(false);
       setIsLoadingFavorites(false);
@@ -393,6 +414,7 @@ export function Home() {
       setRecommendations([]);
       setRecentlyViewed([]);
       setFavorites([]);
+      setFavoriteListingIds(new Set());
       setIsLoadingRecommendations(false);
       setIsLoadingListings(false);
       setIsLoadingFavorites(false);
@@ -462,11 +484,13 @@ export function Home() {
           throw new Error("Failed to load favorites");
         }
 
-        const payload = (await response.json()) as { favorites: ApiFavoriteListing[] };
+        const payload = (await response.json()) as FavoritesPayload;
         setFavorites((payload.favorites ?? []).map(normalizeFavoriteListing));
+        setFavoriteListingIds(new Set(extractFavoriteListingIds(payload)));
       } catch (error) {
         if (!isAbortError(error)) {
           setFavorites([]);
+          setFavoriteListingIds(new Set());
         }
       } finally {
         if (!abortController.signal.aborted) {

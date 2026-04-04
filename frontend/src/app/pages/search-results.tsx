@@ -724,8 +724,19 @@ export function SearchResults() {
           return;
         }
 
-        const payload = (await response.json()) as { listingIds: string[] };
-        setFavoriteListingIds(new Set(payload.listingIds));
+        const payload = (await response.json()) as {
+          listingIds?: Array<string | number>;
+          favorites?: Array<{ id?: string | number }>;
+        };
+        const listingIds = Array.isArray(payload.listingIds)
+          ? payload.listingIds.map((favoriteId) => String(favoriteId))
+          : Array.isArray(payload.favorites)
+          ? payload.favorites
+              .map((favorite) => favorite.id)
+              .filter((favoriteId): favoriteId is string | number => favoriteId !== undefined && favoriteId !== null)
+              .map((favoriteId) => String(favoriteId))
+          : [];
+        setFavoriteListingIds(new Set(listingIds));
       } catch {
         // Keep page usable even if favorites state cannot be loaded.
       }
