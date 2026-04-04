@@ -7,6 +7,9 @@ type HelpContact = {
   title: string;
   description: string;
   detail: string;
+  actionLabel: string;
+  href: string;
+  openInNewTab?: boolean;
   icon: typeof MessageCircle;
   accentClassName: string;
   keywords: string[];
@@ -23,6 +26,8 @@ const HELP_CONTACTS: HelpContact[] = [
     title: "Live Chat",
     description: "Chat with our support team",
     detail: "Available 24/7",
+    actionLabel: "Start chat",
+    href: "/tenant/inbox",
     icon: MessageCircle,
     accentClassName: "bg-brand-primary",
     keywords: ["chat", "support", "message", "live"],
@@ -31,6 +36,8 @@ const HELP_CONTACTS: HelpContact[] = [
     title: "Email Support",
     description: "support@easyrent.com",
     detail: "Response within 2 hours",
+    actionLabel: "Send email",
+    href: "mailto:support@easyrent.com",
     icon: Mail,
     accentClassName: "bg-brand-primary",
     keywords: ["email", "mail", "support", "reply"],
@@ -39,6 +46,8 @@ const HELP_CONTACTS: HelpContact[] = [
     title: "Phone Support",
     description: "+31 20 123 4567",
     detail: "Mon-Fri, 9am-6pm CET",
+    actionLabel: "Call now",
+    href: "tel:+31201234567",
     icon: Phone,
     accentClassName: "bg-brand-primary",
     keywords: ["phone", "call", "contact", "support"],
@@ -280,7 +289,13 @@ export function Help() {
               const Icon = contact.icon;
 
               return (
-                <div key={contact.title} className="bg-neutral-light-gray p-[32px] text-center transition-all hover:-translate-y-[2px] hover:bg-brand-primary-light">
+                <a
+                  key={contact.title}
+                  href={contact.href}
+                  target={contact.openInNewTab ? "_blank" : undefined}
+                  rel={contact.openInNewTab ? "noreferrer" : undefined}
+                  className="block bg-neutral-light-gray p-[32px] text-center transition-all hover:-translate-y-[2px] hover:bg-brand-primary-light focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary"
+                >
                   <div className={`w-[56px] h-[56px] flex items-center justify-center mx-auto mb-[24px] ${contact.accentClassName}`}>
                     <Icon className="w-[28px] h-[28px] text-white" />
                   </div>
@@ -293,7 +308,11 @@ export function Help() {
                   <p className="text-neutral-black text-[13px] font-semibold">
                     {contact.detail}
                   </p>
-                </div>
+                  <span className="mt-[18px] inline-flex items-center gap-[8px] rounded-full bg-white px-[14px] py-[8px] text-[13px] font-semibold text-[#1A1A1A]">
+                    {contact.actionLabel}
+                    <ArrowRight className="h-[14px] w-[14px]" />
+                  </span>
+                </a>
               );
             })}
           </div>
