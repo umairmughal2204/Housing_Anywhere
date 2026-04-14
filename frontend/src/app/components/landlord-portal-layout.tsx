@@ -2,7 +2,9 @@ import { Link, useLocation, useNavigate } from "react-router";
 import { 
   LayoutDashboard, 
   Home, 
-  Calendar, 
+  CalendarDays,
+  ClipboardList,
+  FileText,
   MessageSquare, 
   Settings,
   LogOut,
@@ -52,8 +54,8 @@ export function LandlordPortalLayout({
   const navigation = [
     { name: "Dashboard", href: "/landlord/dashboard", icon: LayoutDashboard },
     { name: "Listings", href: "/landlord/listings", icon: Home },
-    { name: "Rentals", href: "/landlord/rentals", icon: Calendar },
-    { name: "Calendar", href: "/landlord/calendar", icon: Calendar },
+    { name: "Rentals", href: "/landlord/rentals", icon: ClipboardList },
+    { name: "Calendar", href: "/landlord/calendar", icon: CalendarDays },
     { name: "Messages", href: "/landlord/inbox", icon: MessageSquare },
   ];
 
@@ -299,7 +301,7 @@ export function LandlordPortalLayout({
                       className="flex items-center gap-[12px] px-[16px] py-[12px] hover:bg-neutral-light-gray transition-colors"
                     >
                       <div className="w-[32px] h-[32px] bg-brand-light flex items-center justify-center">
-                        <Calendar className="w-[16px] h-[16px] text-brand-primary" />
+                        <FileText className="w-[16px] h-[16px] text-brand-primary" />
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="text-neutral-black text-[14px] font-semibold">Pending applications</div>

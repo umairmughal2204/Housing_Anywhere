@@ -1,4 +1,5 @@
 import { createBrowserRouter, redirect } from "react-router";
+import { createElement, type ComponentType } from "react";
 import { Home } from "./pages/home";
 import { SearchResults } from "./pages/search-results";
 import { PropertyListing } from "./pages/property-listing";
@@ -29,6 +30,27 @@ import { Account } from "./pages/account";
 import { Favorites } from "./pages/favorites";
 import { ErrorBoundary } from "./components/error-boundary";
 import { ProtectedRoute } from "./components/protected-route";
+
+function withProtectedRoute(Page: ComponentType) {
+  return function ProtectedPage() {
+    return createElement(ProtectedRoute, null, createElement(Page));
+  };
+}
+
+const ProtectedLandlordDashboard = withProtectedRoute(LandlordDashboard);
+const ProtectedLandlordAnalytics = withProtectedRoute(LandlordAnalytics);
+const ProtectedLandlordListings = withProtectedRoute(LandlordListings);
+const ProtectedLandlordAddListing = withProtectedRoute(LandlordAddListing);
+const ProtectedLandlordRentals = withProtectedRoute(LandlordRentals);
+const ProtectedLandlordCalendar = withProtectedRoute(LandlordCalendar);
+const ProtectedLandlordInbox = withProtectedRoute(LandlordInbox);
+const ProtectedTenantInbox = withProtectedRoute(TenantInbox);
+const ProtectedTenantApplications = withProtectedRoute(TenantApplications);
+const ProtectedTenantConversation = withProtectedRoute(TenantConversation);
+const ProtectedPayments = withProtectedRoute(Payments);
+const ProtectedAccount = withProtectedRoute(Account);
+const ProtectedFavorites = withProtectedRoute(Favorites);
+const ProtectedPropertyPayment = withProtectedRoute(Payment);
 
 export const router = createBrowserRouter([
   {
@@ -68,37 +90,37 @@ export const router = createBrowserRouter([
   },
   {
     path: "/landlord/dashboard",
-    Component: LandlordDashboard,
+    Component: ProtectedLandlordDashboard,
     ErrorBoundary,
   },
   {
     path: "/landlord/analytics",
-    Component: LandlordAnalytics,
+    Component: ProtectedLandlordAnalytics,
     ErrorBoundary,
   },
   {
     path: "/landlord/listings",
-    Component: LandlordListings,
+    Component: ProtectedLandlordListings,
     ErrorBoundary,
   },
   {
     path: "/landlord/listings/add",
-    Component: LandlordAddListing,
+    Component: ProtectedLandlordAddListing,
     ErrorBoundary,
   },
   {
     path: "/landlord/listings/:id/edit",
-    Component: LandlordAddListing,
+    Component: ProtectedLandlordAddListing,
     ErrorBoundary,
   },
   {
     path: "/landlord/rentals",
-    Component: LandlordRentals,
+    Component: ProtectedLandlordRentals,
     ErrorBoundary,
   },
   {
     path: "/landlord/calendar",
-    Component: LandlordCalendar,
+    Component: ProtectedLandlordCalendar,
     ErrorBoundary,
   },
   {
@@ -108,7 +130,7 @@ export const router = createBrowserRouter([
   },
   {
     path: "/landlord/inbox",
-    Component: LandlordInbox,
+    Component: ProtectedLandlordInbox,
     ErrorBoundary,
   },
   {
@@ -175,37 +197,37 @@ export const router = createBrowserRouter([
   },
   {
     path: "/property/:id/payment",
-    Component: Payment,
+    Component: ProtectedPropertyPayment,
     ErrorBoundary,
   },
   {
     path: "/tenant/inbox",
-    Component: TenantInbox,
+    Component: ProtectedTenantInbox,
     ErrorBoundary,
   },
   {
     path: "/tenant/applications",
-    Component: TenantApplications,
+    Component: ProtectedTenantApplications,
     ErrorBoundary,
   },
   {
     path: "/tenant/inbox/conversation/:id",
-    Component: TenantConversation,
+    Component: ProtectedTenantConversation,
     ErrorBoundary,
   },
   {
     path: "/payments",
-    Component: Payments,
+    Component: ProtectedPayments,
     ErrorBoundary,
   },
   {
     path: "/account",
-    Component: Account,
+    Component: ProtectedAccount,
     ErrorBoundary,
   },
   {
     path: "/favorites",
-    Component: Favorites,
+    Component: ProtectedFavorites,
     ErrorBoundary,
   },
 ]);

@@ -34,6 +34,42 @@ const statusStyle: Record<ApplicationStatus, string> = {
   rejected: "bg-red-50 text-red-600",
 };
 
+function ApplicationsSkeleton() {
+  return (
+    <div className="space-y-[16px]" aria-hidden="true">
+      {[0, 1, 2].map((index) => (
+        <div key={index} className="bg-white border border-[rgba(0,0,0,0.08)] p-[20px] animate-pulse">
+          <div className="flex gap-[16px]">
+            <div className="w-[180px] h-[120px] bg-[#E8E8E8] overflow-hidden flex-shrink-0" />
+
+            <div className="flex-1 min-w-0">
+              <div className="flex items-start justify-between gap-[12px] mb-[8px]">
+                <div className="flex-1 min-w-0">
+                  <div className="h-[22px] w-[55%] bg-[#E8E8E8] mb-[8px]" />
+                  <div className="h-[16px] w-[72%] bg-[#E8E8E8]" />
+                </div>
+                <div className="h-[24px] w-[90px] bg-[#E8E8E8] flex-shrink-0 rounded-full" />
+              </div>
+
+              <div className="flex items-center gap-[18px] mb-[14px]">
+                <div className="h-[16px] w-[170px] bg-[#E8E8E8]" />
+                <div className="h-[16px] w-[150px] bg-[#E8E8E8]" />
+              </div>
+
+              <div className="h-[48px] bg-[#F1F1F1] rounded-[4px] mb-[14px]" />
+
+              <div className="flex items-center gap-[10px]">
+                <div className="h-[36px] w-[146px] bg-[#E8E8E8] rounded-[4px]" />
+                <div className="h-[36px] w-[120px] bg-[#E8E8E8] rounded-[4px]" />
+              </div>
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export function TenantApplications() {
   const { user, isLoading: isAuthLoading } = useAuth();
   const [applications, setApplications] = useState<TenantApplication[]>([]);
@@ -153,6 +189,8 @@ export function TenantApplications() {
           </div>
 
           <div className="space-y-[16px]">
+            {isLoading && <ApplicationsSkeleton />}
+
             {!isLoading && applications.map((application) => (
               <div key={application.id} className="bg-white border border-[rgba(0,0,0,0.08)] p-[20px]">
                 <div className="flex gap-[16px]">
