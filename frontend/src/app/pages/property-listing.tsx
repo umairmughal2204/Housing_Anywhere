@@ -399,8 +399,19 @@ export function PropertyListing() {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (!response.ok) return;
-        const payload = (await response.json()) as { listingIds: string[] };
-        setIsFavorited(payload.listingIds.includes(id));
+        const payload = (await response.json()) as {
+          listingIds?: Array<string | number>;
+          favorites?: Array<{ id?: string | number }>;
+        };
+        const listingIds = Array.isArray(payload.listingIds)
+          ? payload.listingIds.map((favoriteId) => String(favoriteId))
+          : Array.isArray(payload.favorites)
+          ? payload.favorites
+              .map((favorite) => favorite.id)
+              .filter((favoriteId): favoriteId is string | number => favoriteId !== undefined && favoriteId !== null)
+              .map((favoriteId) => String(favoriteId))
+          : [];
+        setIsFavorited(listingIds.includes(id));
       } catch {
         // Ignore; favorite button remains usable.
       }

@@ -1,26 +1,12 @@
 import { Link } from "react-router";
 import { Facebook, Youtube, Instagram, Linkedin, ChevronDown, Globe } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
+import { changeSiteLanguage, getSavedLanguageLabel, SUPPORTED_LANGUAGES } from "../utils/translate";
 
 export function Footer() {
-  const [selectedLanguage, setSelectedLanguage] = useState("English");
+  const [selectedLanguage, setSelectedLanguage] = useState(getSavedLanguageLabel());
   const [showLanguageDropdown, setShowLanguageDropdown] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
-
-  const languages = [
-    "English",
-    "Español",
-    "Français",
-    "Deutsch",
-    "Italiano",
-    "Nederlands",
-    "Português",
-    "Polski",
-    "Türkçe",
-    "中文",
-    "日本語",
-    "한국어"
-  ];
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -71,16 +57,17 @@ export function Footer() {
               </button>
               {showLanguageDropdown && (
                 <div className="absolute left-0 top-full bg-white border border-neutral p-[8px] z-10">
-                  {languages.map((lang) => (
+                  {SUPPORTED_LANGUAGES.map((language) => (
                     <button
-                      key={lang}
+                      key={language.code}
                       className="block w-full text-left px-[8px] py-[4px] hover:bg-brand-primary hover:text-white transition-colors"
                       onClick={() => {
-                        setSelectedLanguage(lang);
+                        setSelectedLanguage(language.label);
+                        changeSiteLanguage(language.code);
                         setShowLanguageDropdown(false);
                       }}
                     >
-                      {lang}
+                      {language.label}
                     </button>
                   ))}
                 </div>
