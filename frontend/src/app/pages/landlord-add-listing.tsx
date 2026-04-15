@@ -5,8 +5,8 @@ import { LandlordPortalLayout } from "../components/landlord-portal-layout";
 import { DateOnlyPicker } from "../components/date-only-picker";
 import { API_BASE } from "../config";
 
-type TernaryArea = "no" | "shared" | "private";
-type YesNo = "yes" | "no";
+type TernaryArea = "" | "no" | "shared" | "private";
+type YesNo = "" | "yes" | "no";
 
 const kinds = ["Entire place", "Private room", "Shared room"];
 const propertyTypes = ["House", "Building", "Apartment"];
@@ -296,39 +296,39 @@ export function LandlordAddListing() {
   const [suitablePeopleCount, setSuitablePeopleCount] = useState("0");
   const [spaceDescription, setSpaceDescription] = useState("");
   const [bedroomsCount, setBedroomsCount] = useState("Select");
-  const [bedroomFurnished, setBedroomFurnished] = useState<YesNo>("no");
-  const [lockOnBedroom, setLockOnBedroom] = useState<YesNo>("no");
+  const [bedroomFurnished, setBedroomFurnished] = useState<YesNo>("");
+  const [lockOnBedroom, setLockOnBedroom] = useState<YesNo>("");
 
-  const [kitchen, setKitchen] = useState<TernaryArea>("no");
-  const [toilet, setToilet] = useState<TernaryArea>("no");
+  const [kitchen, setKitchen] = useState<TernaryArea>("");
+  const [toilet, setToilet] = useState<TernaryArea>("");
   const [bathroom, setBathroom] = useState("Select");
   const [bathroomsCount, setBathroomsCount] = useState("Select");
-  const [livingRoom, setLivingRoom] = useState<TernaryArea>("no");
-  const [balconyTerrace, setBalconyTerrace] = useState<TernaryArea>("no");
-  const [garden, setGarden] = useState<TernaryArea>("no");
-  const [basement, setBasement] = useState<TernaryArea>("no");
-  const [parking, setParking] = useState<TernaryArea>("no");
-  const [wheelchairAccessible, setWheelchairAccessible] = useState<YesNo>("no");
-  const [elevator, setElevator] = useState<YesNo>("no");
-  const [allergyFriendly, setAllergyFriendly] = useState<YesNo>("no");
+  const [livingRoom, setLivingRoom] = useState<TernaryArea>("");
+  const [balconyTerrace, setBalconyTerrace] = useState<TernaryArea>("");
+  const [garden, setGarden] = useState<TernaryArea>("");
+  const [basement, setBasement] = useState<TernaryArea>("");
+  const [parking, setParking] = useState<TernaryArea>("");
+  const [wheelchairAccessible, setWheelchairAccessible] = useState<YesNo>("");
+  const [elevator, setElevator] = useState<YesNo>("");
+  const [allergyFriendly, setAllergyFriendly] = useState<YesNo>("");
 
-  const [bedAmenity, setBedAmenity] = useState<YesNo>("no");
-  const [wifiAmenity, setWifiAmenity] = useState<YesNo>("no");
-  const [deskAmenity, setDeskAmenity] = useState<YesNo>("no");
-  const [closetAmenity, setClosetAmenity] = useState<YesNo>("no");
-  const [tvAmenity, setTvAmenity] = useState<YesNo>("no");
-  const [washingMachineAmenity, setWashingMachineAmenity] = useState<YesNo>("no");
-  const [dryerAmenity, setDryerAmenity] = useState<YesNo>("no");
-  const [dishwasherAmenity, setDishwasherAmenity] = useState<YesNo>("no");
-  const [kitchenwareAmenity, setKitchenwareAmenity] = useState<TernaryArea>("no");
+  const [bedAmenity, setBedAmenity] = useState<YesNo>("");
+  const [wifiAmenity, setWifiAmenity] = useState<YesNo>("");
+  const [deskAmenity, setDeskAmenity] = useState<YesNo>("");
+  const [closetAmenity, setClosetAmenity] = useState<YesNo>("");
+  const [tvAmenity, setTvAmenity] = useState<YesNo>("");
+  const [washingMachineAmenity, setWashingMachineAmenity] = useState<YesNo>("");
+  const [dryerAmenity, setDryerAmenity] = useState<YesNo>("");
+  const [dishwasherAmenity, setDishwasherAmenity] = useState<YesNo>("");
+  const [kitchenwareAmenity, setKitchenwareAmenity] = useState<TernaryArea>("");
   const [heatingAmenity, setHeatingAmenity] = useState("Select");
-  const [airConditioningAmenity, setAirConditioningAmenity] = useState<YesNo>("no");
+  const [airConditioningAmenity, setAirConditioningAmenity] = useState<YesNo>("");
   const [flooringAmenity, setFlooringAmenity] = useState("Select");
-  const [livingRoomFurnitureAmenity, setLivingRoomFurnitureAmenity] = useState<YesNo>("no");
+  const [livingRoomFurnitureAmenity, setLivingRoomFurnitureAmenity] = useState<YesNo>("");
 
-  const [rentCalculation, setRentCalculation] = useState<"daily" | "half-monthly" | "monthly">("daily");
-  const [cancellationPolicy, setCancellationPolicy] = useState<"strict" | "flexible">("flexible");
-  const [rentPricingMode, setRentPricingMode] = useState<"basic" | "advanced">("basic");
+  const [rentCalculation, setRentCalculation] = useState<"" | "daily" | "half-monthly" | "monthly">("");
+  const [cancellationPolicy, setCancellationPolicy] = useState<"" | "strict" | "flexible">("");
+  const [rentPricingMode, setRentPricingMode] = useState<"" | "basic" | "advanced">("");
   const [monthlyRentDisplay, setMonthlyRentDisplay] = useState("");
   const [utilityLines, setUtilityLines] = useState<CostLine[]>([
     { type: "Electricity", includedInRent: "Included in rent", frequency: "every month", estimateType: "Estimate", amount: "0" },
@@ -342,15 +342,15 @@ export function LandlordAddListing() {
   const [optionalServiceLines, setOptionalServiceLines] = useState<OptionalServiceLine[]>([]);
   const [depositLines, setDepositLines] = useState<DepositLine[]>([]);
 
-  const [preferredGender, setPreferredGender] = useState<"male" | "female" | "no-preference">("no-preference");
+  const [preferredGender, setPreferredGender] = useState<"" | "male" | "female" | "no-preference">("");
   const [minimumAgePreference, setMinimumAgePreference] = useState("No preference");
   const [maximumAgePreference, setMaximumAgePreference] = useState("No preference");
-  const [preferredTenantType, setPreferredTenantType] = useState<"any" | "students" | "working">("any");
-  const [couplesAllowed, setCouplesAllowed] = useState<YesNo>("no");
-  const [registrationPossible, setRegistrationPossible] = useState<YesNo>("no");
-  const [petsPolicy, setPetsPolicy] = useState<"no" | "yes" | "negotiable">("no");
-  const [musicPolicy, setMusicPolicy] = useState<"no" | "yes" | "negotiable">("no");
-  const [smokingPolicy, setSmokingPolicy] = useState<"no" | "yes" | "negotiable" | "outside-only">("no");
+  const [preferredTenantType, setPreferredTenantType] = useState<"" | "any" | "students" | "working">("");
+  const [couplesAllowed, setCouplesAllowed] = useState<YesNo>("");
+  const [registrationPossible, setRegistrationPossible] = useState<YesNo>("");
+  const [petsPolicy, setPetsPolicy] = useState<"" | "no" | "yes" | "negotiable">("");
+  const [musicPolicy, setMusicPolicy] = useState<"" | "no" | "yes" | "negotiable">("");
+  const [smokingPolicy, setSmokingPolicy] = useState<"" | "no" | "yes" | "negotiable" | "outside-only">("");
   const [requireProofOfIdentity, setRequireProofOfIdentity] = useState(false);
   const [requireProofOfOccupationOrEnrollment, setRequireProofOfOccupationOrEnrollment] = useState(false);
   const [requireProofOfIncome, setRequireProofOfIncome] = useState(false);
@@ -502,22 +502,22 @@ export function LandlordAddListing() {
         setElevator(listing.elevator ? "yes" : "no");
         setAllergyFriendly(listing.allergyFriendly ? "yes" : "no");
 
-        setBedAmenity(listing.amenities?.bed ? "yes" : "no");
-        setWifiAmenity(listing.amenities?.wifi ? "yes" : "no");
-        setDeskAmenity(listing.amenities?.desk ? "yes" : "no");
-        setClosetAmenity(listing.amenities?.closet ? "yes" : "no");
-        setTvAmenity(listing.amenities?.tv ? "yes" : "no");
-        setWashingMachineAmenity(listing.amenities?.washingMachine ? "yes" : "no");
-        setDryerAmenity(listing.amenities?.dryer ? "yes" : "no");
-        setDishwasherAmenity(listing.amenities?.dishwasher ? "yes" : "no");
-        setKitchenwareAmenity(listing.amenities?.kitchenware ?? "no");
+        setBedAmenity(listing.amenities?.bed ? "yes" : listing.amenities?.bed === false ? "no" : "");
+        setWifiAmenity(listing.amenities?.wifi ? "yes" : listing.amenities?.wifi === false ? "no" : "");
+        setDeskAmenity(listing.amenities?.desk ? "yes" : listing.amenities?.desk === false ? "no" : "");
+        setClosetAmenity(listing.amenities?.closet ? "yes" : listing.amenities?.closet === false ? "no" : "");
+        setTvAmenity(listing.amenities?.tv ? "yes" : listing.amenities?.tv === false ? "no" : "");
+        setWashingMachineAmenity(listing.amenities?.washingMachine ? "yes" : listing.amenities?.washingMachine === false ? "no" : "");
+        setDryerAmenity(listing.amenities?.dryer ? "yes" : listing.amenities?.dryer === false ? "no" : "");
+        setDishwasherAmenity(listing.amenities?.dishwasher ? "yes" : listing.amenities?.dishwasher === false ? "no" : "");
+        setKitchenwareAmenity(listing.amenities?.kitchenware ?? "");
         setHeatingAmenity(heatingToUiValue[listing.amenities?.heating ?? ""] ?? "Select");
-        setAirConditioningAmenity(listing.amenities?.airConditioning ? "yes" : "no");
+        setAirConditioningAmenity(listing.amenities?.airConditioning ? "yes" : listing.amenities?.airConditioning === false ? "no" : "");
         setFlooringAmenity(flooringToUiValue[listing.amenities?.flooring ?? ""] ?? "Select");
-        setLivingRoomFurnitureAmenity(listing.amenities?.livingRoomFurniture ? "yes" : "no");
+        setLivingRoomFurnitureAmenity(listing.amenities?.livingRoomFurniture ? "yes" : listing.amenities?.livingRoomFurniture === false ? "no" : "");
 
-        setRentCalculation(listing.rentCalculation ?? "daily");
-        setCancellationPolicy(listing.cancellationPolicy ?? "flexible");
+        setRentCalculation(listing.rentCalculation ?? "");
+        setCancellationPolicy(listing.cancellationPolicy ?? "");
         setUtilityLines(
           listing.utilities?.length
             ? listing.utilities.map((line) => ({
@@ -545,15 +545,15 @@ export function LandlordAddListing() {
           })) ?? []
         );
 
-        setPreferredGender(listing.preferredGender ?? "no-preference");
+        setPreferredGender(listing.preferredGender ?? "");
         setMinimumAgePreference(listing.minimumAgePreference ? String(listing.minimumAgePreference) : "No preference");
         setMaximumAgePreference(listing.maximumAgePreference ? String(listing.maximumAgePreference) : "No preference");
-        setPreferredTenantType(listing.preferredTenantType ?? "any");
-        setCouplesAllowed(listing.couplesAllowed ? "yes" : "no");
-        setRegistrationPossible(listing.registrationPossible ? "yes" : "no");
-        setPetsPolicy(listing.petsPolicy ?? "no");
-        setMusicPolicy(listing.musicPolicy ?? "no");
-        setSmokingPolicy(listing.smokingPolicy ?? "no");
+        setPreferredTenantType(listing.preferredTenantType ?? "");
+        setCouplesAllowed(listing.couplesAllowed ? "yes" : listing.couplesAllowed === false ? "no" : "");
+        setRegistrationPossible(listing.registrationPossible ? "yes" : listing.registrationPossible === false ? "no" : "");
+        setPetsPolicy(listing.petsPolicy ?? "");
+        setMusicPolicy(listing.musicPolicy ?? "");
+        setSmokingPolicy(listing.smokingPolicy ?? "");
         setRequireProofOfIdentity(Boolean(listing.requireProofOfIdentity));
         setRequireProofOfOccupationOrEnrollment(Boolean(listing.requireProofOfOccupation));
         setRequireProofOfIncome(Boolean(listing.requireProofOfIncome));
@@ -677,6 +677,17 @@ export function LandlordAddListing() {
       if (!suitablePeopleCount || Number.parseInt(suitablePeopleCount, 10) < 1) errors.push("Suitable for how many? must be at least 1");
       if (!spaceDescription.trim()) errors.push("Description");
       if (bedroomsCount === "Select") errors.push("Number of bedrooms");
+      if (!bedroomFurnished) errors.push("Bedroom furnished");
+    }
+
+    if (section === 3) {
+      if (!kitchen) errors.push("Kitchen");
+      if (!toilet) errors.push("Toilet");
+    }
+
+    if (section === 4) {
+      if (!bedAmenity) errors.push("Bed");
+      if (!wifiAmenity) errors.push("WiFi");
     }
 
     if (section === 7) {
@@ -730,17 +741,17 @@ export function LandlordAddListing() {
         bedroomsCount: bedroomsCount === "Select" ? 0 : bedroomsCount === "Studio" ? 0 : parseInt(bedroomsCount),
         bedroomFurnished: bedroomFurnished === "yes",
         lockOnBedroom: lockOnBedroom === "yes",
-        kitchen,
-        toilet,
+        kitchen: kitchen || "no",
+        toilet: toilet || "no",
         bathroomStructure: {
           count: parseBathroomsCount(),
           type: bathroom === "Select" ? "private" : bathroom.toLowerCase(),
         },
-        livingRoom,
-        balconyTerrace,
-        garden,
-        basement,
-        parking,
+        livingRoom: livingRoom || "no",
+        balconyTerrace: balconyTerrace || "no",
+        garden: garden || "no",
+        basement: basement || "no",
+        parking: parking || "no",
         wheelchairAccessible: wheelchairAccessible === "yes",
         elevator: elevator === "yes",
         allergyFriendly: allergyFriendly === "yes",
@@ -753,7 +764,7 @@ export function LandlordAddListing() {
           washingMachine: washingMachineAmenity === "yes",
           dryer: dryerAmenity === "yes",
           dishwasher: dishwasherAmenity === "yes",
-          kitchenware: kitchenwareAmenity,
+          kitchenware: kitchenwareAmenity || "no",
           heating: heatingAmenity === "Select" ? "central-heating" : heatingAmenity.toLowerCase().replace(" ", "-"),
           airConditioning: airConditioningAmenity === "yes",
           flooring: flooringAmenity === "Select" ? "laminate" : flooringAmenity.toLowerCase(),
@@ -778,15 +789,15 @@ export function LandlordAddListing() {
           frequency: line.frequency === "every month" ? "monthly" : "one-time",
           amount: parseFloat(line.amount) || 0,
         })),
-        preferredGender,
+        preferredGender: preferredGender || "no-preference",
         minimumAgePreference: minimumAgePreference === "No preference" ? undefined : parseInt(minimumAgePreference),
         maximumAgePreference: maximumAgePreference === "No preference" ? undefined : parseInt(maximumAgePreference),
-        preferredTenantType,
+        preferredTenantType: preferredTenantType || "any",
         couplesAllowed: couplesAllowed === "yes",
         registrationPossible: registrationPossible === "yes",
-        petsPolicy,
-        musicPolicy,
-        smokingPolicy,
+        petsPolicy: petsPolicy || "no",
+        musicPolicy: musicPolicy || "no",
+        smokingPolicy: smokingPolicy || "no",
         requireProofOfIdentity,
         requireProofOfOccupation: requireProofOfOccupationOrEnrollment,
         requireProofOfIncome,
