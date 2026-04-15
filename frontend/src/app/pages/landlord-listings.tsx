@@ -1,21 +1,23 @@
 import { Link } from "react-router";
-import { LandlordPortalLayout } from "../components/landlord-portal-layout";
 import { useEffect, useState } from "react";
-import { 
-  Home,
-  MessageSquare,
-  Plus,
+import {
+  Bath,
+  Bed,
+  Calendar,
+  ChevronDown,
   Edit,
   Eye,
-  Trash2,
-  Search,
-  MapPin,
-  Bed,
-  Bath,
-  Square,
-  Calendar,
+  Home,
   Loader2,
+  MapPin,
+  MessageSquare,
+  Plus,
+  Search,
+  Settings2,
+  Square,
+  Trash2,
 } from "lucide-react";
+import { LandlordPortalLayout } from "../components/landlord-portal-layout";
 import { ImageWithFallback } from "../components/figma/ImageWithFallback";
 import { API_BASE } from "../config";
 
@@ -91,6 +93,7 @@ function normalizeListing(raw: ApiListing): Listing {
 export function LandlordListings() {
   const apiBase = API_BASE;
   const [filterStatus, setFilterStatus] = useState<ListingStatus | "all">("all");
+  const [selectedCity, setSelectedCity] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [listings, setListings] = useState<Listing[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -216,10 +219,18 @@ export function LandlordListings() {
 
   const filteredListings = listings.filter((listing) => {
     const matchesStatus = filterStatus === "all" || listing.status === filterStatus;
-    const matchesSearch = listing.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         listing.address.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesStatus && matchesSearch;
+    const matchesCity = selectedCity === "all" || listing.city === selectedCity;
+    const searchValue = searchQuery.toLowerCase();
+    const matchesSearch =
+      listing.title.toLowerCase().includes(searchValue) ||
+      listing.address.toLowerCase().includes(searchValue) ||
+      listing.city.toLowerCase().includes(searchValue);
+    return matchesStatus && matchesCity && matchesSearch;
   });
+
+  const cityOptions = Array.from(new Set(listings.map((listing) => listing.city).filter(Boolean))).sort(
+    (left, right) => left.localeCompare(right)
+  );
 
   const statusCounts = {
     all: listings.length,
@@ -227,257 +238,267 @@ export function LandlordListings() {
     inactive: listings.filter((l) => l.status === "inactive").length,
   };
 
+  const renderSkeletonCard = (index: number) => (
+    <div
+      key={index}
+      className="rounded-[24px] border border-[rgba(11,45,58,0.08)] bg-white px-[16px] py-[16px] shadow-[0_1px_2px_rgba(15,23,42,0.04)]"
+    >
+      <div className="animate-pulse flex flex-col gap-[14px] xl:flex-row xl:items-center">
+        <div className="h-[132px] w-full rounded-[16px] bg-[#D5E0EA] xl:w-[180px] xl:flex-shrink-0" />
+        <div className="flex-1 space-y-[10px]">
+          <div className="h-[16px] w-[62%] rounded-full bg-[#D5E0EA]" />
+          <div className="h-[14px] w-[38%] rounded-full bg-[#D5E0EA]" />
+          <div className="flex flex-wrap gap-[8px] pt-[4px]">
+            <div className="h-[12px] w-[84px] rounded-full bg-[#D5E0EA]" />
+            <div className="h-[12px] w-[106px] rounded-full bg-[#D5E0EA]" />
+            <div className="h-[12px] w-[96px] rounded-full bg-[#D5E0EA]" />
+          </div>
+        </div>
+        <div className="flex items-center gap-[10px] xl:justify-end">
+          <div className="h-[34px] w-[150px] rounded-full bg-[#D5E0EA]" />
+          <div className="h-[38px] w-[38px] rounded-full bg-[#D5E0EA]" />
+        </div>
+      </div>
+    </div>
+  );
+
   return (
     <LandlordPortalLayout>
-      {/* Main Content */}
-      <main className="flex-1 p-[32px]">
-        {/* Header */}
-        <div className="flex items-start justify-between mb-[32px]">
+      <main className="flex-1 px-[20px] py-[20px] lg:px-[28px] lg:py-[24px]">
+        <div className="flex flex-col gap-[16px] xl:flex-row xl:items-start xl:justify-between xl:gap-[20px]">
           <div>
-            <h1 className="text-neutral-black text-[32px] font-bold tracking-[-0.02em] mb-[8px]">
+            <h1 className="text-neutral-black text-[28px] font-bold tracking-[-0.03em]">
               Listings
             </h1>
-            <p className="text-neutral-gray text-[16px] mb-[12px]">
-              Manage your property listings
-            </p>
-            <div className="flex items-center gap-[8px]">
-              <span className="px-[8px] py-[3px] text-[11px] font-bold bg-accent-blue/10 text-accent-blue">
-                Active {statusCounts.active}
-              </span>
-              <span className="px-[8px] py-[3px] text-[11px] font-bold bg-neutral-gray/10 text-neutral-gray">
-                Inactive {statusCounts.inactive}
-              </span>
-            </div>
           </div>
-          <Link
-            to="/landlord/listings/add"
-            className="flex items-center gap-[8px] bg-brand-primary text-white px-[24px] py-[12px] font-semibold hover:bg-brand-primary-dark transition-colors"
-          >
-            <Plus className="w-[16px] h-[16px]" />
-            Create New Listing
-          </Link>
+
+          <div className="flex flex-col gap-[10px] sm:flex-row sm:items-center">
+            <Link
+              to="/landlord/dashboard"
+              className="inline-flex items-center justify-center gap-[8px] rounded-[18px] border-2 border-[#AFC1D3] bg-white px-[16px] py-[12px] text-[14px] font-semibold text-[#0B2D3A] shadow-[0_1px_2px_rgba(15,23,42,0.04)] transition-colors hover:bg-[#F7FBFE]"
+            >
+              <Settings2 className="w-[16px] h-[16px]" />
+              Manage all listings
+            </Link>
+            <Link
+              to="/landlord/listings/add"
+              className="inline-flex items-center justify-center rounded-[18px] bg-brand-primary px-[18px] py-[12px] text-[14px] font-bold text-white transition-colors hover:bg-brand-primary-dark"
+            >
+              Add listing
+            </Link>
+          </div>
         </div>
 
-        {isLoading && (
-          <div className="mb-[16px] text-[14px] text-neutral-gray">Loading listings...</div>
-        )}
+        <div className="mt-[20px] grid grid-cols-1 gap-[12px] xl:grid-cols-[220px_220px_1fr]">
+          <div className="relative">
+            <select
+              value={filterStatus}
+              onChange={(event) => setFilterStatus(event.target.value as ListingStatus | "all")}
+              className="h-[58px] w-full appearance-none rounded-[14px] border border-[#A8B2BF] bg-white px-[16px] pr-[40px] text-[15px] font-medium text-[#0B2D3A] outline-none transition-colors focus:border-brand-primary"
+            >
+              <option value="all">All status ({statusCounts.all})</option>
+              <option value="active">Active ({statusCounts.active})</option>
+              <option value="inactive">Inactive ({statusCounts.inactive})</option>
+            </select>
+            <ChevronDown className="pointer-events-none absolute right-[16px] top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-[#0B2D3A]" />
+          </div>
+
+          <div className="relative">
+            <select
+              value={selectedCity}
+              onChange={(event) => setSelectedCity(event.target.value)}
+              className="h-[58px] w-full appearance-none rounded-[14px] border border-[#A8B2BF] bg-white px-[16px] pr-[40px] text-[15px] font-medium text-[#0B2D3A] outline-none transition-colors focus:border-brand-primary"
+            >
+              <option value="all">All cities ({cityOptions.length})</option>
+              {cityOptions.map((city) => (
+                <option key={city} value={city}>
+                  {city}
+                </option>
+              ))}
+            </select>
+            <ChevronDown className="pointer-events-none absolute right-[16px] top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-[#0B2D3A]" />
+          </div>
+
+          <label className="flex h-[58px] items-center gap-[10px] rounded-[14px] border border-[#A8B2BF] bg-white px-[16px]">
+            <Search className="h-[18px] w-[18px] text-[#0B2D3A]" />
+            <input
+              type="text"
+              placeholder="Search by street, city or alias"
+              value={searchQuery}
+              onChange={(event) => setSearchQuery(event.target.value)}
+              className="w-full border-0 bg-transparent text-[15px] font-medium text-[#0B2D3A] outline-none placeholder:text-[#9AA7B4]"
+            />
+          </label>
+        </div>
+
+        {isLoading && <div className="mt-[20px] space-y-[14px]">{[0, 1, 2].map(renderSkeletonCard)}</div>}
+
         {!isLoading && error && (
-          <div className="mb-[16px] text-[14px] text-brand-primary font-semibold">{error}</div>
+          <div className="mt-[18px] rounded-[16px] border border-[#F3C4BE] bg-[#FFF7F5] px-[16px] py-[12px] text-[13px] font-medium text-brand-primary">
+            {error}
+          </div>
         )}
 
-        {/* Filters and Search */}
-        <div className="bg-white border border-[rgba(0,0,0,0.08)] mb-[24px]">
-          <div className="px-[24px] py-[16px] border-b border-[rgba(0,0,0,0.08)] flex items-center justify-between gap-[16px]">
-            <div className="flex items-center gap-[16px] flex-1">
-              <div className="flex items-center gap-[12px] bg-neutral-light-gray px-[16px] py-[10px] flex-1 max-w-[400px]">
-                <Search className="w-[16px] h-[16px] text-neutral-gray" />
-                <input
-                  type="text"
-                  placeholder="Search by title or address..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="flex-1 bg-transparent outline-none text-neutral-black text-[14px] placeholder:text-neutral-gray"
-                />
-              </div>
-
-              <div className="flex items-center gap-[8px]">
-                <button
-                  onClick={() => setFilterStatus("all")}
-                  className={`px-[16px] py-[8px] text-[14px] font-semibold transition-colors ${
-                    filterStatus === "all"
-                      ? "bg-brand-primary text-white"
-                      : "bg-neutral-light-gray text-neutral-black hover:bg-neutral-gray/20"
-                  }`}
-                >
-                  All ({statusCounts.all})
-                </button>
-                <button
-                  onClick={() => setFilterStatus("active")}
-                  className={`px-[16px] py-[8px] text-[14px] font-semibold transition-colors ${
-                    filterStatus === "active"
-                      ? "bg-brand-primary text-white"
-                      : "bg-neutral-light-gray text-neutral-black hover:bg-neutral-gray/20"
-                  }`}
-                >
-                  Active ({statusCounts.active})
-                </button>
-                <button
-                  onClick={() => setFilterStatus("inactive")}
-                  className={`px-[16px] py-[8px] text-[14px] font-semibold transition-colors ${
-                    filterStatus === "inactive"
-                      ? "bg-brand-primary text-white"
-                      : "bg-neutral-light-gray text-neutral-black hover:bg-neutral-gray/20"
-                  }`}
-                >
-                  Inactive ({statusCounts.inactive})
-                </button>
-              </div>
-            </div>
+        {!isLoading && !error && filteredListings.length === 0 && (
+          <div className="mt-[20px] rounded-[22px] border border-[rgba(11,45,58,0.08)] bg-white px-[22px] py-[40px] text-center shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
+            <Home className="mx-auto mb-[12px] h-[40px] w-[40px] text-[#A8B2BF]" />
+            <h2 className="text-[18px] font-bold text-neutral-black">
+              No listings found
+            </h2>
+            <p className="mx-auto mt-[6px] max-w-[520px] text-[14px] text-neutral-gray">
+              {searchQuery || filterStatus !== "all" || selectedCity !== "all"
+                ? "Try adjusting your search or filters."
+                : "Create your first listing to get started."}
+            </p>
+            <Link
+              to="/landlord/listings/add"
+              className="mt-[18px] inline-flex items-center gap-[8px] rounded-[14px] bg-brand-primary px-[18px] py-[11px] text-[14px] font-semibold text-white transition-colors hover:bg-brand-primary-dark"
+            >
+              <Plus className="h-[14px] w-[14px]" />
+              Add listing
+            </Link>
           </div>
-        </div>
+        )}
 
-        {/* Listings Grid */}
-        <div className="grid grid-cols-1 gap-[24px]">
-          {filteredListings.map((listing) => (
-            <div key={listing.id} className="bg-white border border-[rgba(0,0,0,0.08)] hover:border-[rgba(0,0,0,0.16)] transition-colors">
-              <div className="flex gap-[24px] p-[24px]">
-                {/* Image */}
-                <div className="w-[240px] h-[180px] flex-shrink-0 overflow-hidden bg-neutral-light-gray">
-                  <ImageWithFallback
-                    src={listing.images[0] ?? "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800&q=80"}
-                    alt={listing.title}
-                    className="w-full h-full object-contain object-center bg-[#F3F4F6]"
-                  />
-                </div>
+        {!isLoading && !error && filteredListings.length > 0 && (
+          <div className="mt-[20px] space-y-[14px]">
+            {filteredListings.map((listing) => (
+              <article
+                key={listing.id}
+                className="rounded-[22px] border border-[rgba(11,45,58,0.08)] bg-white px-[16px] py-[16px] shadow-[0_1px_2px_rgba(15,23,42,0.04)] transition-shadow hover:shadow-[0_8px_24px_rgba(15,23,42,0.06)]"
+              >
+                <div className="flex flex-col gap-[14px] xl:flex-row xl:items-center">
+                  <div className="overflow-hidden rounded-[16px] bg-[#EEF3F7] xl:h-[132px] xl:w-[180px] xl:flex-shrink-0">
+                    <ImageWithFallback
+                      src={
+                        listing.images[0] ??
+                        "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800&q=80"
+                      }
+                      alt={listing.title}
+                      className="h-full w-full object-cover object-center"
+                    />
+                  </div>
 
-                {/* Content */}
-                <div className="flex-1 flex flex-col">
-                  <div className="flex items-start justify-between mb-[12px]">
-                    <div className="flex-1 min-w-0 pr-[16px]">
-                      <h3 className="text-neutral-black text-[20px] font-bold mb-[8px] leading-snug">
-                        {listing.title}
-                      </h3>
-                      <div className="flex items-center gap-[6px] text-neutral-gray text-[14px] mb-[16px]">
-                        <MapPin className="w-[14px] h-[14px]" />
-                        <span>{listing.address}, {listing.city}</span>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-col gap-[8px] lg:flex-row lg:items-start lg:justify-between">
+                      <div className="min-w-0">
+                        <h2 className="truncate text-[17px] font-bold leading-[1.2] text-neutral-black">
+                          {listing.title}
+                        </h2>
+                        <div className="mt-[6px] flex items-center gap-[6px] text-[13px] text-neutral-gray">
+                          <MapPin className="h-[14px] w-[14px] flex-shrink-0" />
+                          <span className="truncate">
+                            {listing.address}, {listing.city}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="flex flex-col items-start gap-[6px] lg:items-end">
+                        <span
+                          className={`inline-flex rounded-full px-[10px] py-[4px] text-[10px] font-bold uppercase tracking-[0.08em] ${
+                            listing.status === "active"
+                              ? "bg-[#EAF8F1] text-[#0E7A4D]"
+                              : "bg-[#F4F6F8] text-[#7B8794]"
+                          }`}
+                        >
+                          {listing.status === "active" ? "Active" : "Inactive"}
+                        </span>
+                        <button
+                          onClick={() => {
+                            void handleStatusToggle(listing.id, listing.status);
+                          }}
+                          disabled={updatingStatusId === listing.id}
+                          className={`inline-flex items-center gap-[6px] rounded-[12px] border px-[12px] py-[7px] text-[12px] font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
+                            listing.status === "active"
+                              ? "border-[#F0B4AA] bg-[#FFF7F5] text-brand-primary hover:bg-[#FFEDE9]"
+                              : "border-[#B7DDC8] bg-[#F1FBF5] text-[#0E7A4D] hover:bg-[#E5F7EC]"
+                          }`}
+                        >
+                          {updatingStatusId === listing.id ? (
+                            <Loader2 className="h-[13px] w-[13px] animate-spin" />
+                          ) : null}
+                          {updatingStatusId === listing.id
+                            ? "Updating…"
+                            : listing.status === "active"
+                            ? "Deactivate"
+                            : "Activate"}
+                        </button>
                       </div>
                     </div>
 
-                    <div className="flex flex-col items-end gap-[8px] flex-shrink-0">
-                      <span className={`px-[10px] py-[4px] text-[11px] font-bold uppercase tracking-[0.05em] ${
-                        listing.status === "active"
-                          ? "bg-accent-blue/10 text-accent-blue"
-                          : "bg-neutral-gray/10 text-neutral-gray"
-                      }`}>
-                        {listing.status === "active" ? "Active" : "Inactive"}
-                      </span>
-                      <button
-                      onClick={() => { void handleStatusToggle(listing.id, listing.status); }}
-                      disabled={updatingStatusId === listing.id}
-                      className={`inline-flex items-center gap-[6px] px-[14px] py-[7px] text-[13px] font-semibold border transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
-                        listing.status === "active"
-                          ? "border-[#D03A2B]/40 text-[#D03A2B] bg-[#FFF5F3] hover:bg-[#FFE8E4]"
-                          : "border-[#0E7A4D]/40 text-[#0E7A4D] bg-[#EEFAF4] hover:bg-[#D6F5E7]"
-                      }`}
-                    >
-                      {updatingStatusId === listing.id ? (
-                        <Loader2 className="w-[13px] h-[13px] animate-spin" />
-                      ) : null}
-                      {updatingStatusId === listing.id
-                        ? "Updating…"
-                        : listing.status === "active"
-                        ? "Deactivate"
-                        : "Activate"}
-                    </button>
-                    </div>
-                  </div>
-
-                  {/* Property Details */}
-                  <div className="flex flex-wrap items-center gap-[24px] mb-[16px]">
-                    <div className="flex items-center gap-[8px]">
-                      <Bed className="w-[16px] h-[16px] text-neutral-gray" />
-                      <span className="text-neutral-black text-[14px] font-semibold">
+                    <div className="mt-[14px] flex flex-wrap items-center gap-[14px] text-[13px] font-semibold text-neutral-black">
+                      <span className="inline-flex items-center gap-[6px]">
+                        <Bed className="h-[14px] w-[14px] text-neutral-gray" />
                         {listing.bedrooms} {listing.bedrooms === 1 ? "Bedroom" : "Bedrooms"}
                       </span>
-                    </div>
-                    <div className="flex items-center gap-[8px]">
-                      <Bath className="w-[16px] h-[16px] text-neutral-gray" />
-                      <span className="text-neutral-black text-[14px] font-semibold">
+                      <span className="inline-flex items-center gap-[6px]">
+                        <Bath className="h-[14px] w-[14px] text-neutral-gray" />
                         {listing.bathrooms} {listing.bathrooms === 1 ? "Bathroom" : "Bathrooms"}
                       </span>
-                    </div>
-                    <div className="flex items-center gap-[8px]">
-                      <Square className="w-[16px] h-[16px] text-neutral-gray" />
-                      <span className="text-neutral-black text-[14px] font-semibold">
+                      <span className="inline-flex items-center gap-[6px]">
+                        <Square className="h-[14px] w-[14px] text-neutral-gray" />
                         {listing.area}m²
                       </span>
+                      <span className="inline-flex items-center gap-[6px] text-brand-primary">
+                        €{listing.monthlyRent.toLocaleString()} / month
+                      </span>
                     </div>
-                    <div className="ml-auto">
-                      <div className="text-brand-primary text-[24px] font-bold">
-                        €{listing.monthlyRent.toLocaleString()}
+
+                    <div className="mt-[14px] flex flex-col gap-[10px] border-t border-[rgba(11,45,58,0.08)] pt-[12px] lg:flex-row lg:items-center lg:justify-between">
+                      <div className="flex flex-wrap items-center gap-[12px] text-[11px] text-neutral-gray">
+                        <span className="inline-flex items-center gap-[5px]">
+                          <Eye className="h-[12px] w-[12px]" />
+                          {listing.views.toLocaleString()} views
+                        </span>
+                        <span className="inline-flex items-center gap-[5px]">
+                          <MessageSquare className="h-[12px] w-[12px]" />
+                          {listing.inquiries} {listing.inquiries === 1 ? "inquiry" : "inquiries"}
+                        </span>
+                        <span className="inline-flex items-center gap-[5px]">
+                          <Calendar className="h-[12px] w-[12px]" />
+                          {new Date(listing.createdAt).toLocaleDateString("en-GB", {
+                            day: "numeric",
+                            month: "short",
+                            year: "numeric",
+                          })}
+                        </span>
                       </div>
-                      <div className="text-neutral-gray text-[12px] text-right">per month</div>
-                    </div>
-                  </div>
 
-                  {/* Stats */}
-                  <div className="flex items-center pt-[16px] border-t border-[rgba(0,0,0,0.08)]">
-                    <div className="flex items-center gap-[16px] text-neutral-gray text-[12px]">
-                      <span className="flex items-center gap-[5px]">
-                        <Eye className="w-[13px] h-[13px]" />
-                        {listing.views.toLocaleString()} views
-                      </span>
-                      <span className="text-[rgba(0,0,0,0.2)]">·</span>
-                      <span className="flex items-center gap-[5px]">
-                        <MessageSquare className="w-[13px] h-[13px]" />
-                        {listing.inquiries} {listing.inquiries === 1 ? "inquiry" : "inquiries"}
-                      </span>
-                      <span className="text-[rgba(0,0,0,0.2)]">·</span>
-                      <span className="flex items-center gap-[5px]">
-                        <Calendar className="w-[13px] h-[13px]" />
-                        {new Date(listing.createdAt).toLocaleDateString("en-GB", {
-                          day: "numeric",
-                          month: "short",
-                          year: "numeric",
-                        })}
-                      </span>
-                    </div>
-
-                    <div className="ml-auto flex items-center gap-[8px]">
-                      <Link
-                        to={`/property/${listing.id}`}
-                        className="flex items-center gap-[8px] px-[16px] py-[8px] border border-[rgba(0,0,0,0.16)] text-neutral-black text-[14px] font-semibold hover:bg-neutral-light-gray transition-colors"
-                      >
-                        <Eye className="w-[14px] h-[14px]" />
-                        View
-                      </Link>
-                      <Link
-                        to={`/landlord/listings/${listing.id}/edit`}
-                        className="flex items-center gap-[8px] px-[16px] py-[8px] border border-[rgba(0,0,0,0.16)] text-neutral-black text-[14px] font-semibold hover:bg-neutral-light-gray transition-colors"
-                      >
-                        <Edit className="w-[14px] h-[14px]" />
-                        Edit
-                      </Link>
-                      <button
-                        onClick={() => {
-                          setError("");
-                          setDeleteConfirmationText("");
-                          setDeleteTarget(listing);
-                        }}
-                        disabled={deletingId === listing.id}
-                        className="flex items-center gap-[8px] px-[16px] py-[8px] border border-[rgba(255,75,39,0.35)] text-brand-primary text-[14px] font-semibold hover:bg-brand-light transition-colors"
-                      >
-                        <Trash2 className="w-[14px] h-[14px]" />
-                        {deletingId === listing.id ? "Deleting..." : "Delete"}
-                      </button>
+                      <div className="flex flex-wrap items-center gap-[8px]">
+                        <Link
+                          to={`/property/${listing.id}`}
+                          className="inline-flex items-center gap-[6px] rounded-[12px] border border-[rgba(11,45,58,0.16)] px-[12px] py-[7px] text-[12px] font-semibold text-neutral-black transition-colors hover:bg-neutral-light-gray"
+                        >
+                          <Eye className="h-[13px] w-[13px]" />
+                          View
+                        </Link>
+                        <Link
+                          to={`/landlord/listings/${listing.id}/edit`}
+                          className="inline-flex items-center gap-[6px] rounded-[12px] border border-[rgba(11,45,58,0.16)] px-[12px] py-[7px] text-[12px] font-semibold text-neutral-black transition-colors hover:bg-neutral-light-gray"
+                        >
+                          <Edit className="h-[13px] w-[13px]" />
+                          Edit
+                        </Link>
+                        <button
+                          onClick={() => {
+                            setError("");
+                            setDeleteConfirmationText("");
+                            setDeleteTarget(listing);
+                          }}
+                          disabled={deletingId === listing.id}
+                          className="inline-flex items-center gap-[6px] rounded-[12px] border border-[rgba(255,75,39,0.35)] px-[12px] py-[7px] text-[12px] font-semibold text-brand-primary transition-colors hover:bg-brand-light disabled:cursor-not-allowed disabled:opacity-60"
+                        >
+                          <Trash2 className="h-[13px] w-[13px]" />
+                          {deletingId === listing.id ? "Deleting..." : "Delete"}
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            </div>
-          ))}
-
-          {filteredListings.length === 0 && (
-            <div className="bg-white border border-[rgba(0,0,0,0.08)] p-[64px] text-center">
-              <Home className="w-[48px] h-[48px] text-neutral-gray mx-auto mb-[16px]" />
-              <h3 className="text-neutral-black text-[18px] font-bold mb-[8px]">
-                No listings found
-              </h3>
-              <p className="text-neutral-gray text-[14px] mb-[24px]">
-                {searchQuery ? "Try adjusting your search or filters" : "Create your first listing to get started"}
-              </p>
-              {!searchQuery && (
-                <Link
-                  to="/landlord/listings/add"
-                  className="inline-flex items-center gap-[8px] bg-brand-primary text-white px-[24px] py-[12px] font-semibold hover:bg-brand-primary-dark transition-colors"
-                >
-                  <Plus className="w-[16px] h-[16px]" />
-                  Create New Listing
-                </Link>
-              )}
-            </div>
-          )}
-        </div>
+              </article>
+            ))}
+          </div>
+        )}
 
         {deleteTarget && (
           <div className="fixed inset-0 z-[70] bg-black/40 flex items-center justify-center p-[24px]">
