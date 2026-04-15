@@ -10,7 +10,6 @@ type YesNo = "yes" | "no";
 
 const kinds = ["Entire place", "Private room", "Shared room"];
 const propertyTypes = ["House", "Building", "Apartment"];
-const currencies = ["EUR", "USD", "GBP"];
 const minRentalOptions = [
   "No minimum",
   "1 month",
@@ -289,7 +288,7 @@ export function LandlordAddListing() {
   const [availableFrom, setAvailableFrom] = useState("");
   const [isAvailableFromPickerOpen, setIsAvailableFromPickerOpen] = useState(false);
   const [monthlyRent, setMonthlyRent] = useState("");
-  const [currency, setCurrency] = useState("");
+  const [currency, setCurrency] = useState("EUR");
   const [minimumRentalPeriod, setMinimumRentalPeriod] = useState("");
   const [maximumRentalPeriod, setMaximumRentalPeriod] = useState("");
 
@@ -459,7 +458,7 @@ export function LandlordAddListing() {
         setRentalRegistrationNumber(listing.rentalRegistrationNumber ?? "");
         setAvailableFrom(toDateValue(listing.availableFrom));
         setMonthlyRent(listing.monthlyRent !== undefined ? String(listing.monthlyRent) : "");
-        setCurrency(listing.currency ?? "EUR");
+        setCurrency("EUR");
         setMinimumRentalPeriod(mapMonthsToOption("No minimum", listing.minimumRentalPeriod));
         setMaximumRentalPeriod(
           listing.maximumRentalPeriod && listing.maximumRentalPeriod > 0
@@ -671,7 +670,6 @@ export function LandlordAddListing() {
       if (!streetHouse.trim()) errors.push("Street, house number");
       if (!availableFrom) errors.push("Available from");
       if (!monthlyRent || Number.parseFloat(monthlyRent) <= 0) errors.push("Monthly rent must be greater than 0");
-      if (!currency) errors.push("Currency");
     }
 
     if (section === 2) {
@@ -723,7 +721,7 @@ export function LandlordAddListing() {
         rentalRegistrationNumber: rentalRegistrationNumber.trim() || undefined,
         availableFrom: availableFrom,
         monthlyRent: parseFloat(monthlyRent) || 0,
-        currency,
+        currency: "EUR",
         minimumRentalPeriod: Math.max(1, parseInt(minimumRentalPeriod.match(/\d+/)?.[0] || "1")),
         maximumRentalPeriod: maximumRentalPeriod === "No maximum" ? undefined : parseInt(maximumRentalPeriod.match(/\d+/)?.[0] || ""),
         propertySize: parseFloat(propertySize) || 0,
@@ -1034,20 +1032,10 @@ export function LandlordAddListing() {
                   </div>
 
                   <div>
-                    <label className="block text-[12px] text-[#5A7380] mb-[6px]">Currency*</label>
-                    <div className="flex items-center gap-[8px]">
-                      <div className="relative w-full">
-                        <select value={currency} onChange={(e) => setCurrency(e.target.value)} className="w-full h-[44px] bg-transparent border-0 border-b border-[rgba(0,0,0,0.30)] text-[20px] leading-[1] text-[#1A1A1A] appearance-none pr-[28px] focus:outline-none focus:border-brand-primary">
-                          <option value="">Select currency</option>
-                          {currencies.map((item) => (
-                            <option key={item} value={item}>
-                              {item}
-                            </option>
-                          ))}
-                        </select>
-                        <ChevronDown className="pointer-events-none absolute right-[2px] top-1/2 -translate-y-1/2 w-[18px] h-[18px] text-[#5A7380]" />
-                      </div>
-                      <InfoTooltip text="Select the currency tenants will pay in" />
+                    <label className="block text-[12px] text-[#5A7380] mb-[6px]">Currency</label>
+                    <div className="flex items-center gap-[8px] h-[44px] border-0 border-b border-[rgba(0,0,0,0.30)]">
+                      <span className="text-[20px] leading-[1] text-[#1A1A1A]">EUR</span>
+                      <InfoTooltip text="All listing payments are processed in EUR." />
                     </div>
                   </div>
                 </div>

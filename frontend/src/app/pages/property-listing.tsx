@@ -313,11 +313,8 @@ export function PropertyListing() {
       .replace(/\b\w/g, (char) => char.toUpperCase());
   };
 
-  const formatCurrency = (amount: number, currency = "EUR") => {
-    if (currency === "EUR") {
-      return `€${amount.toFixed(2)}`;
-    }
-    return `${currency} ${amount.toFixed(2)}`;
+  const formatCurrency = (amount: number) => {
+    return `€${amount.toFixed(2)}`;
   };
 
   // Scroll to top when navigating to a different property
