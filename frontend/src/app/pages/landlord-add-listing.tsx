@@ -72,6 +72,20 @@ const optionalServicesOptions = [
   "End-early fee",
 ];
 const depositOptions = ["Security deposit", "Bedding deposit", "Towel deposit", "Other deposits"];
+const advancedPricingMonths = [
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
+];
 const agePreferenceOptions = [
   "No preference",
   ...Array.from({ length: 33 }, (_, index) => String(index + 18)),
@@ -79,7 +93,7 @@ const agePreferenceOptions = [
 
 interface CostLine {
   type: string;
-  includedInRent: "Included in rent" | "Excluded";
+  includedInRent: "Included in rent" | "Paid separately";
   frequency: "every month" | "one-time";
   estimateType: "Estimate" | "Exact";
   amount: string;
@@ -87,7 +101,7 @@ interface CostLine {
 
 interface OptionalServiceLine {
   type: string;
-  includedInRent: "Included in rent" | "Excluded";
+  includedInRent: "Included in rent" | "Paid separately";
   frequency: "At move-in" | "every month" | "one-time";
   amount: string;
 }
@@ -288,7 +302,7 @@ export function LandlordAddListing() {
   const [availableFrom, setAvailableFrom] = useState("");
   const [isAvailableFromPickerOpen, setIsAvailableFromPickerOpen] = useState(false);
   const [monthlyRent, setMonthlyRent] = useState("");
-  const [currency, setCurrency] = useState("EUR");
+  const [currency, setCurrency] = useState("");
   const [minimumRentalPeriod, setMinimumRentalPeriod] = useState("");
   const [maximumRentalPeriod, setMaximumRentalPeriod] = useState("");
 
@@ -326,10 +340,10 @@ export function LandlordAddListing() {
   const [flooringAmenity, setFlooringAmenity] = useState("Select");
   const [livingRoomFurnitureAmenity, setLivingRoomFurnitureAmenity] = useState<YesNo>("");
 
-  const [rentCalculation, setRentCalculation] = useState<"" | "daily" | "half-monthly" | "monthly">("");
+  const rentCalculation: "monthly" = "monthly";
   const [cancellationPolicy, setCancellationPolicy] = useState<"" | "strict" | "flexible">("");
   const [rentPricingMode, setRentPricingMode] = useState<"" | "basic" | "advanced">("");
-  const [monthlyRentDisplay, setMonthlyRentDisplay] = useState("");
+  const [advancedMonthlyRates, setAdvancedMonthlyRates] = useState<Record<string, string>>({});
   const [utilityLines, setUtilityLines] = useState<CostLine[]>([
     { type: "Electricity", includedInRent: "Included in rent", frequency: "every month", estimateType: "Estimate", amount: "0" },
     { type: "Water", includedInRent: "Included in rent", frequency: "every month", estimateType: "Estimate", amount: "0" },
@@ -516,13 +530,12 @@ export function LandlordAddListing() {
         setFlooringAmenity(flooringToUiValue[listing.amenities?.flooring ?? ""] ?? "Select");
         setLivingRoomFurnitureAmenity(listing.amenities?.livingRoomFurniture ? "yes" : listing.amenities?.livingRoomFurniture === false ? "no" : "");
 
-        setRentCalculation(listing.rentCalculation ?? "");
         setCancellationPolicy(listing.cancellationPolicy ?? "");
         setUtilityLines(
           listing.utilities?.length
             ? listing.utilities.map((line) => ({
                 type: line.type ?? "Other",
-                includedInRent: line.included ? "Included in rent" : "Excluded",
+                includedInRent: line.included ? "Included in rent" : "Paid separately",
                 frequency: line.frequency === "one-time" ? "one-time" : "every month",
                 estimateType: "Estimate",
                 amount: String(line.amount ?? 0),
@@ -539,7 +552,7 @@ export function LandlordAddListing() {
         setOptionalServiceLines(
           listing.optionalServices?.map((line) => ({
             type: line.type ?? "Other optional costs",
-            includedInRent: "Excluded",
+            includedInRent: "Paid separately",
             frequency: line.frequency === "monthly" ? "every month" : "one-time",
             amount: String(line.amount ?? 0),
           })) ?? []
@@ -670,6 +683,7 @@ export function LandlordAddListing() {
       if (!streetHouse.trim()) errors.push("Street, house number");
       if (!availableFrom) errors.push("Available from");
       if (!monthlyRent || Number.parseFloat(monthlyRent) <= 0) errors.push("Monthly rent must be greater than 0");
+      if (!currency) errors.push("Currency");
     }
 
     if (section === 2) {
@@ -688,6 +702,10 @@ export function LandlordAddListing() {
     if (section === 4) {
       if (!bedAmenity) errors.push("Bed");
       if (!wifiAmenity) errors.push("WiFi");
+    }
+
+    if (section === 5) {
+      if (!cancellationPolicy) errors.push("Cancellation policy");
     }
 
     if (section === 7) {
@@ -771,10 +789,11 @@ export function LandlordAddListing() {
           livingRoomFurniture: livingRoomFurnitureAmenity === "yes",
         },
         rentCalculation,
-        cancellationPolicy,
+        cancellationPolicy: cancellationPolicy || "flexible",
         utilities: utilityLines.map(line => ({
           type: line.type,
-          frequency: line.frequency === "every month" ? "monthly" : "one-time",
+          // Backend only accepts monthly/quarterly/yearly for utilities.
+          frequency: "monthly",
           included: line.includedInRent === "Included in rent",
           amount: parseFloat(line.amount) || 0,
         })),
@@ -830,7 +849,16 @@ export function LandlordAddListing() {
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.message || "Failed to save listing");
+        const fieldErrors = error?.errors?.fieldErrors as Record<string, string[] | undefined> | undefined;
+        const summarizedFieldErrors = fieldErrors
+          ? Object.entries(fieldErrors)
+              .flatMap(([field, messages]) => (messages ?? []).map((message) => `${field}: ${message}`))
+              .join(", ")
+          : "";
+        const finalMessage = summarizedFieldErrors
+          ? `${error.message || "Failed to save listing"} (${summarizedFieldErrors})`
+          : error.message || "Failed to save listing";
+        throw new Error(finalMessage);
       }
 
       const data = await response.json();
@@ -860,6 +888,23 @@ export function LandlordAddListing() {
   }, []);
 
   const navigate = useNavigate();
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+  }, [currentSection]);
+
+  const availableUtilityAddOptions = utilityAddOptions.filter(
+    (option) => !utilityLines.some((line) => line.type === option)
+  );
+  const availableAdditionalRequiredCostOptions = additionalRequiredCostOptions.filter(
+    (option) => !additionalRequiredLines.some((line) => line.type === option)
+  );
+  const availableOptionalServicesOptions = optionalServicesOptions.filter(
+    (option) => !optionalServiceLines.some((line) => line.type === option)
+  );
+  const availableDepositOptions = depositOptions.filter(
+    (option) => !depositLines.some((line) => line.type === option)
+  );
   const contentBottomPaddingClass = currentSection === 1 ? "pb-[44px] md:pb-[56px]" : "pb-[120px] md:pb-[130px]";
 
   return (
@@ -1044,8 +1089,18 @@ export function LandlordAddListing() {
 
                   <div>
                     <label className="block text-[12px] text-[#5A7380] mb-[6px]">Currency</label>
-                    <div className="flex items-center gap-[8px] h-[44px] border-0 border-b border-[rgba(0,0,0,0.30)]">
-                      <span className="text-[20px] leading-[1] text-[#1A1A1A]">EUR</span>
+                    <div className="flex items-center gap-[8px]">
+                      <div className="relative w-full">
+                        <select
+                          value={currency}
+                          onChange={(event) => setCurrency(event.target.value)}
+                          className="w-full h-[44px] bg-transparent border-0 border-b border-[rgba(0,0,0,0.30)] text-[20px] leading-[1] text-[#1A1A1A] appearance-none pr-[28px] focus:outline-none focus:border-brand-primary"
+                        >
+                          <option value="">Select currency</option>
+                          <option value="EUR">EUR</option>
+                        </select>
+                        <ChevronDown className="pointer-events-none absolute right-[2px] top-1/2 -translate-y-1/2 w-[18px] h-[18px] text-[#5A7380]" />
+                      </div>
                       <InfoTooltip text="All listing payments are processed in EUR." />
                     </div>
                   </div>
@@ -1352,36 +1407,9 @@ export function LandlordAddListing() {
             <div className="mt-[16px]">
               <p className="text-[12px] font-semibold text-[#12303B] mb-[8px]">How rent is calculated</p>
 
-              <div className="space-y-[10px] max-w-[620px]">
-                <label className={`block border p-[12px] cursor-pointer ${rentCalculation === "daily" ? "border-[#0F3D49] bg-[#F8FBFC]" : "border-[rgba(0,0,0,0.16)] bg-[#F7F7F9]"}`}>
-                  <div className="flex items-start gap-[8px]">
-                    <input type="radio" name="rent-calc" checked={rentCalculation === "daily"} onChange={() => setRentCalculation("daily")} className="mt-[2px] w-[14px] h-[14px] accent-brand-primary" />
-                    <div>
-                      <p className="text-[12px] font-semibold text-[#12303B]">Daily basis</p>
-                      <p className="text-[11px] text-[#35515D] mt-[4px]">For day/month where tenant does not stay for the full duration (1st till end move-in or move-out month).</p>
-                    </div>
-                  </div>
-                </label>
-
-                <label className={`block border p-[12px] cursor-pointer ${rentCalculation === "half-monthly" ? "border-[#0F3D49] bg-[#F8FBFC]" : "border-[rgba(0,0,0,0.16)] bg-[#F7F7F9]"}`}>
-                  <div className="flex items-start gap-[8px]">
-                    <input type="radio" name="rent-calc" checked={rentCalculation === "half-monthly"} onChange={() => setRentCalculation("half-monthly")} className="mt-[2px] w-[14px] h-[14px] accent-brand-primary" />
-                    <div>
-                      <p className="text-[12px] font-semibold text-[#12303B]">Half-monthly basis</p>
-                      <p className="text-[11px] text-[#35515D] mt-[4px]">If tenant stays 14 nights or fewer in that month, they pay half month rent. If more, full month applies.</p>
-                    </div>
-                  </div>
-                </label>
-
-                <label className={`block border p-[12px] cursor-pointer ${rentCalculation === "monthly" ? "border-[#0F3D49] bg-[#F8FBFC]" : "border-[rgba(0,0,0,0.16)] bg-[#F7F7F9]"}`}>
-                  <div className="flex items-start gap-[8px]">
-                    <input type="radio" name="rent-calc" checked={rentCalculation === "monthly"} onChange={() => setRentCalculation("monthly")} className="mt-[2px] w-[14px] h-[14px] accent-brand-primary" />
-                    <div>
-                      <p className="text-[12px] font-semibold text-[#12303B]">Monthly basis</p>
-                      <p className="text-[11px] text-[#35515D] mt-[4px]">Tenant always pays full month rent, regardless of move-in or move-out dates.</p>
-                    </div>
-                  </div>
-                </label>
+              <div className="max-w-[620px] border border-[#0F3D49] bg-[#F8FBFC] p-[12px]">
+                <p className="text-[12px] font-semibold text-[#12303B]">Monthly basis</p>
+                <p className="text-[11px] text-[#35515D] mt-[4px]">The tenant always pays the full month's rent, regardless of their move-in or move-out dates. E.g., If the tenant moves out on 10 April, they'll pay for the full month of April.</p>
               </div>
             </div>
 
@@ -1394,8 +1422,9 @@ export function LandlordAddListing() {
                     <div>
                       <p className="text-[12px] font-semibold text-[#12303B]">Strict cancellation</p>
                       <ul className="mt-[6px] text-[11px] text-[#35515D] list-disc pl-[14px] space-y-[3px]">
-                        <li>Within 24 hours of confirmation: Full refund of first month</li>
-                        <li>After 24 hours: No refund</li>
+                        <li>If tenant cancels:</li>
+                        <li>Within 24 hours of confirmation - Full refund of first month's rent</li>
+                        <li>After 24 hours of confirmation - No refund</li>
                       </ul>
                     </div>
                   </div>
@@ -1407,9 +1436,11 @@ export function LandlordAddListing() {
                     <div>
                       <p className="text-[12px] font-semibold text-[#12303B]">Flexible cancellation</p>
                       <ul className="mt-[6px] text-[11px] text-[#35515D] list-disc pl-[14px] space-y-[3px]">
-                        <li>More than 30 days away: Full refund</li>
-                        <li>10 to 7 days away: 50% refund</li>
-                        <li>Less than 7 days away: No refund</li>
+                        <li>If tenant cancels within 24 hours of confirmation - Full refund of first month's rent.</li>
+                        <li>If tenant cancels when the move-in date is:</li>
+                        <li>More than 30 days away - Full refund of first month's rent</li>
+                        <li>30 to 7 days away - 50% refund of first month's rent</li>
+                        <li>Less than 7 days away - No refund</li>
                       </ul>
                     </div>
                   </div>
@@ -1439,8 +1470,41 @@ export function LandlordAddListing() {
 
               <div className="mt-[8px] max-w-[180px]">
                 <label className="block text-[10px] text-[#5A7380] mb-[2px]">Monthly rent</label>
-                <input value={monthlyRentDisplay} onChange={(e) => setMonthlyRentDisplay(e.target.value)} className="w-full h-[30px] bg-transparent border-0 border-b border-[rgba(0,0,0,0.35)] text-[16px] text-[#1A1A1A] focus:outline-none focus:border-brand-primary" />
+                <input value={monthlyRent} readOnly className="w-full h-[30px] bg-transparent border-0 border-b border-[rgba(0,0,0,0.35)] text-[16px] text-[#1A1A1A] focus:outline-none" />
               </div>
+
+              {rentPricingMode === "advanced" && (
+                <div className="mt-[14px] max-w-[760px] border border-[rgba(0,0,0,0.14)] bg-white overflow-hidden">
+                  <table className="w-full text-left">
+                    <thead className="bg-[#F5F6F7]">
+                      <tr>
+                        <th className="px-[16px] py-[14px] text-[13px] font-semibold text-[#38586A]">Month</th>
+                        <th className="px-[16px] py-[14px] text-[13px] font-semibold text-[#38586A]">Rent (EUR)</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {advancedPricingMonths.map((month) => (
+                        <tr key={month} className="border-t border-[rgba(0,0,0,0.10)]">
+                          <td className="px-[16px] py-[12px] text-[13px] text-[#38586A]">{month}</td>
+                          <td className="px-[16px] py-[12px]">
+                            <input
+                              type="number"
+                              min="0"
+                              step="0.01"
+                              value={advancedMonthlyRates[month] ?? monthlyRent}
+                              onChange={(event) => {
+                                const nextValue = event.target.value;
+                                setAdvancedMonthlyRates((prev) => ({ ...prev, [month]: nextValue }));
+                              }}
+                              className="w-[116px] h-[28px] bg-transparent border-0 border-b border-[rgba(0,0,0,0.25)] text-[14px] text-[#38586A] focus:outline-none focus:border-brand-primary"
+                            />
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </div>
 
             <div className="mt-[14px]">
@@ -1472,17 +1536,27 @@ export function LandlordAddListing() {
                         <td className="px-[8px] py-[6px]">
                           <select value={line.includedInRent} onChange={(e) => updateUtilityLine(index, "includedInRent", e.target.value as CostLine["includedInRent"])} className="w-full bg-transparent border-0 border-b border-[rgba(0,0,0,0.20)] h-[24px] focus:outline-none">
                             <option value="Included in rent">Included in rent</option>
-                            <option value="Excluded">Excluded</option>
+                            <option value="Paid separately">Paid separately</option>
                           </select>
                         </td>
                         <td className="px-[8px] py-[6px]">
-                          <select value={line.frequency} onChange={(e) => updateUtilityLine(index, "frequency", e.target.value as CostLine["frequency"])} className="w-full bg-transparent border-0 border-b border-[rgba(0,0,0,0.20)] h-[24px] focus:outline-none">
+                          <select
+                            value={line.frequency}
+                            onChange={(e) => updateUtilityLine(index, "frequency", e.target.value as CostLine["frequency"])}
+                            disabled={line.includedInRent === "Included in rent"}
+                            className="w-full bg-transparent border-0 border-b border-[rgba(0,0,0,0.20)] h-[24px] focus:outline-none disabled:opacity-60 disabled:cursor-not-allowed"
+                          >
                             <option value="every month">every month</option>
                             <option value="one-time">one-time</option>
                           </select>
                         </td>
                         <td className="px-[8px] py-[6px]">
-                          <select value={line.estimateType} onChange={(e) => updateUtilityLine(index, "estimateType", e.target.value as CostLine["estimateType"])} className="w-full bg-transparent border-0 border-b border-[rgba(0,0,0,0.20)] h-[24px] focus:outline-none">
+                          <select
+                            value={line.estimateType}
+                            onChange={(e) => updateUtilityLine(index, "estimateType", e.target.value as CostLine["estimateType"])}
+                            disabled={line.includedInRent === "Included in rent"}
+                            className="w-full bg-transparent border-0 border-b border-[rgba(0,0,0,0.20)] h-[24px] focus:outline-none disabled:opacity-60 disabled:cursor-not-allowed"
+                          >
                             <option value="Estimate">Estimate</option>
                             <option value="Exact">Exact</option>
                           </select>
@@ -1490,7 +1564,12 @@ export function LandlordAddListing() {
                         <td className="px-[8px] py-[6px]">
                           <div className="flex items-center gap-[4px]">
                             <span>EUR</span>
-                            <input value={line.amount} onChange={(e) => updateUtilityLine(index, "amount", e.target.value)} className="w-[76px] bg-transparent border-0 border-b border-[rgba(0,0,0,0.20)] h-[24px] focus:outline-none" />
+                            <input
+                              value={line.amount}
+                              onChange={(e) => updateUtilityLine(index, "amount", e.target.value)}
+                              disabled={line.includedInRent === "Included in rent"}
+                              className="w-[76px] bg-transparent border-0 border-b border-[rgba(0,0,0,0.20)] h-[24px] focus:outline-none disabled:opacity-60 disabled:cursor-not-allowed"
+                            />
                           </div>
                         </td>
                         <td className="px-[8px] py-[6px] text-right">
@@ -1515,13 +1594,14 @@ export function LandlordAddListing() {
                 <button
                   type="button"
                   onClick={() => setOpenCostMenu((prev) => (prev === "utility" ? null : "utility"))}
-                  className="text-[11px] text-[#12303B] hover:underline"
+                  disabled={availableUtilityAddOptions.length === 0}
+                  className="text-[11px] text-[#12303B] hover:underline disabled:opacity-50 disabled:cursor-not-allowed disabled:no-underline"
                 >
                   + Add New Cost
                 </button>
                 {openCostMenu === "utility" && (
                   <div className="absolute left-0 mt-[6px] min-w-[240px] bg-white border border-[rgba(0,0,0,0.16)] shadow-[0_8px_18px_rgba(0,0,0,0.14)] z-50 max-h-[320px] overflow-y-auto">
-                    {utilityAddOptions.map((option) => (
+                    {availableUtilityAddOptions.map((option) => (
                       <button
                         key={`utility-add-${option}`}
                         type="button"
@@ -1569,7 +1649,7 @@ export function LandlordAddListing() {
                               className="w-full bg-transparent border-0 border-b border-[rgba(0,0,0,0.20)] h-[24px] focus:outline-none"
                             >
                               <option value="Included in rent">Included in rent</option>
-                              <option value="Excluded">Excluded</option>
+                              <option value="Paid separately">Paid separately</option>
                             </select>
                           </td>
                           <td className="px-[8px] py-[6px]">
@@ -1611,10 +1691,17 @@ export function LandlordAddListing() {
               )}
 
               <div className="mt-[6px] relative inline-block">
-                <button type="button" onClick={() => setOpenCostMenu((prev) => (prev === "required" ? null : "required"))} className="text-[11px] text-[#12303B] hover:underline">+ Add New Cost</button>
+                <button
+                  type="button"
+                  onClick={() => setOpenCostMenu((prev) => (prev === "required" ? null : "required"))}
+                  disabled={availableAdditionalRequiredCostOptions.length === 0}
+                  className="text-[11px] text-[#12303B] hover:underline disabled:opacity-50 disabled:cursor-not-allowed disabled:no-underline"
+                >
+                  + Add New Cost
+                </button>
                 {openCostMenu === "required" && (
                   <div className="absolute left-0 mt-[6px] min-w-[220px] bg-white border border-[rgba(0,0,0,0.16)] shadow-[0_8px_18px_rgba(0,0,0,0.14)] z-50">
-                    {additionalRequiredCostOptions.map((option) => (
+                    {availableAdditionalRequiredCostOptions.map((option) => (
                       <button
                         key={`additional-required-${option}`}
                         type="button"
@@ -1665,7 +1752,7 @@ export function LandlordAddListing() {
                               className="w-full bg-transparent border-0 border-b border-[rgba(0,0,0,0.20)] h-[24px] focus:outline-none"
                             >
                               <option value="Included in rent">Included in rent</option>
-                              <option value="Excluded">Excluded</option>
+                              <option value="Paid separately">Paid separately</option>
                             </select>
                           </td>
                           <td className="px-[8px] py-[6px]">
@@ -1707,10 +1794,17 @@ export function LandlordAddListing() {
               )}
 
               <div className="mt-[6px] relative inline-block">
-                <button type="button" onClick={() => setOpenCostMenu((prev) => (prev === "optional" ? null : "optional"))} className="text-[11px] text-[#12303B] hover:underline">+ Add New Cost</button>
+                <button
+                  type="button"
+                  onClick={() => setOpenCostMenu((prev) => (prev === "optional" ? null : "optional"))}
+                  disabled={availableOptionalServicesOptions.length === 0}
+                  className="text-[11px] text-[#12303B] hover:underline disabled:opacity-50 disabled:cursor-not-allowed disabled:no-underline"
+                >
+                  + Add New Cost
+                </button>
                 {openCostMenu === "optional" && (
                   <div className="absolute left-0 mt-[6px] min-w-[260px] bg-white border border-[rgba(0,0,0,0.16)] shadow-[0_8px_18px_rgba(0,0,0,0.14)] z-50 max-h-[260px] overflow-y-auto">
-                    {optionalServicesOptions.map((option) => (
+                    {availableOptionalServicesOptions.map((option) => (
                       <button
                         key={`optional-service-${option}`}
                         type="button"
@@ -1791,10 +1885,17 @@ export function LandlordAddListing() {
               )}
 
               <div className="mt-[6px] relative inline-block">
-                <button type="button" onClick={() => setOpenCostMenu((prev) => (prev === "deposit" ? null : "deposit"))} className="text-[11px] text-[#12303B] hover:underline">+ Add New Cost</button>
+                <button
+                  type="button"
+                  onClick={() => setOpenCostMenu((prev) => (prev === "deposit" ? null : "deposit"))}
+                  disabled={availableDepositOptions.length === 0}
+                  className="text-[11px] text-[#12303B] hover:underline disabled:opacity-50 disabled:cursor-not-allowed disabled:no-underline"
+                >
+                  + Add New Cost
+                </button>
                 {openCostMenu === "deposit" && (
                   <div className="absolute left-0 mt-[6px] min-w-[220px] bg-white border border-[rgba(0,0,0,0.16)] shadow-[0_8px_18px_rgba(0,0,0,0.14)] z-50">
-                    {depositOptions.map((option) => (
+                    {availableDepositOptions.map((option) => (
                       <button
                         key={`deposit-${option}`}
                         type="button"
