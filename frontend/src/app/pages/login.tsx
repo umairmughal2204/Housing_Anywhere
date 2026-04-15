@@ -1,5 +1,5 @@
 import { Link, useNavigate, useSearchParams } from "react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Mail, Lock, Eye, EyeOff, AlertCircle } from "lucide-react";
 import { useAuth } from "../contexts/auth-context";
 
@@ -74,10 +74,20 @@ export function Login() {
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   
-  const { login, loginWithGoogle, isLoading: isAuthLoading } = useAuth();
+  const { user, login, loginWithGoogle, isLoading: isAuthLoading } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const redirect = searchParams.get("redirect") || searchParams.get("returnTo");
+
+  useEffect(() => {
+    if (user) {
+      if (user.isLandlord) {
+        navigate("/landlord/dashboard");
+      } else {
+        navigate(redirect || "/");
+      }
+    }
+  }, [user]);
 
   const handleGoogleLogin = async () => {
     setError("");
@@ -141,7 +151,6 @@ export function Login() {
       });
 
       await loginWithGoogle(credential, rememberMe);
-      navigate(redirect || "/");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Google sign-in failed. Please try again.");
     } finally {
@@ -162,8 +171,6 @@ export function Login() {
 
     try {
       await login(email, password, rememberMe);
-      // Redirect to specified page or home after successful login
-      navigate(redirect || "/");
     } catch (err) {
       const message = err instanceof Error ? err.message : "Invalid email or password. Please try again.";
       if (message.toLowerCase().includes("failed to fetch")) {

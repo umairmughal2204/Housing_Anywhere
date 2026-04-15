@@ -17,6 +17,7 @@ import { LandlordRentals } from "./pages/landlord-rentals";
 import { LandlordCalendar } from "./pages/landlord-calendar";
 import { LandlordRegister } from "./pages/landlord-register";
 import { LandlordAddListing } from "./pages/landlord-add-listing";
+import { LandlordListingOptions } from "./pages/landlord-listing-options";
 import { HowItWorks } from "./pages/how-it-works";
 import { Pricing } from "./pages/pricing";
 import { Help } from "./pages/help";
@@ -41,6 +42,7 @@ const ProtectedLandlordDashboard = withProtectedRoute(LandlordDashboard);
 const ProtectedLandlordAnalytics = withProtectedRoute(LandlordAnalytics);
 const ProtectedLandlordListings = withProtectedRoute(LandlordListings);
 const ProtectedLandlordAddListing = withProtectedRoute(LandlordAddListing);
+const ProtectedLandlordListingOptions = withProtectedRoute(LandlordListingOptions);
 const ProtectedLandlordRentals = withProtectedRoute(LandlordRentals);
 const ProtectedLandlordCalendar = withProtectedRoute(LandlordCalendar);
 const ProtectedLandlordInbox = withProtectedRoute(LandlordInbox);
@@ -101,6 +103,16 @@ export const router = createBrowserRouter([
   {
     path: "/landlord/listings",
     Component: ProtectedLandlordListings,
+    ErrorBoundary,
+  },
+  {
+    path: "/landlord/add-listing",
+    Component: ProtectedLandlordListingOptions,
+    ErrorBoundary,
+  },
+  {
+    path: "/landlord/add-listing/:mode",
+    Component: ProtectedLandlordAddListing,
     ErrorBoundary,
   },
   {

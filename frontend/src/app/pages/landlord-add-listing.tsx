@@ -280,8 +280,8 @@ export function LandlordAddListing() {
 
   const [kind, setKind] = useState("");
   const [propertyType, setPropertyType] = useState("");
-  const [cityCountry, setCityCountry] = useState("Rotterdam, Netherlands");
-  const [streetHouse, setStreetHouse] = useState("Mathenesserlaan 22");
+  const [cityCountry, setCityCountry] = useState("");
+  const [streetHouse, setStreetHouse] = useState("");
   const [rentalRegistrationNumber, setRentalRegistrationNumber] = useState("");
   const [apartmentNumber, setApartmentNumber] = useState("");
   const [floorNumber, setFloorNumber] = useState("");
@@ -290,8 +290,8 @@ export function LandlordAddListing() {
   const [isAvailableFromPickerOpen, setIsAvailableFromPickerOpen] = useState(false);
   const [monthlyRent, setMonthlyRent] = useState("");
   const [currency, setCurrency] = useState("");
-  const [minimumRentalPeriod, setMinimumRentalPeriod] = useState("No minimum");
-  const [maximumRentalPeriod, setMaximumRentalPeriod] = useState("No maximum");
+  const [minimumRentalPeriod, setMinimumRentalPeriod] = useState("");
+  const [maximumRentalPeriod, setMaximumRentalPeriod] = useState("");
 
   const [propertySize, setPropertySize] = useState("");
   const [suitablePeopleCount, setSuitablePeopleCount] = useState("0");
@@ -330,7 +330,7 @@ export function LandlordAddListing() {
   const [rentCalculation, setRentCalculation] = useState<"daily" | "half-monthly" | "monthly">("daily");
   const [cancellationPolicy, setCancellationPolicy] = useState<"strict" | "flexible">("flexible");
   const [rentPricingMode, setRentPricingMode] = useState<"basic" | "advanced">("basic");
-  const [monthlyRentDisplay, setMonthlyRentDisplay] = useState("234");
+  const [monthlyRentDisplay, setMonthlyRentDisplay] = useState("");
   const [utilityLines, setUtilityLines] = useState<CostLine[]>([
     { type: "Electricity", includedInRent: "Included in rent", frequency: "every month", estimateType: "Estimate", amount: "0" },
     { type: "Water", includedInRent: "Included in rent", frequency: "every month", estimateType: "Estimate", amount: "0" },
@@ -420,7 +420,7 @@ export function LandlordAddListing() {
       return `${year}-${month}-${day}`;
     };
 
-    const mapMonthsToOption = (months?: number, fallback: string) => {
+    const mapMonthsToOption = (fallback: string, months?: number) => {
       if (!months || months < 1) {
         return fallback;
       }
@@ -460,10 +460,10 @@ export function LandlordAddListing() {
         setAvailableFrom(toDateValue(listing.availableFrom));
         setMonthlyRent(listing.monthlyRent !== undefined ? String(listing.monthlyRent) : "");
         setCurrency(listing.currency ?? "EUR");
-        setMinimumRentalPeriod(mapMonthsToOption(listing.minimumRentalPeriod, "No minimum"));
+        setMinimumRentalPeriod(mapMonthsToOption("No minimum", listing.minimumRentalPeriod));
         setMaximumRentalPeriod(
           listing.maximumRentalPeriod && listing.maximumRentalPeriod > 0
-            ? mapMonthsToOption(listing.maximumRentalPeriod, "No maximum")
+            ? mapMonthsToOption("No maximum", listing.maximumRentalPeriod)
             : "No maximum"
         );
 

@@ -352,6 +352,77 @@ router.get("/mine/:id([0-9a-fA-F]{24})", async (req, res) => {
   res.json({ listing: toListingResponse(listing) });
 });
 
+router.post("/:id([0-9a-fA-F]{24})/duplicate", async (req, res) => {
+  const sourceListing = await ListingModel.findOne({ _id: req.params.id, landlordId: req.user!.sub }).lean();
+  if (!sourceListing) {
+    res.status(404).json({ message: "Listing not found" });
+    return;
+  }
+
+  const duplicated = await ListingModel.create({
+    landlordId: req.user!.sub,
+    kind: sourceListing.kind,
+    propertyType: sourceListing.propertyType,
+    address: sourceListing.address,
+    city: sourceListing.city,
+    country: sourceListing.country,
+    apartmentNumber: sourceListing.apartmentNumber,
+    floorNumber: sourceListing.floorNumber,
+    isGroundFloor: sourceListing.isGroundFloor,
+    rentalRegistrationNumber: sourceListing.rentalRegistrationNumber,
+    availableFrom: sourceListing.availableFrom,
+    monthlyRent: sourceListing.monthlyRent,
+    currency: sourceListing.currency,
+    minimumRentalPeriod: sourceListing.minimumRentalPeriod,
+    maximumRentalPeriod: sourceListing.maximumRentalPeriod,
+    propertySize: sourceListing.propertySize,
+    suitablePeopleCount: sourceListing.suitablePeopleCount,
+    spaceDescription: sourceListing.spaceDescription,
+    bedroomsCount: sourceListing.bedroomsCount,
+    bedroomFurnished: sourceListing.bedroomFurnished,
+    lockOnBedroom: sourceListing.lockOnBedroom,
+    kitchen: sourceListing.kitchen,
+    toilet: sourceListing.toilet,
+    bathroomStructure: sourceListing.bathroomStructure,
+    livingRoom: sourceListing.livingRoom,
+    balconyTerrace: sourceListing.balconyTerrace,
+    garden: sourceListing.garden,
+    basement: sourceListing.basement,
+    parking: sourceListing.parking,
+    wheelchairAccessible: sourceListing.wheelchairAccessible,
+    elevator: sourceListing.elevator,
+    allergyFriendly: sourceListing.allergyFriendly,
+    amenities: sourceListing.amenities,
+    rentCalculation: sourceListing.rentCalculation,
+    cancellationPolicy: sourceListing.cancellationPolicy,
+    utilities: sourceListing.utilities,
+    deposits: sourceListing.deposits,
+    optionalServices: sourceListing.optionalServices,
+    preferredGender: sourceListing.preferredGender,
+    minimumAgePreference: sourceListing.minimumAgePreference,
+    maximumAgePreference: sourceListing.maximumAgePreference,
+    preferredTenantType: sourceListing.preferredTenantType,
+    couplesAllowed: sourceListing.couplesAllowed,
+    registrationPossible: sourceListing.registrationPossible,
+    petsPolicy: sourceListing.petsPolicy,
+    musicPolicy: sourceListing.musicPolicy,
+    smokingPolicy: sourceListing.smokingPolicy,
+    requireProofOfIdentity: sourceListing.requireProofOfIdentity,
+    requireProofOfOccupation: sourceListing.requireProofOfOccupation,
+    requireProofOfIncome: sourceListing.requireProofOfIncome,
+    media: sourceListing.media,
+    houseRules: sourceListing.houseRules,
+    title: `Copy of ${sourceListing.title}`,
+    status: "draft",
+    views: 0,
+    inquiries: 0,
+    version: sourceListing.version,
+    agreedToTerms: null,
+  });
+
+  res.status(201).json({ listing: toListingResponse(duplicated.toObject()) });
+});
+
 router.post("/", async (req, res) => {
   const parsed = listingWriteSchema.safeParse(req.body);
   if (!parsed.success) {
