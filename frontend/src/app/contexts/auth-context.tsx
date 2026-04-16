@@ -64,7 +64,8 @@ interface AuthContextType {
   isLoading: boolean;
   login: (email: string, password: string, rememberMe?: boolean) => Promise<void>;
   loginWithGoogle: (credential: string, rememberMe?: boolean) => Promise<void>;
-  signup: (data: SignupData) => Promise<void>;
+  signup: (data: SignupData) => Promise<SignupCodeResponse>;
+  confirmSignupCode: (pendingSignupId: string, code: string) => Promise<void>;
   signupWithGoogle: (credential: string) => Promise<void>;
   requestPasswordReset: (email: string) => Promise<void>;
   resetPasswordWithToken: (token: string, newPassword: string) => Promise<void>;
@@ -83,6 +84,12 @@ interface SignupData {
   firstName: string;
   lastName: string;
   role: "tenant" | "landlord";
+}
+
+interface SignupCodeResponse {
+  pendingSignupId: string;
+  expiresAt: string;
+  message?: string;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -203,6 +210,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!response.ok) {
       const error = (await response.json()) as { message?: string };
       throw new Error(error.message ?? "Signup failed");
+    }
+
+    const payload = (await response.json()) as SignupCodeResponse;
+    return payload;
+  };
+
+  const confirmSignupCode = async (pendingSignupId: string, code: string) => {
+    const response = await fetch(`${API_BASE}/api/auth/signup/confirm`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ pendingSignupId, code }),
+    });
+
+    if (!response.ok) {
+      let errorMessage = "Verification failed";
+      try {
+        const error = (await response.json()) as { message?: string };
+        errorMessage = error.message ?? errorMessage;
+      } catch {
+        // Keep fallback message when non-JSON errors are returned.
+      }
+
+      throw new Error(errorMessage);
     }
 
     const payload = (await response.json()) as AuthResponse;
@@ -478,6 +510,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         login,
         loginWithGoogle,
         signup,
+        confirmSignupCode,
         signupWithGoogle,
         requestPasswordReset,
         resetPasswordWithToken,

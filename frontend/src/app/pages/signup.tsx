@@ -2,6 +2,7 @@ import { Link, useNavigate } from "react-router";
 import { useState } from "react";
 import { Mail, Lock, Eye, EyeOff, User, AlertCircle } from "lucide-react";
 import { useAuth } from "../contexts/auth-context";
+import { InputOTP, InputOTPGroup, InputOTPSlot } from "../components/ui/input-otp";
 
 const GOOGLE_SCRIPT_ID = "google-identity-service";
 
@@ -75,8 +76,12 @@ export function Signup() {
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+  const [step, setStep] = useState<"details" | "verify">("details");
+  const [verificationCode, setVerificationCode] = useState("");
+  const [pendingSignupId, setPendingSignupId] = useState("");
+  const [verificationHint, setVerificationHint] = useState("");
 
-  const { signup, signupWithGoogle } = useAuth();
+  const { signup, confirmSignupCode, signupWithGoogle } = useAuth();
   const navigate = useNavigate();
 
   const handleGoogleSignup = async () => {
@@ -170,30 +175,84 @@ export function Signup() {
     e.preventDefault();
     setError("");
 
-    if (!agreeToTerms) {
-      setError("Please agree to the Terms and Conditions");
+    if (step === "details") {
+      if (!agreeToTerms) {
+        setError("Please agree to the Terms and Conditions");
+        return;
+      }
+
+      if (password.length < 8) {
+        setError("Password must be at least 8 characters");
+        return;
+      }
+
+      setIsLoading(true);
+
+      try {
+        const payload = await signup({
+          email,
+          password,
+          firstName,
+          lastName,
+          role: "tenant",
+        });
+
+        setPendingSignupId(payload.pendingSignupId);
+        setVerificationHint(`We sent a 6-digit code to ${email}.`);
+        setVerificationCode("");
+        setStep("verify");
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Failed to send verification code. Please try again.");
+      } finally {
+        setIsLoading(false);
+      }
       return;
     }
 
-    if (password.length < 8) {
-      setError("Password must be at least 8 characters");
+    if (!pendingSignupId) {
+      setError("Please request a new verification code.");
+      return;
+    }
+
+    if (verificationCode.length !== 6) {
+      setError("Enter the 6-digit verification code sent to your email.");
       return;
     }
 
     setIsLoading(true);
 
     try {
-      await signup({
+      await confirmSignupCode(pendingSignupId, verificationCode);
+      navigate("/");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to verify code. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleResendCode = async () => {
+    setError("");
+
+    if (!agreeToTerms || password.length < 8) {
+      setStep("details");
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const payload = await signup({
         email,
         password,
         firstName,
         lastName,
         role: "tenant",
       });
-      // Redirect to home page after successful signup
-      navigate("/");
+      setPendingSignupId(payload.pendingSignupId);
+      setVerificationHint(`We sent a new 6-digit code to ${email}.`);
+      setVerificationCode("");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to create account. Please try again.");
+      setError(err instanceof Error ? err.message : "Failed to resend verification code.");
     } finally {
       setIsLoading(false);
     }
@@ -231,6 +290,15 @@ export function Signup() {
           </p>
 
           <form onSubmit={handleSubmit} className="space-y-[24px]">
+            {step === "verify" && (
+              <div className="rounded-[12px] border border-[rgba(0,0,0,0.12)] bg-[#F8FAFC] p-[16px]">
+                <p className="text-neutral-black text-[14px] font-semibold">Verify your email</p>
+                <p className="text-neutral-gray text-[13px] mt-[4px] leading-[1.5]">
+                  {verificationHint || "Enter the 6-digit code we sent to your email to finish creating your account."}
+                </p>
+              </div>
+            )}
+
             {/* Name Fields */}
             <div className="grid grid-cols-2 gap-[16px]">
               <div>
@@ -245,6 +313,7 @@ export function Signup() {
                     onChange={(e) => setFirstName(e.target.value)}
                     placeholder="John"
                     required
+                    disabled={step === "verify"}
                     className="w-full pl-[48px] pr-[16px] py-[12px] border border-[rgba(0,0,0,0.16)] text-neutral-black text-[14px] focus:outline-none focus:border-brand-primary transition-colors"
                   />
                 </div>
@@ -259,6 +328,7 @@ export function Signup() {
                   onChange={(e) => setLastName(e.target.value)}
                   placeholder="Doe"
                   required
+                  disabled={step === "verify"}
                   className="w-full px-[16px] py-[12px] border border-[rgba(0,0,0,0.16)] text-neutral-black text-[14px] focus:outline-none focus:border-brand-primary transition-colors"
                 />
               </div>
@@ -277,6 +347,7 @@ export function Signup() {
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="you@example.com"
                   required
+                  disabled={step === "verify"}
                   className="w-full pl-[48px] pr-[16px] py-[12px] border border-[rgba(0,0,0,0.16)] text-neutral-black text-[14px] focus:outline-none focus:border-brand-primary transition-colors"
                 />
               </div>
@@ -295,12 +366,14 @@ export function Signup() {
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Create a strong password"
                   required
+                  disabled={step === "verify"}
                   className="w-full pl-[48px] pr-[48px] py-[12px] border border-[rgba(0,0,0,0.16)] text-neutral-black text-[14px] focus:outline-none focus:border-brand-primary transition-colors"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-[16px] top-1/2 -translate-y-1/2 text-neutral-gray hover:text-neutral-black"
+                  disabled={step === "verify"}
+                  className="absolute right-[16px] top-1/2 -translate-y-1/2 text-neutral-gray hover:text-neutral-black disabled:cursor-not-allowed"
                 >
                   {showPassword ? (
                     <EyeOff className="w-[20px] h-[20px]" />
@@ -314,27 +387,67 @@ export function Signup() {
               </p>
             </div>
 
-            {/* Terms and Conditions */}
-            <div className="flex items-start gap-[8px]">
-              <input
-                type="checkbox"
-                id="terms"
-                checked={agreeToTerms}
-                onChange={(e) => setAgreeToTerms(e.target.checked)}
-                required
-                className="w-[16px] h-[16px] border border-[rgba(0,0,0,0.16)] accent-brand-primary mt-[2px] flex-shrink-0"
-              />
-              <label htmlFor="terms" className="text-neutral-black text-[14px] leading-[1.5]">
-                I agree to the{" "}
-                <Link to="/terms" className="text-brand-primary hover:underline">
-                  Terms of Service
-                </Link>{" "}
-                and{" "}
-                <Link to="/privacy" className="text-brand-primary hover:underline">
-                  Privacy Policy
-                </Link>
-              </label>
-            </div>
+            {step === "details" ? (
+              <div className="flex items-start gap-[8px]">
+                <input
+                  type="checkbox"
+                  id="terms"
+                  checked={agreeToTerms}
+                  onChange={(e) => setAgreeToTerms(e.target.checked)}
+                  required
+                  className="w-[16px] h-[16px] border border-[rgba(0,0,0,0.16)] accent-brand-primary mt-[2px] flex-shrink-0"
+                />
+                <label htmlFor="terms" className="text-neutral-black text-[14px] leading-[1.5]">
+                  I agree to the{" "}
+                  <Link to="/terms" className="text-brand-primary hover:underline">
+                    Terms of Service
+                  </Link>{" "}
+                  and{" "}
+                  <Link to="/privacy" className="text-brand-primary hover:underline">
+                    Privacy Policy
+                  </Link>
+                </label>
+              </div>
+            ) : (
+              <div className="space-y-[12px]">
+                <div>
+                  <label className="text-neutral-black text-[14px] font-semibold block mb-[8px]">
+                    Verification code
+                  </label>
+                  <InputOTP maxLength={6} value={verificationCode} onChange={setVerificationCode}>
+                    <InputOTPGroup>
+                      <InputOTPSlot index={0} />
+                      <InputOTPSlot index={1} />
+                      <InputOTPSlot index={2} />
+                      <InputOTPSlot index={3} />
+                      <InputOTPSlot index={4} />
+                      <InputOTPSlot index={5} />
+                    </InputOTPGroup>
+                  </InputOTP>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-[12px]">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setStep("details");
+                      setError("");
+                    }}
+                    className="text-brand-primary text-[13px] font-semibold hover:underline"
+                  >
+                    Edit details
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleResendCode}
+                    disabled={isLoading}
+                    className="text-brand-primary text-[13px] font-semibold hover:underline disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    Resend code
+                  </button>
+                </div>
+              </div>
+            )}
 
             {/* Error Message */}
             {error && (
@@ -347,53 +460,57 @@ export function Signup() {
             {/* Submit Button */}
             <button
               type="submit"
-              disabled={!agreeToTerms || isLoading}
+              disabled={isLoading || (step === "details" && !agreeToTerms)}
               className={`w-full py-[16px] font-bold transition-colors ${
-                agreeToTerms && !isLoading
+                !isLoading && (step === "verify" || agreeToTerms)
                   ? "bg-brand-primary text-white hover:bg-brand-primary-dark hover:cursor-pointer"
                   : "bg-[#EDEDED] text-neutral-gray cursor-not-allowed"
               }`}
             >
-              {isLoading ? "Creating account..." : "Create account"}
+              {isLoading ? (step === "verify" ? "Verifying code..." : "Sending code...") : step === "verify" ? "Verify code and create account" : "Send verification code"}
             </button>
           </form>
 
-          {/* Divider */}
-          <div className="flex items-center gap-[16px] my-[32px]">
-            <div className="flex-1 h-[1px] bg-[rgba(0,0,0,0.08)]"></div>
-            <span className="text-neutral-gray text-[13px]">OR</span>
-            <div className="flex-1 h-[1px] bg-[rgba(0,0,0,0.08)]"></div>
-          </div>
+          {step === "details" && (
+            <>
+              {/* Divider */}
+              <div className="flex items-center gap-[16px] my-[32px]">
+                <div className="flex-1 h-[1px] bg-[rgba(0,0,0,0.08)]"></div>
+                <span className="text-neutral-gray text-[13px]">OR</span>
+                <div className="flex-1 h-[1px] bg-[rgba(0,0,0,0.08)]"></div>
+              </div>
 
-          {/* Social Signup */}
-          <div className="space-y-[12px]">
-            <button
-              type="button"
-              onClick={handleGoogleSignup}
-              disabled={isGoogleLoading}
-              className="w-full flex items-center justify-center gap-[12px] border border-[rgba(0,0,0,0.16)] py-[12px] text-neutral-black text-[14px] font-semibold hover:bg-neutral-light-gray hover:cursor-pointer disabled:cursor-not-allowed transition-colors"
-            >
-              <svg className="w-[20px] h-[20px]" viewBox="0 0 20 20">
-                <path
-                  d="M19.6 10.227c0-.709-.064-1.39-.182-2.045H10v3.868h5.382a4.6 4.6 0 01-1.996 3.018v2.51h3.232c1.891-1.742 2.982-4.305 2.982-7.35z"
-                  fill="#4285F4"
-                />
-                <path
-                  d="M10 20c2.7 0 4.964-.895 6.618-2.423l-3.232-2.509c-.895.6-2.04.955-3.386.955-2.605 0-4.81-1.76-5.595-4.123H1.064v2.59A9.996 9.996 0 0010 20z"
-                  fill="#34A853"
-                />
-                <path
-                  d="M4.405 11.9c-.2-.6-.314-1.24-.314-1.9 0-.66.114-1.3.314-1.9V5.51H1.064A9.996 9.996 0 000 10c0 1.614.386 3.14 1.064 4.49l3.34-2.59z"
-                  fill="#FBBC05"
-                />
-                <path
-                  d="M10 3.977c1.468 0 2.786.505 3.823 1.496l2.868-2.868C14.959.99 12.695 0 10 0 6.09 0 2.71 2.24 1.064 5.51l3.34 2.59C5.19 5.736 7.395 3.977 10 3.977z"
-                  fill="#EA4335"
-                />
-              </svg>
-              {isGoogleLoading ? "Connecting to Google..." : "Continue with Google"}
-            </button>
-          </div>
+              {/* Social Signup */}
+              <div className="space-y-[12px]">
+                <button
+                  type="button"
+                  onClick={handleGoogleSignup}
+                  disabled={isGoogleLoading}
+                  className="w-full flex items-center justify-center gap-[12px] border border-[rgba(0,0,0,0.16)] py-[12px] text-neutral-black text-[14px] font-semibold hover:bg-neutral-light-gray hover:cursor-pointer disabled:cursor-not-allowed transition-colors"
+                >
+                  <svg className="w-[20px] h-[20px]" viewBox="0 0 20 20">
+                    <path
+                      d="M19.6 10.227c0-.709-.064-1.39-.182-2.045H10v3.868h5.382a4.6 4.6 0 01-1.996 3.018v2.51h3.232c1.891-1.742 2.982-4.305 2.982-7.35z"
+                      fill="#4285F4"
+                    />
+                    <path
+                      d="M10 20c2.7 0 4.964-.895 6.618-2.423l-3.232-2.509c-.895.6-2.04.955-3.386.955-2.605 0-4.81-1.76-5.595-4.123H1.064v2.59A9.996 9.996 0 0010 20z"
+                      fill="#34A853"
+                    />
+                    <path
+                      d="M4.405 11.9c-.2-.6-.314-1.24-.314-1.9 0-.66.114-1.3.314-1.9V5.51H1.064A9.996 9.996 0 000 10c0 1.614.386 3.14 1.064 4.49l3.34-2.59z"
+                      fill="#FBBC05"
+                    />
+                    <path
+                      d="M10 3.977c1.468 0 2.786.505 3.823 1.496l2.868-2.868C14.959.99 12.695 0 10 0 6.09 0 2.71 2.24 1.064 5.51l3.34 2.59C5.19 5.736 7.395 3.977 10 3.977z"
+                      fill="#EA4335"
+                    />
+                  </svg>
+                  {isGoogleLoading ? "Connecting to Google..." : "Continue with Google"}
+                </button>
+              </div>
+            </>
+          )}
 
           {/* Login Link */}
           <p className="text-center text-neutral-gray text-[14px] mt-[32px]">

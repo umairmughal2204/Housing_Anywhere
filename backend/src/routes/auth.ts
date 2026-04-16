@@ -8,12 +8,13 @@ import { z } from "zod";
 import { OAuth2Client } from "google-auth-library";
 import { Types } from "mongoose";
 import { UserModel } from "../models/User.js";
+import { PendingSignupModel } from "../models/PendingSignup.js";
 import { ListingModel } from "../models/Listing.js";
 import { RentalApplicationModel } from "../models/RentalApplication.js";
 import { ConversationModel } from "../models/Conversation.js";
 import { ListingInteractionModel } from "../models/ListingInteraction.js";
 import { signAccessToken } from "../utils/jwt.js";
-import { canSendEmails, sendPasswordResetEmail } from "../utils/mailer.js";
+import { canSendEmails, sendPasswordResetEmail, sendSignupVerificationEmail } from "../utils/mailer.js";
 import { env } from "../config/env.js";
 import { requireAuth } from "../middleware/auth.js";
 
@@ -32,6 +33,11 @@ const signupSchema = z.object({
   firstName: z.string().min(1),
   lastName: z.string().min(1),
   role: z.enum(["tenant", "landlord"]).default("tenant"),
+});
+
+const signupConfirmSchema = z.object({
+  pendingSignupId: z.string().min(1),
+  code: z.string().regex(/^\d{6}$/),
 });
 
 const loginSchema = z.object({
@@ -158,6 +164,14 @@ function hashResetToken(token: string) {
   return crypto.createHash("sha256").update(token).digest("hex");
 }
 
+function hashVerificationCode(code: string) {
+  return crypto.createHash("sha256").update(code).digest("hex");
+}
+
+function generateVerificationCode() {
+  return crypto.randomInt(0, 1_000_000).toString().padStart(6, "0");
+}
+
 function toAuthUser(user: {
   _id: { toString(): string };
   email: string;
@@ -214,24 +228,114 @@ router.post("/signup", async (req, res) => {
     return;
   }
 
+  if (!canSendEmails()) {
+    res.status(503).json({ message: "Email service is not configured" });
+    return;
+  }
+
   const { email, password, firstName, lastName, role } = parsed.data;
-  const existing = await UserModel.findOne({ email: email.toLowerCase() });
+  const normalizedEmail = email.toLowerCase();
+  const existing = await UserModel.findOne({ email: normalizedEmail });
 
   if (existing) {
     res.status(409).json({ message: "Email already in use" });
     return;
   }
 
+  const verificationCode = generateVerificationCode();
+  const verificationCodeHash = hashVerificationCode(verificationCode);
+  const codeExpiresAt = new Date(Date.now() + 15 * 60 * 1000);
   const passwordHash = await bcrypt.hash(password, 10);
-  const user = await UserModel.create({
-    email: email.toLowerCase(),
-    passwordHash,
-    authProvider: "local",
-    firstName,
-    lastName,
-    role,
-    isLandlord: role === "landlord",
+
+  const pendingSignup = await PendingSignupModel.findOneAndUpdate(
+    { email: normalizedEmail },
+    {
+      $set: {
+        email: normalizedEmail,
+        firstName,
+        lastName,
+        role,
+        passwordHash,
+        verificationCodeHash,
+        codeExpiresAt,
+        attempts: 0,
+      },
+    },
+    { upsert: true, new: true }
+  );
+
+  try {
+    await sendSignupVerificationEmail(normalizedEmail, firstName, verificationCode);
+  } catch (error) {
+    await PendingSignupModel.deleteOne({ _id: pendingSignup._id });
+    console.error("[Signup Verification Email Error]", {
+      timestamp: new Date().toISOString(),
+      email: normalizedEmail,
+      error: error instanceof Error ? error.message : String(error),
+    });
+    res.status(500).json({ message: "Could not send verification email. Please try again." });
+    return;
+  }
+
+  res.status(201).json({
+    pendingSignupId: pendingSignup._id.toString(),
+    expiresAt: codeExpiresAt.toISOString(),
+    message: "Verification code sent",
   });
+});
+
+router.post("/signup/confirm", async (req, res) => {
+  const parsed = signupConfirmSchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ message: "Invalid input", errors: parsed.error.flatten() });
+    return;
+  }
+
+  const pendingSignup = await PendingSignupModel.findById(parsed.data.pendingSignupId);
+  if (!pendingSignup) {
+    res.status(400).json({ message: "Verification code is invalid or has expired" });
+    return;
+  }
+
+  if (pendingSignup.codeExpiresAt.getTime() < Date.now()) {
+    await PendingSignupModel.deleteOne({ _id: pendingSignup._id });
+    res.status(400).json({ message: "Verification code is invalid or has expired" });
+    return;
+  }
+
+  if ((pendingSignup.attempts ?? 0) >= 5) {
+    await PendingSignupModel.deleteOne({ _id: pendingSignup._id });
+    res.status(429).json({ message: "Too many invalid verification attempts. Please request a new code." });
+    return;
+  }
+
+  const expectedCodeHash = hashVerificationCode(parsed.data.code);
+  if (pendingSignup.verificationCodeHash !== expectedCodeHash) {
+    pendingSignup.attempts = (pendingSignup.attempts ?? 0) + 1;
+    await pendingSignup.save();
+    res.status(400).json({ message: "Verification code is invalid or has expired" });
+    return;
+  }
+
+  const existingUser = await UserModel.findOne({ email: pendingSignup.email });
+  if (existingUser) {
+    await PendingSignupModel.deleteOne({ _id: pendingSignup._id });
+    res.status(409).json({ message: "Email already in use" });
+    return;
+  }
+
+  const user = await UserModel.create({
+    email: pendingSignup.email,
+    passwordHash: pendingSignup.passwordHash,
+    authProvider: "local",
+    firstName: pendingSignup.firstName,
+    lastName: pendingSignup.lastName,
+    role: pendingSignup.role,
+    isLandlord: pendingSignup.role === "landlord",
+    emailVerified: true,
+  });
+
+  await PendingSignupModel.deleteOne({ _id: pendingSignup._id });
 
   const token = signAccessToken({
     sub: user._id.toString(),
