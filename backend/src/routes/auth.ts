@@ -61,12 +61,14 @@ const googleClient = env.GOOGLE_CLIENT_ID
 const landlordProfileSchema = z.object({
   businessType: z.enum(["individual", "dealer", "agency"]),
   numberOfProperties: z.number().int().nonnegative(),
+  countryOfRegistration: z.string().min(1),
+  phoneCountryCode: z.string().min(1),
   phoneNumber: z.string().min(1),
   businessName: z.string().optional(),
   licenseNumber: z.string().optional(),
-  address: z.string().min(1),
-  city: z.string().min(1),
-  postalCode: z.string().min(1),
+  address: z.string().optional(),
+  city: z.string().optional(),
+  postalCode: z.string().optional(),
 });
 
 const profileUpdateSchema = z.object({
@@ -463,6 +465,8 @@ router.post("/register-landlord", requireAuth, async (req, res) => {
       $set: {
         role: "landlord",
         isLandlord: true,
+        phoneCountryCode: parsed.data.phoneCountryCode,
+        phoneNumber: parsed.data.phoneNumber,
         landlordProfile: parsed.data,
       },
     },

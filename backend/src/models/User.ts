@@ -8,12 +8,14 @@ const landlordProfileSchema = new Schema(
       required: true,
     },
     numberOfProperties: { type: Number, required: true, default: 0 },
+    countryOfRegistration: { type: String, required: true },
+    phoneCountryCode: { type: String, required: true },
     phoneNumber: { type: String, required: true },
     businessName: { type: String },
     licenseNumber: { type: String },
-    address: { type: String, required: true },
-    city: { type: String, required: true },
-    postalCode: { type: String, required: true },
+    address: { type: String },
+    city: { type: String },
+    postalCode: { type: String },
   },
   { _id: false }
 );

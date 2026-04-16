@@ -1240,61 +1240,6 @@ export function Home() {
         </div>
       </section>
 
-      {/* Popular Destinations */}
-      <section className="py-[80px]">
-        <div className="max-w-[1440px] mx-auto px-[32px]">
-          <div className="flex items-end justify-between mb-[48px]">
-            <div>
-              <h2 className="text-[#1A1A1A] text-[48px] font-bold tracking-[-0.02em] mb-[8px]">
-                Popular Destinations
-              </h2>
-              <p className="text-[#6B6B6B] text-[18px]">
-                Discover verified homes in Europe's most livable cities
-              </p>
-            </div>
-            <Link
-              to="/listings/berlin"
-              className="flex items-center gap-[8px] text-[#0891B2] font-bold hover:gap-[12px] transition-all"
-            >
-              View All Cities
-              <ArrowRight className="w-[20px] h-[20px]" />
-            </Link>
-          </div>
-
-          <div className="grid grid-cols-4 gap-[24px]">
-            {cities.map((city, idx) => (
-              <Link
-                key={idx}
-                to={`/listings/${city.name.toLowerCase()}`}
-                className="group relative overflow-hidden aspect-[3/4] bg-[#F7F7F9]"
-              >
-                <img
-                  src={city.image}
-                  alt={city.name}
-                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
-                <div className="absolute bottom-[24px] left-[24px] right-[24px] text-white">
-                  <h3 className="text-[28px] font-bold mb-[4px]">
-                    {city.name}
-                  </h3>
-                  <p className="text-white/80 text-[14px] mb-[8px]">
-                    {city.country}
-                  </p>
-                  <div className="flex items-center gap-[8px] text-[13px]">
-                    <HomeIcon className="w-[14px] h-[14px]" />
-                    <span>{city.properties} properties</span>
-                  </div>
-                </div>
-                <div className="absolute top-[16px] right-[16px] bg-[#2563EB] text-white px-[8px] py-[4px] text-[11px] font-bold uppercase tracking-[0.05em] opacity-0 group-hover:opacity-100 transition-opacity">
-                  Explore
-                </div>
-              </Link>
-            ))}
-          </div>
-        </div>
-      </section>
-
       {/* How It Works CTA */}
       <section className="py-[80px] bg-[#1A1A1A] text-white">
         <div className="max-w-[1440px] mx-auto px-[32px]">

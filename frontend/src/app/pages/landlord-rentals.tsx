@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { ImageWithFallback } from "../components/figma/ImageWithFallback";
 import { API_BASE } from "../config";
+import { Skeleton } from "../components/ui/skeleton";
 
 type RequestStatus = "pending" | "approved" | "rejected";
 
@@ -520,7 +521,6 @@ export function LandlordRentals() {
         <div className="mb-[32px]">
           <h1 className="text-neutral-black text-[32px] font-bold tracking-[-0.02em] mb-[8px]">Rentals</h1>
           <p className="text-neutral-gray text-[16px]">Tenant rental requests received for your listings</p>
-          {isLoading && <p className="text-neutral-gray text-[14px] mt-[8px]">Loading rental requests...</p>}
           {!isLoading && error && <p className="text-brand-primary text-[14px] mt-[8px]">{error}</p>}
         </div>
 
@@ -570,6 +570,24 @@ export function LandlordRentals() {
         </div>
 
         <div className="space-y-[12px]">
+          {isLoading && [0, 1, 2].map((item) => (
+            <div key={item} className="bg-white border border-[rgba(0,0,0,0.08)] p-[16px]">
+              <div className="flex gap-[16px]">
+                <Skeleton className="w-[120px] h-[90px] rounded" />
+                <div className="flex-1 space-y-[10px]">
+                  <Skeleton className="h-[16px] w-[50%]" />
+                  <Skeleton className="h-[12px] w-[30%]" />
+                  <div className="grid grid-cols-3 gap-[12px]">
+                    <Skeleton className="h-[32px] w-full" />
+                    <Skeleton className="h-[32px] w-full" />
+                    <Skeleton className="h-[32px] w-full" />
+                  </div>
+                  <Skeleton className="h-[24px] w-full" />
+                </div>
+              </div>
+            </div>
+          ))}
+
           {filteredApplications.map((application) => (
             <div
               key={application.id}

@@ -5,6 +5,7 @@ import { Link } from "react-router";
 import { useAuth } from "../contexts/auth-context";
 import { useConversation } from "../hooks/use-conversation";
 import { API_BASE } from "../config";
+import { Skeleton } from "../components/ui/skeleton";
 import { io, type Socket } from "socket.io-client";
 import { ChatMessageBubble, getConversationPreview, getConversationSearchableText } from "../components/chat-offer-message";
 
@@ -359,14 +360,29 @@ export function LandlordInbox() {
           </div>
 
           <div className="flex-1 overflow-y-auto">
-            {isLoading && <p className="text-[#6B6B6B] text-[13px] p-[20px]">Loading...</p>}
+            {isLoading && (
+              <div className="p-[16px] space-y-[12px]">
+                {[0, 1, 2, 3, 4].map((item) => (
+                  <div key={item} className="bg-white border border-[rgba(0,0,0,0.06)] p-[12px]">
+                    <div className="flex items-start gap-[10px]">
+                      <Skeleton className="w-[38px] h-[38px] rounded-full" />
+                      <div className="flex-1 space-y-[8px]">
+                        <Skeleton className="h-[14px] w-[45%]" />
+                        <Skeleton className="h-[12px] w-[70%]" />
+                        <Skeleton className="h-[12px] w-[55%]" />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
             {!isLoading && error && <p className="text-brand-primary text-[13px] p-[20px]">{error}</p>}
             {!isLoading && !error && filtered.length === 0 && (
               <div className="p-[40px] text-center">
                 <p className="text-[#6B6B6B] text-[13px]">{searchQuery ? "No conversations match your search." : "No conversations yet."}</p>
               </div>
             )}
-            {filtered.map((c) => (
+            {!isLoading && filtered.map((c) => (
               <button
                 key={c.id}
                 onClick={() => setSelectedId(c.id)}

@@ -3,6 +3,7 @@ import { LandlordPortalLayout } from "../components/landlord-portal-layout";
 import { useAuth } from "../contexts/auth-context";
 import { Home, TrendingUp, Euro, Users } from "lucide-react";
 import { API_BASE } from "../config";
+import { Skeleton } from "../components/ui/skeleton";
 
 interface DashboardStats {
   totalProperties: number;
@@ -97,10 +98,33 @@ export function LandlordAnalytics() {
             Analytics
           </h1>
           <p className="text-neutral-gray text-[16px]">Performance overview for your listings</p>
-          {isLoading && <p className="text-neutral-gray text-[14px] mt-[8px]">Loading analytics...</p>}
           {!isLoading && error && <p className="text-brand-primary text-[14px] mt-[8px]">{error}</p>}
         </div>
 
+        {isLoading && (
+          <div className="space-y-[24px]">
+            <div className="grid grid-cols-4 gap-[24px]">
+              {[0, 1, 2, 3].map((card) => (
+                <div key={card} className="bg-white border border-[rgba(0,0,0,0.08)] p-[24px] space-y-[12px]">
+                  <Skeleton className="h-[48px] w-[48px]" />
+                  <Skeleton className="h-[36px] w-[90px]" />
+                  <Skeleton className="h-[14px] w-[120px]" />
+                  <Skeleton className="h-[12px] w-[160px]" />
+                </div>
+              ))}
+            </div>
+
+            <div className="bg-white border border-[rgba(0,0,0,0.08)] p-[24px] space-y-[16px]">
+              <Skeleton className="h-[20px] w-[240px]" />
+              {[0, 1, 2, 3].map((row) => (
+                <Skeleton key={row} className="h-[44px] w-full" />
+              ))}
+            </div>
+          </div>
+        )}
+
+        {!isLoading && (
+        <>
         <div className="grid grid-cols-4 gap-[24px] mb-[32px]">
           <div className="bg-white border border-[rgba(0,0,0,0.08)] p-[24px]">
             <div className="flex items-start justify-between mb-[16px]">
@@ -232,6 +256,8 @@ export function LandlordAnalytics() {
             </table>
           </div>
         </div>
+        </>
+        )}
       </main>
     </LandlordPortalLayout>
   );

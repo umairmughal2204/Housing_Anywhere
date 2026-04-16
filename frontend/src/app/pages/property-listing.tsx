@@ -722,8 +722,79 @@ export function PropertyListing() {
 
     return total;
   })();
-  const rentLineLabel = selectedStartDate && selectedEndDate ? "Rent for selected period" : "First month's rent";
+  const hasSelectedDateRange = Boolean(selectedStartDate && selectedEndDate);
+  const rentLineLabel = hasSelectedDateRange ? "Rent for selected period" : "First month's rent";
+  const firstMonthRentAmount = listing?.monthlyRent ?? 0;
   const amountToConfirmStay = rentForSelectedPeriod + tenantProtectionFee;
+  const rentBreakdownRows = useMemo(() => {
+    if (!listing || !selectedStartDate || !selectedEndDate || selectedEndDate < selectedStartDate) {
+      return [] as Array<{
+        periodLabel: string;
+        amountLabel: string;
+        originalAmountLabel?: string;
+      }>;
+    }
+
+    const monthSegments: Array<{
+      start: Date;
+      end: Date;
+      amount: number;
+      isFullMonth: boolean;
+    }> = [];
+
+    let cursor = new Date(selectedStartDate);
+    while (cursor <= selectedEndDate) {
+      const segmentStart = new Date(cursor);
+      const currentMonthEnd = monthEnd(segmentStart);
+      const segmentEnd = currentMonthEnd < selectedEndDate ? currentMonthEnd : new Date(selectedEndDate);
+      const daysInMonth = currentMonthEnd.getDate();
+      const occupiedDays = Math.floor((segmentEnd.getTime() - segmentStart.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+      const amount = occupiedDays < daysInMonth
+        ? (listing.monthlyRent / daysInMonth) * occupiedDays
+        : listing.monthlyRent;
+
+      monthSegments.push({
+        start: segmentStart,
+        end: segmentEnd,
+        amount,
+        isFullMonth: occupiedDays === daysInMonth,
+      });
+
+      cursor = new Date(segmentEnd);
+      cursor.setDate(cursor.getDate() + 1);
+    }
+
+    const rows: Array<{ periodLabel: string; amountLabel: string; originalAmountLabel?: string }> = [];
+
+    for (let i = 0; i < monthSegments.length; i += 1) {
+      const segment = monthSegments[i];
+
+      if (!segment.isFullMonth) {
+        rows.push({
+          periodLabel: `${getDateLabel(segment.start)} - ${getDateLabel(segment.end)}`,
+          amountLabel: formatCurrency(segment.amount, listing.currency),
+          originalAmountLabel: formatCurrency(listing.monthlyRent, listing.currency),
+        });
+        continue;
+      }
+
+      let count = 1;
+      let lastEnd = segment.end;
+      while (i + count < monthSegments.length && monthSegments[i + count].isFullMonth) {
+        lastEnd = monthSegments[i + count].end;
+        count += 1;
+      }
+
+      rows.push({
+        periodLabel: `${getDateLabel(segment.start)} - ${getDateLabel(lastEnd)}`,
+        amountLabel: count > 1 ? `${count} months x ${formatCurrency(listing.monthlyRent, listing.currency)}` : formatCurrency(listing.monthlyRent, listing.currency),
+      });
+
+      i += count - 1;
+    }
+
+    return rows;
+  }, [listing, selectedStartDate, selectedEndDate]);
 
   const previousImage = () => {
     setCurrentImageIndex((prev) => (prev === 0 ? propertyImages.length - 1 : prev - 1));
@@ -1218,15 +1289,6 @@ export function PropertyListing() {
                 <span className="text-[#0F2D36] text-[13px] underline decoration-dotted underline-offset-[5px]">
                   {listing?.utilitiesIncluded ? "includes bills" : "excludes bills"}, {listing?.deposit === 0 ? "no deposit" : "deposit required"}
                 </span>
-                <span className="inline-flex items-center gap-[4px] px-[10px] py-[5px] bg-[#D7EFE5] text-[#0F2D36] text-[14px] font-semibold rounded-[5px]">
-                  Get up to 5% off
-                  <span className="relative inline-flex items-center group">
-                    <Info className="w-[14px] h-[14px] cursor-help" aria-hidden="true" />
-                    <span className="pointer-events-none absolute left-1/2 top-[calc(100%+8px)] z-[20] -translate-x-1/2 whitespace-nowrap rounded-[4px] bg-[#0F2D36] px-[8px] py-[6px] text-[12px] leading-[1.3] font-medium text-white opacity-0 shadow-[0_8px_24px_rgba(0,0,0,0.24)] transition-opacity duration-150 group-hover:opacity-100">
-                      Discount depends on your rental period and payment method.
-                    </span>
-                  </span>
-                </span>
               </div>
 
               <div className="flex flex-wrap gap-[8px]">
@@ -1611,39 +1673,41 @@ export function PropertyListing() {
                     </span>
                   </button>
 
-                  <div className="space-y-[10px] pb-[14px] border-b border-[rgba(15,45,54,0.14)]">
-                    <div className="flex items-center justify-between">
-                      <p className="text-[#2F4653] text-[15px] leading-[1.2] flex items-center gap-[6px]">
-                        {rentLineLabel}
-                        <span className="relative inline-flex items-center group">
-                          <Info className="w-[14px] h-[14px] cursor-help" aria-hidden="true" />
-                          <span className="pointer-events-none absolute left-1/2 top-[calc(100%+8px)] z-[20] -translate-x-1/2 whitespace-nowrap rounded-[4px] bg-[#0F2D36] px-[8px] py-[6px] text-[12px] leading-[1.3] font-medium text-white opacity-0 shadow-[0_8px_24px_rgba(0,0,0,0.24)] transition-opacity duration-150 group-hover:opacity-100">
-                            {selectedStartDate && selectedEndDate
-                              ? "This is the rent total for your selected rental period."
-                              : "This is the rent amount for your first month."}
-                          </span>
-                        </span>
-                      </p>
-                      <p className="text-[#2F4653] text-[15px] leading-[1.2]">{formatCurrency(rentForSelectedPeriod, listing?.currency)}</p>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <p className="text-[#2F4653] text-[15px] leading-[1.2] flex items-center gap-[6px]">
-                        Tenant Protection fee
-                        <span className="relative inline-flex items-center group">
-                          <Info className="w-[14px] h-[14px] cursor-help" aria-hidden="true" />
-                          <span className="pointer-events-none absolute left-1/2 top-[calc(100%+8px)] z-[20] -translate-x-1/2 whitespace-nowrap rounded-[4px] bg-[#0F2D36] px-[8px] py-[6px] text-[12px] leading-[1.3] font-medium text-white opacity-0 shadow-[0_8px_24px_rgba(0,0,0,0.24)] transition-opacity duration-150 group-hover:opacity-100">
-                            Fee for payment protection and move-in support.
-                          </span>
-                        </span>
-                      </p>
-                      <p className="text-[#2F4653] text-[15px] leading-[1.2]">{formatCurrency(tenantProtectionFee, listing?.currency)}</p>
-                    </div>
-                  </div>
+                  {hasSelectedDateRange && (
+                    <>
+                      <div className="space-y-[10px] pb-[14px] border-b border-[rgba(15,45,54,0.14)]">
+                        <div className="flex items-center justify-between">
+                          <p className="text-[#2F4653] text-[15px] leading-[1.2] flex items-center gap-[6px]">
+                            {rentLineLabel}
+                            <span className="relative inline-flex items-center group">
+                              <Info className="w-[14px] h-[14px] cursor-help" aria-hidden="true" />
+                              <span className="pointer-events-none absolute left-1/2 top-[calc(100%+8px)] z-[20] -translate-x-1/2 whitespace-nowrap rounded-[4px] bg-[#0F2D36] px-[8px] py-[6px] text-[12px] leading-[1.3] font-medium text-white opacity-0 shadow-[0_8px_24px_rgba(0,0,0,0.24)] transition-opacity duration-150 group-hover:opacity-100">
+                                This is the rent total for your selected rental period.
+                              </span>
+                            </span>
+                          </p>
+                          <p className="text-[#2F4653] text-[15px] leading-[1.2]">{formatCurrency(rentForSelectedPeriod, listing?.currency)}</p>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <p className="text-[#2F4653] text-[15px] leading-[1.2] flex items-center gap-[6px]">
+                            Tenant Protection fee
+                            <span className="relative inline-flex items-center group">
+                              <Info className="w-[14px] h-[14px] cursor-help" aria-hidden="true" />
+                              <span className="pointer-events-none absolute left-1/2 top-[calc(100%+8px)] z-[20] -translate-x-1/2 whitespace-nowrap rounded-[4px] bg-[#0F2D36] px-[8px] py-[6px] text-[12px] leading-[1.3] font-medium text-white opacity-0 shadow-[0_8px_24px_rgba(0,0,0,0.24)] transition-opacity duration-150 group-hover:opacity-100">
+                                Fee for payment protection and move-in support.
+                              </span>
+                            </span>
+                          </p>
+                          <p className="text-[#2F4653] text-[15px] leading-[1.2]">{formatCurrency(tenantProtectionFee, listing?.currency)}</p>
+                        </div>
+                      </div>
 
-                  <div className="flex items-center justify-between py-[14px]">
-                    <p className="text-[#2F4653] text-[18px] leading-[1.2] font-bold">To confirm stay</p>
-                    <p className="text-[#2F4653] text-[18px] leading-[1.2] font-bold">{formatCurrency(amountToConfirmStay, listing?.currency)}</p>
-                  </div>
+                      <div className="flex items-center justify-between py-[14px]">
+                        <p className="text-[#2F4653] text-[18px] leading-[1.2] font-bold">To confirm stay</p>
+                        <p className="text-[#2F4653] text-[18px] leading-[1.2] font-bold">{formatCurrency(amountToConfirmStay, listing?.currency)}</p>
+                      </div>
+                    </>
+                  )}
 
                   <button
                     type="button"
@@ -1784,89 +1848,95 @@ export function PropertyListing() {
             </div>
 
             <div className="px-[24px] py-[22px]">
-              <p className="text-[#173743] text-[15px] leading-[1.55] mb-[18px]">A breakdown of all costs for your stay.</p>
+              <p className="text-[#173743] text-[16px] leading-[1.55] mb-[18px]">A breakdown of all costs for your stay.</p>
 
               <p className="text-[#0F2D36] text-[33px] leading-[1.1] font-bold mb-[14px]">You <span className="text-[#6A7F88]">-&gt;</span> EasyRent</p>
-              <p className="text-[#173743] text-[15px] leading-[1.55] mb-[14px]">Pay this now to secure your place.</p>
+              <p className="text-[#173743] text-[16px] leading-[1.55] mb-[14px]">Pay this now to secure your place.</p>
 
-              <div className="inline-flex items-center gap-[6px] mb-[14px] rounded-[4px] px-[8px] py-[4px] bg-[#D7EFE5] text-[#0F2D36] text-[13px] font-semibold">
-                Get up to 5% off
-                <span className="relative inline-flex items-center group">
-                  <Info className="w-[14px] h-[14px] cursor-help" aria-hidden="true" />
-                  <span className="pointer-events-none absolute left-1/2 top-[calc(100%+8px)] z-[20] -translate-x-1/2 whitespace-nowrap rounded-[4px] bg-[#0F2D36] px-[8px] py-[6px] text-[12px] leading-[1.3] font-medium text-white opacity-0 shadow-[0_8px_24px_rgba(0,0,0,0.24)] transition-opacity duration-150 group-hover:opacity-100">
-                    Discount depends on your rental period and payment method.
-                  </span>
-                </span>
-              </div>
+              {hasSelectedDateRange ? (
+                <>
+                  <div className="space-y-[10px] border-b border-[rgba(15,45,54,0.12)] pb-[16px]">
+                    <div className="flex items-center justify-between gap-[12px]">
+                      <p className="text-[#0F2D36] text-[16px] leading-[1.35]">{rentLineLabel}</p>
+                      <p className="text-[#0F2D36] text-[16px] leading-[1.35] font-semibold">{formatCurrency(rentForSelectedPeriod, listing.currency)}</p>
+                    </div>
 
-              <div className="space-y-[10px] border-b border-[rgba(15,45,54,0.12)] pb-[16px]">
-                <div className="flex items-center justify-between gap-[12px]">
-                  <p className="text-[#0F2D36] text-[15px] leading-[1.35]">{rentLineLabel}</p>
-                  <p className="text-[#0F2D36] text-[15px] leading-[1.35] font-semibold">{formatCurrency(rentForSelectedPeriod, listing.currency)}</p>
-                </div>
+                    <div className="flex items-center justify-between gap-[12px]">
+                      <p className="text-[#0F2D36] text-[16px] leading-[1.35] flex items-center gap-[6px]">
+                        Tenant Protection fee
+                        <span className="relative inline-flex items-center group">
+                          <Info className="w-[14px] h-[14px] text-[#70838B] cursor-help" aria-hidden="true" />
+                          <span className="pointer-events-none absolute left-1/2 top-[calc(100%+8px)] z-[20] -translate-x-1/2 whitespace-nowrap rounded-[4px] bg-[#0F2D36] px-[8px] py-[6px] text-[12px] leading-[1.3] font-medium text-white opacity-0 shadow-[0_8px_24px_rgba(0,0,0,0.24)] transition-opacity duration-150 group-hover:opacity-100">
+                            Fee for payment protection and move-in support.
+                          </span>
+                        </span>
+                      </p>
+                      <p className="text-[#0F2D36] text-[16px] leading-[1.35] font-semibold">{formatCurrency(tenantProtectionFee, listing.currency)}</p>
+                    </div>
+                  </div>
 
-                <div className="flex items-center justify-between gap-[12px]">
-                  <p className="text-[#0F2D36] text-[15px] leading-[1.35] flex items-center gap-[6px]">
-                    Tenant Protection fee
-                    <span className="relative inline-flex items-center group">
-                      <Info className="w-[14px] h-[14px] text-[#70838B] cursor-help" aria-hidden="true" />
-                      <span className="pointer-events-none absolute left-1/2 top-[calc(100%+8px)] z-[20] -translate-x-1/2 whitespace-nowrap rounded-[4px] bg-[#0F2D36] px-[8px] py-[6px] text-[12px] leading-[1.3] font-medium text-white opacity-0 shadow-[0_8px_24px_rgba(0,0,0,0.24)] transition-opacity duration-150 group-hover:opacity-100">
-                        Fee for payment protection and move-in support.
+                  <div className="mt-[10px] mb-[18px] rounded-[4px] bg-[#EEF3F7] p-[12px]">
+                    <div className="flex items-center justify-between gap-[12px] mb-[6px]">
+                      <p className="text-[#0F2D36] text-[16px] leading-[1.2] font-bold">Total</p>
+                      <p className="text-[#0F2D36] text-[16px] leading-[1.2] font-bold">{formatCurrency(amountToConfirmStay, listing.currency)}</p>
+                    </div>
+                    <p className="text-[#264991] text-[14px] leading-[1.45] flex items-center gap-[6px]">
+                      <Shield className="w-[14px] h-[14px]" />
+                      Covered by Tenant Protection.
+                      <button
+                        type="button"
+                        className="underline decoration-dotted underline-offset-[4px] hover:text-[#1D3F85] transition-colors cursor-pointer"
+                      >
+                        Learn more
+                      </button>
+                    </p>
+                  </div>
+                </>
+              ) : (
+                <div className="space-y-[18px] border-b border-[rgba(15,45,54,0.12)] pb-[16px]">
+                  <div className="flex items-end justify-between gap-[12px] border-b border-dotted border-[rgba(15,45,54,0.24)] pb-[8px]">
+                    <p className="text-[#0F2D36] text-[16px] leading-[1.35] font-semibold">Monthly rent</p>
+                    <p className="text-[#0F2D36] text-[16px] leading-[1.35] font-semibold">{formatCurrency(firstMonthRentAmount, listing.currency).replace(".00", "")}</p>
+                  </div>
+                  <div className="flex items-end justify-between gap-[12px] border-b border-dotted border-[rgba(15,45,54,0.24)] pb-[8px]">
+                    <p className="text-[#0F2D36] text-[16px] leading-[1.35] font-semibold flex items-center gap-[6px]">
+                      Tenant Protection fee
+                      <span className="relative inline-flex items-center group">
+                        <Info className="w-[14px] h-[14px] text-[#70838B] cursor-help" aria-hidden="true" />
+                        <span className="pointer-events-none absolute left-1/2 top-[calc(100%+8px)] z-[20] -translate-x-1/2 whitespace-nowrap rounded-[4px] bg-[#0F2D36] px-[8px] py-[6px] text-[12px] leading-[1.3] font-medium text-white opacity-0 shadow-[0_8px_24px_rgba(0,0,0,0.24)] transition-opacity duration-150 group-hover:opacity-100">
+                          Fee for payment protection and move-in support.
+                        </span>
                       </span>
-                    </span>
-                  </p>
-                  <p className="text-[#0F2D36] text-[15px] leading-[1.35] font-semibold">{formatCurrency(tenantProtectionFee, listing.currency)}</p>
+                    </p>
+                    <button
+                      type="button"
+                      onClick={handleOpenDateSelector}
+                      className="text-[#0F2D36] text-[16px] leading-[1.35] font-semibold underline decoration-dotted underline-offset-[4px] hover:text-[#0A2530] transition-colors cursor-pointer"
+                    >
+                      Select dates
+                    </button>
+                  </div>
                 </div>
-              </div>
-
-              <div className="mt-[10px] mb-[18px] rounded-[4px] bg-[#EEF3F7] p-[12px]">
-                <div className="flex items-center justify-between gap-[12px] mb-[6px]">
-                  <p className="text-[#0F2D36] text-[16px] leading-[1.2] font-bold">Total</p>
-                  <p className="text-[#0F2D36] text-[16px] leading-[1.2] font-bold">{formatCurrency(amountToConfirmStay, listing.currency)}</p>
-                </div>
-                <p className="text-[#264991] text-[14px] leading-[1.45] flex items-center gap-[6px]">
-                  <Shield className="w-[14px] h-[14px]" />
-                  Covered by Tenant Protection.
-                  <button
-                    type="button"
-                    className="underline decoration-dotted underline-offset-[4px] hover:text-[#1D3F85] transition-colors cursor-pointer"
-                  >
-                    Learn more
-                  </button>
-                </p>
-              </div>
-
-              <div className="mb-[18px]">
-                <p className="text-[#0F2D36] text-[16px] font-semibold mb-[8px]">Pay with</p>
-                <div className="flex flex-wrap items-center gap-[10px] text-[#8A969C] text-[12px] font-semibold uppercase">
-                  <span>Visa</span>
-                  <span>Amex</span>
-                  <span>Sofort</span>
-                  <span>Bancontact</span>
-                  <span>EPS</span>
-                  <span>GiroPay</span>
-                  <span>Przelewy24</span>
-                </div>
-              </div>
+              )}
 
               <div className="pt-[16px] border-t border-[rgba(15,45,54,0.12)]">
                 <p className="text-[#0F2D36] text-[33px] leading-[1.1] font-bold mb-[14px]">You <span className="text-[#6A7F88]">-&gt;</span> {listing.landlord?.name ?? "Landlord"}</p>
-                <p className="text-[#173743] text-[15px] leading-[1.55] mb-[14px]">Future rental costs to the landlord. You'll pay these directly, per your contract.</p>
+                <p className="text-[#173743] text-[16px] leading-[1.55] mb-[14px]">Future rental costs to the landlord. You'll pay these directly, per your contract.</p>
 
                 <div className="space-y-[10px] mb-[12px]">
                   <div className="flex items-center justify-between gap-[12px]">
-                    <p className="text-[#0F2D36] text-[15px] leading-[1.35]">{securityDepositLine?.label ?? "Security deposit"}</p>
-                    <p className="text-[#95A4AC] text-[15px] leading-[1.35] font-semibold">{securityDepositLine?.value ?? "Not required"}</p>
+                    <p className="text-[#0F2D36] text-[16px] leading-[1.35]">{securityDepositLine?.label ?? "Security deposit"}</p>
+                    <p className="text-[#95A4AC] text-[16px] leading-[1.35] font-semibold">{securityDepositLine?.value ?? "Not required"}</p>
                   </div>
 
                   <div>
-                    <p className="text-[#0F2D36] text-[15px] leading-[1.35] mb-[6px]">Utilities</p>
+                    <p className="text-[#0F2D36] text-[16px] leading-[1.35] mb-[6px]">Utilities</p>
                     <div className="space-y-[8px] pl-[10px]">
                       {utilityLines.length > 0 ? (
                         utilityLines.map((line) => (
                           <div key={line.label} className="flex items-center justify-between gap-[10px]">
-                            <p className="text-[#173743] text-[14px] leading-[1.35]">{line.label}</p>
-                            <p className="text-[14px] leading-[1.35] flex items-center gap-[6px] text-[#2A7B4F]">
+                            <p className="text-[#173743] text-[15px] leading-[1.35]">{line.label}</p>
+                            <p className="text-[15px] leading-[1.35] flex items-center gap-[6px] text-[#2A7B4F]">
                               {line.value === "Included" && <Check className="w-[14px] h-[14px]" />}
                               <span className={line.value === "Included" ? "font-medium" : "text-[#0F2D36]"}>{line.value}</span>
                             </p>
@@ -1880,20 +1950,43 @@ export function PropertyListing() {
                 </div>
 
                 <div className="pt-[8px] border-t border-[rgba(15,45,54,0.12)]">
-                  <p className="text-[#0F2D36] text-[15px] leading-[1.35] mb-[8px]">Rent</p>
+                  <p className="text-[#0F2D36] text-[16px] leading-[1.35] mb-[8px]">Rent</p>
                   <div className="space-y-[8px]">
-                    <div className="flex items-center justify-between gap-[12px]">
-                      <p className="text-[#173743] text-[14px] leading-[1.35]">
-                        {moveInDate && firstRentEndDate ? `${getDateLabel(moveInDate)} - ${getDateLabel(firstRentEndDate)}` : "Current period"}
-                      </p>
-                      <p className="text-[#0F2D36] text-[14px] leading-[1.35] font-medium">{rentLine?.value ?? formatCurrency(listing.monthlyRent, listing.currency)}</p>
-                    </div>
-                    <div className="flex items-center justify-between gap-[12px]">
-                      <p className="text-[#173743] text-[14px] leading-[1.35]">
-                        {secondRentStartDate && secondRentEndDate ? `${getDateLabel(secondRentStartDate)} - ${getDateLabel(secondRentEndDate)}` : "Next period"}
-                      </p>
-                      <p className="text-[#0F2D36] text-[14px] leading-[1.35] font-medium">{rentLine?.value ?? formatCurrency(listing.monthlyRent, listing.currency)}</p>
-                    </div>
+                    {hasSelectedDateRange && rentBreakdownRows.length > 0 ? (
+                      rentBreakdownRows.map((row) => (
+                        <div key={`${row.periodLabel}-${row.amountLabel}`} className="flex items-center gap-[10px]">
+                          <p className="text-[#173743] text-[15px] leading-[1.35] whitespace-nowrap">{row.periodLabel}</p>
+                          <span className="flex-1 border-b border-dotted border-[rgba(15,45,54,0.24)]" />
+                          <div className="flex items-center gap-[6px]">
+                            {row.originalAmountLabel && (
+                              <span className="relative inline-flex items-center gap-[6px] group">
+                                <Info className="w-[14px] h-[14px] text-[#70838B] cursor-help" aria-hidden="true" />
+                                <span className="text-[#8897A0] text-[15px] leading-[1.35] line-through">{row.originalAmountLabel}</span>
+                                <span className="pointer-events-none absolute left-1/2 top-[calc(100%+8px)] z-[20] -translate-x-1/2 whitespace-nowrap rounded-[4px] bg-[#0F2D36] px-[8px] py-[6px] text-[12px] leading-[1.3] font-medium text-white opacity-0 shadow-[0_8px_24px_rgba(0,0,0,0.24)] transition-opacity duration-150 group-hover:opacity-100">
+                                  Original full-month rent before proration.
+                                </span>
+                              </span>
+                            )}
+                            <span className="text-[#0F2D36] text-[15px] leading-[1.35] font-medium">{row.amountLabel}</span>
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <>
+                        <div className="flex items-center justify-between gap-[12px]">
+                          <p className="text-[#173743] text-[15px] leading-[1.35]">
+                            {moveInDate && firstRentEndDate ? `${getDateLabel(moveInDate)} - ${getDateLabel(firstRentEndDate)}` : "Current period"}
+                          </p>
+                          <p className="text-[#0F2D36] text-[15px] leading-[1.35] font-medium">{rentLine?.value ?? formatCurrency(listing.monthlyRent, listing.currency)}</p>
+                        </div>
+                        <div className="flex items-center justify-between gap-[12px]">
+                          <p className="text-[#173743] text-[15px] leading-[1.35]">
+                            {secondRentStartDate && secondRentEndDate ? `${getDateLabel(secondRentStartDate)} - ${getDateLabel(secondRentEndDate)}` : "Next period"}
+                          </p>
+                          <p className="text-[#0F2D36] text-[15px] leading-[1.35] font-medium">{rentLine?.value ?? formatCurrency(listing.monthlyRent, listing.currency)}</p>
+                        </div>
+                      </>
+                    )}
                   </div>
                 </div>
               </div>

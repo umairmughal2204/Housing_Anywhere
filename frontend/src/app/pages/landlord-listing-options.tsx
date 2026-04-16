@@ -3,6 +3,7 @@ import { useNavigate } from "react-router";
 import { LandlordPortalLayout } from "../components/landlord-portal-layout";
 import { Button } from "../components/ui/button";
 import { API_BASE } from "../config";
+import { Skeleton } from "../components/ui/skeleton";
 
 interface MineListing {
   id: string;
@@ -190,7 +191,10 @@ export function LandlordListingOptions() {
                   )}
                 </select>
                 {isLoadingListings && (
-                  <p className="text-[13px] text-neutral-gray mt-[8px]">Loading your listings...</p>
+                  <div className="mt-[10px] space-y-[8px]">
+                    <Skeleton className="h-[12px] w-[60%]" />
+                    <Skeleton className="h-[12px] w-[40%]" />
+                  </div>
                 )}
               </div>
             )}

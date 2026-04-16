@@ -4,12 +4,14 @@ import { API_BASE } from "../config";
 interface LandlordProfile {
   businessType: "individual" | "dealer" | "agency";
   numberOfProperties: number;
+  countryOfRegistration: string;
+  phoneCountryCode: string;
   phoneNumber: string;
   businessName?: string;
   licenseNumber?: string;
-  address: string;
-  city: string;
-  postalCode: string;
+  address?: string;
+  city?: string;
+  postalCode?: string;
 }
 
 interface User {

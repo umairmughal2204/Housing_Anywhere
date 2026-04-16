@@ -5,6 +5,7 @@ import { useAuth } from "../contexts/auth-context";
 import { UserAvatar } from "./user-avatar";
 import { changeSiteLanguage, getSavedLanguageLabel, SUPPORTED_LANGUAGES } from "../utils/translate";
 import { API_BASE } from "../config";
+import { useLocation } from "react-router";
 
 interface HeaderConversationItem {
   unread: number;
@@ -13,6 +14,7 @@ interface HeaderConversationItem {
 export function Header() {
   const { user, isAuthenticated, logout } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [showDropdown, setShowDropdown] = useState(false);
   const [selectedLanguage, setSelectedLanguage] = useState(getSavedLanguageLabel());
   const [showLanguageDropdown, setShowLanguageDropdown] = useState(false);
@@ -103,6 +105,7 @@ export function Header() {
   }, [isAuthenticated]);
 
   const inboxHref = user?.role === "landlord" ? "/landlord/inbox" : "/tenant/inbox";
+  const isOnLandlordDashboard = location.pathname.startsWith("/landlord/dashboard");
 
   return (
     <header className="border-b border-neutral bg-white sticky top-0 z-50">
@@ -202,11 +205,11 @@ export function Header() {
             {/* Show appropriate landlord button based on status */}
             {user?.isLandlord ? (
               <Link 
-                to="/landlord/dashboard" 
+                to={isOnLandlordDashboard ? "/landlord/add-listing" : "/landlord/dashboard"}
                 className="flex items-center gap-[8px] px-[16px] py-[8px] bg-brand-primary text-white text-[14px] font-semibold hover:bg-brand-primary-dark transition-colors"
               >
-                <LayoutDashboard className="w-[16px] h-[16px]" />
-                Go to Dashboard
+                {isOnLandlordDashboard ? <FileText className="w-[16px] h-[16px]" /> : <LayoutDashboard className="w-[16px] h-[16px]" />}
+                {isOnLandlordDashboard ? "Add Listing" : "Go to Dashboard"}
               </Link>
             ) : (
               <Link 
@@ -248,7 +251,7 @@ export function Header() {
 
               {/* Dropdown Menu */}
               {showDropdown && (
-                <div className="absolute top-[calc(100%+8px)] right-0 w-[280px] bg-white border border-neutral shadow-lg">
+                <div className="absolute top-[calc(100%+8px)] right-0 w-[280px] max-w-[calc(100vw-16px)] max-h-[80vh] overflow-y-auto bg-white border border-neutral shadow-lg">
                   {/* User Info */}
                   <div className="p-[16px] border-b border-neutral">
                     <div className="flex items-center gap-[12px]">
@@ -303,14 +306,15 @@ export function Header() {
                       <Heart className="w-[16px] h-[16px] text-neutral-gray" />
                       Favorites
                     </Link>
-                    <Link
-                      to="/payments"
-                      className="flex items-center gap-[12px] px-[16px] py-[12px] text-neutral-black text-[14px] hover:bg-neutral-light-gray transition-colors"
-                      onClick={() => setShowDropdown(false)}
+                    <button
+                      type="button"
+                      disabled
+                      aria-disabled="true"
+                      className="w-full flex items-center gap-[12px] px-[16px] py-[12px] text-[14px] text-neutral-gray cursor-not-allowed"
                     >
                       <CreditCard className="w-[16px] h-[16px] text-neutral-gray" />
                       Payments
-                    </Link>
+                    </button>
                     <Link
                       to="/account"
                       className="flex items-center gap-[12px] px-[16px] py-[12px] text-neutral-black text-[14px] hover:bg-neutral-light-gray transition-colors"

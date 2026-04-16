@@ -370,6 +370,7 @@ export function LandlordAddListing() {
   const [requireProofOfIncome, setRequireProofOfIncome] = useState(false);
 
   const [agreedToTerms, setAgreedToTerms] = useState(false);
+  const [agreedToDocumentPrivacyPolicy, setAgreedToDocumentPrivacyPolicy] = useState(false);
   const [uploadedMedia, setUploadedMedia] = useState<UploadedMediaItem[]>([]);
   const [isUploadingPhotos, setIsUploadingPhotos] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
@@ -711,6 +712,7 @@ export function LandlordAddListing() {
     if (section === 7) {
       if (uploadedMedia.length === 0) errors.push("Photos");
       if (!agreedToTerms) errors.push("HousingAnywhere terms & conditions agreement");
+      if (!agreedToDocumentPrivacyPolicy) errors.push("Document usage and Privacy Policy agreement");
     }
 
     return errors;
@@ -893,6 +895,12 @@ export function LandlordAddListing() {
     window.scrollTo({ top: 0, left: 0, behavior: "auto" });
   }, [currentSection]);
 
+  useEffect(() => {
+    if (submitError || sectionError || uploadError) {
+      window.scrollTo({ top: 0, left: 0, behavior: "smooth" });
+    }
+  }, [submitError, sectionError, uploadError]);
+
   const availableUtilityAddOptions = utilityAddOptions.filter(
     (option) => !utilityLines.some((line) => line.type === option)
   );
@@ -906,22 +914,12 @@ export function LandlordAddListing() {
     (option) => !depositLines.some((line) => line.type === option)
   );
   const contentBottomPaddingClass = currentSection === 1 ? "pb-[44px] md:pb-[56px]" : "pb-[120px] md:pb-[130px]";
+  const sectionLayoutClass = "max-w-[760px] mr-auto w-full";
 
   return (
-    <LandlordPortalLayout
-      hideSidebar
-      headerLeadingAction={(
-        <button
-          type="button"
-          onClick={() => navigate("/landlord/dashboard")}
-          className="h-[36px] px-[12px] bg-brand-primary text-white text-[11px] font-semibold hover:bg-brand-primary-dark transition-colors"
-        >
-          GO TO DASHBOARD
-        </button>
-      )}
-    >
+    <LandlordPortalLayout hideSidebar>
       <div className={`bg-[#F7F7F9] min-h-[calc(100vh-74px)] px-[20px] md:px-[28px] py-[24px] md:py-[32px] ${contentBottomPaddingClass}`}>
-        <div className="max-w-[760px] mr-auto w-full">
+        <div className={sectionLayoutClass}>
         {submitError && (
           <div className="mb-[20px] p-[12px] bg-red-50 border border-red-200 rounded text-red-700 text-[13px]">
             {submitError}
@@ -942,7 +940,6 @@ export function LandlordAddListing() {
             {uploadError}
           </div>
         )}
-        <p className="mb-[14px] text-[12px] text-[#5A7380]">Fields marked with <span className="text-[#C0392B]">*</span> are required.</p>
         {currentSection === 1 && (
           <div className="w-full">
             <h1 className="text-[32px] leading-[1.1] font-bold text-neutral-black tracking-[-0.02em]">Create your listing</h1>
@@ -2159,6 +2156,19 @@ export function LandlordAddListing() {
                 />
                 <span>
                   I agree with the <a href="#" className="underline text-[#12303B]">HousingAnywhere terms &amp; conditions</a>
+                </span>
+              </label>
+
+              <label className="mt-[8px] inline-flex items-start gap-[8px] cursor-pointer text-[12px] text-[#244A57] max-w-[980px]">
+                <input
+                  type="checkbox"
+                  checked={agreedToDocumentPrivacyPolicy}
+                  onChange={(e) => setAgreedToDocumentPrivacyPolicy(e.target.checked)}
+                  className="mt-[2px] w-[13px] h-[13px] accent-brand-primary"
+                />
+                <span>
+                  I agree that I will only use the required documents to create a rental agreement. I will destroy the copies within 48 hours if the person won't be renting the property. Read our{" "}
+                  <a href="#" className="underline text-[#12303B]">Privacy Policy</a>.
                 </span>
               </label>
             </div>
