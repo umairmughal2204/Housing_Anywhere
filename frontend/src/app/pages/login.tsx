@@ -107,9 +107,9 @@ export function Login() {
             id?: {
               initialize: (config: {
                 client_id: string;
-                callback: (response: { credential?: string }) => void;
+                callback: (response: { credential?: string; error?: string }) => void;
               }) => void;
-              prompt: () => void;
+              prompt: (callback?: (notification: { isNotDisplayed: () => boolean; isSkippedMoment: () => boolean }) => void) => void;
             };
           };
         };
@@ -135,24 +135,41 @@ export function Login() {
             if (settled) {
               return;
             }
-            settled = true;
-            window.clearTimeout(timeout);
 
-            if (!response.credential) {
-              reject(new Error("No Google credential received"));
+            if (response.error) {
+              settled = true;
+              window.clearTimeout(timeout);
+              reject(new Error(response.error));
               return;
             }
 
+            if (!response.credential) {
+              return;
+            }
+
+            settled = true;
+            window.clearTimeout(timeout);
             resolve(response.credential);
           },
         });
 
-        google.accounts.id.prompt();
+        google.accounts.id.prompt((notification) => {
+          if (settled) {
+            return;
+          }
+
+          if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
+            settled = true;
+            window.clearTimeout(timeout);
+            reject(new Error("Google sign-in UI could not be displayed. Please ensure Google is not blocked."));
+          }
+        });
       });
 
       await loginWithGoogle(credential, rememberMe);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Google sign-in failed. Please try again.");
+      const message = err instanceof Error ? err.message : "Google sign-in failed. Please try again.";
+      setError(message);
     } finally {
       setIsGoogleLoading(false);
     }

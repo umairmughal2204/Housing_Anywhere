@@ -102,7 +102,7 @@ interface CostLine {
 interface OptionalServiceLine {
   type: string;
   includedInRent: "Included in rent" | "Paid separately";
-  frequency: "At move-in" | "every month" | "one-time";
+  frequency: "At move-in" | "every month" | "Move out";
   amount: string;
 }
 
@@ -739,7 +739,7 @@ export function LandlordAddListing() {
           listing.optionalServices?.map((line) => ({
             type: line.type ?? "Other optional costs",
             includedInRent: "Paid separately",
-            frequency: line.frequency === "monthly" ? "every month" : "one-time",
+            frequency: line.frequency === "monthly" ? "every month" : "Move out",
             amount: String(line.amount ?? 0),
           })) ?? []
         );
@@ -1992,7 +1992,7 @@ export function LandlordAddListing() {
                             >
                               <option value="At move-in">At move-in</option>
                               <option value="every month">every month</option>
-                              <option value="one-time">one-time</option>
+                              <option value="Move out">Move out</option>
                             </select>
                           </td>
                           <td className="px-[8px] py-[6px]">

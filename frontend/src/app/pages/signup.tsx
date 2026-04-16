@@ -97,9 +97,9 @@ export function Signup() {
             id?: {
               initialize: (config: {
                 client_id: string;
-                callback: (response: { credential?: string }) => void;
+                callback: (response: { credential?: string; error?: string }) => void;
               }) => void;
-              prompt: () => void;
+              prompt: (callback?: (notification: { isNotDisplayed: () => boolean; isSkippedMoment: () => boolean }) => void) => void;
             };
           };
         };
@@ -125,25 +125,42 @@ export function Signup() {
             if (settled) {
               return;
             }
-            settled = true;
-            window.clearTimeout(timeout);
 
-            if (!response.credential) {
-              reject(new Error("No Google credential received"));
+            if (response.error) {
+              settled = true;
+              window.clearTimeout(timeout);
+              reject(new Error(response.error));
               return;
             }
 
+            if (!response.credential) {
+              return;
+            }
+
+            settled = true;
+            window.clearTimeout(timeout);
             resolve(response.credential);
           },
         });
 
-        google.accounts.id.prompt();
+        google.accounts.id.prompt((notification) => {
+          if (settled) {
+            return;
+          }
+
+          if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
+            settled = true;
+            window.clearTimeout(timeout);
+            reject(new Error("Google sign-up UI could not be displayed. Please ensure Google is not blocked."));
+          }
+        });
       });
 
       await signupWithGoogle(credential);
       navigate("/");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Google sign-up failed. Please try again.");
+      const message = err instanceof Error ? err.message : "Google sign-up failed. Please try again.";
+      setError(message);
     } finally {
       setIsGoogleLoading(false);
     }
