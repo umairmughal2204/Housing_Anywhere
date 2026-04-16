@@ -60,7 +60,7 @@ export function LandlordRegister() {
   const { registerAsLandlord, isAuthenticated } = useAuth();
 
   const [formData, setFormData] = useState({
-    businessType: "individual" as "individual" | "dealer" | "agency",
+    businessType: "" as "" | "individual" | "dealer" | "agency",
     numberOfProperties: "",
     countryOfRegistration: "",
     phoneCountryCode: "+1",
@@ -105,6 +105,11 @@ export function LandlordRegister() {
 
     if (!isAuthenticated) {
       navigate("/login");
+      return;
+    }
+
+    if (!formData.businessType) {
+      setError("Please select what type of landlord you are.");
       return;
     }
 
@@ -205,7 +210,7 @@ export function LandlordRegister() {
 
               <label
                 className={`block cursor-pointer rounded-[2px] border px-[16px] py-[16px] transition-colors ${
-                  formData.businessType !== "individual" ? "border-[#284D61] bg-white" : "border-[#C0CDD8] bg-white"
+                  formData.businessType === "dealer" ? "border-[#284D61] bg-white" : "border-[#C0CDD8] bg-white"
                 }`}
               >
                 <div className="flex items-start gap-[12px]">

@@ -65,9 +65,9 @@ export function LandlordDashboard() {
 
   return (
     <LandlordPortalLayout>
-      <main className="flex-1 p-[32px]">
+      <main className="flex-1 py-[32px] px-[20px] md:px-[110px] xl:px-[150px]">
         <div className="mb-[28px]">
-          <h1 className="text-neutral-black text-[24px] font-bold tracking-[-0.02em] mb-[8px]">
+          <h1 className="text-neutral-black text-[28px] font-bold tracking-[-0.03em] mb-[8px]">
             Stay connected with interested tenants
           </h1>
           <p className="text-neutral-gray text-[14px]">
@@ -77,26 +77,21 @@ export function LandlordDashboard() {
         </div>
 
         {isLoading && (
-          <div className="grid grid-cols-1 lg:grid-cols-[1.15fr_1fr] gap-[24px]">
+          <div className="grid grid-cols-1 gap-[24px] max-w-[860px] mx-auto">
             <div className="bg-white border border-[rgba(0,0,0,0.08)] rounded-[10px] p-[28px] space-y-[14px]">
               <Skeleton className="h-[30px] w-[300px]" />
               <Skeleton className="h-[100px] w-full" />
               <Skeleton className="h-[52px] w-[200px]" />
             </div>
-            <div className="space-y-[16px]">
-              <Skeleton className="h-[110px] w-full" />
-              <Skeleton className="h-[110px] w-full" />
-              <Skeleton className="h-[120px] w-full" />
-            </div>
           </div>
         )}
 
         {!isLoading && (
-          <div className="grid grid-cols-1 lg:grid-cols-[1.15fr_1fr] gap-[24px] items-start">
-            <div className="bg-white border border-[rgba(0,0,0,0.08)] rounded-[10px] p-[28px]">
-              <h2 className="text-[#12303B] text-[34px] font-bold leading-[1.05] mb-[16px]">Ready for your first request?</h2>
+          <div className="grid grid-cols-1 gap-[24px] items-start max-w-[860px] mx-auto">
+            <div className="bg-white border border-[#E3E8EE] rounded-[14px] p-[28px] shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
+              <h2 className="text-[#12303B] text-[22px] font-bold leading-[1.15] mb-[12px] text-center">Ready for your first request?</h2>
 
-              <div className="w-[92px] h-[92px] mx-auto my-[8px]">
+              <div className="w-[68px] h-[68px] mx-auto my-[6px]">
                 <img
                   src="/src/assets/business-report.svg"
                   alt="Business report illustration"
@@ -104,47 +99,17 @@ export function LandlordDashboard() {
                 />
               </div>
 
-              <p className="text-[#35515D] text-[16px] leading-[1.45] text-center max-w-[560px] mx-auto">
+              <p className="text-[#35515D] text-[14px] leading-[1.45] text-center max-w-[520px] mx-auto">
                 To get started, make sure your listings are published and looking their best.
               </p>
 
-              <div className="mt-[26px] flex justify-center">
+              <div className="mt-[18px] flex justify-center">
                 <Link
                   to="/landlord/listings"
-                  className="h-[48px] min-w-[220px] px-[24px] bg-brand-primary text-white text-[18px] font-bold inline-flex items-center justify-center hover:bg-brand-primary-dark transition-colors"
+                  className="h-[40px] min-w-[180px] px-[18px] inline-flex items-center justify-center rounded-[12px] border border-[#0BA5C7] bg-[#0BA5C7] text-white text-[14px] font-semibold shadow-[0_1px_2px_rgba(15,23,42,0.04)] hover:bg-[#0897B5] hover:border-[#0897B5] transition-colors"
                 >
                   Go to listings
                 </Link>
-              </div>
-            </div>
-
-            <div className="space-y-[18px]">
-              <div className="bg-white border border-[rgba(0,0,0,0.08)] rounded-[10px] p-[20px]">
-                <p className="text-[#35515D] text-[15px] mb-[10px]">Response time</p>
-                <p className="text-[#12303B] text-[22px] font-bold leading-[1]">-</p>
-                <span className="mt-[12px] inline-flex px-[12px] py-[4px] rounded-full text-[13px] font-semibold bg-[#E9EEF2] text-[#35515D]">
-                  Pending
-                </span>
-              </div>
-
-              <div className="bg-white border border-[rgba(0,0,0,0.08)] rounded-[10px] p-[20px]">
-                <p className="text-[#35515D] text-[15px] mb-[10px]">Response rate</p>
-                <p className="text-[#12303B] text-[22px] font-bold leading-[1]">-</p>
-                <span className="mt-[12px] inline-flex px-[12px] py-[4px] rounded-full text-[13px] font-semibold bg-[#E9EEF2] text-[#35515D]">
-                  Pending
-                </span>
-              </div>
-
-              <div className="bg-white border border-[rgba(0,0,0,0.08)] rounded-[10px] p-[20px]">
-                <h3 className="text-[#12303B] text-[22px] font-bold leading-[1.2] mb-[8px]">Stay competitive</h3>
-                <p className="text-[#35515D] text-[15px] leading-[1.55]">
-                  High scores, high ranking. Landlords with fast replies and a 100% response rate appear higher in search results.
-                </p>
-                {(stats.unreadMessages > 0 || stats.pendingApplications > 0) && (
-                  <p className="mt-[12px] text-[14px] text-[#35515D]">
-                    You currently have {stats.unreadMessages} unread message(s) and {stats.pendingApplications} pending application(s).
-                  </p>
-                )}
               </div>
             </div>
           </div>

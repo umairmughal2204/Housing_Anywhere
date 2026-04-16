@@ -291,10 +291,10 @@ export function Landlord() {
             <div className="bg-white border border-[rgba(0,0,0,0.08)] p-[24px] text-center">
               <TrendingUp className="w-[40px] h-[40px] text-brand-primary mx-auto mb-[16px]" />
               <h3 className="text-[#1A1A1A] text-[18px] font-bold mb-[8px]">
-                Performance analytics
+                Live activity updates
               </h3>
               <p className="text-[#6B6B6B] text-[14px] leading-[1.6]">
-                Track views, inquiries, and optimize your listing
+                Stay updated on inquiries and tenant responses in real time
               </p>
             </div>
             <div className="bg-white border border-[rgba(0,0,0,0.08)] p-[24px] text-center">

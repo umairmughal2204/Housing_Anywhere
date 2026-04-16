@@ -11,7 +11,6 @@ import { TenantInbox } from "./pages/tenant-inbox";
 import { TenantApplications } from "./pages/tenant-applications";
 import { LandlordInbox } from "./pages/landlord-inbox";
 import { LandlordDashboard } from "./pages/landlord-dashboard";
-import { LandlordAnalytics } from "./pages/landlord-analytics";
 import { LandlordListings } from "./pages/landlord-listings";
 import { LandlordRentals } from "./pages/landlord-rentals";
 import { LandlordCalendar } from "./pages/landlord-calendar";
@@ -39,7 +38,6 @@ function withProtectedRoute(Page: ComponentType) {
 }
 
 const ProtectedLandlordDashboard = withProtectedRoute(LandlordDashboard);
-const ProtectedLandlordAnalytics = withProtectedRoute(LandlordAnalytics);
 const ProtectedLandlordListings = withProtectedRoute(LandlordListings);
 const ProtectedLandlordAddListing = withProtectedRoute(LandlordAddListing);
 const ProtectedLandlordListingOptions = withProtectedRoute(LandlordListingOptions);
@@ -97,7 +95,7 @@ export const router = createBrowserRouter([
   },
   {
     path: "/landlord/analytics",
-    Component: ProtectedLandlordAnalytics,
+    loader: () => redirect("/landlord/dashboard"),
     ErrorBoundary,
   },
   {

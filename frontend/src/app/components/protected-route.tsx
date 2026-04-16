@@ -20,7 +20,7 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#F7F7F9]">
         <div className="text-center">
-          <div className="w-[64px] h-[64px] bg-[#FF4B27] flex items-center justify-center mx-auto mb-[24px]">
+          <div className="w-[64px] h-[64px] bg-brand-primary flex items-center justify-center mx-auto mb-[16px]">
             <svg width="32" height="32" viewBox="0 0 20 20" fill="none">
               <path
                 d="M10 2L3 7V17H8V12H12V17H17V7L10 2Z"
@@ -32,7 +32,10 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
               />
             </svg>
           </div>
-          <div className="text-[#6B6B6B] text-[16px]">Loading...</div>
+          <div className="text-[16px] font-semibold text-[#12303B] mb-[4px]">
+            Easy<span className="text-brand-primary">Rent</span>
+          </div>
+          <div className="text-[#6B6B6B] text-[14px]">Loading...</div>
         </div>
       </div>
     );

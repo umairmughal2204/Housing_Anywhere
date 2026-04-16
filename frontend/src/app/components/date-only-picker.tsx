@@ -6,6 +6,7 @@ interface DateOnlyPickerProps {
   onClose: () => void;
   selectedDate: Date | null;
   onDateChange: (date: Date) => void;
+  minDate?: Date;
 }
 
 function isSameDay(left: Date, right: Date) {
@@ -20,7 +21,7 @@ function startOfDay(date: Date) {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate());
 }
 
-export function DateOnlyPicker({ isOpen, onClose, selectedDate, onDateChange }: DateOnlyPickerProps) {
+export function DateOnlyPicker({ isOpen, onClose, selectedDate, onDateChange, minDate }: DateOnlyPickerProps) {
   const [visibleMonth, setVisibleMonth] = useState<Date>(() =>
     selectedDate ? new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1) : new Date()
   );
@@ -85,8 +86,10 @@ export function DateOnlyPicker({ isOpen, onClose, selectedDate, onDateChange }: 
   }
 
   const today = startOfDay(new Date());
+  const normalizedMinDate = minDate ? startOfDay(minDate) : null;
   const currentYear = visibleMonth.getFullYear();
   const currentMonthIndex = visibleMonth.getMonth();
+  const canGoToPreviousMonth = !normalizedMinDate || new Date(currentYear, currentMonthIndex - 1, 1) >= new Date(normalizedMinDate.getFullYear(), normalizedMinDate.getMonth(), 1);
 
   // Month/Year picker - generate years and months
   const yearRange = Array.from({ length: 20 }, (_, i) => currentYear - 10 + i);
@@ -105,7 +108,8 @@ export function DateOnlyPicker({ isOpen, onClose, selectedDate, onDateChange }: 
         <button
           type="button"
           onClick={() => setVisibleMonth((prev) => new Date(prev.getFullYear(), prev.getMonth() - 1, 1))}
-          className="h-[36px] w-[36px] flex items-center justify-center border border-[rgba(15,61,73,0.15)] rounded-[6px] hover:bg-[#F0F6F7] transition-colors"
+          disabled={!canGoToPreviousMonth}
+          className="h-[36px] w-[36px] flex items-center justify-center border border-[rgba(15,61,73,0.15)] rounded-[6px] hover:bg-[#F0F6F7] disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent transition-colors"
           aria-label="Previous month"
         >
           <ChevronLeft className="w-[18px] h-[18px] text-[#0F2D36]" />
@@ -202,16 +206,21 @@ export function DateOnlyPicker({ isOpen, onClose, selectedDate, onDateChange }: 
 
           const isSelected = selectedDate ? isSameDay(cell.date, selectedDate) : false;
           const isToday = isSameDay(cell.date, today);
+          const isDisabled = normalizedMinDate ? cell.date < normalizedMinDate : false;
 
           return (
             <button
               key={cell.key}
               type="button"
+              disabled={isDisabled}
               onClick={() => {
                 onDateChange(cell.date as Date);
                 onClose();
               }}
               className={`h-[40px] text-[14px] font-medium rounded-[6px] transition-colors ${
+                isDisabled
+                  ? "text-[#A7B3B9] bg-[#F5F7F8] cursor-not-allowed"
+                  :
                 isSelected
                   ? "bg-[#0F2D36] text-white"
                   : isToday

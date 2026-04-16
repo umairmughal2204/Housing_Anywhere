@@ -57,13 +57,13 @@ export function LandlordCalendar() {
 
   return (
     <LandlordPortalLayout>
-      <main className="flex-1 p-[32px]">
+      <main className="flex-1 px-[20px] py-[20px] lg:px-[28px] lg:py-[24px]">
         {/* Header */}
         <div className="mb-[32px]">
-          <h1 className="text-neutral-black text-[32px] font-bold tracking-[-0.02em] mb-[8px]">
+          <h1 className="text-neutral-black text-[28px] font-bold tracking-[-0.03em] mb-[8px]">
             Calendar
           </h1>
-          <p className="text-neutral-gray text-[16px]">
+          <p className="text-neutral-gray text-[14px]">
             View all your property bookings and availability
           </p>
           {error && <p className="text-brand-primary text-[14px] mt-[8px]">{error}</p>}

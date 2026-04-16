@@ -202,11 +202,11 @@ export function LandlordPortalLayout({
   return (
     <div className="min-h-screen bg-neutral-light-gray">
       {/* Top Header */}
-      <header className="bg-white border-b border-[rgba(0,0,0,0.08)] sticky top-0 z-50">
-        <div className="max-w-[1440px] mx-auto px-[32px] py-[16px] flex items-center justify-between">
+      <header className="bg-white border-b border-[#E3E8EE] shadow-[0_1px_2px_rgba(15,23,42,0.04)] sticky top-0 z-50">
+        <div className="max-w-[1440px] mx-auto px-[20px] lg:px-[28px] py-[12px] flex items-center justify-between">
           <div className="flex items-center gap-[12px]">
             <Link to="/" className="flex items-center gap-[8px]">
-              <div className="w-[32px] h-[32px] bg-brand-primary flex items-center justify-center">
+              <div className="w-[34px] h-[34px] bg-brand-primary rounded-[8px] flex items-center justify-center">
                 <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
                   <path
                     d="M10 2L3 7V17H8V12H12V17H17V7L10 2Z"
@@ -229,7 +229,7 @@ export function LandlordPortalLayout({
 
             <Link
               to={isOnListingForm ? "/landlord/dashboard" : "/landlord/add-listing"}
-              className="flex items-center gap-[8px] px-[16px] py-[8px] bg-brand-primary text-white text-[14px] font-semibold hover:bg-brand-primary-dark transition-colors"
+              className="inline-flex items-center gap-[8px] rounded-[14px] border border-[#8C99A8] px-[16px] py-[10px] bg-white text-[#1F2937] text-[14px] font-semibold shadow-[0_1px_2px_rgba(15,23,42,0.04)] hover:bg-[#F5F7FA] hover:border-[#7A8898] hover:text-[#1F2937] transition-colors"
             >
               {isOnListingForm ? <LayoutDashboard className="w-[16px] h-[16px]" /> : <FileText className="w-[16px] h-[16px]" />}
               {isOnListingForm ? "Go to Dashboard" : "Add Listing"}
@@ -351,6 +351,14 @@ export function LandlordPortalLayout({
                     >
                       <TrendingUp className="w-[16px] h-[16px] text-neutral-gray" />
                       How it works
+                    </Link>
+                    <Link
+                      to="/listings"
+                      className="flex items-center gap-[12px] px-[16px] py-[12px] text-neutral-black text-[14px] hover:bg-neutral-light-gray transition-colors"
+                      onClick={() => setShowUserMenu(false)}
+                    >
+                      <Home className="w-[16px] h-[16px] text-neutral-gray" />
+                      View as Tenant
                     </Link>
                     <Link
                       to="/pricing"
@@ -509,14 +517,6 @@ export function LandlordPortalLayout({
               })}
             </nav>
 
-            <div className="px-[24px] py-[16px] border-t border-[rgba(0,0,0,0.08)]">
-              <Link
-                to="/landlord/add-listing"
-                className="block w-full px-[16px] py-[10px] bg-brand-primary text-white text-[14px] font-bold text-center hover:bg-brand-primary-dark transition-colors"
-              >
-                + Add Listing
-              </Link>
-            </div>
           </aside>
         )}
 

@@ -347,28 +347,43 @@ export function LandlordInbox() {
 
   return (
     <LandlordPortalLayout>
-      <div className="h-[calc(100vh-73px)] flex bg-white">
-        {/* Sidebar */}
-        <div className="w-[380px] border-r border-[rgba(0,0,0,0.08)] flex flex-col flex-shrink-0">
-          <div className="p-[20px] border-b border-[rgba(0,0,0,0.08)] bg-white">
-            <h1 className="text-[22px] font-bold text-[#1A1A1A] mb-[14px]">Inbox</h1>
-            <div className="relative">
-              <Search className="absolute left-[12px] top-1/2 -translate-y-1/2 w-[15px] h-[15px] text-[#6B6B6B]" />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search"
-                className="w-full pl-[34px] pr-[12px] py-[9px] bg-[#F7F7F9] text-[13px] text-[#1A1A1A] placeholder:text-[#9B9B9B] border-2 border-transparent focus:border-brand-primary outline-none transition-colors"
-              />
-            </div>
+      <main className="flex-1 px-[20px] py-[20px] lg:px-[28px] lg:py-[24px]">
+        <div className="flex flex-col gap-[16px] xl:flex-row xl:items-start xl:justify-between xl:gap-[20px]">
+          <div>
+            <h1 className="text-neutral-black text-[28px] font-bold tracking-[-0.03em]">Messages</h1>
           </div>
 
-          <div className="flex-1 overflow-y-auto">
+          <div className="flex flex-col gap-[10px] sm:flex-row sm:items-center">
+            <Link
+              to="/landlord/listings"
+              className="inline-flex items-center justify-center gap-[8px] rounded-[18px] border-2 border-[#AFC1D3] bg-white px-[16px] py-[12px] text-[14px] font-semibold text-[#0B2D3A] shadow-[0_1px_2px_rgba(15,23,42,0.04)] transition-colors hover:bg-[#F7FBFE]"
+            >
+              View listings
+            </Link>
+          </div>
+        </div>
+
+        <div className="mt-[20px] flex h-[calc(100vh-200px)] min-h-[620px] overflow-hidden rounded-[22px] border border-[rgba(11,45,58,0.08)] bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
+          {/* Conversation list */}
+          <div className="w-[390px] border-r border-[rgba(0,0,0,0.08)] flex flex-col flex-shrink-0 bg-[#F7FAFC]">
+            <div className="p-[16px] border-b border-[rgba(0,0,0,0.08)] bg-white">
+              <div className="relative">
+                <Search className="absolute left-[14px] top-1/2 -translate-y-1/2 h-[18px] w-[18px] text-[#0B2D3A]" />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search messages"
+                  className="h-[48px] w-full rounded-[12px] border border-[#A8B2BF] bg-white pl-[42px] pr-[12px] text-[14px] font-medium text-[#0B2D3A] placeholder:text-[#9AA7B4] outline-none transition-colors focus:border-brand-primary"
+                />
+              </div>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-[12px] space-y-[10px]">
             {isLoading && (
-              <div className="p-[16px] space-y-[12px]">
+              <div className="space-y-[12px]">
                 {[0, 1, 2, 3, 4].map((item) => (
-                  <div key={item} className="bg-white border border-[rgba(0,0,0,0.06)] p-[12px]">
+                  <div key={item} className="rounded-[14px] border border-[rgba(11,45,58,0.08)] bg-white p-[12px]">
                     <div className="flex items-start gap-[10px]">
                       <Skeleton className="w-[38px] h-[38px] rounded-full" />
                       <div className="flex-1 space-y-[8px]">
@@ -381,9 +396,9 @@ export function LandlordInbox() {
                 ))}
               </div>
             )}
-            {!isLoading && error && <p className="text-brand-primary text-[13px] p-[20px]">{error}</p>}
+            {!isLoading && error && <p className="text-brand-primary text-[13px] p-[8px]">{error}</p>}
             {!isLoading && !error && filtered.length === 0 && (
-              <div className="p-[40px] text-center">
+              <div className="p-[30px] text-center">
                 <p className="text-[#6B6B6B] text-[13px]">{searchQuery ? "No conversations match your search." : "No conversations yet."}</p>
               </div>
             )}
@@ -391,8 +406,10 @@ export function LandlordInbox() {
               <button
                 key={c.id}
                 onClick={() => setSelectedId(c.id)}
-                className={`w-full p-[16px] border-b border-[rgba(0,0,0,0.06)] text-left transition-all ${
-                  selectedId === c.id ? "bg-white shadow-[inset_4px_0_0_0_var(--color-brand-primary)]" : "bg-[#F7F7F9] hover:bg-white"
+                className={`w-full rounded-[14px] border p-[14px] text-left transition-all ${
+                  selectedId === c.id
+                    ? "border-brand-primary/40 bg-white shadow-[0_2px_10px_rgba(15,23,42,0.05)]"
+                    : "border-[rgba(11,45,58,0.08)] bg-white hover:border-[#BFD0DD]"
                 }`}
               >
                 <div className="flex items-start gap-[10px]">
@@ -418,26 +435,27 @@ export function LandlordInbox() {
                 </div>
               </button>
             ))}
-          </div>
-        </div>
-
-        {/* Main panel */}
-        {selectedConversation ? (
-          <ChatPanel key={selectedConversation.id} conversation={selectedConversation} onClose={() => setSelectedId(null)} />
-        ) : (
-          <div className="flex-1 flex items-center justify-center bg-[#F7F7F9]">
-            <div className="text-center max-w-[320px]">
-              <div className="w-[80px] h-[80px] rounded-full bg-white mx-auto mb-[16px] flex items-center justify-center border border-[rgba(0,0,0,0.08)]">
-                <Send className="w-[36px] h-[36px] text-[#D0D0D0]" />
-              </div>
-              <h3 className="text-[20px] font-bold text-[#1A1A1A] mb-[8px]">Select a conversation</h3>
-              <p className="text-[14px] text-[#6B6B6B] leading-[1.6]">
-                Choose a tenant message from the list to start chatting.
-              </p>
             </div>
           </div>
-        )}
-      </div>
+
+          {/* Main panel */}
+          {selectedConversation ? (
+            <ChatPanel key={selectedConversation.id} conversation={selectedConversation} onClose={() => setSelectedId(null)} />
+          ) : (
+            <div className="flex-1 flex items-center justify-center bg-[#F7FAFC]">
+              <div className="text-center max-w-[320px]">
+                <div className="w-[80px] h-[80px] rounded-full bg-white mx-auto mb-[16px] flex items-center justify-center border border-[rgba(0,0,0,0.08)]">
+                  <Send className="w-[36px] h-[36px] text-[#D0D0D0]" />
+                </div>
+                <h3 className="text-[20px] font-bold text-[#1A1A1A] mb-[8px]">Select a conversation</h3>
+                <p className="text-[14px] text-[#6B6B6B] leading-[1.6]">
+                  Choose a tenant message from the list to start chatting.
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
+      </main>
     </LandlordPortalLayout>
   );
 }

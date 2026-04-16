@@ -337,14 +337,26 @@ export function Header() {
                       <TrendingUp className="w-[16px] h-[16px] text-neutral-gray" />
                       How it works
                     </Link>
-                    <Link
-                      to="/pricing"
-                      className="flex items-center gap-[12px] px-[16px] py-[12px] text-neutral-black text-[14px] hover:bg-neutral-light-gray transition-colors"
-                      onClick={() => setShowDropdown(false)}
-                    >
-                      <CreditCard className="w-[16px] h-[16px] text-neutral-gray" />
-                      Pricing
-                    </Link>
+                    {user?.isLandlord ? (
+                      <Link
+                        to="/pricing"
+                        className="flex items-center gap-[12px] px-[16px] py-[12px] text-neutral-black text-[14px] hover:bg-neutral-light-gray transition-colors"
+                        onClick={() => setShowDropdown(false)}
+                      >
+                        <CreditCard className="w-[16px] h-[16px] text-neutral-gray" />
+                        Pricing
+                      </Link>
+                    ) : (
+                      <button
+                        type="button"
+                        disabled
+                        aria-disabled="true"
+                        className="w-full flex items-center gap-[12px] px-[16px] py-[12px] text-[14px] text-neutral-gray cursor-not-allowed"
+                      >
+                        <CreditCard className="w-[16px] h-[16px] text-neutral-gray" />
+                        Pricing
+                      </button>
+                    )}
                     <Link
                       to="/help"
                       className="flex items-center gap-[12px] px-[16px] py-[12px] text-neutral-black text-[14px] hover:bg-neutral-light-gray transition-colors"

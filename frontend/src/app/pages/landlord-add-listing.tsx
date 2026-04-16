@@ -840,6 +840,36 @@ export function LandlordAddListing() {
     return Number.isNaN(parsed.getTime()) ? null : parsed;
   };
 
+  const parseRentalPeriodMonths = (value: string, type: "min" | "max") => {
+    if (!value) {
+      return null;
+    }
+
+    if (value === "No minimum") {
+      return 0;
+    }
+
+    if (value === "No maximum") {
+      return type === "max" ? Number.POSITIVE_INFINITY : 0;
+    }
+
+    const numericMatch = value.match(/\d+(\.\d+)?/);
+    if (!numericMatch) {
+      return null;
+    }
+
+    const amount = Number.parseFloat(numericMatch[0]);
+    if (!Number.isFinite(amount)) {
+      return null;
+    }
+
+    if (value.includes("year")) {
+      return Math.round(amount * 12);
+    }
+
+    return Math.round(amount);
+  };
+
   const toDateInputValue = (date: Date) => {
     const year = date.getFullYear();
     const month = `${date.getMonth() + 1}`.padStart(2, "0");
@@ -858,6 +888,8 @@ export function LandlordAddListing() {
   };
 
   const isMultiUnitProperty = propertyType === "Apartment" || propertyType === "Building";
+  const selectedMinimumRentalMonths = parseRentalPeriodMonths(minimumRentalPeriod, "min");
+  const selectedMaximumRentalMonths = parseRentalPeriodMonths(maximumRentalPeriod, "max");
 
   const getSectionValidationErrors = (section: 1 | 2 | 3 | 4 | 5 | 6 | 7): string[] => {
     const errors: string[] = [];
@@ -870,6 +902,13 @@ export function LandlordAddListing() {
       if (!availableFrom) errors.push("Available from");
       if (!monthlyRent || Number.parseFloat(monthlyRent) <= 0) errors.push("Monthly rent must be greater than 0");
       if (!currency) errors.push("Currency");
+      if (
+        selectedMinimumRentalMonths !== null &&
+        selectedMaximumRentalMonths !== null &&
+        selectedMaximumRentalMonths < selectedMinimumRentalMonths
+      ) {
+        errors.push("Maximum rental period can't be less than minimum rental period");
+      }
     }
 
     if (section === 2) {
@@ -1089,6 +1128,14 @@ export function LandlordAddListing() {
   const availableUtilityAddOptions = utilityAddOptions.filter(
     (option) => !utilityLines.some((line) => line.type === option)
   );
+  const availableMaxRentalOptions = maxRentalOptions.filter((option) => {
+    const optionMonths = parseRentalPeriodMonths(option, "max");
+    if (optionMonths === null || selectedMinimumRentalMonths === null) {
+      return true;
+    }
+
+    return optionMonths >= selectedMinimumRentalMonths;
+  });
   const availableAdditionalRequiredCostOptions = additionalRequiredCostOptions.filter(
     (option) => !additionalRequiredLines.some((line) => line.type === option)
   );
@@ -1099,7 +1146,7 @@ export function LandlordAddListing() {
     (option) => !depositLines.some((line) => line.type === option)
   );
   const contentBottomPaddingClass = currentSection === 1 ? "pb-[44px] md:pb-[56px]" : "pb-[120px] md:pb-[130px]";
-  const sectionLayoutClass = "max-w-[760px] mr-auto w-full";
+  const sectionLayoutClass = "max-w-[760px] w-full mr-auto md:ml-[24px] lg:ml-[56px] xl:ml-[96px] 2xl:ml-[140px]";
 
   return (
     <LandlordPortalLayout hideSidebar hideFooter>
@@ -1331,6 +1378,7 @@ export function LandlordAddListing() {
                       isOpen={isAvailableFromPickerOpen}
                       onClose={() => setIsAvailableFromPickerOpen(false)}
                       selectedDate={parseAvailableFromDate()}
+                      minDate={new Date()}
                       onDateChange={(date) => {
                         setAvailableFrom(toDateInputValue(date));
                         setSectionError(null);
@@ -1378,7 +1426,26 @@ export function LandlordAddListing() {
                 <div>
                   <label className="block text-[12px] text-[#5A7380] mb-[6px]">Minimum rental period</label>
                   <div className="relative">
-                    <select value={minimumRentalPeriod} onChange={(e) => setMinimumRentalPeriod(e.target.value)} className="w-full h-[44px] bg-transparent border-0 border-b border-[rgba(0,0,0,0.30)] text-[20px] leading-[1] text-[#1A1A1A] appearance-none pr-[28px] focus:outline-none focus:border-brand-primary">
+                    <select
+                      value={minimumRentalPeriod}
+                      onChange={(e) => {
+                        const nextMinimum = e.target.value;
+                        setMinimumRentalPeriod(nextMinimum);
+
+                        const nextMinimumMonths = parseRentalPeriodMonths(nextMinimum, "min");
+                        const currentMaximumMonths = parseRentalPeriodMonths(maximumRentalPeriod, "max");
+                        if (
+                          nextMinimumMonths !== null &&
+                          currentMaximumMonths !== null &&
+                          currentMaximumMonths < nextMinimumMonths
+                        ) {
+                          setMaximumRentalPeriod("No maximum");
+                        }
+
+                        setSectionError(null);
+                      }}
+                      className="w-full h-[44px] bg-transparent border-0 border-b border-[rgba(0,0,0,0.30)] text-[20px] leading-[1] text-[#1A1A1A] appearance-none pr-[28px] focus:outline-none focus:border-brand-primary"
+                    >
                       {minRentalOptions.map((item) => (
                         <option key={item} value={item}>
                           {item}
@@ -1392,8 +1459,15 @@ export function LandlordAddListing() {
                 <div>
                   <label className="block text-[12px] text-[#5A7380] mb-[6px]">Maximum rental period</label>
                   <div className="relative">
-                    <select value={maximumRentalPeriod} onChange={(e) => setMaximumRentalPeriod(e.target.value)} className="w-full h-[44px] bg-transparent border-0 border-b border-[rgba(0,0,0,0.30)] text-[20px] leading-[1] text-[#1A1A1A] appearance-none pr-[28px] focus:outline-none focus:border-brand-primary">
-                      {maxRentalOptions.map((item) => (
+                    <select
+                      value={maximumRentalPeriod}
+                      onChange={(e) => {
+                        setMaximumRentalPeriod(e.target.value);
+                        setSectionError(null);
+                      }}
+                      className="w-full h-[44px] bg-transparent border-0 border-b border-[rgba(0,0,0,0.30)] text-[20px] leading-[1] text-[#1A1A1A] appearance-none pr-[28px] focus:outline-none focus:border-brand-primary"
+                    >
+                      {availableMaxRentalOptions.map((item) => (
                         <option key={item} value={item}>
                           {item}
                         </option>
