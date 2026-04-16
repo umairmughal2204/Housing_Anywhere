@@ -894,6 +894,15 @@ export function LandlordAddListing() {
   const getSectionValidationErrors = (section: 1 | 2 | 3 | 4 | 5 | 6 | 7): string[] => {
     const errors: string[] = [];
 
+    const isUtilityAmountInvalid = (line: CostLine) => {
+      if (line.includedInRent === "Included in rent") {
+        return false;
+      }
+
+      const parsedAmount = Number(line.amount);
+      return !line.amount.trim() || Number.isNaN(parsedAmount) || parsedAmount <= 0;
+    };
+
     if (section === 1) {
       if (!kind) errors.push("What kind of place are you listing?");
       if (!propertyType) errors.push("What type of property is this?");
@@ -931,11 +940,19 @@ export function LandlordAddListing() {
 
     if (section === 5) {
       if (!cancellationPolicy) errors.push("Cancellation policy");
+
+      const missingPaidUtilityAmounts = utilityLines.some((line) => isUtilityAmountInvalid(line));
+      if (missingPaidUtilityAmounts) {
+        errors.push("Utility amount above 0 for paid separately items");
+      }
+    }
+
+    if (section === 6) {
+      if (!agreedToDocumentPrivacyPolicy) errors.push("Document usage and Privacy Policy agreement");
     }
 
     if (section === 7) {
       if (uploadedMedia.length === 0) errors.push("Photos");
-      if (!agreedToTerms) errors.push("HousingAnywhere terms & conditions agreement");
       if (!agreedToDocumentPrivacyPolicy) errors.push("Document usage and Privacy Policy agreement");
     }
 
@@ -1897,12 +1914,19 @@ export function LandlordAddListing() {
                           <div className="flex items-center gap-[4px]">
                             <span>EUR</span>
                             <input
+                              type="number"
+                              min="0"
+                              step="0.01"
+                              inputMode="decimal"
                               value={line.amount}
                               onChange={(e) => updateUtilityLine(index, "amount", e.target.value)}
                               disabled={line.includedInRent === "Included in rent"}
                               className="w-[76px] bg-transparent border-0 border-b border-[rgba(0,0,0,0.20)] h-[24px] focus:outline-none disabled:opacity-60 disabled:cursor-not-allowed"
                             />
                           </div>
+                          {line.includedInRent === "Paid separately" && (!line.amount.trim() || Number.isNaN(Number(line.amount)) || Number(line.amount) <= 0) && (
+                            <p className="text-[10px] text-[#C0392B] mt-[2px]">Please enter an amount above 0</p>
+                          )}
                         </td>
                         <td className="px-[8px] py-[6px] text-right">
                           {line.type === "Broadcasting fee" && (
@@ -2418,6 +2442,23 @@ export function LandlordAddListing() {
                   </span>
                 </label>
               </div>
+
+              <div className="mt-[18px]">
+                <h3 className="text-[16px] font-semibold text-[#12303B]">Permissions<span className="text-[#C0392B]">*</span></h3>
+
+                <label className="mt-[8px] inline-flex items-start gap-[8px] cursor-pointer text-[12px] text-[#244A57] max-w-[980px]">
+                  <input
+                    type="checkbox"
+                    checked={agreedToDocumentPrivacyPolicy}
+                    onChange={(e) => setAgreedToDocumentPrivacyPolicy(e.target.checked)}
+                    className="mt-[2px] w-[13px] h-[13px] accent-brand-primary"
+                  />
+                  <span>
+                    I agree that I will only use the required documents to create a rental agreement. I will destroy the copies within 48 hours if the person won't be renting the property. Read our{" "}
+                    <a href="#" className="underline text-[#12303B]">Privacy Policy</a>.
+                  </span>
+                </label>
+              </div>
             </div>
           </div>
         )}
@@ -2482,17 +2523,6 @@ export function LandlordAddListing() {
 
             <div className="mt-[28px]">
               <h2 className="text-[16px] font-semibold text-[#12303B]">Permissions<span className="text-[#C0392B]">*</span></h2>
-              <label className="mt-[8px] inline-flex items-center gap-[8px] cursor-pointer text-[12px] text-[#244A57]">
-                <input
-                  type="checkbox"
-                  checked={agreedToTerms}
-                  onChange={(e) => setAgreedToTerms(e.target.checked)}
-                  className="w-[13px] h-[13px] accent-brand-primary"
-                />
-                <span>
-                  I agree with the <a href="#" className="underline text-[#12303B]">HousingAnywhere terms &amp; conditions</a>
-                </span>
-              </label>
 
               <label className="mt-[8px] inline-flex items-start gap-[8px] cursor-pointer text-[12px] text-[#244A57] max-w-[980px]">
                 <input
