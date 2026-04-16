@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router";
 import { LandlordPortalLayout } from "../components/landlord-portal-layout";
 import { Button } from "../components/ui/button";
@@ -16,14 +16,74 @@ export function LandlordListingOptions() {
   const apiBase = API_BASE;
   const navigate = useNavigate();
   const [selectedOption, setSelectedOption] = useState<"new" | "duplicate">("new");
+  const [flowStep, setFlowStep] = useState<"options" | "duplicate-select">("options");
   const [myListings, setMyListings] = useState<MineListing[]>([]);
+  const [hasExistingListings, setHasExistingListings] = useState<boolean | null>(null);
   const [selectedListingId, setSelectedListingId] = useState("");
+  const [listingSearchQuery, setListingSearchQuery] = useState("");
   const [isLoadingListings, setIsLoadingListings] = useState(false);
   const [isContinuing, setIsContinuing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    const token = localStorage.getItem("authToken");
+    if (!token) {
+      setError("Please log in again to continue.");
+      setHasExistingListings(false);
+      return;
+    }
+
+    const fetchMineForGate = async () => {
+      setIsLoadingListings(true);
+      setError(null);
+      try {
+        const response = await fetch(`${apiBase}/api/listings/mine`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error("Unable to load your listings");
+        }
+
+        const data = (await response.json()) as { listings: MineListing[] };
+        const listings = data.listings ?? [];
+        setMyListings(listings);
+
+        if (listings.length === 0) {
+          setHasExistingListings(false);
+          navigate("/landlord/add-listing/new", { replace: true });
+          return;
+        }
+
+        setHasExistingListings(true);
+        setSelectedListingId((current) => current || listings[0].id);
+      } catch (fetchError) {
+        const message = fetchError instanceof Error ? fetchError.message : "Unable to load your listings";
+        setError(message);
+        setHasExistingListings(true);
+      } finally {
+        setIsLoadingListings(false);
+      }
+    };
+
+    void fetchMineForGate();
+  }, [apiBase, navigate]);
+
+  useEffect(() => {
     if (selectedOption !== "duplicate") {
+      return;
+    }
+
+    if (flowStep !== "duplicate-select") {
+      return;
+    }
+
+    if (myListings.length > 0) {
+      if (!selectedListingId) {
+        setSelectedListingId(myListings[0].id);
+      }
       return;
     }
 
@@ -48,9 +108,10 @@ export function LandlordListingOptions() {
         }
 
         const data = (await response.json()) as { listings: MineListing[] };
-        setMyListings(data.listings);
-        if (data.listings.length > 0) {
-          setSelectedListingId(data.listings[0].id);
+        const listings = data.listings ?? [];
+        setMyListings(listings);
+        if (listings.length > 0) {
+          setSelectedListingId(listings[0].id);
         }
       } catch (fetchError) {
         const message = fetchError instanceof Error ? fetchError.message : "Unable to load your listings";
@@ -61,7 +122,36 @@ export function LandlordListingOptions() {
     };
 
     void fetchMine();
-  }, [selectedOption, apiBase]);
+  }, [flowStep, selectedOption, apiBase, myListings, selectedListingId]);
+
+  const filteredMyListings = useMemo(() => {
+    const searchValue = listingSearchQuery.trim().toLowerCase();
+    if (!searchValue) {
+      return myListings;
+    }
+
+    return myListings.filter((listing) => {
+      const title = (listing.title ?? "").toLowerCase();
+      const city = (listing.city ?? "").toLowerCase();
+      const address = (listing.address ?? "").toLowerCase();
+      return title.includes(searchValue) || city.includes(searchValue) || address.includes(searchValue);
+    });
+  }, [listingSearchQuery, myListings]);
+
+  if (hasExistingListings === null) {
+    return (
+      <LandlordPortalLayout hideSidebar hideFooter>
+        <div className="flex items-center justify-center min-h-[calc(100vh-200px)] px-[32px]">
+          <div className="w-full max-w-[800px] space-y-[10px]">
+            <Skeleton className="h-[40px] w-[280px]" />
+            <Skeleton className="h-[20px] w-[520px]" />
+            <Skeleton className="h-[130px] w-full" />
+            <Skeleton className="h-[130px] w-full" />
+          </div>
+        </div>
+      </LandlordPortalLayout>
+    );
+  }
 
   const handleCreateNew = () => {
     navigate("/landlord/add-listing/new");
@@ -70,7 +160,17 @@ export function LandlordListingOptions() {
   const handleContinue = async () => {
     setError(null);
     if (selectedOption === "new") {
+      if (flowStep === "options") {
+        handleCreateNew();
+        return;
+      }
+
       handleCreateNew();
+      return;
+    }
+
+    if (flowStep === "options") {
+      setFlowStep("duplicate-select");
       return;
     }
 
@@ -114,103 +214,169 @@ export function LandlordListingOptions() {
   };
 
   return (
-    <LandlordPortalLayout>
-      <div className="flex items-center justify-center min-h-[calc(100vh-200px)] px-[32px]">
-        <div className="w-full max-w-[800px]">
+    <LandlordPortalLayout hideSidebar hideFooter>
+      <div className="flex items-center justify-center min-h-[calc(100vh-200px)] px-[24px] py-[16px]">
+        <div className="w-full max-w-[720px]">
           {/* Header */}
-          <div className="mb-[48px]">
-            <h1 className="text-neutral-black text-[40px] font-bold tracking-[-0.02em] mb-[16px]">
-              Listing options
-            </h1>
-            <p className="text-neutral-gray text-[16px] leading-[1.6]">
-              Select one of the options below to start listing your property.
-            </p>
+          <div className="mb-[32px]">
+            {flowStep === "options" ? (
+              <>
+                <h1 className="text-neutral-black text-[34px] font-bold tracking-[-0.02em] mb-[10px]">
+                  Listing options
+                </h1>
+                <p className="text-neutral-gray text-[14px] leading-[1.6] max-w-[620px]">
+                  Select one of the options below to start listing your property.
+                </p>
+              </>
+            ) : (
+              <>
+                <h1 className="text-neutral-black text-[34px] font-bold tracking-[-0.02em] mb-[10px]">
+                  Duplicate an existing listing
+                </h1>
+                <p className="text-neutral-gray text-[14px] leading-[1.6] max-w-[620px]">
+                  Search and select one of your existing listings below for duplication.
+                </p>
+              </>
+            )}
           </div>
 
-          {/* Options */}
-          <div className="space-y-[24px]">
+          {flowStep === "options" ? (
+            <div className="space-y-[16px]">
             {/* Create New Listing */}
             <div
               onClick={() => setSelectedOption("new")}
-              className="cursor-pointer border-[2px] border-neutral-light-gray hover:border-brand-primary transition-colors p-[32px] rounded-[8px] hover:bg-neutral-lighter-gray"
+              className="cursor-pointer border-[1.5px] border-neutral-light-gray hover:border-brand-primary transition-colors p-[24px] rounded-[10px] hover:bg-neutral-lighter-gray"
             >
-              <div className="flex items-start gap-[24px]">
-                <div className={`w-[24px] h-[24px] rounded-full border-[2px] flex items-center justify-center flex-shrink-0 mt-[4px] ${selectedOption === "new" ? "border-brand-primary" : "border-neutral-light-gray"}`}>
-                  {selectedOption === "new" && <div className="w-[12px] h-[12px] rounded-full bg-brand-primary" />}
+              <div className="flex items-start gap-[18px]">
+                <div className={`w-[22px] h-[22px] rounded-full border-[2px] flex items-center justify-center flex-shrink-0 mt-[3px] ${selectedOption === "new" ? "border-brand-primary" : "border-neutral-light-gray"}`}>
+                  {selectedOption === "new" && <div className="w-[11px] h-[11px] rounded-full bg-brand-primary" />}
                 </div>
                 <div>
-                  <h2 className="text-neutral-black text-[18px] font-bold mb-[8px]">
+                  <h2 className="text-neutral-black text-[16px] font-bold mb-[6px]">
                     Create new listing
                   </h2>
-                  <p className="text-neutral-gray text-[14px] leading-[1.6]">
+                  <p className="text-neutral-gray text-[13px] leading-[1.6] max-w-[580px]">
                     Select this option to create a new listing from scratch.
                   </p>
                 </div>
               </div>
             </div>
-
             {/* Duplicate Listing */}
             <div
               onClick={() => setSelectedOption("duplicate")}
-              className="cursor-pointer border-[2px] border-neutral-light-gray hover:border-brand-primary transition-colors p-[32px] rounded-[8px] hover:bg-neutral-lighter-gray"
+              className="cursor-pointer border-[1.5px] border-neutral-light-gray hover:border-brand-primary transition-colors p-[24px] rounded-[10px] hover:bg-neutral-lighter-gray"
             >
-              <div className="flex items-start gap-[24px]">
-                <div className={`w-[24px] h-[24px] rounded-full border-[2px] flex items-center justify-center flex-shrink-0 mt-[4px] ${selectedOption === "duplicate" ? "border-brand-primary" : "border-neutral-light-gray"}`}>
-                  {selectedOption === "duplicate" && <div className="w-[12px] h-[12px] rounded-full bg-brand-primary" />}
+              <div className="flex items-start gap-[18px]">
+                <div className={`w-[22px] h-[22px] rounded-full border-[2px] flex items-center justify-center flex-shrink-0 mt-[3px] ${selectedOption === "duplicate" ? "border-brand-primary" : "border-neutral-light-gray"}`}>
+                  {selectedOption === "duplicate" && <div className="w-[11px] h-[11px] rounded-full bg-brand-primary" />}
                 </div>
                 <div>
-                  <h2 className="text-neutral-black text-[18px] font-bold mb-[8px]">
+                  <h2 className="text-neutral-black text-[16px] font-bold mb-[6px]">
                     Duplicate an existing listing
                   </h2>
-                  <p className="text-neutral-gray text-[14px] leading-[1.6]">
+                  <p className="text-neutral-gray text-[13px] leading-[1.6] max-w-[620px]">
                     Select this option if you want to create a listing that is quite similar to a listing that you already listed on HousingAnywhere.
                   </p>
                 </div>
               </div>
             </div>
 
-            {selectedOption === "duplicate" && (
-              <div className="border border-neutral-light-gray rounded-[8px] p-[20px] bg-white">
-                <label className="block text-[14px] font-semibold text-neutral-black mb-[8px]">
-                  Select listing to duplicate
-                </label>
-                <select
-                  className="w-full border border-neutral-light-gray rounded-[6px] px-[12px] py-[10px] text-[14px] text-neutral-black"
-                  value={selectedListingId}
-                  onChange={(e) => setSelectedListingId(e.target.value)}
-                  disabled={isLoadingListings || myListings.length === 0}
-                >
-                  {myListings.length === 0 ? (
-                    <option value="">No listings available</option>
-                  ) : (
-                    myListings.map((listing) => (
-                      <option key={listing.id} value={listing.id}>
-                        {listing.title || "Untitled listing"} - {listing.city || "Unknown city"}
-                      </option>
-                    ))
-                  )}
-                </select>
-                {isLoadingListings && (
-                  <div className="mt-[10px] space-y-[8px]">
-                    <Skeleton className="h-[12px] w-[60%]" />
-                    <Skeleton className="h-[12px] w-[40%]" />
-                  </div>
-                )}
-              </div>
-            )}
-
             {error && <p className="text-[13px] text-brand-primary">{error}</p>}
           </div>
+          ) : (
+            <div className="space-y-[16px]">
+              <div className="border border-neutral-light-gray rounded-[10px] p-[16px] bg-white">
+                <div className="mb-[14px]">
+                  <label className="block text-[13px] font-semibold text-neutral-black mb-[8px]">
+                    Search your listings
+                  </label>
+                  <input
+                    type="text"
+                    value={listingSearchQuery}
+                    onChange={(event) => setListingSearchQuery(event.target.value)}
+                    placeholder="Search by address, city or title"
+                    className="w-full rounded-[8px] border border-neutral-light-gray px-[12px] py-[10px] text-[14px] text-neutral-black outline-none focus:border-brand-primary"
+                  />
+                </div>
+
+                <div className="space-y-[10px] max-h-[280px] overflow-y-auto pr-[4px]">
+                  {isLoadingListings && (
+                    <div className="space-y-[8px]">
+                      <Skeleton className="h-[54px] w-full" />
+                      <Skeleton className="h-[54px] w-full" />
+                    </div>
+                  )}
+
+                  {!isLoadingListings && filteredMyListings.length === 0 && (
+                    <p className="text-[13px] text-neutral-gray">
+                      {listingSearchQuery ? "No listings match your search." : "No listings available."}
+                    </p>
+                  )}
+
+                  {!isLoadingListings && filteredMyListings.map((listing) => {
+                    const isSelected = selectedListingId === listing.id;
+                    return (
+                      <button
+                        key={listing.id}
+                        type="button"
+                        onClick={() => setSelectedListingId(listing.id)}
+                        className={`w-full text-left rounded-[10px] border p-[14px] transition-colors ${
+                          isSelected
+                            ? "border-brand-primary bg-brand-light"
+                            : "border-neutral-light-gray hover:border-brand-primary hover:bg-neutral-lighter-gray"
+                        }`}
+                      >
+                        <div className="flex items-start justify-between gap-[12px]">
+                          <div className="min-w-0">
+                            <p className="text-[14px] font-semibold text-neutral-black truncate">
+                              {listing.title || "Untitled listing"}
+                            </p>
+                            <p className="text-[12px] text-neutral-gray mt-[3px] truncate">
+                              {listing.address || "No address"} {listing.city ? `• ${listing.city}` : ""}
+                            </p>
+                          </div>
+                          <span className={`shrink-0 rounded-full px-[10px] py-[4px] text-[11px] font-semibold ${isSelected ? "bg-brand-primary text-white" : "bg-neutral-light-gray text-neutral-black"}`}>
+                            {isSelected ? "Selected" : "Choose"}
+                          </span>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <p className="mt-[12px] text-[12px] text-neutral-gray">
+                  Pick a listing to duplicate, then make the changes you need.
+                </p>
+              </div>
+
+              {error && <p className="text-[13px] text-brand-primary">{error}</p>}
+            </div>
+          )}
 
           {/* Continue Button */}
-          <div className="flex justify-end mt-[48px]">
+          <div className="flex items-center justify-between mt-[28px]">
+            {flowStep === "duplicate-select" ? (
+              <Button
+                type="button"
+                onClick={() => {
+                  setFlowStep("options");
+                  setError(null);
+                }}
+                className="h-[46px] border border-brand-primary bg-white px-[22px] text-[14px] font-bold text-brand-primary hover:bg-brand-light transition-colors"
+              >
+                BACK
+              </Button>
+            ) : (
+              <div />
+            )}
+
             <Button
               type="button"
               onClick={handleContinue}
-              disabled={isContinuing || (selectedOption === "duplicate" && myListings.length === 0)}
-              className="bg-brand-primary text-white px-[32px] py-[16px] font-bold hover:bg-brand-primary-dark transition-colors"
+              disabled={isContinuing || (flowStep === "duplicate-select" && myListings.length === 0)}
+              className="h-[46px] bg-brand-primary px-[22px] text-[14px] font-bold text-white hover:bg-brand-primary-dark transition-colors"
             >
-              {isContinuing ? "PLEASE WAIT..." : "CONTINUE"}
+              {isContinuing ? "PLEASE WAIT..." : flowStep === "duplicate-select" ? "DUPLICATE" : "CONTINUE"}
             </Button>
           </div>
         </div>

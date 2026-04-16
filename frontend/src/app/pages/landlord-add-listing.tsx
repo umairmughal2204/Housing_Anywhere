@@ -917,7 +917,7 @@ export function LandlordAddListing() {
   const sectionLayoutClass = "max-w-[760px] mr-auto w-full";
 
   return (
-    <LandlordPortalLayout hideSidebar>
+    <LandlordPortalLayout hideSidebar hideFooter>
       <div className={`bg-[#F7F7F9] min-h-[calc(100vh-74px)] px-[20px] md:px-[28px] py-[24px] md:py-[32px] ${contentBottomPaddingClass}`}>
         <div className={sectionLayoutClass}>
         {submitError && (

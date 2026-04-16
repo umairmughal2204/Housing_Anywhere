@@ -6,7 +6,7 @@ import {
   FileText,
   MessageSquare,
   MessageCircle,
-  Heart,
+  Bell,
   Settings,
   TrendingUp,
   CreditCard,
@@ -27,17 +27,21 @@ interface LandlordPortalLayoutProps {
   children: React.ReactNode;
   headerLeadingAction?: React.ReactNode;
   hideSidebar?: boolean;
+  hideFooter?: boolean;
 }
 
 export function LandlordPortalLayout({
   children,
   headerLeadingAction,
   hideSidebar = false,
+  hideFooter = false,
 }: LandlordPortalLayoutProps) {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, logout } = useAuth();
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const [showNotificationsMenu, setShowNotificationsMenu] = useState(false);
+  const [acknowledgedNotificationTotal, setAcknowledgedNotificationTotal] = useState(0);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [selectedLanguage, setSelectedLanguage] = useState(getSavedLanguageLabel());
   const [showLanguageDropdown, setShowLanguageDropdown] = useState(false);
@@ -46,8 +50,10 @@ export function LandlordPortalLayout({
     label: string;
   } | null>(null);
   const [unreadMessages, setUnreadMessages] = useState(0);
+  const [pendingApplications, setPendingApplications] = useState(0);
   const [totalProperties, setTotalProperties] = useState(0);
   const [hasLoadedSummary, setHasLoadedSummary] = useState(false);
+  const notificationsMenuRef = useRef<HTMLDivElement>(null);
   const userMenuRef = useRef<HTMLDivElement>(null);
   const languageDropdownRef = useRef<HTMLDivElement>(null);
 
@@ -64,6 +70,7 @@ export function LandlordPortalLayout({
     const token = localStorage.getItem("authToken");
     if (!token) {
       setUnreadMessages(0);
+      setPendingApplications(0);
       setTotalProperties(0);
       setHasLoadedSummary(false);
       return;
@@ -81,6 +88,7 @@ export function LandlordPortalLayout({
         if (!response.ok) {
           if (!isCancelled) {
             setUnreadMessages(0);
+            setPendingApplications(0);
             setTotalProperties(0);
             setHasLoadedSummary(true);
           }
@@ -97,12 +105,14 @@ export function LandlordPortalLayout({
 
         if (!isCancelled) {
           setUnreadMessages(payload.stats?.unreadMessages ?? 0);
+          setPendingApplications(payload.stats?.pendingApplications ?? 0);
           setTotalProperties(payload.stats?.totalProperties ?? 0);
           setHasLoadedSummary(true);
         }
       } catch {
         if (!isCancelled) {
           setUnreadMessages(0);
+          setPendingApplications(0);
           setTotalProperties(0);
           setHasLoadedSummary(true);
         }
@@ -135,6 +145,10 @@ export function LandlordPortalLayout({
         setShowUserMenu(false);
       }
 
+      if (showNotificationsMenu && notificationsMenuRef.current && !notificationsMenuRef.current.contains(target)) {
+        setShowNotificationsMenu(false);
+      }
+
       if (showLanguageDropdown && languageDropdownRef.current && !languageDropdownRef.current.contains(target)) {
         setShowLanguageDropdown(false);
       }
@@ -142,7 +156,7 @@ export function LandlordPortalLayout({
 
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [showLanguageDropdown, showUserMenu]);
+  }, [showLanguageDropdown, showNotificationsMenu, showUserMenu]);
 
   const handleLogout = () => {
     logout();
@@ -163,6 +177,27 @@ export function LandlordPortalLayout({
     ? totalProperties
     : (user?.landlordProfile?.numberOfProperties ?? 0);
   const isOnLandlordDashboard = location.pathname.startsWith("/landlord/dashboard");
+  const isOnListingForm =
+    location.pathname === "/landlord/add-listing" ||
+    location.pathname.startsWith("/landlord/add-listing/") ||
+    location.pathname === "/landlord/listings/add" ||
+    location.pathname.startsWith("/landlord/listings/");
+  const totalNotifications = unreadMessages + pendingApplications;
+  const unseenNotifications = Math.max(0, totalNotifications - acknowledgedNotificationTotal);
+
+  useEffect(() => {
+    setAcknowledgedNotificationTotal((previous) => Math.min(previous, totalNotifications));
+  }, [totalNotifications]);
+
+  const handleToggleNotificationsMenu = () => {
+    setShowNotificationsMenu((previous) => {
+      const next = !previous;
+      if (next) {
+        setAcknowledgedNotificationTotal(totalNotifications);
+      }
+      return next;
+    });
+  };
 
   return (
     <div className="min-h-screen bg-neutral-light-gray">
@@ -193,11 +228,11 @@ export function LandlordPortalLayout({
             {headerLeadingAction}
 
             <Link
-              to={isOnLandlordDashboard ? "/landlord/add-listing" : "/landlord/dashboard"}
+              to={isOnListingForm ? "/landlord/dashboard" : "/landlord/add-listing"}
               className="flex items-center gap-[8px] px-[16px] py-[8px] bg-brand-primary text-white text-[14px] font-semibold hover:bg-brand-primary-dark transition-colors"
             >
-              {isOnLandlordDashboard ? <FileText className="w-[16px] h-[16px]" /> : <LayoutDashboard className="w-[16px] h-[16px]" />}
-              {isOnLandlordDashboard ? "Add Listing" : "Go to Dashboard"}
+              {isOnListingForm ? <LayoutDashboard className="w-[16px] h-[16px]" /> : <FileText className="w-[16px] h-[16px]" />}
+              {isOnListingForm ? "Go to Dashboard" : "Add Listing"}
             </Link>
 
             <Link to="/landlord/inbox" className="relative p-[8px] hover:bg-neutral-light-gray transition-colors">
@@ -209,36 +244,68 @@ export function LandlordPortalLayout({
               )}
             </Link>
 
-            <Link to="/favorites" className="p-[8px] hover:bg-neutral-light-gray transition-colors">
-              <Heart className="w-[20px] h-[20px] text-neutral-gray" />
-            </Link>
-
-            {/* Language */}
-            <div className="relative" ref={languageDropdownRef}>
+            <div className="relative" ref={notificationsMenuRef}>
               <button
-                onClick={() => setShowLanguageDropdown((prev) => !prev)}
-                className="p-[8px] hover:bg-neutral-light-gray transition-colors"
-                aria-label="Change language"
+                type="button"
+                className="relative p-[8px] hover:bg-neutral-light-gray transition-colors"
+                aria-label="Notifications"
+                onClick={handleToggleNotificationsMenu}
               >
-                <Globe className="w-[20px] h-[20px] text-neutral-gray" />
+                <Bell className="w-[20px] h-[20px] text-neutral-gray" />
+                {unseenNotifications > 0 && (
+                  <span className="absolute top-[4px] right-[4px] min-w-[16px] h-[16px] px-[4px] bg-brand-primary text-white text-[10px] font-bold flex items-center justify-center rounded-full">
+                    {unseenNotifications > 99 ? "99+" : unseenNotifications}
+                  </span>
+                )}
               </button>
 
-              {showLanguageDropdown && (
-                <div className="absolute top-[calc(100%+8px)] right-0 w-[180px] max-h-[260px] overflow-y-auto bg-white border border-[rgba(0,0,0,0.08)] shadow-lg">
-                  {SUPPORTED_LANGUAGES.map((language) => (
-                    <button
-                      key={language.code}
-                      onClick={() => {
-                        setPendingLanguage({ code: language.code, label: language.label });
-                        setShowLanguageDropdown(false);
-                      }}
-                      className={`w-full flex items-center justify-between px-[16px] py-[12px] text-neutral-black text-[14px] hover:bg-neutral-light-gray transition-colors ${
-                        selectedLanguage === language.label ? "bg-neutral-light-gray" : ""
-                      }`}
+              {showNotificationsMenu && (
+                <div className="absolute top-[calc(100%+8px)] right-0 w-[320px] bg-white border border-[rgba(0,0,0,0.08)] shadow-lg">
+                  <div className="px-[16px] py-[12px] border-b border-[rgba(0,0,0,0.08)]">
+                    <p className="text-neutral-black text-[14px] font-bold">Notifications</p>
+                  </div>
+
+                  <div className="py-[8px]">
+                    <Link
+                      to="/landlord/inbox"
+                      className="flex items-center justify-between gap-[10px] px-[16px] py-[12px] hover:bg-neutral-light-gray transition-colors"
+                      onClick={() => setShowNotificationsMenu(false)}
                     >
-                      <span>{language.label}</span>
-                    </button>
-                  ))}
+                      <div className="flex items-center gap-[10px]">
+                        <MessageCircle className="w-[16px] h-[16px] text-neutral-gray" />
+                        <div>
+                          <p className="text-neutral-black text-[13px] font-semibold">Messages</p>
+                          <p className="text-neutral-gray text-[12px]">Unread conversation messages</p>
+                        </div>
+                      </div>
+                      <span className="text-brand-primary text-[12px] font-bold">{unreadMessages}</span>
+                    </Link>
+
+                    <Link
+                      to="/landlord/rentals"
+                      className="flex items-center justify-between gap-[10px] px-[16px] py-[12px] hover:bg-neutral-light-gray transition-colors"
+                      onClick={() => setShowNotificationsMenu(false)}
+                    >
+                      <div className="flex items-center gap-[10px]">
+                        <ClipboardList className="w-[16px] h-[16px] text-neutral-gray" />
+                        <div>
+                          <p className="text-neutral-black text-[13px] font-semibold">Rental applications</p>
+                          <p className="text-neutral-gray text-[12px]">Pending tenant applications</p>
+                        </div>
+                      </div>
+                      <span className="text-brand-primary text-[12px] font-bold">{pendingApplications}</span>
+                    </Link>
+                  </div>
+
+                  <div className="border-t border-[rgba(0,0,0,0.08)] py-[8px]">
+                    <Link
+                      to="/landlord/dashboard"
+                      className="block px-[16px] py-[10px] text-neutral-black text-[13px] font-semibold hover:bg-neutral-light-gray transition-colors"
+                      onClick={() => setShowNotificationsMenu(false)}
+                    >
+                      View all in dashboard
+                    </Link>
+                  </div>
                 </div>
               )}
             </div>
@@ -312,6 +379,36 @@ export function LandlordPortalLayout({
                       Log Out
                     </button>
                   </div>
+                </div>
+              )}
+            </div>
+
+            {/* Language */}
+            <div className="relative" ref={languageDropdownRef}>
+              <button
+                onClick={() => setShowLanguageDropdown((prev) => !prev)}
+                className="p-[8px] hover:bg-neutral-light-gray transition-colors"
+                aria-label="Change language"
+              >
+                <Globe className="w-[20px] h-[20px] text-neutral-gray" />
+              </button>
+
+              {showLanguageDropdown && (
+                <div className="absolute top-[calc(100%+8px)] right-0 w-[180px] max-h-[260px] overflow-y-auto bg-white border border-[rgba(0,0,0,0.08)] shadow-lg">
+                  {SUPPORTED_LANGUAGES.map((language) => (
+                    <button
+                      key={language.code}
+                      onClick={() => {
+                        setPendingLanguage({ code: language.code, label: language.label });
+                        setShowLanguageDropdown(false);
+                      }}
+                      className={`w-full flex items-center justify-between px-[16px] py-[12px] text-neutral-black text-[14px] hover:bg-neutral-light-gray transition-colors ${
+                        selectedLanguage === language.label ? "bg-neutral-light-gray" : ""
+                      }`}
+                    >
+                      <span>{language.label}</span>
+                    </button>
+                  ))}
                 </div>
               )}
             </div>
@@ -414,7 +511,7 @@ export function LandlordPortalLayout({
 
             <div className="px-[24px] py-[16px] border-t border-[rgba(0,0,0,0.08)]">
               <Link
-                to="/landlord/listings/add"
+                to="/landlord/add-listing"
                 className="block w-full px-[16px] py-[10px] bg-brand-primary text-white text-[14px] font-bold text-center hover:bg-brand-primary-dark transition-colors"
               >
                 + Add Listing
@@ -428,7 +525,7 @@ export function LandlordPortalLayout({
         </main>
       </div>
 
-      <Footer />
+      {!hideFooter && <Footer />}
     </div>
   );
 }

@@ -5,12 +5,14 @@ import { DatePicker } from "../components/date-picker";
 import { buildOfferMessage } from "../components/chat-offer-message";
 import {
   Calendar,
+  ChevronDown,
   Download,
   FileText,
   Mail,
   MapPin,
   MessageSquare,
   Phone,
+  Search,
   User,
   CheckCircle,
   XCircle,
@@ -194,6 +196,7 @@ function calculateApplicationTotal(paymentDetails?: ApplicationRecord["paymentDe
 export function LandlordRentals() {
   const apiBase = API_BASE;
   const [filterStatus, setFilterStatus] = useState<RequestStatus | "all">("pending");
+  const [searchQuery, setSearchQuery] = useState("");
   const [applications, setApplications] = useState<ApplicationRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
@@ -269,8 +272,22 @@ export function LandlordRentals() {
   }, [selectedApplicationId]);
 
   const filteredApplications = useMemo(() => {
-    return applications.filter((application) => filterStatus === "all" || application.status === filterStatus);
-  }, [applications, filterStatus]);
+    const searchValue = searchQuery.trim().toLowerCase();
+    return applications.filter((application) => {
+      const matchesStatus = filterStatus === "all" || application.status === filterStatus;
+      if (!searchValue) {
+        return matchesStatus;
+      }
+
+      const matchesSearch =
+        application.listing.title.toLowerCase().includes(searchValue) ||
+        application.listing.city.toLowerCase().includes(searchValue) ||
+        application.tenant.name.toLowerCase().includes(searchValue) ||
+        application.tenant.email.toLowerCase().includes(searchValue);
+
+      return matchesStatus && matchesSearch;
+    });
+  }, [applications, filterStatus, searchQuery]);
 
   const statusCounts = useMemo(
     () => ({
@@ -517,72 +534,54 @@ export function LandlordRentals() {
 
   return (
     <LandlordPortalLayout>
-      <main className="flex-1 p-[32px]">
-        <div className="mb-[32px]">
-          <h1 className="text-neutral-black text-[32px] font-bold tracking-[-0.02em] mb-[8px]">Rentals</h1>
-          <p className="text-neutral-gray text-[16px]">Tenant rental requests received for your listings</p>
-          {!isLoading && error && <p className="text-brand-primary text-[14px] mt-[8px]">{error}</p>}
+      <main className="flex-1 px-[20px] py-[20px] lg:px-[28px] lg:py-[24px]">
+        <div>
+          <h1 className="text-neutral-black text-[28px] font-bold tracking-[-0.03em]">Rentals</h1>
+          <p className="mt-[4px] text-neutral-gray text-[14px]">Tenant rental requests received for your listings</p>
+          {!isLoading && error && <p className="text-brand-primary text-[13px] mt-[8px]">{error}</p>}
         </div>
 
-        <div className="bg-white border border-[rgba(0,0,0,0.08)] mb-[24px]">
-          <div className="flex items-center gap-[8px] px-[24px] py-[16px]">
-            <button
-              onClick={() => setFilterStatus("pending")}
-              className={`px-[24px] py-[10px] text-[14px] font-semibold transition-colors ${
-                filterStatus === "pending"
-                  ? "bg-brand-primary text-white"
-                  : "bg-neutral-light-gray text-neutral-black hover:bg-neutral-gray/20"
-              }`}
+        <div className="mt-[20px] grid grid-cols-1 gap-[12px] xl:grid-cols-[260px_1fr]">
+          <div className="relative">
+            <select
+              value={filterStatus}
+              onChange={(event) => setFilterStatus(event.target.value as RequestStatus | "all")}
+              className="h-[58px] w-full appearance-none rounded-[14px] border border-[#A8B2BF] bg-white px-[16px] pr-[40px] text-[15px] font-medium text-[#0B2D3A] outline-none transition-colors focus:border-brand-primary"
             >
-              Pending ({statusCounts.pending})
-            </button>
-            <button
-              onClick={() => setFilterStatus("approved")}
-              className={`px-[24px] py-[10px] text-[14px] font-semibold transition-colors ${
-                filterStatus === "approved"
-                  ? "bg-brand-primary text-white"
-                  : "bg-neutral-light-gray text-neutral-black hover:bg-neutral-gray/20"
-              }`}
-            >
-              Approved ({statusCounts.approved})
-            </button>
-            <button
-              onClick={() => setFilterStatus("rejected")}
-              className={`px-[24px] py-[10px] text-[14px] font-semibold transition-colors ${
-                filterStatus === "rejected"
-                  ? "bg-brand-primary text-white"
-                  : "bg-neutral-light-gray text-neutral-black hover:bg-neutral-gray/20"
-              }`}
-            >
-              Rejected ({statusCounts.rejected})
-            </button>
-            <button
-              onClick={() => setFilterStatus("all")}
-              className={`px-[24px] py-[10px] text-[14px] font-semibold transition-colors ${
-                filterStatus === "all"
-                  ? "bg-brand-primary text-white"
-                  : "bg-neutral-light-gray text-neutral-black hover:bg-neutral-gray/20"
-              }`}
-            >
-              All ({statusCounts.all})
-            </button>
+              <option value="pending">Pending ({statusCounts.pending})</option>
+              <option value="approved">Approved ({statusCounts.approved})</option>
+              <option value="rejected">Rejected ({statusCounts.rejected})</option>
+              <option value="all">All ({statusCounts.all})</option>
+            </select>
+            <ChevronDown className="pointer-events-none absolute right-[16px] top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-[#0B2D3A]" />
           </div>
+
+          <label className="flex h-[58px] items-center gap-[10px] rounded-[14px] border border-[#A8B2BF] bg-white px-[16px]">
+            <Search className="h-[18px] w-[18px] text-[#0B2D3A]" />
+            <input
+              type="text"
+              placeholder="Search by tenant, city, listing or email"
+              value={searchQuery}
+              onChange={(event) => setSearchQuery(event.target.value)}
+              className="w-full border-0 bg-transparent text-[15px] font-medium text-[#0B2D3A] outline-none placeholder:text-[#9AA7B4]"
+            />
+          </label>
         </div>
 
-        <div className="space-y-[12px]">
+        <div className="mt-[20px] space-y-[14px]">
           {isLoading && [0, 1, 2].map((item) => (
-            <div key={item} className="bg-white border border-[rgba(0,0,0,0.08)] p-[16px]">
-              <div className="flex gap-[16px]">
-                <Skeleton className="w-[120px] h-[90px] rounded" />
-                <div className="flex-1 space-y-[10px]">
-                  <Skeleton className="h-[16px] w-[50%]" />
-                  <Skeleton className="h-[12px] w-[30%]" />
+            <div key={item} className="rounded-[24px] border border-[rgba(11,45,58,0.08)] bg-white px-[16px] py-[16px] shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
+              <div className="flex gap-[16px] animate-pulse">
+                <Skeleton className="w-[136px] h-[100px] rounded-[12px]" />
+                <div className="flex-1 space-y-[12px]">
+                  <Skeleton className="h-[16px] w-[56%]" />
+                  <Skeleton className="h-[12px] w-[34%]" />
                   <div className="grid grid-cols-3 gap-[12px]">
-                    <Skeleton className="h-[32px] w-full" />
-                    <Skeleton className="h-[32px] w-full" />
-                    <Skeleton className="h-[32px] w-full" />
+                    <Skeleton className="h-[30px] w-full rounded-[8px]" />
+                    <Skeleton className="h-[30px] w-full rounded-[8px]" />
+                    <Skeleton className="h-[30px] w-full rounded-[8px]" />
                   </div>
-                  <Skeleton className="h-[24px] w-full" />
+                  <Skeleton className="h-[24px] w-full rounded-[8px]" />
                 </div>
               </div>
             </div>
@@ -592,11 +591,11 @@ export function LandlordRentals() {
             <div
               key={application.id}
               onClick={() => setSelectedApplicationId(application.id)}
-              className="bg-white border border-[rgba(0,0,0,0.08)] p-[16px] cursor-pointer hover:shadow-md transition-shadow"
+              className="rounded-[24px] border border-[rgba(11,45,58,0.08)] bg-white px-[16px] py-[16px] shadow-[0_1px_2px_rgba(15,23,42,0.04)] cursor-pointer hover:shadow-[0_8px_24px_rgba(15,23,42,0.08)] transition-shadow"
             >
               <div className="flex gap-[16px]">
                 {/* Property Image */}
-                <div className="w-[120px] h-[90px] overflow-hidden bg-neutral-light-gray flex-shrink-0 rounded">
+                <div className="w-[136px] h-[100px] overflow-hidden bg-neutral-light-gray flex-shrink-0 rounded-[12px]">
                   <ImageWithFallback
                     src={application.listing.image}
                     alt={application.listing.title}
@@ -608,13 +607,13 @@ export function LandlordRentals() {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-start justify-between gap-[12px] mb-[8px]">
                     <div className="flex-1 min-w-0">
-                      <h3 className="text-neutral-black text-[14px] font-bold">{application.listing.title}</h3>
-                      <div className="flex items-center gap-[4px] text-neutral-gray text-[12px]">
+                      <h3 className="text-neutral-black text-[15px] font-bold">{application.listing.title}</h3>
+                      <div className="flex items-center gap-[4px] text-neutral-gray text-[12px] mt-[2px]">
                         <MapPin className="w-[12px] h-[12px] flex-shrink-0" />
                         <span className="truncate">{application.listing.city}</span>
                       </div>
                     </div>
-                    <span className={`px-[12px] py-[4px] text-[10px] font-bold uppercase tracking-[0.05em] flex-shrink-0 whitespace-nowrap rounded-full ${statusStyle[application.status]}`}>
+                    <span className={`px-[12px] py-[5px] text-[10px] font-bold uppercase tracking-[0.05em] flex-shrink-0 whitespace-nowrap rounded-full ${statusStyle[application.status]}`}>
                       {statusLabel[application.status]}
                     </span>
                   </div>
@@ -638,7 +637,7 @@ export function LandlordRentals() {
                   </div>
 
                   {/* Meta Row */}
-                  <div className="flex items-center justify-between gap-[12px] mt-[8px] pt-[8px] border-t border-[rgba(0,0,0,0.04)]">
+                  <div className="flex items-center justify-between gap-[12px] mt-[10px] pt-[10px] border-t border-[rgba(0,0,0,0.04)]">
                     <div className="flex items-center gap-[16px] text-[11px] text-neutral-gray">
                       <div className="flex items-center gap-[4px]">
                         <User className="w-[12px] h-[12px]" />
@@ -662,7 +661,7 @@ export function LandlordRentals() {
           ))}
 
           {!isLoading && filteredApplications.length === 0 && (
-            <div className="bg-white border border-[rgba(0,0,0,0.08)] p-[64px] text-center">
+            <div className="rounded-[24px] border border-[rgba(11,45,58,0.08)] bg-white p-[56px] text-center shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
               <FileText className="w-[48px] h-[48px] text-neutral-gray mx-auto mb-[16px]" />
               <h3 className="text-neutral-black text-[18px] font-bold mb-[8px]">No rental requests found</h3>
               <p className="text-neutral-gray text-[14px]">

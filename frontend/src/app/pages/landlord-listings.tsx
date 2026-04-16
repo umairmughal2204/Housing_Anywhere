@@ -281,7 +281,7 @@ export function LandlordListings() {
               Manage all listings
             </Link>
             <Link
-              to="/landlord/listings/add"
+              to="/landlord/add-listing"
               className="inline-flex items-center justify-center rounded-[18px] bg-brand-primary px-[18px] py-[12px] text-[14px] font-bold text-white transition-colors hover:bg-brand-primary-dark"
             >
               Add listing
@@ -351,7 +351,7 @@ export function LandlordListings() {
                 : "Create your first listing to get started."}
             </p>
             <Link
-              to="/landlord/listings/add"
+              to="/landlord/add-listing"
               className="mt-[18px] inline-flex items-center gap-[8px] rounded-[14px] bg-brand-primary px-[18px] py-[11px] text-[14px] font-semibold text-white transition-colors hover:bg-brand-primary-dark"
             >
               <Plus className="h-[14px] w-[14px]" />

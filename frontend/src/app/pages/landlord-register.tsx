@@ -5,6 +5,56 @@ import { useAuth } from "../contexts/auth-context";
 import { COUNTRY_OPTIONS, PROPERTY_COUNT_OPTIONS } from "../utils/country-data";
 import { Header } from "../components/header";
 
+type PhoneLengthRule = {
+  min: number;
+  max: number;
+};
+
+const DEFAULT_PHONE_RULE: PhoneLengthRule = { min: 6, max: 12 };
+
+const COUNTRY_PHONE_RULES: Record<string, PhoneLengthRule> = {
+  AU: { min: 9, max: 9 },
+  AT: { min: 7, max: 13 },
+  BE: { min: 8, max: 9 },
+  CA: { min: 10, max: 10 },
+  CN: { min: 11, max: 11 },
+  CZ: { min: 9, max: 9 },
+  DK: { min: 8, max: 8 },
+  FI: { min: 7, max: 12 },
+  FR: { min: 9, max: 9 },
+  DE: { min: 10, max: 11 },
+  GR: { min: 10, max: 10 },
+  HK: { min: 8, max: 8 },
+  IN: { min: 10, max: 10 },
+  IE: { min: 7, max: 9 },
+  IT: { min: 9, max: 10 },
+  JP: { min: 10, max: 10 },
+  MY: { min: 9, max: 10 },
+  NL: { min: 9, max: 9 },
+  NZ: { min: 8, max: 10 },
+  NO: { min: 8, max: 8 },
+  PL: { min: 9, max: 9 },
+  PT: { min: 9, max: 9 },
+  RO: { min: 9, max: 9 },
+  SG: { min: 8, max: 8 },
+  ES: { min: 9, max: 9 },
+  SE: { min: 7, max: 9 },
+  CH: { min: 9, max: 9 },
+  TH: { min: 9, max: 9 },
+  TR: { min: 10, max: 10 },
+  AE: { min: 9, max: 9 },
+  GB: { min: 10, max: 11 },
+  US: { min: 10, max: 10 },
+};
+
+function getCountryPhoneRule(countryCode?: string) {
+  if (!countryCode) {
+    return DEFAULT_PHONE_RULE;
+  }
+
+  return COUNTRY_PHONE_RULES[countryCode] ?? DEFAULT_PHONE_RULE;
+}
+
 export function LandlordRegister() {
   const navigate = useNavigate();
   const { registerAsLandlord, isAuthenticated } = useAuth();
@@ -19,8 +69,33 @@ export function LandlordRegister() {
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const selectedRegistrationCountry = COUNTRY_OPTIONS.find((country) => country.name === formData.countryOfRegistration);
+  const selectedPhoneRule = getCountryPhoneRule(selectedRegistrationCountry?.code);
+  const phoneDigits = formData.phoneNumber.replace(/\D/g, "");
+  const isPhoneNumberValid =
+    phoneDigits.length >= selectedPhoneRule.min && phoneDigits.length <= selectedPhoneRule.max;
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
+
+    if (name === "countryOfRegistration") {
+      const matchedCountry = COUNTRY_OPTIONS.find((country) => country.name === value);
+      setFormData((prev) => ({
+        ...prev,
+        countryOfRegistration: value,
+        phoneCountryCode: matchedCountry?.dialCode ?? prev.phoneCountryCode,
+      }));
+      return;
+    }
+
+    if (name === "phoneNumber") {
+      setFormData((prev) => ({
+        ...prev,
+        phoneNumber: value,
+      }));
+      return;
+    }
+
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
@@ -30,6 +105,18 @@ export function LandlordRegister() {
 
     if (!isAuthenticated) {
       navigate("/login");
+      return;
+    }
+
+    if (!selectedRegistrationCountry) {
+      setError("Please select your country of registration.");
+      return;
+    }
+
+    if (!isPhoneNumberValid) {
+      setError(
+        `Phone number for ${selectedRegistrationCountry.name} should be between ${selectedPhoneRule.min} and ${selectedPhoneRule.max} digits.`
+      );
       return;
     }
 
@@ -62,7 +149,8 @@ export function LandlordRegister() {
     formData.numberOfProperties.length > 0 &&
     formData.countryOfRegistration.length > 0 &&
     formData.phoneCountryCode.length > 0 &&
-    formData.phoneNumber.trim().length > 0;
+    phoneDigits.length >= selectedPhoneRule.min &&
+    phoneDigits.length <= selectedPhoneRule.max;
 
   return (
     <div className="min-h-screen bg-white">
@@ -198,6 +286,7 @@ export function LandlordRegister() {
                       name="phoneCountryCode"
                       value={formData.phoneCountryCode}
                       onChange={handleChange}
+                      disabled={!selectedRegistrationCountry}
                       className="w-full appearance-none rounded-[2px] border border-[rgba(0,0,0,0.14)] bg-white px-[12px] py-[12px] pr-[40px] text-[#244A57] text-[14px] focus:outline-none focus:border-[#284D61]"
                     >
                       {COUNTRY_OPTIONS.map((country) => (
@@ -224,7 +313,9 @@ export function LandlordRegister() {
                   <span className="inline-flex h-[18px] w-[18px] items-center justify-center rounded-full bg-[#E7EAEE] text-[11px] font-bold text-[#8A96A3]">
                     i
                   </span>
-                  At a later stage, we will send a verification SMS to this number
+                  {selectedRegistrationCountry
+                    ? `Phone code matched to ${selectedRegistrationCountry.name}. Use a ${selectedPhoneRule.min === selectedPhoneRule.max ? `${selectedPhoneRule.min}` : `${selectedPhoneRule.min}-${selectedPhoneRule.max}`} digit number.`
+                    : "Select your country first, then the phone code will be matched automatically."}
                 </p>
               </div>
             </div>

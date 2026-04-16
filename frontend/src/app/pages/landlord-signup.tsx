@@ -34,8 +34,8 @@ export function LandlordSignup() {
     return (
       <div className="min-h-screen bg-white flex items-center justify-center">
         <div className="text-center">
-          <div className="w-[48px] h-[48px] border-4 border-[#FF4B27] border-t-transparent rounded-full animate-spin mx-auto mb-[16px]"></div>
-          <p className="text-[#6B6B6B] text-[14px]">Loading...</p>
+          <div className="w-[48px] h-[48px] border-4 border-brand-primary border-t-transparent rounded-full animate-spin mx-auto mb-[16px]"></div>
+          <p className="text-brand-primary text-[14px] font-semibold">Loading...</p>
         </div>
       </div>
     );
@@ -48,7 +48,7 @@ export function LandlordSignup() {
         <div className="w-full max-w-[480px]">
           {/* Logo */}
           <Link to="/" className="flex items-center gap-[8px] mb-[48px]">
-            <div className="w-[32px] h-[32px] bg-[#FF4B27] flex items-center justify-center">
+            <div className="w-[32px] h-[32px] bg-brand-primary flex items-center justify-center">
               <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
                 <path
                   d="M10 2L3 7V17H8V12H12V17H17V7L10 2Z"
@@ -61,7 +61,7 @@ export function LandlordSignup() {
               </svg>
             </div>
             <span className="text-[#1A1A1A] text-[18px] font-bold">
-              Housing<span className="text-[#FF4B27]">Anywhere</span>
+              Easy<span className="text-brand-primary">Rent</span>
             </span>
           </Link>
 
@@ -101,7 +101,7 @@ export function LandlordSignup() {
                   onChange={(e) => setLastName(e.target.value)}
                   placeholder="Doe"
                   required
-                  className="w-full px-[16px] py-[12px] border border-[rgba(0,0,0,0.16)] text-[#1A1A1A] text-[14px] focus:outline-none focus:border-[#FF4B27] transition-colors"
+                  className="w-full px-[16px] py-[12px] border border-[rgba(0,0,0,0.16)] text-[#1A1A1A] text-[14px] focus:outline-none focus:border-brand-primary transition-colors"
                 />
               </div>
             </div>
@@ -119,7 +119,7 @@ export function LandlordSignup() {
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="you@example.com"
                   required
-                  className="w-full pl-[48px] pr-[16px] py-[12px] border border-[rgba(0,0,0,0.16)] text-[#1A1A1A] text-[14px] focus:outline-none focus:border-[#FF4B27] transition-colors"
+                  className="w-full pl-[48px] pr-[16px] py-[12px] border border-[rgba(0,0,0,0.16)] text-[#1A1A1A] text-[14px] focus:outline-none focus:border-brand-primary transition-colors"
                 />
               </div>
             </div>
@@ -137,7 +137,7 @@ export function LandlordSignup() {
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Create a strong password"
                   required
-                  className="w-full pl-[48px] pr-[48px] py-[12px] border border-[rgba(0,0,0,0.16)] text-[#1A1A1A] text-[14px] focus:outline-none focus:border-[#FF4B27] transition-colors"
+                  className="w-full pl-[48px] pr-[48px] py-[12px] border border-[rgba(0,0,0,0.16)] text-[#1A1A1A] text-[14px] focus:outline-none focus:border-brand-primary transition-colors"
                 />
                 <button
                   type="button"
@@ -164,7 +164,7 @@ export function LandlordSignup() {
                 checked={agreeToTerms}
                 onChange={(e) => setAgreeToTerms(e.target.checked)}
                 required
-                className="w-[16px] h-[16px] border border-[rgba(0,0,0,0.16)] accent-[#FF4B27] mt-[2px] flex-shrink-0"
+                className="w-[16px] h-[16px] border border-[rgba(0,0,0,0.16)] accent-brand-primary mt-[2px] flex-shrink-0"
               />
               <label htmlFor="terms" className="text-[#1A1A1A] text-[14px] leading-[1.5]">
                 I agree to the{" "}
@@ -184,7 +184,7 @@ export function LandlordSignup() {
               disabled={!agreeToTerms}
               className={`w-full py-[16px] font-bold transition-colors ${
                 agreeToTerms
-                  ? "bg-[#FF4B27] text-white hover:bg-[#E63E1C]"
+                  ? "bg-brand-primary text-white hover:bg-brand-primary-dark"
                   : "bg-[#EDEDED] text-[#6B6B6B] cursor-not-allowed"
               }`}
             >
@@ -203,10 +203,7 @@ export function LandlordSignup() {
           <div className="space-y-[12px]">
             <button className="w-full flex items-center justify-center gap-[12px] border border-[rgba(0,0,0,0.16)] py-[12px] text-[#1A1A1A] text-[14px] font-semibold hover:bg-[#F7F7F9] transition-colors">
               <svg className="w-[20px] h-[20px]" viewBox="0 0 20 20">
-                <path
-                  d="M19.6 10.227c0-.709-.064-1.39-.182-2.045H10v3.868h5.382a4.6 4.6 0 01-1.996 3.018v2.51h3.232c1.891-1.742 2.982-4.305 2.982-7.35z"
-                  fill="#4285F4"
-                />
+                <path d="M19.6 10.227c0-.709-.064-1.39-.182-2.045H10v3.868h5.382a4.6 4.6 0 01-1.996 3.018v2.51h3.232c1.891-1.742 2.982-4.305 2.982-7.35z" fill="#4285F4" />
                 <path
                   d="M10 20c2.7 0 4.964-.895 6.618-2.423l-3.232-2.509c-.895.6-2.04.955-3.386.955-2.605 0-4.81-1.76-5.595-4.123H1.064v2.59A9.996 9.996 0 0010 20z"
                   fill="#34A853"
