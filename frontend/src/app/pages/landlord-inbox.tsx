@@ -68,12 +68,17 @@ function ChatPanel({ conversation, onClose }: ChatPanelProps) {
 
   useEffect(() => {
     if (messages.length === 0) return;
-    if (isFirstLoad.current) { messagesEndRef.current?.scrollIntoView(); isFirstLoad.current = false; }
-    else {
-      const c = messagesContainerRef.current;
-      if (c && c.scrollHeight - c.scrollTop - c.clientHeight < 120) {
-        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-      }
+    const c = messagesContainerRef.current;
+    if (!c) return;
+
+    if (isFirstLoad.current) {
+      c.scrollTop = c.scrollHeight;
+      isFirstLoad.current = false;
+      return;
+    }
+
+    if (c.scrollHeight - c.scrollTop - c.clientHeight < 120) {
+      c.scrollTo({ top: c.scrollHeight, behavior: "smooth" });
     }
   }, [messages]);
 

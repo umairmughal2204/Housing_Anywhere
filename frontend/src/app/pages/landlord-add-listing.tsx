@@ -186,6 +186,26 @@ interface ApiListing {
   status?: "active" | "draft" | "inactive";
 }
 
+interface GeocodeSearchResult {
+  display_name?: string;
+  address?: {
+    city?: string;
+    town?: string;
+    village?: string;
+    municipality?: string;
+    county?: string;
+    country?: string;
+    road?: string;
+    house_number?: string;
+  };
+}
+
+interface AddressSuggestion {
+  label: string;
+  cityCountry: string;
+  streetHouse?: string;
+}
+
 const kindToUiValue: Record<string, string> = {
   "entire-place": "Entire place",
   "private-room": "Private room",
@@ -295,6 +315,12 @@ export function LandlordAddListing() {
   const [propertyType, setPropertyType] = useState("");
   const [cityCountry, setCityCountry] = useState("");
   const [streetHouse, setStreetHouse] = useState("");
+  const [citySuggestions, setCitySuggestions] = useState<AddressSuggestion[]>([]);
+  const [streetSuggestions, setStreetSuggestions] = useState<AddressSuggestion[]>([]);
+  const [showCitySuggestions, setShowCitySuggestions] = useState(false);
+  const [showStreetSuggestions, setShowStreetSuggestions] = useState(false);
+  const [isCityLookupLoading, setIsCityLookupLoading] = useState(false);
+  const [isStreetLookupLoading, setIsStreetLookupLoading] = useState(false);
   const [rentalRegistrationNumber, setRentalRegistrationNumber] = useState("");
   const [apartmentNumber, setApartmentNumber] = useState("");
   const [floorNumber, setFloorNumber] = useState("");
@@ -384,6 +410,165 @@ export function LandlordAddListing() {
 
   const { id: listingId } = useParams();
   const isEditMode = !!listingId;
+
+  const normalizeCityCountry = (result: GeocodeSearchResult) => {
+    const city =
+      result.address?.city ??
+      result.address?.town ??
+      result.address?.village ??
+      result.address?.municipality ??
+      result.address?.county ??
+      "";
+    const country = result.address?.country ?? "";
+
+    if (city && country) {
+      return `${city}, ${country}`;
+    }
+
+    const fallbackParts = (result.display_name ?? "")
+      .split(",")
+      .map((part) => part.trim())
+      .filter(Boolean);
+
+    if (fallbackParts.length >= 2) {
+      return `${fallbackParts[0]}, ${fallbackParts[fallbackParts.length - 1]}`;
+    }
+
+    return fallbackParts[0] ?? "";
+  };
+
+  useEffect(() => {
+    const query = cityCountry.trim();
+    if (query.length < 2) {
+      setCitySuggestions([]);
+      setIsCityLookupLoading(false);
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      const controller = new AbortController();
+
+      const runLookup = async () => {
+        setIsCityLookupLoading(true);
+
+        try {
+          const response = await fetch(
+            `https://nominatim.openstreetmap.org/search?format=jsonv2&addressdetails=1&limit=6&q=${encodeURIComponent(query)}`,
+            {
+              signal: controller.signal,
+            }
+          );
+
+          if (!response.ok) {
+            throw new Error("Failed to fetch city suggestions");
+          }
+
+          const payload = (await response.json()) as GeocodeSearchResult[];
+          const seen = new Set<string>();
+          const mapped = (payload ?? [])
+            .map((item) => {
+              const cityCountryValue = normalizeCityCountry(item);
+              return {
+                label: cityCountryValue || item.display_name || "",
+                cityCountry: cityCountryValue,
+              } as AddressSuggestion;
+            })
+            .filter((item) => item.cityCountry.length > 0)
+            .filter((item) => {
+              if (seen.has(item.cityCountry.toLowerCase())) {
+                return false;
+              }
+              seen.add(item.cityCountry.toLowerCase());
+              return true;
+            });
+
+          setCitySuggestions(mapped);
+        } catch {
+          setCitySuggestions([]);
+        } finally {
+          setIsCityLookupLoading(false);
+        }
+      };
+
+      void runLookup();
+
+      return () => controller.abort();
+    }, 280);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [cityCountry]);
+
+  useEffect(() => {
+    const query = streetHouse.trim();
+    if (query.length < 3) {
+      setStreetSuggestions([]);
+      setIsStreetLookupLoading(false);
+      return;
+    }
+
+    const lookupQuery = cityCountry.trim().length > 0 ? `${query}, ${cityCountry.trim()}` : query;
+
+    const timeoutId = window.setTimeout(() => {
+      const controller = new AbortController();
+
+      const runLookup = async () => {
+        setIsStreetLookupLoading(true);
+
+        try {
+          const response = await fetch(
+            `https://nominatim.openstreetmap.org/search?format=jsonv2&addressdetails=1&limit=6&q=${encodeURIComponent(lookupQuery)}`,
+            {
+              signal: controller.signal,
+            }
+          );
+
+          if (!response.ok) {
+            throw new Error("Failed to fetch street suggestions");
+          }
+
+          const payload = (await response.json()) as GeocodeSearchResult[];
+          const seen = new Set<string>();
+          const mapped = (payload ?? [])
+            .map((item) => {
+              const road = item.address?.road?.trim() ?? "";
+              const houseNumber = item.address?.house_number?.trim() ?? "";
+              const street = [road, houseNumber].filter(Boolean).join(" ").trim();
+              const cityCountryValue = normalizeCityCountry(item);
+              return {
+                label: item.display_name ?? street,
+                streetHouse: street || item.display_name || "",
+                cityCountry: cityCountryValue,
+              } as AddressSuggestion;
+            })
+            .filter((item) => item.streetHouse && item.cityCountry)
+            .filter((item) => {
+              const key = `${(item.streetHouse ?? "").toLowerCase()}|${item.cityCountry.toLowerCase()}`;
+              if (seen.has(key)) {
+                return false;
+              }
+              seen.add(key);
+              return true;
+            });
+
+          setStreetSuggestions(mapped);
+        } catch {
+          setStreetSuggestions([]);
+        } finally {
+          setIsStreetLookupLoading(false);
+        }
+      };
+
+      void runLookup();
+
+      return () => controller.abort();
+    }, 280);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [cityCountry, streetHouse]);
 
   const updateUtilityLine = <K extends keyof CostLine>(index: number, key: K, value: CostLine[K]) => {
     setUtilityLines((prev) => prev.map((line, i) => (i === index ? { ...line, [key]: value } : line)));
@@ -987,14 +1172,90 @@ export function LandlordAddListing() {
                 <div>
                   <label className="block text-[12px] text-[#5A7380] mb-[6px]">City, country*</label>
                   <div className="flex items-center gap-[8px]">
-                    <input value={cityCountry} onChange={(e) => setCityCountry(e.target.value)} className="w-full h-[44px] bg-transparent border-0 border-b border-[rgba(0,0,0,0.30)] text-[20px] text-[#1A1A1A] placeholder:text-[#8A8A8A] focus:outline-none focus:border-brand-primary" placeholder="Rotterdam, Netherlands" />
+                    <div className="relative w-full">
+                      <input
+                        value={cityCountry}
+                        onChange={(e) => {
+                          setCityCountry(e.target.value);
+                          setShowCitySuggestions(true);
+                        }}
+                        onFocus={() => setShowCitySuggestions(true)}
+                        onBlur={() => {
+                          window.setTimeout(() => setShowCitySuggestions(false), 120);
+                        }}
+                        className="w-full h-[44px] bg-transparent border-0 border-b border-[rgba(0,0,0,0.30)] text-[20px] text-[#1A1A1A] placeholder:text-[#8A8A8A] focus:outline-none focus:border-brand-primary"
+                        placeholder="Rotterdam, Netherlands"
+                      />
+
+                      {showCitySuggestions && (isCityLookupLoading || citySuggestions.length > 0) && (
+                        <div className="absolute left-0 right-0 top-[calc(100%+6px)] z-40 rounded-[8px] border border-[rgba(0,0,0,0.14)] bg-white shadow-[0_8px_20px_rgba(0,0,0,0.08)] max-h-[220px] overflow-y-auto">
+                          {isCityLookupLoading && (
+                            <div className="px-[12px] py-[10px] text-[13px] text-[#5A7380]">Searching locations...</div>
+                          )}
+                          {!isCityLookupLoading && citySuggestions.map((suggestion) => (
+                            <button
+                              key={`${suggestion.cityCountry}-${suggestion.label}`}
+                              type="button"
+                              onMouseDown={(event) => event.preventDefault()}
+                              onClick={() => {
+                                setCityCountry(suggestion.cityCountry);
+                                setShowCitySuggestions(false);
+                              }}
+                              className="w-full px-[12px] py-[10px] text-left text-[13px] text-[#12303B] hover:bg-[#F5F8FA] transition-colors"
+                            >
+                              {suggestion.cityCountry}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                     <InfoTooltip text="Enter city and country for your listing" />
                   </div>
                 </div>
 
                 <div>
                   <label className="block text-[12px] text-[#5A7380] mb-[6px]">Street, house number*</label>
-                  <input value={streetHouse} onChange={(e) => setStreetHouse(e.target.value)} className="w-full h-[44px] bg-transparent border-0 border-b border-[rgba(0,0,0,0.30)] text-[20px] text-[#1A1A1A] placeholder:text-[#8A8A8A] focus:outline-none focus:border-brand-primary" placeholder="Mathenesserlaan 22" />
+                  <div className="relative w-full">
+                    <input
+                      value={streetHouse}
+                      onChange={(e) => {
+                        setStreetHouse(e.target.value);
+                        setShowStreetSuggestions(true);
+                      }}
+                      onFocus={() => setShowStreetSuggestions(true)}
+                      onBlur={() => {
+                        window.setTimeout(() => setShowStreetSuggestions(false), 120);
+                      }}
+                      className="w-full h-[44px] bg-transparent border-0 border-b border-[rgba(0,0,0,0.30)] text-[20px] text-[#1A1A1A] placeholder:text-[#8A8A8A] focus:outline-none focus:border-brand-primary"
+                      placeholder="Mathenesserlaan 22"
+                    />
+
+                    {showStreetSuggestions && (isStreetLookupLoading || streetSuggestions.length > 0) && (
+                      <div className="absolute left-0 right-0 top-[calc(100%+6px)] z-40 rounded-[8px] border border-[rgba(0,0,0,0.14)] bg-white shadow-[0_8px_20px_rgba(0,0,0,0.08)] max-h-[240px] overflow-y-auto">
+                        {isStreetLookupLoading && (
+                          <div className="px-[12px] py-[10px] text-[13px] text-[#5A7380]">Searching addresses...</div>
+                        )}
+                        {!isStreetLookupLoading && streetSuggestions.map((suggestion) => (
+                          <button
+                            key={`${suggestion.streetHouse}-${suggestion.cityCountry}`}
+                            type="button"
+                            onMouseDown={(event) => event.preventDefault()}
+                            onClick={() => {
+                              setStreetHouse(suggestion.streetHouse ?? "");
+                              if (suggestion.cityCountry) {
+                                setCityCountry(suggestion.cityCountry);
+                              }
+                              setShowStreetSuggestions(false);
+                            }}
+                            className="w-full px-[12px] py-[10px] text-left hover:bg-[#F5F8FA] transition-colors"
+                          >
+                            <div className="text-[13px] text-[#12303B] font-medium">{suggestion.streetHouse}</div>
+                            <div className="text-[12px] text-[#6D808A] mt-[2px]">{suggestion.cityCountry}</div>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
 
                 {streetHouse.trim().length > 0 && isMultiUnitProperty && (
