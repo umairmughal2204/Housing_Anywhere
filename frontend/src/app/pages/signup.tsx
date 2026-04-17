@@ -265,7 +265,7 @@ export function Signup() {
         <div className="w-full max-w-[480px]">
           {/* Logo */}
           <Link to="/" className="flex items-center gap-[8px] mb-[48px]">
-            <div className="w-[32px] h-[32px] bg-brand-primary flex items-center justify-center">
+            <div className="w-[38px] h-[38px] bg-brand-primary rounded-[14px] flex items-center justify-center shadow-[0_8px_18px_rgba(11,165,199,0.22)]">
               <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
                 <path
                   d="M10 2L3 7V17H8V12H12V17H17V7L10 2Z"
@@ -277,7 +277,7 @@ export function Signup() {
                 />
               </svg>
             </div>
-            <span className="text-neutral-black text-[18px] font-bold">
+            <span className="text-neutral-black text-[18px] font-bold tracking-[-0.02em]">
               Easy<span className="text-brand-primary">Rent</span>
             </span>
           </Link>
@@ -461,7 +461,7 @@ export function Signup() {
             <button
               type="submit"
               disabled={isLoading || (step === "details" && !agreeToTerms)}
-              className={`w-full py-[16px] font-bold transition-colors ${
+              className={`w-full rounded-[14px] py-[16px] font-bold transition-colors ${
                 !isLoading && (step === "verify" || agreeToTerms)
                   ? "bg-brand-primary text-white hover:bg-brand-primary-dark hover:cursor-pointer"
                   : "bg-[#EDEDED] text-neutral-gray cursor-not-allowed"
@@ -486,7 +486,7 @@ export function Signup() {
                   type="button"
                   onClick={handleGoogleSignup}
                   disabled={isGoogleLoading}
-                  className="w-full flex items-center justify-center gap-[12px] border border-[rgba(0,0,0,0.16)] py-[12px] text-neutral-black text-[14px] font-semibold hover:bg-neutral-light-gray hover:cursor-pointer disabled:cursor-not-allowed transition-colors"
+                  className="w-full rounded-[14px] flex items-center justify-center gap-[12px] border border-[rgba(0,0,0,0.16)] py-[12px] text-neutral-black text-[14px] font-semibold hover:bg-neutral-light-gray hover:cursor-pointer disabled:cursor-not-allowed transition-colors"
                 >
                   <svg className="w-[20px] h-[20px]" viewBox="0 0 20 20">
                     <path

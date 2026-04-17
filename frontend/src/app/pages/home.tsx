@@ -1587,11 +1587,11 @@ export function Home() {
             })}
           </div>
 
-          <div className="mt-[18px]">
+          {/* <div className="mt-[18px]">
             <Link to="/help" className="text-[14px] font-bold text-[#052F3C] underline underline-offset-4 hover:no-underline">
               Visit our Help Center
             </Link>
-          </div>
+          </div> */}
         </div>
       </section>
 

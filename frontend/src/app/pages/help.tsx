@@ -419,7 +419,7 @@ export function Help() {
         </div>
       </section>
 
-      <Footer />
+      <Footer variant="dashboard" />
     </div>
   );
 }

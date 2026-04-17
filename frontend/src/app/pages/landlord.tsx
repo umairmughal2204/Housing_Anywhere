@@ -43,7 +43,7 @@ export function Landlord() {
               </p>
               <button
                 onClick={handleGetStarted}
-                className="inline-block bg-brand-primary text-white px-[48px] py-[18px] font-bold hover:bg-brand-primary-dark transition-colors"
+                className="inline-block rounded-[14px] bg-brand-primary text-white px-[48px] py-[18px] font-bold hover:bg-brand-primary-dark transition-colors"
               >
                 {user?.isLandlord ? "Go to Dashboard" : isAuthenticated ? "Complete Registration" : "Get started for free"}
               </button>
@@ -55,7 +55,7 @@ export function Landlord() {
               <img
                 src="https://images.unsplash.com/photo-1743865318581-2e0e59e7292e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxwcm9mZXNzaW9uYWwlMjB3b21hbiUyMGxhcHRvcCUyMHdvcmtpbmclMjBob21lfGVufDF8fHx8MTc3MzE0NDQxM3ww&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral"
                 alt="Landlord"
-                className="w-full h-[500px] object-cover"
+                className="w-full h-[500px] rounded-[18px] object-cover"
               />
             </div>
           </div>
@@ -108,8 +108,8 @@ export function Landlord() {
 
           <div className="grid grid-cols-2 gap-[32px]">
             {/* Feature 1 */}
-            <div className="bg-white border border-[rgba(0,0,0,0.08)] p-[32px]">
-              <div className="w-[56px] h-[56px] bg-accent-blue flex items-center justify-center mb-[24px]">
+            <div className="bg-white border border-[rgba(0,0,0,0.08)] rounded-[18px] p-[32px]">
+              <div className="w-[56px] h-[56px] rounded-[14px] bg-accent-blue flex items-center justify-center mb-[24px]">
                 <Users className="w-[32px] h-[32px] text-white" />
               </div>
               <h3 className="text-[#1A1A1A] text-[24px] font-bold mb-[12px]">
@@ -121,8 +121,8 @@ export function Landlord() {
             </div>
 
             {/* Feature 2 */}
-            <div className="bg-white border border-[rgba(0,0,0,0.08)] p-[32px]">
-              <div className="w-[56px] h-[56px] bg-accent-blue flex items-center justify-center mb-[24px]">
+            <div className="bg-white border border-[rgba(0,0,0,0.08)] rounded-[18px] p-[32px]">
+              <div className="w-[56px] h-[56px] rounded-[14px] bg-accent-blue flex items-center justify-center mb-[24px]">
                 <Shield className="w-[32px] h-[32px] text-white" />
               </div>
               <h3 className="text-[#1A1A1A] text-[24px] font-bold mb-[12px]">
@@ -134,8 +134,8 @@ export function Landlord() {
             </div>
 
             {/* Feature 3 */}
-            <div className="bg-white border border-[rgba(0,0,0,0.08)] p-[32px]">
-              <div className="w-[56px] h-[56px] bg-accent-blue flex items-center justify-center mb-[24px]">
+            <div className="bg-white border border-[rgba(0,0,0,0.08)] rounded-[18px] p-[32px]">
+              <div className="w-[56px] h-[56px] rounded-[14px] bg-accent-blue flex items-center justify-center mb-[24px]">
                 <FileText className="w-[32px] h-[32px] text-white" />
               </div>
               <h3 className="text-[#1A1A1A] text-[24px] font-bold mb-[12px]">
@@ -147,8 +147,8 @@ export function Landlord() {
             </div>
 
             {/* Feature 4 */}
-            <div className="bg-white border border-[rgba(0,0,0,0.08)] p-[32px]">
-              <div className="w-[56px] h-[56px] bg-accent-blue flex items-center justify-center mb-[24px]">
+            <div className="bg-white border border-[rgba(0,0,0,0.08)] rounded-[18px] p-[32px]">
+              <div className="w-[56px] h-[56px] rounded-[14px] bg-accent-blue flex items-center justify-center mb-[24px]">
                 <Clock className="w-[32px] h-[32px] text-white" />
               </div>
               <h3 className="text-[#1A1A1A] text-[24px] font-bold mb-[12px]">
@@ -169,7 +169,7 @@ export function Landlord() {
             <img
               src="https://images.unsplash.com/photo-1758523669429-45723b96106c?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxjb3VwbGUlMjByZWxheGluZyUyMG1vZGVybiUyMGFwYXJ0bWVudCUyMGhvbWV8ZW58MXx8fHwxNzczMTQ0NDEyfDA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral"
               alt="Couple relaxing"
-              className="w-full h-[500px] object-cover"
+              className="w-full h-[500px] rounded-[18px] object-cover"
             />
             <div>
               <h2 className="text-[#1A1A1A] text-[48px] font-bold tracking-[-0.02em] mb-[24px]">
@@ -258,7 +258,7 @@ export function Landlord() {
           <div className="text-center mt-[48px]">
             <Link
               to={isAuthenticated ? "/landlord/inbox" : "/signup"}
-              className="inline-flex items-center gap-[12px] bg-brand-primary text-white px-[48px] py-[18px] font-bold hover:bg-brand-primary-dark transition-colors"
+              className="inline-flex items-center gap-[12px] rounded-[14px] bg-brand-primary text-white px-[48px] py-[18px] font-bold hover:bg-brand-primary-dark transition-colors"
             >
               {isAuthenticated ? "Go to dashboard" : "Get started now"}
               <ArrowRight className="w-[20px] h-[20px]" />
@@ -279,16 +279,16 @@ export function Landlord() {
             </p>
           </div>
 
-          <div className="bg-white border border-[rgba(0,0,0,0.08)] p-[48px]">
+          <div className="bg-white border border-[rgba(0,0,0,0.08)] rounded-[22px] p-[48px]">
             <img
               src="https://images.unsplash.com/photo-1663756915301-2ba688e078cf?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxtb2Rlcm4lMjBhcGFydG1lbnQlMjBpbnRlcmlvciUyMGxpdmluZyUyMHJvb218ZW58MXx8fHwxNzczMDU2NjkzfDA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral"
               alt="Dashboard Preview"
-              className="w-full h-[400px] object-cover rounded-[4px]"
+              className="w-full h-[400px] object-cover rounded-[14px]"
             />
           </div>
 
           <div className="grid grid-cols-3 gap-[32px] mt-[48px]">
-            <div className="bg-white border border-[rgba(0,0,0,0.08)] p-[24px] text-center">
+            <div className="bg-white border border-[rgba(0,0,0,0.08)] rounded-[16px] p-[24px] text-center">
               <TrendingUp className="w-[40px] h-[40px] text-brand-primary mx-auto mb-[16px]" />
               <h3 className="text-[#1A1A1A] text-[18px] font-bold mb-[8px]">
                 Live activity updates
@@ -297,7 +297,7 @@ export function Landlord() {
                 Stay updated on inquiries and tenant responses in real time
               </p>
             </div>
-            <div className="bg-white border border-[rgba(0,0,0,0.08)] p-[24px] text-center">
+            <div className="bg-white border border-[rgba(0,0,0,0.08)] rounded-[16px] p-[24px] text-center">
               <Home className="w-[40px] h-[40px] text-brand-primary mx-auto mb-[16px]" />
               <h3 className="text-[#1A1A1A] text-[18px] font-bold mb-[8px]">
                 Multi-property management
@@ -306,7 +306,7 @@ export function Landlord() {
                 Manage unlimited properties in one place
               </p>
             </div>
-            <div className="bg-white border border-[rgba(0,0,0,0.08)] p-[24px] text-center">
+            <div className="bg-white border border-[rgba(0,0,0,0.08)] rounded-[16px] p-[24px] text-center">
               <Star className="w-[40px] h-[40px] text-brand-primary mx-auto mb-[16px]" />
               <h3 className="text-[#1A1A1A] text-[18px] font-bold mb-[8px]">
                 Tenant ratings
@@ -330,7 +330,7 @@ export function Landlord() {
           </p>
           <Link
             to={isAuthenticated ? "/landlord/inbox" : "/signup"}
-            className="inline-block bg-brand-primary text-white px-[56px] py-[20px] font-bold text-[16px] hover:bg-brand-primary-dark transition-colors"
+            className="inline-block rounded-[14px] bg-brand-primary text-white px-[56px] py-[20px] font-bold text-[16px] hover:bg-brand-primary-dark transition-colors"
           >
             {isAuthenticated ? "Go to dashboard" : "List your property for free"}
           </Link>
@@ -347,7 +347,7 @@ export function Landlord() {
           </div>
 
           <div className="max-w-[800px] mx-auto space-y-[16px]">
-            <details className="bg-[#F7F7F9] border border-[rgba(0,0,0,0.08)] p-[24px] cursor-pointer">
+            <details className="bg-[#F7F7F9] border border-[rgba(0,0,0,0.08)] rounded-[14px] p-[24px] cursor-pointer">
               <summary className="text-[#1A1A1A] text-[18px] font-bold flex items-center justify-between">
                 How much does it cost to list my property?
                 <svg className="w-[20px] h-[20px]" viewBox="0 0 20 20" fill="none">
@@ -359,7 +359,7 @@ export function Landlord() {
               </p>
             </details>
 
-            <details className="bg-[#F7F7F9] border border-[rgba(0,0,0,0.08)] p-[24px] cursor-pointer">
+            <details className="bg-[#F7F7F9] border border-[rgba(0,0,0,0.08)] rounded-[14px] p-[24px] cursor-pointer">
               <summary className="text-[#1A1A1A] text-[18px] font-bold flex items-center justify-between">
                 How do I know tenants are verified?
                 <svg className="w-[20px] h-[20px]" viewBox="0 0 20 20" fill="none">
@@ -371,7 +371,7 @@ export function Landlord() {
               </p>
             </details>
 
-            <details className="bg-[#F7F7F9] border border-[rgba(0,0,0,0.08)] p-[24px] cursor-pointer">
+            <details className="bg-[#F7F7F9] border border-[rgba(0,0,0,0.08)] rounded-[14px] p-[24px] cursor-pointer">
               <summary className="text-[#1A1A1A] text-[18px] font-bold flex items-center justify-between">
                 What if my tenant doesn't pay rent?
                 <svg className="w-[20px] h-[20px]" viewBox="0 0 20 20" fill="none">
@@ -383,7 +383,7 @@ export function Landlord() {
               </p>
             </details>
 
-            <details className="bg-[#F7F7F9] border border-[rgba(0,0,0,0.08)] p-[24px] cursor-pointer">
+            <details className="bg-[#F7F7F9] border border-[rgba(0,0,0,0.08)] rounded-[14px] p-[24px] cursor-pointer">
               <summary className="text-[#1A1A1A] text-[18px] font-bold flex items-center justify-between">
                 Can I list multiple properties?
                 <svg className="w-[20px] h-[20px]" viewBox="0 0 20 20" fill="none">
@@ -395,7 +395,7 @@ export function Landlord() {
               </p>
             </details>
 
-            <details className="bg-[#F7F7F9] border border-[rgba(0,0,0,0.08)] p-[24px] cursor-pointer">
+            <details className="bg-[#F7F7F9] border border-[rgba(0,0,0,0.08)] rounded-[14px] p-[24px] cursor-pointer">
               <summary className="text-[#1A1A1A] text-[18px] font-bold flex items-center justify-between">
                 How long does it take to find a tenant?
                 <svg className="w-[20px] h-[20px]" viewBox="0 0 20 20" fill="none">
@@ -407,7 +407,7 @@ export function Landlord() {
               </p>
             </details>
 
-            <details className="bg-[#F7F7F9] border border-[rgba(0,0,0,0.08)] p-[24px] cursor-pointer">
+            <details className="bg-[#F7F7F9] border border-[rgba(0,0,0,0.08)] rounded-[14px] p-[24px] cursor-pointer">
               <summary className="text-[#1A1A1A] text-[18px] font-bold flex items-center justify-between">
                 What types of properties can I list?
                 <svg className="w-[20px] h-[20px]" viewBox="0 0 20 20" fill="none">
@@ -423,7 +423,7 @@ export function Landlord() {
       </section>
 
       {/* Footer */}
-      <Footer />
+      <Footer variant="dashboard" />
     </div>
   );
 }
