@@ -187,11 +187,14 @@ export function DatePicker({
   if (!isOpen) return null;
 
   return (
-    <div ref={pickerRef} className={`${isModal ? "bg-white rounded-xl shadow-2xl p-4 border" : "absolute z-50 bg-white shadow-xl p-4 border mt-2 rounded-xl"}`}>
+    <div
+      ref={pickerRef}
+      className={`${isModal ? "w-full max-w-[780px] bg-white rounded-[28px] shadow-[0_24px_60px_rgba(15,45,54,0.16)] p-5 border border-[rgba(15,45,54,0.08)]" : "absolute z-50 top-[calc(100%+12px)] left-0 w-[calc(100vw-24px)] max-w-[780px] bg-white shadow-[0_24px_60px_rgba(15,45,54,0.16)] p-5 border border-[rgba(15,45,54,0.08)] rounded-[28px]"}`}
+    >
       {/* Tabs */}
-      <div className="flex gap-2 mb-3">
+      <div className="mb-4 flex gap-3">
         <button 
-          className={`px-3 py-1.5 rounded-lg text-[13px] font-medium ${selectingStart ? 'bg-[#0F2D36] text-white' : 'bg-gray-100'}`}
+          className={`min-w-[128px] px-5 py-3 rounded-full text-[14px] font-semibold transition-colors ${selectingStart ? 'bg-[#0F2D36] text-white shadow-[0_8px_18px_rgba(15,45,54,0.18)]' : 'bg-[#F2F5F7] text-[#5F7480] hover:bg-[#E9EEF2]'}`}
           onClick={() => {
             setSelectingStart(true);
             // Keep existing selection and focus on move-in month for easier editing.
@@ -204,7 +207,7 @@ export function DatePicker({
         </button>
         <button 
           disabled={!tempStartDate}
-          className={`px-3 py-1.5 rounded-lg text-[13px] font-medium ${!selectingStart ? 'bg-[#0F2D36] text-white' : 'bg-gray-100'} disabled:opacity-30`}
+          className={`min-w-[128px] px-5 py-3 rounded-full text-[14px] font-semibold transition-colors ${!selectingStart ? 'bg-[#0F2D36] text-white shadow-[0_8px_18px_rgba(15,45,54,0.18)]' : 'bg-[#F2F5F7] text-[#5F7480] hover:bg-[#E9EEF2]'} disabled:opacity-30`}
           onClick={() => {
             setSelectingStart(false);
             if (tempEndDate) {
@@ -221,24 +224,24 @@ export function DatePicker({
       </div>
 
       {/* Nav */}
-      <div className="flex justify-between items-center mb-3">
-        <button onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1))} className="p-1.5 hover:bg-gray-100 rounded-full">
-          <ChevronLeft size={18} />
+      <div className="mb-4 flex items-center justify-between">
+        <button onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1))} className="flex h-10 w-10 items-center justify-center rounded-full border border-[rgba(15,45,54,0.08)] transition-colors hover:bg-[#F4F7F9]">
+          <ChevronLeft size={18} className="text-[#0F2D36]" />
         </button>
-        <span className="font-semibold text-sm uppercase tracking-wide text-gray-500">
+        <span className="text-sm font-semibold uppercase tracking-[0.14em] text-gray-500">
             {selectingStart ? "Select Move-in" : "Select Move-out"}
         </span>
-        <button onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1))} className="p-1.5 hover:bg-gray-100 rounded-full">
-          <ChevronRight size={18} />
+        <button onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1))} className="flex h-10 w-10 items-center justify-center rounded-full border border-[rgba(15,45,54,0.08)] transition-colors hover:bg-[#F4F7F9]">
+          <ChevronRight size={18} className="text-[#0F2D36]" />
         </button>
       </div>
 
-      <div className="flex flex-col md:flex-row gap-5">
+      <div className="flex flex-col gap-5 md:flex-row md:gap-6">
         {renderMonth(0)}
         {renderMonth(1)}
       </div>
 
-      <div className="mt-4 pt-3 border-t flex justify-between items-center gap-3 flex-wrap">
+      <div className="mt-5 flex flex-wrap items-center justify-between gap-4 border-t pt-4">
         <div className="flex items-center gap-4 flex-wrap">
           <label className="inline-flex items-center gap-2 text-xs text-gray-600 select-none cursor-pointer">
             <input
@@ -267,14 +270,14 @@ export function DatePicker({
               setSelectingStart(true);
               onClearSelection?.();
             }}
-            className="px-4 py-2 text-sm font-semibold text-gray-600 hover:underline"
+            className="px-4 py-2 text-sm font-semibold text-gray-600 hover:text-[#0F2D36]"
           >
             Clear
           </button>
           <button 
             disabled={!tempStartDate || !tempEndDate}
             onClick={() => { onDateChange(tempStartDate, tempEndDate); onClose(); }}
-            className="px-6 py-2 bg-[#0F2D36] text-white rounded-lg text-sm font-bold disabled:opacity-40"
+            className="rounded-full bg-[#0F2D36] px-6 py-2.5 text-sm font-bold text-white shadow-[0_10px_20px_rgba(15,45,54,0.18)] disabled:opacity-40"
           >
             Apply
           </button>

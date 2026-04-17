@@ -203,10 +203,10 @@ export function LandlordPortalLayout({
     <div className="min-h-screen bg-neutral-light-gray">
       {/* Top Header */}
       <header className="bg-white border-b border-[#E3E8EE] shadow-[0_1px_2px_rgba(15,23,42,0.04)] sticky top-0 z-50">
-        <div className="max-w-[1440px] mx-auto px-[20px] lg:px-[28px] py-[12px] flex items-center justify-between">
+        <div className="max-w-[1440px] mx-auto px-[20px] lg:px-[28px] py-[16px] flex items-center justify-between">
           <div className="flex items-center gap-[12px]">
             <Link to="/" className="flex items-center gap-[8px]">
-              <div className="w-[34px] h-[34px] bg-brand-primary rounded-[8px] flex items-center justify-center">
+              <div className="w-[36px] h-[36px] bg-brand-primary rounded-[8px] flex items-center justify-center">
                 <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
                   <path
                     d="M10 2L3 7V17H8V12H12V17H17V7L10 2Z"
@@ -229,13 +229,13 @@ export function LandlordPortalLayout({
 
             <Link
               to={isOnListingForm ? "/landlord/dashboard" : "/landlord/add-listing"}
-              className="inline-flex items-center gap-[8px] rounded-[14px] border border-[#8C99A8] px-[16px] py-[10px] bg-white text-[#1F2937] text-[14px] font-semibold shadow-[0_1px_2px_rgba(15,23,42,0.04)] hover:bg-[#F5F7FA] hover:border-[#7A8898] hover:text-[#1F2937] transition-colors"
+              className="inline-flex items-center gap-[8px] rounded-[14px] border border-[#8C99A8] px-[16px] py-[11px] bg-white text-[#1F2937] text-[14px] font-semibold shadow-[0_1px_2px_rgba(15,23,42,0.04)] hover:bg-[#F5F7FA] hover:border-[#7A8898] hover:text-[#1F2937] transition-colors"
             >
               {isOnListingForm ? <LayoutDashboard className="w-[16px] h-[16px]" /> : <FileText className="w-[16px] h-[16px]" />}
               {isOnListingForm ? "Go to Dashboard" : "Add Listing"}
             </Link>
 
-            <Link to="/landlord/inbox" className="relative p-[8px] hover:bg-neutral-light-gray transition-colors">
+            <Link to="/landlord/inbox" className="relative p-[10px] hover:bg-neutral-light-gray transition-colors">
               <MessageCircle className="w-[20px] h-[20px] text-neutral-gray" />
               {unreadMessages > 0 && (
                 <span className="absolute top-[4px] right-[4px] min-w-[16px] h-[16px] px-[4px] bg-brand-primary text-white text-[10px] font-bold flex items-center justify-center rounded-full">
@@ -247,7 +247,7 @@ export function LandlordPortalLayout({
             <div className="relative" ref={notificationsMenuRef}>
               <button
                 type="button"
-                className="relative p-[8px] hover:bg-neutral-light-gray transition-colors"
+                className="relative p-[10px] hover:bg-neutral-light-gray transition-colors"
                 aria-label="Notifications"
                 onClick={handleToggleNotificationsMenu}
               >
@@ -314,19 +314,19 @@ export function LandlordPortalLayout({
             <div className="relative" ref={userMenuRef}>
               <button
                 onClick={() => setShowUserMenu(!showUserMenu)}
-                className="p-[8px] hover:bg-neutral-light-gray transition-colors"
+                className="p-[10px] hover:bg-neutral-light-gray transition-colors"
               >
                 <UserAvatar
                   name={user?.name}
                   profilePictureUrl={user?.profilePictureUrl}
-                  sizeClassName="w-[40px] h-[40px]"
+                  sizeClassName="w-[44px] h-[44px]"
                   textClassName="text-white text-[16px] font-semibold bg-neutral-gray"
                 />
               </button>
 
               {/* Dropdown */}
               {showUserMenu && (
-                <div className="absolute top-[calc(100%+8px)] right-0 w-[240px] bg-white border border-[rgba(0,0,0,0.08)] shadow-lg">
+                <div className="absolute top-[calc(100%+10px)] right-0 w-[240px] bg-white border border-[rgba(0,0,0,0.08)] shadow-lg">
                   <div className="py-[8px]">
                     <Link
                       to="/landlord/dashboard"
@@ -345,7 +345,7 @@ export function LandlordPortalLayout({
                       Account
                     </Link>
                     <Link
-                      to="/how-it-works"
+                      to="/how-it-works?audience=landlord"
                       className="flex items-center gap-[12px] px-[16px] py-[12px] text-neutral-black text-[14px] hover:bg-neutral-light-gray transition-colors"
                       onClick={() => setShowUserMenu(false)}
                     >
@@ -395,7 +395,7 @@ export function LandlordPortalLayout({
             <div className="relative" ref={languageDropdownRef}>
               <button
                 onClick={() => setShowLanguageDropdown((prev) => !prev)}
-                className="p-[8px] hover:bg-neutral-light-gray transition-colors"
+                className="p-[10px] hover:bg-neutral-light-gray transition-colors"
                 aria-label="Change language"
               >
                 <Globe className="w-[20px] h-[20px] text-neutral-gray" />
@@ -423,7 +423,7 @@ export function LandlordPortalLayout({
 
             <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="md:hidden p-[8px] hover:bg-neutral-light-gray transition-colors"
+              className="md:hidden p-[10px] hover:bg-neutral-light-gray transition-colors"
               aria-label="Toggle navigation"
             >
               {isMobileMenuOpen ? (

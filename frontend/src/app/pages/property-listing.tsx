@@ -1046,7 +1046,7 @@ export function PropertyListing() {
 
   return (
     <div className="min-h-screen bg-white">
-      <Header />
+      <Header variant="dashboard" />
 
       {/* Breadcrumb */}
       <div className="bg-neutral-light-gray border-b border-[rgba(0,0,0,0.08)]">
@@ -2032,7 +2032,7 @@ export function PropertyListing() {
         </div>
       )}
 
-      <Footer />
+      <Footer variant="dashboard" />
     </div>
   );
 }

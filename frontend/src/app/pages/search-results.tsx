@@ -1020,11 +1020,11 @@ export function SearchResults() {
   }, [isMapExpanded]);
 
   return (
-    <div className="min-h-screen bg-white">
-      <Header />
+    <div className="min-h-screen bg-[#F4F7FA]">
+      <Header variant="dashboard" />
 
       {/* Filter Bar */}
-      <div data-results-filter-bar="true" className="border-b border-[rgba(0,0,0,0.08)] bg-white sticky top-[64px] z-40">
+      <div data-results-filter-bar="true" className="sticky top-[76px] z-40 border-b border-[#E3E8EE] bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
         <div ref={filtersRef} className="max-w-[1440px] mx-auto px-[32px]">
           {/* Top Filter Row */}
           <div className="flex items-center gap-[12px] py-[14px] flex-wrap">
@@ -1033,7 +1033,7 @@ export function SearchResults() {
               <button
                 type="button"
                 onClick={() => togglePanel("date")}
-                className={`flex items-center gap-[8px] text-[#1A1A1A] text-[14px] px-[12px] py-[8px] border transition-colors ${
+                className={`flex items-center gap-[8px] text-[#1A1A1A] text-[14px] px-[12px] py-[8px] rounded-[12px] border transition-colors ${
                   dateOpen || requestedStartDate || requestedEndDate
                     ? "border-[#1A1A1A] bg-[#F7F7F9]"
                     : "border-[rgba(0,0,0,0.08)] hover:border-[rgba(0,0,0,0.16)]"
@@ -1099,7 +1099,7 @@ export function SearchResults() {
             <div className="relative">
               <button
                 onClick={() => togglePanel("price")}
-                className={`flex items-center gap-[8px] px-[16px] py-[8px] border transition-colors ${
+                className={`flex items-center gap-[8px] px-[16px] py-[8px] rounded-[12px] border transition-colors ${
                   priceOpen || minPrice !== null || maxPrice !== null
                     ? "border-[#1A1A1A] bg-[#F7F7F9]"
                     : "border-[rgba(0,0,0,0.08)] hover:border-[rgba(0,0,0,0.16)]"
@@ -1165,7 +1165,7 @@ export function SearchResults() {
             <div className="relative">
               <button
                 onClick={() => togglePanel("propertyType")}
-                className={`flex items-center gap-[8px] px-[16px] py-[8px] border transition-colors ${
+                className={`flex items-center gap-[8px] px-[16px] py-[8px] rounded-[12px] border transition-colors ${
                   propertyTypeOpen || selectedPropertyTypes.size > 0
                     ? "border-[#1A1A1A] bg-[#F7F7F9]"
                     : "border-[rgba(0,0,0,0.08)] hover:border-[rgba(0,0,0,0.16)]"
@@ -1209,7 +1209,7 @@ export function SearchResults() {
             <div className="relative">
               <button
                 onClick={() => togglePanel("neighborhoods")}
-                className={`flex items-center gap-[8px] px-[16px] py-[8px] border transition-colors ${
+                className={`flex items-center gap-[8px] px-[16px] py-[8px] rounded-[12px] border transition-colors ${
                   neighborhoodsOpen || selectedNeighborhoods.size > 0
                     ? "border-[#1A1A1A] bg-[#F7F7F9]"
                     : "border-[rgba(0,0,0,0.08)] hover:border-[rgba(0,0,0,0.16)]"
@@ -1256,7 +1256,7 @@ export function SearchResults() {
             <div className="relative">
               <button
                 onClick={() => togglePanel("all")}
-                className={`flex items-center gap-[8px] px-[16px] py-[8px] border transition-colors ${
+                className={`flex items-center gap-[8px] px-[16px] py-[8px] rounded-[12px] border transition-colors ${
                   allFiltersOpen || minBedrooms !== null
                     ? "border-[#1A1A1A] bg-[#F7F7F9]"
                     : "border-[rgba(0,0,0,0.08)] hover:border-[rgba(0,0,0,0.16)]"
@@ -1373,7 +1373,7 @@ export function SearchResults() {
       </div>
 
       {/* Breadcrumb */}
-      <div className="bg-[#F7F7F9] border-b border-[rgba(0,0,0,0.08)]">
+      <div className="bg-[#F4F7FA] border-b border-[#E3E8EE]">
         <div className="max-w-[1440px] mx-auto px-[32px] py-[16px]">
           <div className="flex items-center gap-[8px] text-[13px]">
             <Link to="/" className="text-[#0891B2] hover:underline font-semibold">
@@ -1388,7 +1388,7 @@ export function SearchResults() {
       </div>
 
       {/* Results Header */}
-      <div id="results-header" className="bg-white border-b border-[rgba(0,0,0,0.08)]">
+      <div id="results-header" className="bg-white border-b border-[#E3E8EE]">
         <div className="max-w-[1440px] mx-auto px-[32px] py-[24px]">
           <div className="flex items-center justify-between gap-[20px] flex-wrap">
             <h1 className="text-[#1A1A1A] text-[20px] font-semibold">
@@ -1400,7 +1400,7 @@ export function SearchResults() {
                 <button
                   type="button"
                   onClick={() => setSortOpen((prev) => !prev)}
-                  className={`inline-flex items-center justify-between gap-[8px] min-w-[190px] px-[16px] py-[12px] border text-[14px] font-semibold transition-colors ${
+                  className={`inline-flex items-center justify-between gap-[8px] min-w-[190px] rounded-[12px] px-[16px] py-[12px] border text-[14px] font-semibold transition-colors ${
                     viewMode === "list"
                       ? "bg-white text-[#1A1A1A] border-[rgba(0,0,0,0.20)]"
                       : "bg-white text-[#1A1A1A] border-[rgba(0,0,0,0.14)] hover:border-[rgba(0,0,0,0.24)]"
@@ -1439,7 +1439,7 @@ export function SearchResults() {
                 <button
                   type="button"
                   onClick={handleShowMap}
-                  className="inline-flex items-center justify-center gap-[8px] min-w-[120px] px-[16px] py-[12px] border text-[14px] font-semibold transition-colors bg-white text-[#1A1A1A] border-[rgba(0,0,0,0.14)] hover:border-[rgba(0,0,0,0.24)]"
+                  className="inline-flex items-center justify-center gap-[8px] min-w-[120px] rounded-[12px] px-[16px] py-[12px] border text-[14px] font-semibold transition-colors bg-white text-[#1A1A1A] border-[rgba(0,0,0,0.14)] hover:border-[rgba(0,0,0,0.24)]"
                 >
                   <Map className="w-[16px] h-[16px]" />
                   <span>Map</span>
@@ -1451,7 +1451,7 @@ export function SearchResults() {
       </div>
 
       {/* Property Grid */}
-      <div id="results-content" className="bg-white">
+      <div id="results-content" className="bg-[#F4F7FA]">
         <div className={`max-w-[1440px] mx-auto px-[32px] py-[32px] ${isSplitMapMode ? "xl:pb-[20px]" : ""}`}>
           {(viewMode === "list" || viewMode === "map") && (
             <div className={viewMode === "map" ? (isMapExpanded ? "" : "grid grid-cols-1 xl:grid-cols-[58%_42%] xl:gap-0 items-start") : ""}>
@@ -1466,11 +1466,11 @@ export function SearchResults() {
                 <div
                   key={property.id}
                   onClick={() => navigate(`/property/${property.id}`)}
-                  className="cursor-pointer group"
+                  className="group cursor-pointer overflow-hidden rounded-[8px] border border-[rgba(15,45,54,0.16)] bg-white transition-shadow duration-200 hover:shadow-[0_10px_24px_rgba(15,45,54,0.10)]"
                 >
                   {/* Image Container */}
                   <div 
-                    className="relative mb-[12px] overflow-hidden group/carousel"
+                    className="relative overflow-hidden group/carousel"
                     onWheel={(e) => {
                       const previewImages = getListingCardImages(property.id, property.images);
                       if (previewImages.length <= 1) return;
@@ -1493,8 +1493,8 @@ export function SearchResults() {
                     
                     {/* New Badge */}
                     {!property.images[1] && (
-                      <div className="absolute top-[12px] left-[12px] bg-[#2563EB] text-white px-[12px] py-[4px]">
-                        <span className="text-[12px] font-bold uppercase tracking-[0.05em]">New</span>
+                      <div className="absolute top-[12px] left-[12px] rounded-full bg-[#38BDF8] px-[12px] py-[5px] shadow-[0_8px_18px_rgba(56,189,248,0.32)]">
+                        <span className="text-[11px] font-bold tracking-[0.04em] text-white">NEW</span>
                       </div>
                     )}
 
@@ -1580,21 +1580,21 @@ export function SearchResults() {
                   </div>
 
                   {/* Property Info */}
-                  <div className="space-y-[8px]">
+                  <div className="px-[16px] pt-[14px] pb-[12px]">
                     {/* Title */}
-                    <h3 className="text-[#1A1A1A] text-[16px] font-bold leading-tight line-clamp-1">
+                    <h3 className="mb-[10px] text-[16px] font-semibold leading-[1.25] text-[#12303B] line-clamp-2">
                       {property.title}, {property.city}
                     </h3>
 
                     {/* Rating */}
-                    <div className="flex items-center gap-[4px]">
+                    <div className="mb-[8px] flex items-center gap-[4px]">
                       <Star className="w-[14px] h-[14px] text-[#0891B2] fill-[#0891B2]" />
                       <span className="text-[#1A1A1A] text-[14px] font-semibold">Live</span>
                       <span className="text-[#6B6B6B] text-[14px]">listing</span>
                     </div>
 
                     {/* Size and Housemates */}
-                    <div className="flex items-center gap-[12px] text-[#6B6B6B] text-[13px]">
+                    <div className="mb-[12px] flex items-center gap-[12px] text-[13px] text-[#3E5963]">
                       <div className="flex items-center gap-[4px]">
                         <HomeIcon className="w-[14px] h-[14px]" />
                         <span>{property.area} m²</span>
@@ -1606,15 +1606,15 @@ export function SearchResults() {
                     </div>
 
                     {/* Price */}
-                    <div className="flex items-baseline gap-[4px]">
-                      <span className="text-[#1A1A1A] text-[18px] font-bold">€{property.monthlyRent}</span>
-                      <span className="text-[#6B6B6B] text-[13px]">/month, excl. utilities</span>
+                    <div className="mb-[10px] flex items-baseline gap-[4px]">
+                      <span className="text-[18px] font-bold text-[#12303B]">€{property.monthlyRent}</span>
+                      <span className="text-[14px] text-[#4F6771]">/month, excl. utilities</span>
                     </div>
 
                     {/* Availability */}
-                    <div className="flex items-center gap-[6px]">
-                      <div className="w-[6px] h-[6px] rounded-full bg-[#2563EB]" />
-                      <span className="text-[#1A1A1A] text-[13px] font-semibold">Available from {new Date(property.availableFrom).toLocaleDateString("en-GB")}</span>
+                    <div className="mt-[8px] flex items-center gap-[8px] border-t border-[rgba(15,45,54,0.12)] pt-[12px] text-[14px] font-semibold text-[#12303B]">
+                      <div className="h-[10px] w-[10px] rounded-full bg-[#17A45A]" />
+                      <span>Available from {new Date(property.availableFrom).toLocaleDateString("en-GB")}</span>
                     </div>
                   </div>
                 </div>
@@ -1622,7 +1622,7 @@ export function SearchResults() {
               </div>
 
               {viewMode === "map" && (
-                <div className={`${isMapExpanded ? "fixed inset-x-0 bottom-0 top-[132px] md:top-[154px] z-[90] flex flex-col" : "xl:sticky xl:top-[76px] xl:-mt-[102px] xl:pl-[24px]"} border border-[rgba(0,0,0,0.08)] overflow-hidden bg-white`}>
+                <div className={`${isMapExpanded ? "fixed inset-x-0 bottom-0 top-[132px] md:top-[154px] z-[90] flex flex-col" : "xl:sticky xl:top-[88px] xl:pl-[24px]"} overflow-hidden rounded-[16px] border border-[#E3E8EE] bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04)]`}>
                   <div className="relative">
                     <div className={`w-full ${isMapExpanded ? "h-[calc(100vh-206px)] md:h-[calc(100vh-228px)] min-h-[460px]" : "h-[68vh] min-h-[520px] xl:h-[calc(100vh-152px)]"} bg-[#E6EEF5]`}>
                       {isLoading ? (
@@ -1698,7 +1698,7 @@ export function SearchResults() {
                       <button
                         type="button"
                         onClick={() => setIsMapExpanded((prev) => !prev)}
-                        className="pointer-events-auto inline-flex items-center gap-[8px] px-[18px] py-[14px] bg-white text-[#12303B] text-[14px] font-semibold border border-[rgba(0,0,0,0.08)] shadow-[0_8px_20px_rgba(0,0,0,0.08)] hover:bg-[#F7F7F9] transition-colors rounded-[4px] z-[1201]"
+                        className="pointer-events-auto inline-flex items-center gap-[8px] rounded-[12px] px-[18px] py-[14px] bg-white text-[#12303B] text-[14px] font-semibold border border-[rgba(0,0,0,0.08)] shadow-[0_8px_20px_rgba(0,0,0,0.08)] hover:bg-[#F7F7F9] transition-colors z-[1201]"
                       >
                         <ChevronLeft className="w-[16px] h-[16px]" />
                         {isMapExpanded ? "View list" : "Expand map"}
@@ -1706,7 +1706,7 @@ export function SearchResults() {
                       <button
                         type="button"
                         onClick={handleShowRecommended}
-                        className="pointer-events-auto inline-flex items-center gap-[8px] px-[18px] py-[14px] bg-white text-[#12303B] text-[14px] font-semibold border border-[rgba(0,0,0,0.08)] shadow-[0_8px_20px_rgba(0,0,0,0.08)] hover:bg-[#F7F7F9] transition-colors rounded-[4px] z-[1201]"
+                        className="pointer-events-auto inline-flex items-center gap-[8px] rounded-[12px] px-[18px] py-[14px] bg-white text-[#12303B] text-[14px] font-semibold border border-[rgba(0,0,0,0.08)] shadow-[0_8px_20px_rgba(0,0,0,0.08)] hover:bg-[#F7F7F9] transition-colors z-[1201]"
                       >
                         <X className="w-[16px] h-[16px]" />
                         Close map
@@ -1741,7 +1741,7 @@ export function SearchResults() {
         </div>
       </div>
 
-      <Footer />
+      <Footer variant="dashboard" />
     </div>
   );
 }

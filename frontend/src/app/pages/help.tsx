@@ -225,25 +225,27 @@ export function Help() {
     <div className="min-h-screen bg-white">
       <Header />
 
-      <section className="bg-gradient-to-br from-[#0891B2] to-[#0E7490] text-white py-[80px]">
+      <section className="relative overflow-hidden bg-[#D8DFE9] pt-[50px] pb-[136px] md:pt-[64px] md:pb-[164px]">
         <div className="max-w-[1200px] mx-auto px-[32px] text-center">
-          <h1 className="text-[48px] font-bold tracking-[-0.02em] mb-[24px]">
+          <h1 className="text-[#032E3D] text-[42px] md:text-[58px] font-bold tracking-[-0.04em] leading-[1] mb-[16px]">
             Help Center
           </h1>
-          <p className="text-[20px] text-white/90 max-w-[720px] mx-auto mb-[32px] leading-[1.6]">
+          <p className="text-[#0D3747] text-[15px] md:text-[18px] font-semibold max-w-[760px] mx-auto leading-[1.45]">
             Search articles, contact support, and explore guidance for tenants and landlords in one place.
           </p>
 
-          <div className="max-w-[720px] mx-auto">
-            <div className="flex items-center gap-[12px] bg-white p-[16px] shadow-[0_12px_40px_rgba(0,0,0,0.12)]">
-              <Search className="w-[20px] h-[20px] text-[#6B6B6B]" />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(event) => setSearchQuery(event.target.value)}
-                placeholder="Search topics like deposit, verification, cancel booking, or rent"
-                className="flex-1 outline-none text-[#1A1A1A] placeholder:text-[#6B6B6B]"
-              />
+          <div className="mx-auto mt-[42px] max-w-[760px]">
+            <div className="flex items-center gap-[12px] rounded-full border border-[rgba(255,255,255,0.9)] bg-[rgba(255,255,255,0.52)] p-[4px] shadow-[0_14px_28px_rgba(15,23,42,0.06)]">
+              <div className="flex flex-1 items-center gap-[12px] rounded-full bg-white px-[18px] py-[12px] shadow-[inset_0_0_0_1px_rgba(11,165,199,0.08)]">
+                <Search className="w-[18px] h-[18px] text-[#6B6B6B]" />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(event) => setSearchQuery(event.target.value)}
+                  placeholder="Search topics like deposit, verification, cancel booking, or rent"
+                  className="flex-1 outline-none text-[14px] text-[#1A1A1A] placeholder:text-[#6B6B6B]"
+                />
+              </div>
             </div>
 
             <div className="mt-[16px] flex flex-wrap items-center justify-center gap-[8px]">
@@ -252,7 +254,7 @@ export function Help() {
                   key={term}
                   type="button"
                   onClick={() => setSearchQuery(term)}
-                  className="rounded-full border border-white/30 bg-white/10 px-[12px] py-[6px] text-[13px] font-semibold text-white transition-colors hover:bg-white hover:text-[#0E7490]"
+                  className="rounded-full border border-[rgba(11,165,199,0.14)] bg-white px-[12px] py-[6px] text-[12px] font-semibold text-[#0D3747] transition-colors hover:bg-[#032E3D] hover:text-white"
                 >
                   {term}
                 </button>
@@ -260,10 +262,11 @@ export function Help() {
             </div>
           </div>
 
-          <p className="mt-[18px] text-[13px] text-white/80">
+          <p className="mt-[18px] text-[13px] text-[#0D3747]/80">
             Try searching for support email, rent payment, safety, or landlord verification.
           </p>
         </div>
+        <div className="pointer-events-none absolute left-1/2 bottom-[-210px] h-[340px] w-[1800px] -translate-x-1/2 rounded-[50%] bg-white" />
       </section>
 
       <section className="py-[72px]">

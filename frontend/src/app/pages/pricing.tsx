@@ -2,6 +2,9 @@ import { Header } from "../components/header";
 import { Footer } from "../components/footer";
 import { ChevronRight, ChevronDown, Check } from "lucide-react";
 import { useState } from "react";
+import listYourPlaceImage from "../../assets/list_your_place.svg";
+import rentItOutImage from "../../assets/rent_it_out.svg";
+import getPaidImage from "../../assets/get_paid.svg";
 
 export function Pricing() {
   const [activeTab, setActiveTab] = useState<"tenants" | "landlords">("tenants");
@@ -11,43 +14,89 @@ export function Pricing() {
     setOpenFaq(openFaq === index ? null : index);
   };
 
+  const landlordFaqs = [
+    {
+      q: "Why do I have to pay a commission fee?",
+      a: "Our fees allow us to operate our platform and services: a dedicated customer support team, secure payment processing, API integrations and fraud detection. We only charge this small commission fee when a tenant successfully books your place. And remember, on HousingAnywhere you can list an unlimited number of properties and chat with potential tenants for free.",
+    },
+    {
+      q: "What happens if a tenant cancels a booking?",
+      a: "If your tenant cancels within 24 hours of booking your place, they are entitled to a full refund. After that time, you are covered by our landlord guarantee, meaning you will still receive the first month's rent, even if the tenant cancels. Note that we only payout the first month's rent 48 hours after the tenant has moved in and provided that the reality of your place matches what was advertised in your listing.",
+    },
+    {
+      q: "Do you guarantee the payment of the monthly rent?",
+      a: "We currently do not offer this sort of guarantee. However, we do provide an online rent collection system which you can use to request the rent, deposit and any other payments from your tenants.",
+    },
+    {
+      q: "Do you provide insurance against damage to the property during the tenancy?",
+      a: "We currently do not offer such insurance and strongly recommend charging your tenants a security deposit, in order to cover any potential damage. Simply send your tenant a payment request for the deposit via our secure online rent collection system.",
+    },
+  ];
+
+  const tenantFaqs = [
+    {
+      q: "Which city I need to pay for Landlord fee ?",
+      a: "Landlord fees are only applicable in certain countries where this is a standard practice. Check the regional pricing section above to see if your destination has landlord fees.",
+    },
+    {
+      q: "How do I pay my monthly rent?",
+      a: "After your first month's rent is paid through our platform, subsequent monthly payments can be made through automatic bank transfers or our payment portal. You'll receive reminders before each payment is due.",
+    },
+    {
+      q: "Is My deposit protection like an insurance fee?",
+      a: "No, your security deposit is not an insurance fee. It's a refundable amount held in escrow to protect the landlord against damages. It will be returned to you at the end of your lease, minus any deductions for damages.",
+    },
+    {
+      q: "I am booking an apartment from the US, but I am moving to Spain. Can I add the service fee to the lease?",
+      a: "The service fee is a one-time payment due at booking and cannot be added to your monthly lease payments. However, we do offer payment plans that allow you to split the first payment into three monthly installments at 0% interest.",
+    },
+  ];
+
   return (
     <div className="min-h-screen bg-white">
       <Header />
 
       {/* Hero Section */}
-      <section className="bg-brand-primary-light py-[64px]">
+      <section className="relative overflow-hidden bg-[#D8DFE9] pt-[50px] pb-[136px] md:pt-[64px] md:pb-[164px]">
         <div className="max-w-[1200px] mx-auto px-[32px] text-center">
-          <h1 className="text-neutral-black text-[48px] font-bold tracking-[-0.02em] mb-[16px]">
+          <h1 className="text-[#032E3D] text-[42px] md:text-[58px] font-bold tracking-[-0.04em] leading-[1]">
             Pricing
           </h1>
-          <p className="text-neutral-black text-[18px] mb-[32px] max-w-[600px] mx-auto">
-            Learn about the benefits of using EasyRent.
+          <p className="mt-[16px] text-[#0D3747] text-[15px] md:text-[18px] font-semibold max-w-[840px] mx-auto leading-[1.45]">
+            Learn about the benefits of using HousingAnywhere
           </p>
           
-          <div className="flex items-center justify-center gap-[16px]">
+          <div className="mx-auto mt-[42px] flex w-full max-w-[700px] rounded-full border border-[rgba(255,255,255,0.9)] bg-[rgba(255,255,255,0.52)] p-[4px] shadow-[0_14px_28px_rgba(15,23,42,0.06)]">
             <button
-              onClick={() => setActiveTab("tenants")}
-              className={`px-[32px] py-[12px] rounded-full font-semibold transition-colors ${
+              onClick={() => {
+                setActiveTab("tenants");
+                setOpenFaq(null);
+              }}
+              className={`h-[52px] flex-1 rounded-full text-[16px] md:text-[18px] font-medium transition-colors ${
                 activeTab === "tenants"
-                  ? "bg-brand-primary text-white"
-                  : "bg-white text-neutral-black border border-neutral"
+                  ? "bg-[#032E3D] text-white"
+                  : "bg-transparent text-[#0D3747] hover:bg-[rgba(255,255,255,0.32)]"
               }`}
             >
               For tenants
             </button>
             <button
-              onClick={() => setActiveTab("landlords")}
-              className={`px-[32px] py-[12px] rounded-full font-semibold transition-colors ${
+              onClick={() => {
+                setActiveTab("landlords");
+                setOpenFaq(null);
+              }}
+              className={`h-[52px] flex-1 rounded-full text-[16px] md:text-[18px] font-semibold transition-colors ${
                 activeTab === "landlords"
-                  ? "bg-brand-primary text-white"
-                  : "bg-white text-neutral-black border border-neutral"
+                  ? "bg-[#032E3D] text-white"
+                  : "bg-transparent text-[#0D3747] hover:bg-[rgba(255,255,255,0.32)]"
               }`}
             >
               For landlords
             </button>
           </div>
         </div>
+
+        <div className="pointer-events-none absolute left-1/2 bottom-[-210px] h-[340px] w-[1800px] -translate-x-1/2 rounded-[50%] bg-white" />
       </section>
 
       {/* Main Content Section */}
@@ -247,6 +296,67 @@ export function Pricing() {
             </>
           ) : (
             <>
+              <section className="pb-[80px] md:pb-[96px]">
+                <div className="mx-auto max-w-[1280px] px-[32px] text-center">
+                  <h2 className="text-[34px] md:text-[42px] font-bold leading-[1.12] tracking-[-0.02em] text-[#2E4C63]">
+                    Rent out your properties in 3 easy steps
+                  </h2>
+                  <p className="mx-auto mt-[14px] max-w-[900px] text-[18px] md:text-[22px] leading-[1.5] text-[#6B849B]">
+                    Find your ideal tenant and get your property booked in a matter of days. Renting out on HousingAnywhere is quick, easy and safe. Start generating revenue now!
+                  </p>
+
+                  <div className="mt-[44px] grid grid-cols-1 gap-[28px] md:grid-cols-3 md:gap-[36px]">
+                    <article className="text-left">
+                      <img src={listYourPlaceImage} alt="List your place" className="mx-auto h-[190px] w-full max-w-[260px] object-contain" />
+                      <div className="mt-[10px] flex items-start gap-[12px]">
+                        <span className="text-[54px] font-bold leading-[0.9] text-[#10222E]">1.</span>
+                        <div>
+                          <h3 className="text-[20px] md:text-[24px] font-semibold leading-[1.15] text-[#30485B]">List your place</h3>
+                          <p className="mt-[12px] max-w-[330px] text-[18px] md:text-[16px] leading-[1.55] text-[#30485B]">
+                            Create your listings within 5 minutes and make your properties visible to the world!
+                          </p>
+                        </div>
+                      </div>
+                    </article>
+
+                    <article className="text-left">
+                      <img src={rentItOutImage} alt="Rent it out" className="mx-auto h-[190px] w-full max-w-[260px] object-contain" />
+                      <div className="mt-[10px] flex items-start gap-[12px]">
+                        <span className="text-[54px] font-bold leading-[0.9] text-[#10222E]">2.</span>
+                        <div>
+                          <h3 className="text-[20px] md:text-[24px] font-semibold leading-[1.15] text-[#30485B]">Rent it out</h3>
+                          <p className="mt-[12px] max-w-[330px] text-[18px] md:text-[16px] leading-[1.55] text-[#30485B]">
+                            Receive contact requests, select your favorite tenants and confirm the rental.
+                          </p>
+                        </div>
+                      </div>
+                    </article>
+
+                    <article className="text-left">
+                      <img src={getPaidImage} alt="Get paid" className="mx-auto h-[190px] w-full max-w-[260px] object-contain" />
+                      <div className="mt-[10px] flex items-start gap-[12px]">
+                        <span className="text-[54px] font-bold leading-[0.9] text-[#10222E]">3.</span>
+                        <div>
+                          <h3 className="text-[20px] md:text-[24px] font-semibold leading-[1.15] text-[#30485B]">Get paid</h3>
+                          <p className="mt-[12px] max-w-[330px] text-[18px] md:text-[16px] leading-[1.55] text-[#30485B]">
+                            Get paid out after your tenant has successfully moved-in.
+                          </p>
+                        </div>
+                      </div>
+                    </article>
+                  </div>
+
+                  <div className="mt-[56px] flex justify-center">
+                    <button
+                      type="button"
+                      className="inline-flex items-center justify-center rounded-full bg-[#032E3D] px-[24px] py-[14px] text-[14px] font-bold uppercase tracking-[0.02em] text-white shadow-[0_10px_24px_rgba(3,46,61,0.18)] transition-colors hover:bg-[#0A4154]"
+                    >
+                      List your properties for free
+                    </button>
+                  </div>
+                </div>
+              </section>
+
               {/* Landlord Pricing Content */}
               <h2 className="text-neutral-black text-[32px] font-bold tracking-[-0.02em] mb-[24px] text-center">
                 Choose the right plan for your rental business
@@ -431,45 +541,7 @@ export function Pricing() {
           </h2>
           
           <div className="space-y-[16px]">
-            {(activeTab === "tenants" ? [
-              {
-                q: "Which city I need to pay for Landlord fee ?",
-                a: "Landlord fees are only applicable in certain countries where this is a standard practice. Check the regional pricing section above to see if your destination has landlord fees.",
-              },
-              {
-                q: "How do I pay my monthly rent?",
-                a: "After your first month's rent is paid through our platform, subsequent monthly payments can be made through automatic bank transfers or our payment portal. You'll receive reminders before each payment is due.",
-              },
-              {
-                q: "Is My deposit protection like an insurance fee?",
-                a: "No, your security deposit is not an insurance fee. It's a refundable amount held in escrow to protect the landlord against damages. It will be returned to you at the end of your lease, minus any deductions for damages.",
-              },
-              {
-                q: "I am booking an apartment from the US, but I am moving to Spain. Can I add the service fee to the lease?",
-                a: "The service fee is a one-time payment due at booking and cannot be added to your monthly lease payments. However, we do offer payment plans that allow you to split the first payment into three monthly installments at 0% interest.",
-              },
-            ] : [
-              {
-                q: "What commission does EasyRent charge?",
-                a: "Our commission rates vary by plan: Basic (15%), Professional (10%), and Enterprise (5%). The commission is only charged when you successfully rent out your property.",
-              },
-              {
-                q: "Can I upgrade or downgrade my plan anytime?",
-                a: "Yes, you can upgrade or downgrade your plan at any time. If you upgrade, you'll be charged a prorated amount for the remainder of the month. If you downgrade, the change will take effect at the start of your next billing cycle.",
-              },
-              {
-                q: "How does the verification process work?",
-                a: "To become a verified landlord, you'll need to provide proof of property ownership or authorization to rent, valid identification, and pass a background check. The verification process typically takes 2-3 business days.",
-              },
-              {
-                q: "What payment methods do you accept from tenants?",
-                a: "We accept all major credit cards, debit cards, and bank transfers. All payments are processed securely through our platform, and funds are transferred to your account within 2-3 business days after tenant move-in.",
-              },
-              {
-                q: "Is there a free trial for paid plans?",
-                a: "Yes! The Professional plan comes with a 14-day free trial. You can explore all features with no commitment. Cancel anytime during the trial period without being charged.",
-              },
-            ]).map((faq, idx) => (
+            {(activeTab === "tenants" ? tenantFaqs : landlordFaqs).map((faq, idx) => (
               <div
                 key={idx}
                 className="bg-white border border-neutral overflow-hidden"

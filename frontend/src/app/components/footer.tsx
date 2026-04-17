@@ -3,10 +3,15 @@ import { Facebook, Youtube, Instagram, Linkedin, ChevronDown, Globe } from "luci
 import { useState, useRef, useEffect } from "react";
 import { changeSiteLanguage, getSavedLanguageLabel, SUPPORTED_LANGUAGES } from "../utils/translate";
 
-export function Footer() {
+interface FooterProps {
+  variant?: "default" | "dashboard";
+}
+
+export function Footer({ variant = "default" }: FooterProps) {
   const [selectedLanguage, setSelectedLanguage] = useState(getSavedLanguageLabel());
   const [showLanguageDropdown, setShowLanguageDropdown] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const isDashboardVariant = variant === "dashboard";
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -21,14 +26,14 @@ export function Footer() {
   }, []);
 
   return (
-    <footer className="bg-neutral-light-gray py-[64px]">
-      <div className="max-w-[1440px] mx-auto px-[32px]">
+    <footer className={isDashboardVariant ? "bg-white border-t border-[#E3E8EE] py-[88px]" : "bg-neutral-light-gray py-[80px]"}>
+      <div className={isDashboardVariant ? "max-w-[1440px] mx-auto px-[20px] lg:px-[28px]" : "max-w-[1440px] mx-auto px-[32px]"}>
         <div className="grid grid-cols-[1fr_1fr_1fr_1fr_auto] gap-[64px]">
           {/* Left Section - Logo, Language, App */}
           <div>
             {/* Logo */}
-            <Link to="/" className="flex items-center gap-[8px] mb-[32px]">
-              <div className="w-[32px] h-[32px] bg-brand-primary flex items-center justify-center">
+            <Link to="/" className="flex items-center gap-[8px] mb-[36px]">
+              <div className={isDashboardVariant ? "w-[36px] h-[36px] rounded-[8px] bg-brand-primary flex items-center justify-center" : "w-[36px] h-[36px] bg-brand-primary flex items-center justify-center"}>
                 <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
                   <path
                     d="M10 2L3 7V17H8V12H12V17H17V7L10 2Z"
@@ -48,7 +53,7 @@ export function Footer() {
             {/* Language Selector */}
             <div ref={dropdownRef} className="relative">
               <button
-                className="flex items-center gap-[8px] mb-[32px] text-neutral-black hover:text-brand-primary transition-colors"
+                className="flex items-center gap-[8px] mb-[36px] text-neutral-black hover:text-brand-primary transition-colors"
                 onClick={() => setShowLanguageDropdown(!showLanguageDropdown)}
               >
                 <Globe className="w-[16px] h-[16px]" />
@@ -75,7 +80,7 @@ export function Footer() {
             </div>
 
             {/* Description */}
-            <div className="border border-neutral p-[16px] bg-white">
+            <div className="border border-neutral p-[18px] bg-white">
               <p className="text-neutral-gray text-[14px] leading-[1.6]">
                 EasyRent connects international students, expats, and digital nomads with verified mid-to-long-term rental properties worldwide. Find your perfect home with trusted landlords.
               </p>
@@ -84,7 +89,7 @@ export function Footer() {
 
           {/* Easyrent Column */}
           <div>
-            <h3 className="text-neutral-black text-[14px] font-bold mb-[24px]">Easyrent</h3>
+            <h3 className="text-neutral-black text-[14px] font-bold mb-[28px]">Easyrent</h3>
             <ul className="space-y-[12px]">
               <li>
                 <Link to="/how-it-works" className="text-neutral-gray text-[14px] hover:text-brand-primary transition-colors">
@@ -116,7 +121,7 @@ export function Footer() {
 
           {/* Tenants Column */}
           <div>
-            <h3 className="text-neutral-black text-[14px] font-bold mb-[24px]">Tenants</h3>
+            <h3 className="text-neutral-black text-[14px] font-bold mb-[28px]">Tenants</h3>
             <ul className="space-y-[12px]">
               <li>
                 <Link to="/how-it-works" className="text-neutral-gray text-[14px] hover:text-brand-primary transition-colors">
@@ -135,7 +140,7 @@ export function Footer() {
               </li>
             </ul>
             
-            <h4 className="text-neutral-black text-[14px] font-bold mt-[32px] mb-[24px]">Support</h4>
+            <h4 className="text-neutral-black text-[14px] font-bold mt-[36px] mb-[28px]">Support</h4>
             <ul className="space-y-[12px]">
               <li>
                 <Link to="/help" className="text-neutral-gray text-[14px] hover:text-brand-primary transition-colors">
@@ -152,7 +157,7 @@ export function Footer() {
 
           {/* Landlords Column */}
           <div>
-            <h3 className="text-neutral-black text-[14px] font-bold mb-[24px]">Landlords</h3>
+            <h3 className="text-neutral-black text-[14px] font-bold mb-[28px]">Landlords</h3>
             <ul className="space-y-[12px]">
               <li>
                 <Link to="/how-it-works" className="text-neutral-gray text-[14px] hover:text-brand-primary transition-colors">
@@ -231,7 +236,7 @@ export function Footer() {
       </div>
 
       {/* Copyright Section */}
-      <div className="max-w-[1440px] mx-auto px-[32px] mt-[48px] pt-[24px] border-t border-neutral">
+      <div className={isDashboardVariant ? "max-w-[1440px] mx-auto px-[20px] lg:px-[28px] mt-[60px] pt-[30px] border-t border-[#E3E8EE]" : "max-w-[1440px] mx-auto px-[32px] mt-[56px] pt-[28px] border-t border-neutral"}>
         <p className="text-neutral-gray text-[14px] text-center">
           © 2026 EasyRent. All rights reserved.
         </p>
