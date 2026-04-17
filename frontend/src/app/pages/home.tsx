@@ -294,11 +294,12 @@ function buildCitySuggestions(listings: ListingCitySuggestion[]) {
   }
 
   return [...suggestionMap.values()]
+    .filter(({ liveProperties }) => liveProperties > 0)
     .map(({ liveProperties, ...city }) => ({
       ...city,
-      properties: liveProperties > 0 ? liveProperties : city.properties,
+      properties: liveProperties,
     }))
-    .sort((left, right) => left.name.localeCompare(right.name));
+    .sort((left, right) => right.properties - left.properties);
 }
 
 function getFilteredCities(suggestions: CitySuggestion[], query: string) {

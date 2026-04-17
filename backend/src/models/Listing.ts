@@ -213,7 +213,7 @@ const listingSchema = new Schema(
     status: {
       type: String,
       enum: ["active", "draft", "inactive"],
-      default: "draft",
+      default: "active",
       index: true,
     },
     version: { type: Number, default: 2 }, // Schema version for migration tracking
