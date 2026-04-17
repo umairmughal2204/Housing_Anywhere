@@ -114,14 +114,14 @@ export function Header({ variant = "default" }: HeaderProps) {
 
   return (
     <header className={isDashboardVariant ? "bg-white border-b border-[#E3E8EE] shadow-[0_1px_2px_rgba(15,23,42,0.04)] sticky top-0 z-50" : "sticky top-0 z-50 bg-white/96 backdrop-blur-md shadow-[0_10px_30px_rgba(2,22,33,0.08)] rounded-b-[30px] border-b border-[rgba(11,165,199,0.14)]"}>
-      <div className={isDashboardVariant ? "max-w-[1440px] mx-auto px-[20px] lg:px-[28px] py-[16px] flex items-center justify-between" : "relative max-w-[1440px] mx-auto px-[32px] py-[18px] flex items-center justify-between"}>
+      <div className={isDashboardVariant ? "max-w-[1440px] mx-auto px-[12px] sm:px-[20px] lg:px-[28px] py-[12px] sm:py-[16px] flex items-center justify-between" : "relative max-w-[1440px] mx-auto px-[16px] sm:px-[32px] py-[14px] sm:py-[18px] flex items-center justify-between"}>
         {!isDashboardVariant && (
           <div className="pointer-events-none absolute inset-x-[18px] bottom-[8px] h-[1px] bg-[linear-gradient(90deg,transparent,rgba(11,165,199,0.26),transparent)]" />
         )}
         {/* Logo */}
         <Link to="/" className="flex items-center gap-[8px]">
-          <div className={isDashboardVariant ? "w-[36px] h-[36px] bg-brand-primary rounded-[8px] flex items-center justify-center" : "w-[38px] h-[38px] bg-brand-primary rounded-[14px] flex items-center justify-center shadow-[0_8px_18px_rgba(11,165,199,0.22)]"}>
-            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+          <div className={isDashboardVariant ? "w-[32px] sm:w-[36px] h-[32px] sm:h-[36px] bg-brand-primary rounded-[8px] flex items-center justify-center" : "w-[32px] sm:w-[38px] h-[32px] sm:h-[38px] bg-brand-primary rounded-[14px] flex items-center justify-center shadow-[0_8px_18px_rgba(11,165,199,0.22)]"}>
+            <svg width="18" height="18" viewBox="0 0 20 20" fill="none" className="sm:w-[20px] sm:h-[20px]">
               <path
                 d="M10 2L3 7V17H8V12H12V17H17V7L10 2Z"
                 fill="white"
@@ -132,29 +132,29 @@ export function Header({ variant = "default" }: HeaderProps) {
               />
             </svg>
           </div>
-          <span className="text-neutral-black text-[18px] font-bold tracking-[-0.02em]">
+          <span className="text-neutral-black text-[16px] sm:text-[18px] font-bold tracking-[-0.02em]">
             Easy<span className="text-brand-primary">Rent</span>
           </span>
         </Link>
 
         {/* Center Navigation - Only show when NOT logged in */}
         {!isAuthenticated && (
-          <nav className="flex items-center gap-[28px] rounded-full border border-[rgba(11,165,199,0.14)] bg-white px-[22px] py-[10px] shadow-[0_8px_20px_rgba(2,22,33,0.04)]">
+          <nav className="hidden md:flex items-center gap-[28px] rounded-full border border-[rgba(11,165,199,0.14)] bg-white px-[22px] py-[10px] shadow-[0_8px_20px_rgba(2,22,33,0.04)]">
             <Link
               to="/how-it-works"
-              className="text-neutral-black text-[14px] font-medium hover:text-brand-primary transition-colors"
+              className="text-neutral-black text-[12px] sm:text-[14px] font-medium hover:text-brand-primary transition-colors"
             >
               How it works
             </Link>
             <Link
               to="/pricing"
-              className="text-neutral-black text-[14px] font-medium hover:text-brand-primary transition-colors"
+              className="text-neutral-black text-[12px] sm:text-[14px] font-medium hover:text-brand-primary transition-colors"
             >
               Pricing
             </Link>
             <Link
               to="/help"
-              className="text-neutral-black text-[14px] font-medium hover:text-brand-primary transition-colors"
+              className="text-neutral-black text-[12px] sm:text-[14px] font-medium hover:text-brand-primary transition-colors"
             >
               Help
             </Link>
@@ -163,7 +163,7 @@ export function Header({ variant = "default" }: HeaderProps) {
 
         {/* Right Actions - Logged Out */}
         {!isAuthenticated && (
-          <div className="flex items-center gap-[16px]">
+          <div className="hidden sm:flex items-center gap-[12px] sm:gap-[16px]">
             <Link 
               to="/login"
               className="text-neutral-black text-[14px] font-medium hover:text-brand-primary transition-colors"

@@ -27,14 +27,14 @@ export function Footer({ variant = "default" }: FooterProps) {
 
   return (
     <footer className={isDashboardVariant ? "bg-white border-t border-[#E3E8EE] py-[88px]" : "bg-neutral-light-gray py-[80px]"}>
-      <div className={isDashboardVariant ? "max-w-[1440px] mx-auto px-[20px] lg:px-[28px]" : "max-w-[1440px] mx-auto px-[32px]"}>
-        <div className="grid grid-cols-[1fr_1fr_1fr_1fr_auto] gap-[64px]">
+      <div className={isDashboardVariant ? "max-w-[1440px] mx-auto px-[16px] sm:px-[20px] lg:px-[28px]" : "max-w-[1440px] mx-auto px-[16px] sm:px-[32px]"}>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-[32px] sm:gap-[48px] lg:gap-[64px]">
           {/* Left Section - Logo, Language, App */}
           <div>
             {/* Logo */}
             <Link to="/" className="flex items-center gap-[8px] mb-[36px]">
-              <div className={isDashboardVariant ? "w-[36px] h-[36px] rounded-[8px] bg-brand-primary flex items-center justify-center" : "w-[36px] h-[36px] bg-brand-primary flex items-center justify-center"}>
-                <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+              <div className={isDashboardVariant ? "w-[32px] sm:w-[36px] h-[32px] sm:h-[36px] rounded-[8px] bg-brand-primary flex items-center justify-center" : "w-[32px] sm:w-[36px] h-[32px] sm:h-[36px] bg-brand-primary flex items-center justify-center"}>
+                <svg width="18" height="18" viewBox="0 0 20 20" fill="none" className="sm:w-[20px] sm:h-[20px]">
                   <path
                     d="M10 2L3 7V17H8V12H12V17H17V7L10 2Z"
                     fill="white"
@@ -45,7 +45,7 @@ export function Footer({ variant = "default" }: FooterProps) {
                   />
                 </svg>
               </div>
-              <span className="text-neutral-black text-[16px] font-bold">
+              <span className="text-neutral-black text-[14px] sm:text-[16px] font-bold">
                 Easy<span className="text-brand-primary">Rent</span>
               </span>
             </Link>
@@ -53,12 +53,12 @@ export function Footer({ variant = "default" }: FooterProps) {
             {/* Language Selector */}
             <div ref={dropdownRef} className="relative">
               <button
-                className="flex items-center gap-[8px] mb-[36px] text-neutral-black hover:text-brand-primary transition-colors"
+                className="flex items-center gap-[8px] mb-[36px] text-neutral-black text-[12px] sm:text-[14px] hover:text-brand-primary transition-colors"
                 onClick={() => setShowLanguageDropdown(!showLanguageDropdown)}
               >
-                <Globe className="w-[16px] h-[16px]" />
-                <span className="text-[14px] font-semibold">{selectedLanguage}</span>
-                <ChevronDown className="w-[14px] h-[14px]" />
+                <Globe className="w-[14px] sm:w-[16px] h-[14px] sm:h-[16px]" />
+                <span className="font-semibold">{selectedLanguage}</span>
+                <ChevronDown className="w-[12px] sm:w-[14px] h-[12px] sm:h-[14px]" />
               </button>
               {showLanguageDropdown && (
                 <div className="absolute left-0 top-full bg-white border border-neutral p-[8px] z-10">
@@ -80,8 +80,8 @@ export function Footer({ variant = "default" }: FooterProps) {
             </div>
 
             {/* Description */}
-            <div className="border border-neutral p-[18px] bg-white">
-              <p className="text-neutral-gray text-[14px] leading-[1.6]">
+            <div className="border border-neutral p-[12px] sm:p-[18px] bg-white">
+              <p className="text-neutral-gray text-[12px] sm:text-[14px] leading-[1.6]">
                 EasyRent connects international students, expats, and digital nomads with verified mid-to-long-term rental properties worldwide. Find your perfect home with trusted landlords.
               </p>
             </div>
@@ -89,7 +89,7 @@ export function Footer({ variant = "default" }: FooterProps) {
 
           {/* Easyrent Column */}
           <div>
-            <h3 className="text-neutral-black text-[14px] font-bold mb-[28px]">Easyrent</h3>
+            <h3 className="text-neutral-black text-[12px] sm:text-[14px] font-bold mb-[20px] sm:mb-[28px]">Easyrent</h3>
             <ul className="space-y-[12px]">
               <li>
                 <Link to="/how-it-works" className="text-neutral-gray text-[14px] hover:text-brand-primary transition-colors">
