@@ -589,7 +589,7 @@ export function Pricing() {
         </div>
       </section>
 
-      <Footer />
+      <Footer variant="dashboard" />
     </div>
   );
 }

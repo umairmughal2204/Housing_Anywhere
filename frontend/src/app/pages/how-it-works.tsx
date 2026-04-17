@@ -641,7 +641,7 @@ export function HowItWorks() {
       </section>
       )}
 
-      <Footer />
+      <Footer variant="dashboard" />
     </div>
   );
 }
