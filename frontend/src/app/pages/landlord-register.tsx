@@ -4,6 +4,7 @@ import { ChevronDown } from "lucide-react";
 import { useAuth } from "../contexts/auth-context";
 import { COUNTRY_OPTIONS, PROPERTY_COUNT_OPTIONS } from "../utils/country-data";
 import { Header } from "../components/header";
+import image1Svg from "/src/assets/image1.svg?url";
 
 type PhoneLengthRule = {
   min: number;
@@ -341,7 +342,7 @@ export function LandlordRegister() {
 
           <div className="hidden justify-center pt-[34px] lg:flex lg:pt-[54px]">
             <img
-              src="/src/assets/image1.svg"
+              src={image1Svg}
               alt="Landlord registration illustration"
               className="w-full max-w-[320px] h-auto"
             />

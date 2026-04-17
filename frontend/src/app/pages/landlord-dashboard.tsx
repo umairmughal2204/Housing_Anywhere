@@ -4,6 +4,7 @@ import { LandlordPortalLayout } from "../components/landlord-portal-layout";
 import { useAuth } from "../contexts/auth-context";
 import { API_BASE } from "../config";
 import { Skeleton } from "../components/ui/skeleton";
+import businessReportSvg from "/src/assets/business-report.svg?url";
 
 interface DashboardStats {
   unreadMessages: number;
@@ -93,7 +94,7 @@ export function LandlordDashboard() {
 
               <div className="w-[68px] h-[68px] mx-auto my-[6px]">
                 <img
-                  src="/src/assets/business-report.svg"
+                  src={businessReportSvg}
                   alt="Business report illustration"
                   className="w-full h-full object-contain"
                 />
