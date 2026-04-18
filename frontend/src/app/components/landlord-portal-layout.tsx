@@ -3,7 +3,6 @@ import { createPortal } from "react-dom";
 import { 
   LayoutDashboard, 
   Home, 
-  CalendarDays,
   ClipboardList,
   FileText,
   MessageSquare, 
@@ -61,7 +60,6 @@ export function LandlordPortalLayout({
     { name: "Dashboard", href: "/landlord/dashboard", icon: LayoutDashboard },
     { name: "Listings", href: "/landlord/listings", icon: Home },
     { name: "Rentals", href: "/landlord/rentals", icon: ClipboardList },
-    { name: "Calendar", href: "/landlord/calendar", icon: CalendarDays },
     { name: "Messages", href: "/landlord/inbox", icon: MessageSquare },
   ];
 
