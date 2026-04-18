@@ -1044,14 +1044,23 @@ export function PropertyListing() {
     }, 260);
   };
 
+  const propertySearchPlaceholder = listing?.city
+    ? `Places in ${listing.city}`
+    : "Search places";
+
   return (
     <div className="min-h-screen bg-white">
-      <Header variant="dashboard" />
+      <Header
+        variant="dashboard"
+        logoVariant="mobile-favicon"
+        forceSearchBar
+        searchPlaceholder={propertySearchPlaceholder}
+      />
 
       {/* Breadcrumb */}
       <div className="bg-neutral-light-gray border-b border-[rgba(0,0,0,0.08)]">
-        <div className="max-w-[1440px] mx-auto px-[32px] py-[12px]">
-          <div className="flex items-center gap-[8px] text-[13px]">
+        <div className="max-w-[1440px] mx-auto px-[16px] sm:px-[24px] lg:px-[32px] py-[10px] sm:py-[12px]">
+          <div className="hidden md:flex items-center gap-[8px] text-[13px]">
             <Link to="/" className="text-brand-primary hover:underline font-semibold">
               ReserveHousing
             </Link>
@@ -1066,13 +1075,18 @@ export function PropertyListing() {
             <span className="text-neutral-gray">&gt;</span>
             <span className="text-neutral-black font-semibold">{listing?.title ?? "Listing"}</span>
           </div>
+          <div className="md:hidden flex items-center gap-[8px] text-[12px]">
+            <Link to="/" className="text-brand-primary font-semibold">ReserveHousing</Link>
+            <span className="text-neutral-gray">&gt;</span>
+            <span className="text-neutral-black font-semibold truncate">{listing?.title ?? "Listing"}</span>
+          </div>
         </div>
       </div>
 
       {/* Main Content */}
-      <div className="max-w-[1440px] mx-auto px-[32px] py-[32px]">
+      <div className="max-w-[1440px] mx-auto px-[12px] sm:px-[20px] lg:px-[32px] pt-[14px] sm:pt-[24px] lg:pt-[32px] pb-[120px] lg:pb-[32px]">
         {isLoading && (
-          <div className="animate-pulse flex gap-[48px]">
+          <div className="animate-pulse flex flex-col lg:flex-row gap-[24px] lg:gap-[48px]">
             <div className="flex-[2]">
               <div className="mb-[24px]">
                 <div className="h-[480px] w-full bg-[#E8EDF2] rounded-[4px] mb-[16px]" />
@@ -1160,35 +1174,35 @@ export function PropertyListing() {
         )}
 
         {listing && (
-        <div className="flex gap-[48px]">
+        <div className="flex flex-col lg:flex-row gap-[20px] lg:gap-[48px]">
           {/* Left Column - Gallery & Details */}
-          <div className="flex-[2]">
+          <div className="min-w-0 lg:flex-[2]">
             {/* Image Gallery */}
-            <div className="mb-[24px]">
+            <div className="mb-[18px] sm:mb-[24px]">
               {/* Main Image */}
               <div className="relative mb-[16px] bg-[#F7F7F9]">
                 <img
                   src={propertyImages[currentImageIndex]}
                   alt="Property"
-                  className="w-full h-[480px] object-cover object-center bg-[#F3F4F6]"
+                  className="w-full h-[260px] sm:h-[360px] lg:h-[480px] object-cover object-center bg-[#F3F4F6]"
                 />
 
                 {/* Navigation Arrows */}
                 <button
                   onClick={previousImage}
-                  className="absolute left-[16px] top-1/2 -translate-y-1/2 w-[40px] h-[40px] bg-white/90 hover:bg-white flex items-center justify-center transition-colors"
+                  className="absolute left-[10px] sm:left-[16px] top-1/2 -translate-y-1/2 w-[34px] h-[34px] sm:w-[40px] sm:h-[40px] bg-white/90 hover:bg-white flex items-center justify-center transition-colors"
                 >
-                  <ChevronLeft className="w-[20px] h-[20px] text-[#1A1A1A]" />
+                  <ChevronLeft className="w-[18px] h-[18px] sm:w-[20px] sm:h-[20px] text-[#1A1A1A]" />
                 </button>
                 <button
                   onClick={nextImage}
-                  className="absolute right-[16px] top-1/2 -translate-y-1/2 w-[40px] h-[40px] bg-white/90 hover:bg-white flex items-center justify-center transition-colors"
+                  className="absolute right-[10px] sm:right-[16px] top-1/2 -translate-y-1/2 w-[34px] h-[34px] sm:w-[40px] sm:h-[40px] bg-white/90 hover:bg-white flex items-center justify-center transition-colors"
                 >
-                  <ChevronRight className="w-[20px] h-[20px] text-[#1A1A1A]" />
+                  <ChevronRight className="w-[18px] h-[18px] sm:w-[20px] sm:h-[20px] text-[#1A1A1A]" />
                 </button>
 
                 {/* Top Right Actions */}
-                <div className="absolute top-[16px] right-[16px] flex items-center gap-[8px]">
+                <div className="absolute top-[10px] right-[10px] sm:top-[16px] sm:right-[16px] flex items-center gap-[8px]">
                   <button
                     type="button"
                     onClick={() => void handleShareListing()}
@@ -1213,15 +1227,15 @@ export function PropertyListing() {
                 <button
                   type="button"
                   onClick={handleViewOnMap}
-                  className="absolute bottom-[16px] left-[16px] flex items-center gap-[8px] bg-white px-[16px] py-[10px] hover:bg-[#F7F7F9] transition-colors"
+                  className="absolute bottom-[12px] left-[12px] sm:bottom-[16px] sm:left-[16px] flex items-center gap-[8px] bg-white px-[14px] py-[9px] sm:px-[16px] sm:py-[10px] hover:bg-[#F7F7F9] transition-colors rounded-[12px]"
                 >
-                  <MapPin className="w-[16px] h-[16px] text-[#1A1A1A]" />
+                  <MapPin className="w-[16px] h-[16px] text-[#F04D2D]" />
                   <span className="text-[#1A1A1A] text-[14px] font-semibold">View on map</span>
                 </button>
               </div>
 
               {/* Thumbnail Strip */}
-              <div className="flex items-center gap-[8px]">
+              <div className="hidden sm:flex items-center gap-[8px]">
                 {propertyImages.slice(0, 4).map((image, index) => (
                   <button
                     key={index}
@@ -1278,13 +1292,13 @@ export function PropertyListing() {
             )}
 
             {/* Property Title & Meta */}
-            <div className="mb-[28px]">
-              <h1 className="text-[#0F2D36] text-[34px] leading-[1.08] font-bold tracking-[-0.02em] mb-[10px]">
+            <div className="mb-[18px] sm:mb-[28px]">
+              <h1 className="text-[#0F2D36] text-[24px] sm:text-[34px] leading-[1.12] font-bold tracking-[-0.02em] mb-[8px] sm:mb-[10px]">
                 {isLoading ? "Loading..." : listing?.title ?? "Listing unavailable"}
               </h1>
 
-              <div className="flex items-center flex-wrap gap-[8px] mb-[10px]">
-                <span className="text-[#0F2D36] text-[44px] leading-[1] font-bold">{formatCurrency(listing?.monthlyRent ?? 0, listing?.currency).replace(".00", "")}</span>
+              <div className="flex items-center flex-wrap gap-[6px] sm:gap-[8px] mb-[10px]">
+                <span className="text-[#0F2D36] text-[32px] sm:text-[44px] leading-[1] font-bold">{formatCurrency(listing?.monthlyRent ?? 0, listing?.currency).replace(".00", "")}</span>
                 <span className="text-[#0F2D36] text-[15px] font-semibold">per month,</span>
                 <span className="text-[#0F2D36] text-[13px] underline decoration-dotted underline-offset-[5px]">
                   {listing?.utilitiesIncluded ? "includes bills" : "excludes bills"}, {listing?.deposit === 0 ? "no deposit" : "deposit required"}
@@ -1632,9 +1646,9 @@ export function PropertyListing() {
           </div>
 
           {/* Right Column - Sidebar */}
-          <div className="flex-[1]">
-            <div className="sticky top-[100px] space-y-[10px]">
-              <div className="border border-[rgba(15,45,54,0.18)] rounded-[6px] bg-[#F8FAFC] overflow-hidden">
+          <div className="lg:flex-[1]">
+            <div className="space-y-[10px] lg:sticky lg:top-[100px]">
+              <div className="hidden lg:block border border-[rgba(15,45,54,0.18)] rounded-[6px] bg-[#F8FAFC] overflow-hidden">
                 <div className="px-[24px] py-[18px] flex items-center gap-[14px] border-b border-[rgba(15,45,54,0.12)] bg-white">
                   <div className="w-[64px] h-[64px] rounded-full overflow-hidden border border-[rgba(15,45,54,0.16)] bg-[#EAF2FF] shrink-0">
                     <img
@@ -1652,7 +1666,7 @@ export function PropertyListing() {
                   </div>
                 </div>
 
-                <div className="px-[24px] py-[18px]">
+                <div className="px-[16px] sm:px-[24px] py-[16px] sm:py-[18px]">
                   <div className="flex items-center justify-between mb-[14px]">
                     <p className="text-[#2F4653] text-[14px] leading-[1.2]">1st available move-in date:</p>
                     <p className="text-[#2F4653] text-[14px] leading-[1.2] font-bold">
@@ -1663,7 +1677,7 @@ export function PropertyListing() {
                   <button
                     type="button"
                     onClick={handleOpenDateSelector}
-                    className="w-full h-[56px] mb-[16px] flex items-center justify-center gap-[8px] border border-[rgba(15,45,54,0.35)] rounded-[7px] text-[#0F2D36] hover:bg-[#EEF3F7] transition-colors"
+                    className="w-full h-[56px] mb-[16px] flex items-center justify-center gap-[8px] border border-[rgba(15,45,54,0.35)] rounded-[14px] text-[#0F2D36] hover:bg-[#EEF3F7] transition-colors"
                   >
                     <Calendar className="w-[20px] h-[20px]" />
                     <span className="text-[16px] leading-[1] font-semibold">
@@ -1721,7 +1735,7 @@ export function PropertyListing() {
                   <button
                     onClick={handleApplyToRent}
                     disabled={user?.role === "landlord" || hasApplied}
-                    className="w-full h-[56px] rounded-[8px] bg-brand-primary text-white text-[16px] leading-[1] font-bold hover:bg-brand-primary-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="hidden lg:flex w-full h-[56px] items-center justify-center rounded-[14px] bg-brand-primary text-white text-[16px] leading-[1] font-bold hover:bg-brand-primary-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {hasApplied ? "Application already submitted" : "Apply to rent"}
                   </button>
@@ -1734,7 +1748,7 @@ export function PropertyListing() {
                 </div>
               </div>
 
-              <div className="border border-[rgba(15,45,54,0.18)] rounded-[6px] p-[28px] bg-[#F8FAFC]">
+              <div className="hidden lg:block border border-[rgba(15,45,54,0.18)] rounded-[6px] p-[28px] bg-[#F8FAFC]">
                 <h4 className="text-[#0F2D36] text-[16px] leading-[1.2] font-bold mb-[14px]">Not ready to apply?</h4>
                 <p className="text-[#173743] text-[14px] leading-[1.55] mb-[18px] max-w-[420px]">
                   Ask the landlord questions, share info, and see if there's a match. Get the answers you need to rent with peace of mind.
@@ -1749,7 +1763,7 @@ export function PropertyListing() {
                 </button>
               </div>
 
-              <div className="border border-[rgba(15,45,54,0.12)] rounded-[6px] p-[28px] bg-[#E9EEF4]">
+              <div className="hidden lg:block border border-[rgba(15,45,54,0.12)] rounded-[6px] p-[28px] bg-[#E9EEF4]">
                 <h4 className="text-[#264991] text-[16px] leading-[1.25] font-bold mb-[12px] flex items-center gap-[10px]">
                   <Heart className="w-[22px] h-[22px]" />
                   Covered by Tenant Protection
@@ -1802,7 +1816,7 @@ export function PropertyListing() {
                 </button>
               </div>
 
-              <div className="border border-[rgba(15,45,54,0.18)] rounded-[6px] p-[28px] bg-[#F8FAFC]">
+              <div className="hidden lg:block border border-[rgba(15,45,54,0.18)] rounded-[6px] p-[28px] bg-[#F8FAFC]">
                 <h4 className="text-[#0F2D36] text-[16px] leading-[1.2] font-bold mb-[12px] flex items-center gap-[10px]">
                   <FileText className="w-[22px] h-[22px]" />
                   Digital Contract
@@ -1819,6 +1833,72 @@ export function PropertyListing() {
         </div>
         )}
       </div>
+
+      {listing && (
+        <div className="fixed inset-x-0 bottom-0 z-[85] border-t border-[rgba(15,45,54,0.16)] bg-white px-[14px] pt-[10px] pb-[calc(10px+env(safe-area-inset-bottom))] lg:hidden">
+          <div className="mx-auto max-w-[640px] rounded-[18px] border border-[rgba(15,45,54,0.14)] bg-[#F8FAFC] p-[14px] shadow-[0_-8px_22px_rgba(15,45,54,0.14)]">
+            <div className="mb-[12px] flex items-end gap-[4px]">
+              <span className="text-[#0F2D36] text-[34px] leading-[1] font-bold">{formatCurrency(listing.monthlyRent, listing.currency).replace(".00", "")}</span>
+              <span className="text-[#0F2D36] text-[16px] leading-[1.1] font-medium">/month</span>
+            </div>
+
+            <div className="mb-[12px] rounded-[16px] bg-[#DFF1EA] px-[14px] py-[12px]">
+              <p className="text-[#0E5A43] text-[15px] font-semibold">
+                {listing.deposit === 0 ? "No deposit - Pay less to move in." : `Deposit required: ${formatCurrency(listing.deposit, listing.currency)}`}
+              </p>
+            </div>
+
+            <div className="mb-[12px] flex items-center justify-between">
+              <p className="text-[#2F4653] text-[14px] leading-[1.2]">1st available move-in date:</p>
+              <p className="text-[#2F4653] text-[14px] leading-[1.2] font-bold">
+                {new Date(listing.availableFrom).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })}
+              </p>
+            </div>
+
+            <button
+              type="button"
+              onClick={handleOpenDateSelector}
+              className="mb-[14px] w-full h-[56px] flex items-center justify-center gap-[8px] border border-[rgba(15,45,54,0.35)] rounded-[14px] text-[#0F2D36] hover:bg-[#EEF3F7] transition-colors"
+            >
+              <Calendar className="w-[20px] h-[20px]" />
+              <span className="text-[16px] leading-[1] font-semibold">
+                {selectedStartDate && selectedEndDate
+                  ? `${new Date(selectedStartDate).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })} - ${new Date(selectedEndDate).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })}`
+                  : "Move-in date - Move-out date"}
+              </span>
+            </button>
+
+            <button
+              type="button"
+              onClick={handleOpenPaymentsDrawer}
+              className="mb-[14px] inline-flex items-center gap-[8px] text-[#0F2D36] text-[15px] leading-[1.2] font-semibold underline decoration-dotted underline-offset-[4px] hover:text-[#0A2530] transition-colors"
+            >
+              <FileText className="w-[16px] h-[16px]" />
+              View all payments
+            </button>
+
+            <div className="flex items-center gap-[12px]">
+              <button
+                type="button"
+                onClick={handleMessageLandlord}
+                disabled={user?.role === "landlord"}
+                aria-label="Message landlord"
+                className="inline-flex h-[58px] w-[58px] items-center justify-center rounded-[14px] border-[3px] border-[#B8C8D4] bg-white text-[#0F2D36] hover:bg-[#EEF3F7] transition-colors disabled:opacity-50"
+              >
+                <MessageSquare className="h-[20px] w-[20px]" />
+              </button>
+              <button
+                type="button"
+                onClick={handleApplyToRent}
+                disabled={user?.role === "landlord" || hasApplied}
+                className="flex h-[58px] flex-1 items-center justify-center rounded-[14px] bg-brand-primary text-white text-[16px] leading-[1] font-bold hover:bg-brand-primary-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {hasApplied ? "Application submitted" : "Apply to rent"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {isPaymentsDrawerOpen && listing && (
         <div className="fixed inset-0 z-[90]">

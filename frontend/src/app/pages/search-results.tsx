@@ -1,6 +1,7 @@
 import { useParams, Link, useNavigate, useSearchParams, useLocation } from "react-router";
 import { Header } from "../components/header";
 import { Footer } from "../components/footer";
+import { DatePicker } from "../components/date-picker";
 import { MapContainer, Marker, Popup, TileLayer, useMap } from "react-leaflet";
 import L from "leaflet";
 import { 
@@ -21,6 +22,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { API_BASE } from "../config";
 import { toast } from "sonner";
 import "leaflet/dist/leaflet.css";
+import { useIsMobile } from "../components/ui/use-mobile";
+import priceSliderGraph from "../../assets/price-slider-graph.svg";
 
 interface ListingItem {
   id: string;
@@ -333,19 +336,20 @@ export function SearchResults() {
   const [isGeocoding, setIsGeocoding] = useState(false);
   const [minPriceDraft, setMinPriceDraft] = useState("");
   const [maxPriceDraft, setMaxPriceDraft] = useState("");
-  const [minBedroomsDraft, setMinBedroomsDraft] = useState("");
   const [mapResetSignal, setMapResetSignal] = useState(0);
   const [carouselImagesByListingId, setCarouselImagesByListingId] = useState<Record<string, number>>({});
   const [favoriteSplashById, setFavoriteSplashById] = useState<Set<string>>(new Set());
+  const [showAllNeighborhoods, setShowAllNeighborhoods] = useState(false);
+  const [allFiltersShowAllNeighborhoods, setAllFiltersShowAllNeighborhoods] = useState(false);
   const filtersRef = useRef<HTMLDivElement>(null);
   const sortMenuRef = useRef<HTMLDivElement>(null);
+  const isMobile = useIsMobile();
   const requestedStartDate = useMemo(() => parseFilterDate(searchParams.get("startDate")), [searchParams]);
   const requestedEndDate = useMemo(() => parseFilterDate(searchParams.get("endDate")), [searchParams]);
   const startDateValue = searchParams.get("startDate") ?? "";
   const endDateValue = searchParams.get("endDate") ?? "";
   const minPrice = useMemo(() => parseNumberParam(searchParams.get("minPrice")), [searchParams]);
   const maxPrice = useMemo(() => parseNumberParam(searchParams.get("maxPrice")), [searchParams]);
-  const minBedrooms = useMemo(() => parseNumberParam(searchParams.get("minBedrooms")), [searchParams]);
   const selectedPropertyTypes = useMemo(
     () => new Set(parseDelimitedParam(searchParams.get("types"))),
     [searchParams],
@@ -366,6 +370,21 @@ export function SearchResults() {
 
     return [...uniqueNeighborhoods].sort((left, right) => left.localeCompare(right));
   }, [properties]);
+  const absoluteMinPrice = 0;
+  const absoluteMaxPrice = 15000;
+  const resolvedMinDraft = useMemo(() => {
+    const parsed = Number(minPriceDraft);
+    return Number.isFinite(parsed) ? parsed : absoluteMinPrice;
+  }, [absoluteMinPrice, minPriceDraft]);
+  const resolvedMaxDraft = useMemo(() => {
+    const parsed = Number(maxPriceDraft);
+    return Number.isFinite(parsed) ? parsed : absoluteMaxPrice;
+  }, [absoluteMaxPrice, maxPriceDraft]);
+  const sliderMinValue = Math.max(absoluteMinPrice, Math.min(resolvedMinDraft, absoluteMaxPrice));
+  const sliderMaxValue = Math.min(absoluteMaxPrice, Math.max(resolvedMaxDraft, sliderMinValue));
+  const sliderSpan = Math.max(1, absoluteMaxPrice - absoluteMinPrice);
+  const sliderMinPercent = ((sliderMinValue - absoluteMinPrice) / sliderSpan) * 100;
+  const sliderMaxPercent = ((sliderMaxValue - absoluteMinPrice) / sliderSpan) * 100;
 
   useEffect(() => {
     // Keep new searches anchored at the page top so users always see the header first.
@@ -383,8 +402,33 @@ export function SearchResults() {
   useEffect(() => {
     setMinPriceDraft(minPrice !== null ? String(minPrice) : "");
     setMaxPriceDraft(maxPrice !== null ? String(maxPrice) : "");
-    setMinBedroomsDraft(minBedrooms !== null ? String(minBedrooms) : "");
-  }, [maxPrice, minBedrooms, minPrice]);
+  }, [maxPrice, minPrice]);
+
+  useEffect(() => {
+    if (!neighborhoodsOpen) {
+      setShowAllNeighborhoods(false);
+    }
+  }, [neighborhoodsOpen]);
+
+  useEffect(() => {
+    if (!allFiltersOpen) {
+      setAllFiltersShowAllNeighborhoods(false);
+    }
+  }, [allFiltersOpen]);
+
+  useEffect(() => {
+    if (!dateOpen && !allFiltersOpen) {
+      document.body.style.overflow = "";
+      return;
+    }
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [allFiltersOpen, dateOpen]);
 
   const updateSearchFilters = (nextValues: Record<string, string | number | null>) => {
     const nextParams = new URLSearchParams(searchParams);
@@ -426,7 +470,7 @@ export function SearchResults() {
 
   const clearAllFilters = () => {
     const nextParams = new URLSearchParams(searchParams);
-    ["startDate", "endDate", "minPrice", "maxPrice", "types", "neighborhoods", "minBedrooms"].forEach((key) => {
+    ["startDate", "endDate", "minPrice", "maxPrice", "types", "neighborhoods"].forEach((key) => {
       nextParams.delete(key);
     });
     setSearchParams(nextParams);
@@ -444,14 +488,14 @@ export function SearchResults() {
       }
     };
 
-    if (dateOpen || priceOpen || propertyTypeOpen || neighborhoodsOpen || allFiltersOpen) {
+    if (dateOpen || priceOpen || propertyTypeOpen || neighborhoodsOpen) {
       document.addEventListener("mousedown", handleClickOutside);
     }
 
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
-  }, [allFiltersOpen, dateOpen, neighborhoodsOpen, priceOpen, propertyTypeOpen]);
+  }, [dateOpen, neighborhoodsOpen, priceOpen, propertyTypeOpen]);
 
   useEffect(() => {
     const handleSortOutside = (event: MouseEvent) => {
@@ -496,10 +540,6 @@ export function SearchResults() {
         return false;
       }
 
-      if (minBedrooms !== null && property.bedrooms < minBedrooms) {
-        return false;
-      }
-
       if (selectedPropertyTypes.size > 0 && !selectedPropertyTypes.has(property.propertyType)) {
         return false;
       }
@@ -513,7 +553,6 @@ export function SearchResults() {
     });
   }, [
     maxPrice,
-    minBedrooms,
     minPrice,
     properties,
     requestedStartDate,
@@ -558,9 +597,8 @@ export function SearchResults() {
     if (minPrice !== null || maxPrice !== null) count += 1;
     if (selectedPropertyTypes.size > 0) count += 1;
     if (selectedNeighborhoods.size > 0) count += 1;
-    if (minBedrooms !== null) count += 1;
     return count;
-  }, [maxPrice, minBedrooms, minPrice, requestedEndDate, requestedStartDate, selectedNeighborhoods.size, selectedPropertyTypes.size]);
+  }, [maxPrice, minPrice, requestedEndDate, requestedStartDate, selectedNeighborhoods.size, selectedPropertyTypes.size]);
   const dateRangeLabel = useMemo(() => {
     const startLabel = formatDateLabel(requestedStartDate);
     const endLabel = formatDateLabel(requestedEndDate);
@@ -666,19 +704,10 @@ export function SearchResults() {
       });
     }
 
-    if (minBedrooms !== null) {
-      chips.push({
-        key: "bedrooms",
-        label: `${minBedrooms}+ bedrooms`,
-        clear: () => updateSearchFilters({ minBedrooms: null }),
-      });
-    }
-
     return chips;
   }, [
     dateRangeLabel,
     maxPrice,
-    minBedrooms,
     minPrice,
     priceLabel,
     requestedEndDate,
@@ -1041,19 +1070,19 @@ export function SearchResults() {
 
   return (
     <div className="min-h-screen bg-[#F4F7FA]">
-      <Header variant="dashboard" />
+      <Header variant="dashboard" logoVariant="mobile-favicon" />
 
       {/* Filter Bar */}
       <div data-results-filter-bar="true" className="sticky top-[76px] z-40 border-b border-[#E3E8EE] bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
-        <div ref={filtersRef} className="max-w-[1440px] mx-auto px-[32px]">
+        <div ref={filtersRef} className="max-w-[1440px] mx-auto px-[16px] sm:px-[24px] lg:px-[32px]">
           {/* Top Filter Row */}
-          <div className="flex items-center gap-[12px] py-[14px] flex-wrap">
+          <div className="flex items-center gap-[10px] py-[12px] overflow-x-auto whitespace-nowrap [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:flex-wrap md:overflow-visible md:whitespace-normal md:py-[14px]">
             {/* Date Display */}
             <div className="relative">
               <button
                 type="button"
                 onClick={() => togglePanel("date")}
-                className={`flex items-center gap-[8px] text-[#1A1A1A] text-[14px] px-[12px] py-[8px] rounded-[12px] border transition-colors ${
+                className={`flex items-center gap-[8px] text-[#1A1A1A] text-[13px] sm:text-[14px] px-[12px] py-[8px] rounded-[12px] border transition-colors flex-shrink-0 ${
                   dateOpen || requestedStartDate || requestedEndDate
                     ? "border-[#1A1A1A] bg-[#F7F7F9]"
                     : "border-[rgba(0,0,0,0.08)] hover:border-[rgba(0,0,0,0.16)]"
@@ -1065,92 +1094,133 @@ export function SearchResults() {
                 <ChevronDown className="w-[16px] h-[16px] text-[#6B6B6B]" />
               </button>
               {dateOpen && (
-                <div className="absolute top-full left-0 mt-[8px] w-[320px] bg-white border border-[rgba(0,0,0,0.08)] shadow-[0_8px_32px_rgba(0,0,0,0.12)] p-[16px] z-50">
-                  <div className="text-[13px] font-semibold text-[#1A1A1A] mb-[10px]">Select your stay dates</div>
-                  <div className="grid grid-cols-2 gap-[10px] mb-[12px]">
-                    <label className="text-[12px] text-[#6B6B6B]">
-                      Move in
-                      <input
-                        type="date"
-                        value={startDateValue}
-                        max={endDateValue || undefined}
-                        onChange={(event) => {
-                          const nextStart = event.target.value;
-                          updateSearchFilters({ startDate: nextStart || null });
-                        }}
-                        className="mt-[4px] w-full border border-[rgba(0,0,0,0.12)] px-[10px] py-[8px] text-[13px] outline-none"
-                      />
-                    </label>
-                    <label className="text-[12px] text-[#6B6B6B]">
-                      Move out
-                      <input
-                        type="date"
-                        value={endDateValue}
-                        min={startDateValue || undefined}
-                        onChange={(event) => {
-                          const nextEnd = event.target.value;
-                          updateSearchFilters({ endDate: nextEnd || null });
-                        }}
-                        className="mt-[4px] w-full border border-[rgba(0,0,0,0.12)] px-[10px] py-[8px] text-[13px] outline-none"
-                      />
-                    </label>
+                <>
+                  {isMobile && <button type="button" aria-label="Close date overlay" onClick={() => setDateOpen(false)} className="fixed inset-0 z-[95] bg-[rgba(16,26,34,0.50)] md:hidden" />}
+                  <div className={isMobile ? "fixed inset-x-0 bottom-0 z-[96] md:hidden" : "absolute top-full left-0 mt-[8px] z-50 hidden md:block"}>
+                    <DatePicker
+                      isOpen={dateOpen}
+                      onClose={() => setDateOpen(false)}
+                      startDate={requestedStartDate}
+                      endDate={requestedEndDate}
+                      initializeFromSelection
+                      presentation={isMobile ? "bottom-sheet" : "popover"}
+                      onDateChange={(start, end) => {
+                        updateSearchFilters({
+                          startDate: start ? toDateQueryValue(start) : null,
+                          endDate: end ? toDateQueryValue(end) : null,
+                        });
+                      }}
+                      onClearSelection={() => updateSearchFilters({ startDate: null, endDate: null })}
+                    />
                   </div>
-                  <div className="flex items-center justify-between">
-                    <button
-                      type="button"
-                      onClick={() => updateSearchFilters({ startDate: null, endDate: null })}
-                      className="text-[12px] font-semibold text-[#6B6B6B] hover:text-[#1A1A1A]"
-                    >
-                      Clear dates
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setDateOpen(false)}
-                      className="px-[12px] py-[6px] bg-[#1A1A1A] text-white text-[12px] font-semibold"
-                    >
-                      Done
-                    </button>
-                  </div>
-                </div>
+                </>
               )}
             </div>
 
             {/* Price Dropdown */}
-            <div className="relative">
+            <div className="relative hidden md:block">
               <button
+                type="button"
                 onClick={() => togglePanel("price")}
-                className={`flex items-center gap-[8px] px-[16px] py-[8px] rounded-[12px] border transition-colors ${
+                className={`flex items-center gap-[8px] px-[16px] py-[8px] rounded-[12px] border transition-colors flex-shrink-0 ${
                   priceOpen || minPrice !== null || maxPrice !== null
                     ? "border-[#1A1A1A] bg-[#F7F7F9]"
                     : "border-[rgba(0,0,0,0.08)] hover:border-[rgba(0,0,0,0.16)]"
                 }`}
               >
-                <span className="text-[#1A1A1A] text-[14px] font-semibold">{priceLabel}</span>
+                <span className="text-[#1A1A1A] text-[13px] sm:text-[14px] font-semibold">{priceLabel}</span>
                 <ChevronDown className="w-[16px] h-[16px] text-[#6B6B6B]" />
               </button>
               {priceOpen && (
-                <div className="absolute top-full left-0 mt-[8px] w-[260px] bg-white border border-[rgba(0,0,0,0.08)] shadow-[0_8px_32px_rgba(0,0,0,0.12)] p-[16px] z-50">
-                  <div className="text-[13px] font-semibold text-[#1A1A1A] mb-[12px]">Monthly rent</div>
-                  <div className="flex items-center gap-[8px] mb-[12px]">
-                    <input
-                      type="number"
-                      min={0}
-                      placeholder="Min"
-                      value={minPriceDraft}
-                      onChange={(event) => setMinPriceDraft(event.target.value)}
-                      className="w-full border border-[rgba(0,0,0,0.12)] px-[10px] py-[8px] text-[13px] outline-none"
-                    />
-                    <span className="text-[#6B6B6B]">-</span>
-                    <input
-                      type="number"
-                      min={0}
-                      placeholder="Max"
-                      value={maxPriceDraft}
-                      onChange={(event) => setMaxPriceDraft(event.target.value)}
-                      className="w-full border border-[rgba(0,0,0,0.12)] px-[10px] py-[8px] text-[13px] outline-none"
-                    />
+                <div className="absolute top-full left-0 mt-[8px] w-[380px] max-w-[calc(100vw-24px)] overflow-hidden rounded-[22px] border border-[rgba(11,45,58,0.10)] bg-white shadow-[0_18px_44px_rgba(0,0,0,0.14)] z-50">
+                  <div className="flex items-center justify-between gap-[12px] px-[18px] pt-[18px]">
+                    <div className="text-[16px] font-semibold text-[#12303B]">Monthly rent</div>
+                    <button
+                      type="button"
+                      className="inline-flex items-center gap-[8px] rounded-[14px] border border-[#AFC1D3] bg-white px-[14px] py-[9px] text-[13px] font-semibold text-[#12303B]"
+                    >
+                      Euros (€)
+                      <ChevronDown className="h-[16px] w-[16px] text-[#12303B]" />
+                    </button>
                   </div>
-                  <div className="flex items-center justify-between">
+
+                  <div className="px-[18px] pt-[16px]">
+                    <div className="rounded-[18px] bg-[#FCFEFF] px-[12px] pt-[14px] pb-[10px] border border-[#E6EDF3]">
+                      <img
+                        src={priceSliderGraph}
+                        alt="Price trend graph"
+                        className="h-[146px] w-full object-cover rounded-[12px]"
+                      />
+                      <div className="mt-[8px] flex items-center justify-between text-[11px] text-[#6B7280]">
+                        <span>€{absoluteMinPrice.toLocaleString("en-GB")}</span>
+                        <span>€{absoluteMaxPrice.toLocaleString("en-GB")}</span>
+                      </div>
+
+                      <div className="relative mt-[14px] px-[2px]">
+                        <div className="h-[3px] rounded-full bg-[#D5E2ED]" />
+                        <div
+                          className="absolute top-0 h-[3px] rounded-full bg-[#103947]"
+                          style={{ left: `${sliderMinPercent}%`, width: `${Math.max(0, sliderMaxPercent - sliderMinPercent)}%` }}
+                        />
+
+                        <input
+                          type="range"
+                          min={absoluteMinPrice}
+                          max={absoluteMaxPrice}
+                          value={sliderMinValue}
+                          onChange={(event) => {
+                            const nextMin = Number(event.target.value);
+                            setMinPriceDraft(String(Math.min(nextMin, sliderMaxValue)));
+                          }}
+                          className="absolute inset-x-0 top-[-8px] h-[20px] w-full appearance-none bg-transparent [&::-webkit-slider-thumb]:h-[20px] [&::-webkit-slider-thumb]:w-[20px] [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-[#3B82F6] [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:shadow-[0_2px_10px_rgba(59,130,246,0.25)]"
+                        />
+                        <input
+                          type="range"
+                          min={absoluteMinPrice}
+                          max={absoluteMaxPrice}
+                          value={sliderMaxValue}
+                          onChange={(event) => {
+                            const nextMax = Number(event.target.value);
+                            setMaxPriceDraft(String(Math.max(nextMax, sliderMinValue)));
+                          }}
+                          className="absolute inset-x-0 top-[-8px] h-[20px] w-full appearance-none bg-transparent [&::-webkit-slider-thumb]:h-[20px] [&::-webkit-slider-thumb]:w-[20px] [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-[#3B82F6] [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:shadow-[0_2px_10px_rgba(59,130,246,0.25)]"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-[12px] px-[18px] pt-[18px]">
+                    <label className="block">
+                      <span className="mb-[8px] block text-[14px] font-medium text-[#12303B]">Minimum</span>
+                      <div className="flex items-center rounded-[16px] border border-[#AFC1D3] bg-white px-[14px] py-[14px] focus-within:border-[#12303B]">
+                        <span className="text-[18px] font-medium text-[#8C99A8]">€</span>
+                        <input
+                          type="number"
+                          min={0}
+                          placeholder="0"
+                          value={minPriceDraft}
+                          onChange={(event) => setMinPriceDraft(event.target.value)}
+                          className="w-full bg-transparent pl-[10px] text-[18px] font-medium text-[#12303B] outline-none placeholder:text-[#8C99A8]"
+                        />
+                      </div>
+                    </label>
+                    <label className="block">
+                      <span className="mb-[8px] block text-[14px] font-medium text-[#12303B]">Maximum</span>
+                      <div className="flex items-center rounded-[16px] border border-[#AFC1D3] bg-white px-[14px] py-[14px] focus-within:border-[#12303B]">
+                        <span className="text-[18px] font-medium text-[#8C99A8]">€</span>
+                        <input
+                          type="number"
+                          min={0}
+                          placeholder={absoluteMaxPrice.toString()}
+                          value={maxPriceDraft}
+                          onChange={(event) => setMaxPriceDraft(event.target.value)}
+                          className="w-full bg-transparent pl-[10px] text-[18px] font-medium text-[#12303B] outline-none placeholder:text-[#8C99A8]"
+                        />
+                      </div>
+                    </label>
+                  </div>
+
+                  <div className="px-[18px] pt-[16px] pb-[18px]">
                     <button
                       type="button"
                       onClick={() => {
@@ -1159,20 +1229,34 @@ export function SearchResults() {
                         updateSearchFilters({ minPrice: null, maxPrice: null });
                         setPriceOpen(false);
                       }}
-                      className="text-[12px] font-semibold text-[#6B6B6B] hover:text-[#1A1A1A]"
+                      className="rounded-[16px] border border-[#AFC1D3] px-[18px] py-[11px] text-[14px] font-semibold text-[#12303B] hover:bg-[#F7FAFC]"
                     >
                       Clear
                     </button>
                     <button
                       type="button"
                       onClick={() => {
+                        const nextMin = minPriceDraft.trim() ? Number(minPriceDraft) : null;
+                        const nextMax = maxPriceDraft.trim() ? Number(maxPriceDraft) : null;
+                        const sanitizedMin = nextMin !== null && Number.isFinite(nextMin)
+                          ? Math.max(absoluteMinPrice, Math.min(nextMin, absoluteMaxPrice))
+                          : null;
+                        const sanitizedMax = nextMax !== null && Number.isFinite(nextMax)
+                          ? Math.max(absoluteMinPrice, Math.min(nextMax, absoluteMaxPrice))
+                          : null;
+                        const safeMin = sanitizedMin !== null && sanitizedMax !== null
+                          ? Math.min(sanitizedMin, sanitizedMax)
+                          : sanitizedMin;
+                        const safeMax = sanitizedMin !== null && sanitizedMax !== null
+                          ? Math.max(sanitizedMin, sanitizedMax)
+                          : sanitizedMax;
                         updateSearchFilters({
-                          minPrice: minPriceDraft.trim() ? Number(minPriceDraft) : null,
-                          maxPrice: maxPriceDraft.trim() ? Number(maxPriceDraft) : null,
+                          minPrice: safeMin,
+                          maxPrice: safeMax,
                         });
                         setPriceOpen(false);
                       }}
-                      className="px-[12px] py-[6px] bg-[#1A1A1A] text-white text-[12px] font-semibold"
+                      className="rounded-[16px] bg-brand-primary px-[18px] py-[11px] text-[14px] font-semibold text-white shadow-[0_10px_22px_rgba(11,165,199,0.24)] hover:bg-brand-primary-dark"
                     >
                       Apply
                     </button>
@@ -1182,29 +1266,35 @@ export function SearchResults() {
             </div>
 
             {/* Property Type Dropdown */}
-            <div className="relative">
+            <div className="relative hidden md:block">
               <button
+                type="button"
                 onClick={() => togglePanel("propertyType")}
-                className={`flex items-center gap-[8px] px-[16px] py-[8px] rounded-[12px] border transition-colors ${
+                className={`flex items-center gap-[8px] px-[16px] py-[8px] rounded-[12px] border transition-colors flex-shrink-0 ${
                   propertyTypeOpen || selectedPropertyTypes.size > 0
                     ? "border-[#1A1A1A] bg-[#F7F7F9]"
                     : "border-[rgba(0,0,0,0.08)] hover:border-[rgba(0,0,0,0.16)]"
                 }`}
               >
-                <span className="text-[#1A1A1A] text-[14px] font-semibold">
+                <span className="text-[#1A1A1A] text-[13px] sm:text-[14px] font-semibold">
                   {selectedPropertyTypes.size > 0 ? `Property type (${selectedPropertyTypes.size})` : "Property type"}
                 </span>
                 <ChevronDown className="w-[16px] h-[16px] text-[#6B6B6B]" />
               </button>
               {propertyTypeOpen && (
-                <div className="absolute top-full left-0 mt-[8px] w-[240px] bg-white border border-[rgba(0,0,0,0.08)] shadow-[0_8px_32px_rgba(0,0,0,0.12)] p-[12px] z-50">
+                <div className="absolute top-full left-0 mt-[8px] w-[280px] max-w-[calc(100vw-24px)] overflow-hidden rounded-[20px] border border-[rgba(11,45,58,0.10)] bg-white shadow-[0_18px_44px_rgba(0,0,0,0.14)] z-50">
+                  <div className="px-[18px] pt-[18px] pb-[10px]">
+                    <div className="text-[16px] font-semibold text-[#12303B]">Property type</div>
+                  </div>
+                  <div className="space-y-[2px] px-[10px] pb-[16px]">
                   {PROPERTY_TYPES.map((type) => {
                     const checked = selectedPropertyTypes.has(type);
                     return (
-                      <label key={type} className="flex items-center gap-[8px] px-[8px] py-[6px] text-[13px] text-[#1A1A1A] cursor-pointer hover:bg-[#F7F7F9]">
+                      <label key={type} className="flex items-center gap-[10px] rounded-[12px] px-[12px] py-[11px] text-[14px] text-[#12303B] cursor-pointer hover:bg-[#F7FAFC]">
                         <input
                           type="checkbox"
                           checked={checked}
+                          className="h-[18px] w-[18px] rounded-[4px] border-[#AFC1D3] text-brand-primary focus:ring-brand-primary"
                           onChange={() => {
                             const nextTypes = new Set(selectedPropertyTypes);
                             if (nextTypes.has(type)) {
@@ -1217,41 +1307,48 @@ export function SearchResults() {
                             });
                           }}
                         />
-                        <span className="capitalize">{type}</span>
+                        <span className="capitalize font-medium">{type}</span>
                       </label>
                     );
                   })}
+                  </div>
                 </div>
               )}
             </div>
 
             {/* Neighborhoods Dropdown */}
-            <div className="relative">
+            <div className="relative hidden md:block">
               <button
+                type="button"
                 onClick={() => togglePanel("neighborhoods")}
-                className={`flex items-center gap-[8px] px-[16px] py-[8px] rounded-[12px] border transition-colors ${
+                className={`flex items-center gap-[8px] px-[16px] py-[8px] rounded-[12px] border transition-colors flex-shrink-0 ${
                   neighborhoodsOpen || selectedNeighborhoods.size > 0
                     ? "border-[#1A1A1A] bg-[#F7F7F9]"
                     : "border-[rgba(0,0,0,0.08)] hover:border-[rgba(0,0,0,0.16)]"
                 }`}
               >
-                <span className="text-[#1A1A1A] text-[14px] font-semibold">
+                <span className="text-[#1A1A1A] text-[13px] sm:text-[14px] font-semibold">
                   {selectedNeighborhoods.size > 0 ? `Neighborhoods (${selectedNeighborhoods.size})` : "Neighborhoods"}
                 </span>
                 <ChevronDown className="w-[16px] h-[16px] text-[#6B6B6B]" />
               </button>
               {neighborhoodsOpen && (
-                <div className="absolute top-full left-0 mt-[8px] w-[280px] max-h-[320px] overflow-y-auto bg-white border border-[rgba(0,0,0,0.08)] shadow-[0_8px_32px_rgba(0,0,0,0.12)] p-[12px] z-50">
-                  {neighborhoodOptions.length === 0 && (
-                    <div className="text-[13px] text-[#6B6B6B] px-[8px] py-[6px]">No neighborhoods available yet.</div>
-                  )}
-                  {neighborhoodOptions.map((neighborhood) => {
+                <div className="absolute top-full left-0 mt-[8px] w-[300px] max-w-[calc(100vw-24px)] overflow-hidden rounded-[20px] border border-[rgba(11,45,58,0.10)] bg-white shadow-[0_18px_44px_rgba(0,0,0,0.14)] z-50">
+                  <div className="px-[18px] pt-[18px] pb-[12px]">
+                    <div className="text-[16px] font-semibold text-[#12303B]">Neighborhoods</div>
+                  </div>
+                  <div className="max-h-[268px] overflow-y-auto px-[10px] pb-[10px]">
+                    {neighborhoodOptions.length === 0 && (
+                      <div className="text-[13px] text-[#6B6B6B] px-[8px] py-[6px]">No neighborhoods available yet.</div>
+                    )}
+                    {(showAllNeighborhoods ? neighborhoodOptions : neighborhoodOptions.slice(0, 5)).map((neighborhood) => {
                     const checked = selectedNeighborhoods.has(neighborhood);
                     return (
-                      <label key={neighborhood} className="flex items-center gap-[8px] px-[8px] py-[6px] text-[13px] text-[#1A1A1A] cursor-pointer hover:bg-[#F7F7F9]">
+                      <label key={neighborhood} className="flex items-center gap-[10px] rounded-[12px] px-[12px] py-[11px] text-[14px] text-[#12303B] cursor-pointer hover:bg-[#F7FAFC]">
                         <input
                           type="checkbox"
                           checked={checked}
+                          className="h-[18px] w-[18px] rounded-[4px] border-[#AFC1D3] text-brand-primary focus:ring-brand-primary"
                           onChange={() => {
                             const nextNeighborhoods = new Set(selectedNeighborhoods);
                             if (nextNeighborhoods.has(neighborhood)) {
@@ -1264,10 +1361,23 @@ export function SearchResults() {
                             });
                           }}
                         />
-                        <span>{neighborhood}</span>
+                        <span className="font-medium">{neighborhood}</span>
                       </label>
                     );
-                  })}
+                    })}
+                  </div>
+                  {neighborhoodOptions.length > 5 && (
+                    <div className="px-[18px] pb-[18px]">
+                      <button
+                        type="button"
+                        onClick={() => setShowAllNeighborhoods((prev) => !prev)}
+                        className="inline-flex items-center gap-[8px] text-[14px] font-semibold text-[#12303B] underline decoration-[#12303B] underline-offset-[4px]"
+                      >
+                        {showAllNeighborhoods ? "Show less" : "Show all"}
+                        <ChevronDown className={`h-[16px] w-[16px] transition-transform ${showAllNeighborhoods ? "rotate-180" : ""}`} />
+                      </button>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -1275,15 +1385,16 @@ export function SearchResults() {
             {/* All Filters Button */}
             <div className="relative">
               <button
+                type="button"
                 onClick={() => togglePanel("all")}
-                className={`flex items-center gap-[8px] px-[16px] py-[8px] rounded-[12px] border transition-colors ${
-                  allFiltersOpen || minBedrooms !== null
+                className={`flex items-center gap-[8px] px-[16px] py-[8px] rounded-[12px] border transition-colors flex-shrink-0 ${
+                  allFiltersOpen
                     ? "border-[#1A1A1A] bg-[#F7F7F9]"
                     : "border-[rgba(0,0,0,0.08)] hover:border-[rgba(0,0,0,0.16)]"
                 }`}
               >
                 <SlidersHorizontal className="w-[16px] h-[16px] text-[#1A1A1A]" />
-                <span className="text-[#1A1A1A] text-[14px] font-semibold">All filters</span>
+                <span className="text-[#1A1A1A] text-[13px] sm:text-[14px] font-semibold">All filters</span>
                 {activeFilters > 0 && (
                   <div className="w-[20px] h-[20px] rounded-full bg-[#1A1A1A] flex items-center justify-center">
                     <span className="text-white text-[11px] font-bold">{activeFilters}</span>
@@ -1291,38 +1402,7 @@ export function SearchResults() {
                 )}
               </button>
               {allFiltersOpen && (
-                <div className="absolute top-full left-0 mt-[8px] w-[300px] bg-white border border-[rgba(0,0,0,0.08)] shadow-[0_8px_32px_rgba(0,0,0,0.12)] p-[16px] z-50">
-                  <div className="text-[13px] font-semibold text-[#1A1A1A] mb-[8px]">Minimum bedrooms</div>
-                  <input
-                    type="number"
-                    min={0}
-                    value={minBedroomsDraft}
-                    onChange={(event) => setMinBedroomsDraft(event.target.value)}
-                    placeholder="e.g. 2"
-                    className="w-full border border-[rgba(0,0,0,0.12)] px-[10px] py-[8px] text-[13px] outline-none mb-[12px]"
-                  />
-                  <div className="flex items-center justify-between">
-                    <button
-                      type="button"
-                      onClick={clearAllFilters}
-                      className="text-[12px] font-semibold text-[#6B6B6B] hover:text-[#1A1A1A]"
-                    >
-                      Clear all
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        updateSearchFilters({
-                          minBedrooms: minBedroomsDraft.trim() ? Number(minBedroomsDraft) : null,
-                        });
-                        setAllFiltersOpen(false);
-                      }}
-                      className="px-[12px] py-[6px] bg-[#1A1A1A] text-white text-[12px] font-semibold"
-                    >
-                      Apply
-                    </button>
-                  </div>
-                </div>
+                <></>
               )}
             </div>
 
@@ -1331,7 +1411,7 @@ export function SearchResults() {
           </div>
 
           {activeFilterChips.length > 0 && (
-            <div className="flex items-center gap-[8px] pb-[10px] flex-wrap">
+            <div className="flex items-center gap-[8px] pb-[10px] flex-wrap overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
               {activeFilterChips.map((chip) => (
                 <button
                   key={chip.key}
@@ -1347,7 +1427,7 @@ export function SearchResults() {
           )}
 
           {/* Tenant Type Tabs */}
-          <div className="flex items-center gap-[32px] border-t border-[rgba(0,0,0,0.08)] pt-[8px] pb-[8px]">
+          <div className="flex items-center gap-[18px] md:gap-[32px] border-t border-[rgba(0,0,0,0.08)] pt-[8px] pb-[8px] overflow-x-auto whitespace-nowrap [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             <button
               onClick={() => setActiveTab("anyone")}
               className={`pb-[12px] text-[14px] font-semibold transition-colors ${
@@ -1392,9 +1472,240 @@ export function SearchResults() {
         </div>
       </div>
 
+      {allFiltersOpen && (
+        <>
+          <button
+            type="button"
+            aria-label="Close all filters overlay"
+            onClick={() => setAllFiltersOpen(false)}
+            className="fixed inset-0 z-[1300] bg-[rgba(16,26,34,0.52)]"
+          />
+          <aside
+            className={isMobile
+              ? "fixed inset-x-0 bottom-0 z-[1310] max-h-[86vh] overflow-y-auto rounded-t-[24px] border border-[rgba(11,45,58,0.14)] bg-white shadow-[0_-14px_36px_rgba(0,0,0,0.24)]"
+              : "fixed right-0 top-0 z-[1310] h-full w-full max-w-[740px] overflow-y-auto border-l border-[rgba(11,45,58,0.14)] bg-white shadow-[-12px_0_36px_rgba(0,0,0,0.24)]"
+            }
+          >
+            <div className="sticky top-0 z-10 flex items-center justify-between border-b border-[#DDE6EE] bg-white px-[16px] py-[14px]">
+              <h2 className="text-[24px] font-bold text-[#12303B]">Filters</h2>
+              <button
+                type="button"
+                onClick={() => setAllFiltersOpen(false)}
+                className="inline-flex h-[34px] w-[34px] items-center justify-center rounded-full text-[#12303B] hover:bg-[#F3F7FB]"
+                aria-label="Close all filters"
+              >
+                <X className="h-[20px] w-[20px]" />
+              </button>
+            </div>
+
+            <div className="space-y-[20px] px-[16px] py-[14px]">
+              <section>
+                <div className="mb-[10px] flex items-center justify-between gap-[10px]">
+                  <h4 className="text-[18px] font-bold text-[#12303B]">Monthly rent</h4>
+                  <button
+                    type="button"
+                    className="inline-flex items-center gap-[6px] rounded-[12px] border border-[#AFC1D3] bg-white px-[12px] py-[7px] text-[13px] font-semibold text-[#12303B]"
+                  >
+                    Euros (€)
+                    <ChevronDown className="h-[14px] w-[14px] text-[#12303B]" />
+                  </button>
+                </div>
+
+                <div className="rounded-[14px] border border-[#E6EDF3] bg-[#FCFEFF] px-[10px] pt-[12px] pb-[10px]">
+                  <img
+                    src={priceSliderGraph}
+                    alt="Price trend graph"
+                    className="h-[98px] w-full object-cover rounded-[10px]"
+                  />
+
+                  <div className="relative mt-[10px] px-[2px]">
+                    <div className="h-[3px] rounded-full bg-[#D5E2ED]" />
+                    <div
+                      className="absolute top-0 h-[3px] rounded-full bg-[#103947]"
+                      style={{ left: `${sliderMinPercent}%`, width: `${Math.max(0, sliderMaxPercent - sliderMinPercent)}%` }}
+                    />
+
+                    <input
+                      type="range"
+                      min={absoluteMinPrice}
+                      max={absoluteMaxPrice}
+                      value={sliderMinValue}
+                      onChange={(event) => {
+                        const nextMin = Number(event.target.value);
+                        setMinPriceDraft(String(Math.min(nextMin, sliderMaxValue)));
+                      }}
+                      className="absolute inset-x-0 top-[-8px] h-[20px] w-full appearance-none bg-transparent [&::-webkit-slider-thumb]:h-[18px] [&::-webkit-slider-thumb]:w-[18px] [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-[#3B82F6] [&::-webkit-slider-thumb]:bg-white"
+                    />
+                    <input
+                      type="range"
+                      min={absoluteMinPrice}
+                      max={absoluteMaxPrice}
+                      value={sliderMaxValue}
+                      onChange={(event) => {
+                        const nextMax = Number(event.target.value);
+                        setMaxPriceDraft(String(Math.max(nextMax, sliderMinValue)));
+                      }}
+                      className="absolute inset-x-0 top-[-8px] h-[20px] w-full appearance-none bg-transparent [&::-webkit-slider-thumb]:h-[18px] [&::-webkit-slider-thumb]:w-[18px] [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-[#3B82F6] [&::-webkit-slider-thumb]:bg-white"
+                    />
+                  </div>
+                </div>
+
+                <div className="mt-[12px] grid grid-cols-2 gap-[10px]">
+                  <label className="block">
+                    <span className="mb-[6px] block text-[12px] font-medium text-[#12303B]">Minimum</span>
+                    <div className="flex items-center rounded-[12px] border border-[#AFC1D3] bg-white px-[12px] py-[10px]">
+                      <span className="text-[16px] font-medium text-[#8C99A8]">€</span>
+                      <input
+                        type="number"
+                        min={0}
+                        max={15000}
+                        value={minPriceDraft}
+                        onChange={(event) => setMinPriceDraft(event.target.value)}
+                        placeholder="0"
+                        className="w-full bg-transparent pl-[8px] text-[16px] font-medium text-[#12303B] outline-none placeholder:text-[#8C99A8]"
+                      />
+                    </div>
+                  </label>
+                  <label className="block">
+                    <span className="mb-[6px] block text-[12px] font-medium text-[#12303B]">Maximum</span>
+                    <div className="flex items-center rounded-[12px] border border-[#AFC1D3] bg-white px-[12px] py-[10px]">
+                      <span className="text-[16px] font-medium text-[#8C99A8]">€</span>
+                      <input
+                        type="number"
+                        min={0}
+                        max={15000}
+                        value={maxPriceDraft}
+                        onChange={(event) => setMaxPriceDraft(event.target.value)}
+                        placeholder="15000"
+                        className="w-full bg-transparent pl-[8px] text-[16px] font-medium text-[#12303B] outline-none placeholder:text-[#8C99A8]"
+                      />
+                    </div>
+                  </label>
+                </div>
+              </section>
+
+              <section>
+                <h4 className="mb-[8px] text-[18px] font-bold text-[#12303B]">Property type</h4>
+                <div className="grid grid-cols-1 gap-[2px] sm:grid-cols-2">
+                  {PROPERTY_TYPES.map((type) => {
+                    const checked = selectedPropertyTypes.has(type);
+                    return (
+                      <label key={`sidebar-${type}`} className="flex items-center gap-[8px] rounded-[10px] px-[10px] py-[9px] text-[14px] text-[#12303B] cursor-pointer hover:bg-[#F7FAFC]">
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          className="h-[16px] w-[16px] rounded-[4px] border-[#AFC1D3] text-brand-primary focus:ring-brand-primary"
+                          onChange={() => {
+                            const nextTypes = new Set(selectedPropertyTypes);
+                            if (nextTypes.has(type)) {
+                              nextTypes.delete(type);
+                            } else {
+                              nextTypes.add(type);
+                            }
+                            updateSearchFilters({
+                              types: nextTypes.size > 0 ? serializeDelimitedParam([...nextTypes]) : null,
+                            });
+                          }}
+                        />
+                        <span className="capitalize font-medium">{type}</span>
+                      </label>
+                    );
+                  })}
+                </div>
+              </section>
+
+              <section>
+                <h4 className="mb-[8px] text-[18px] font-bold text-[#12303B]">Neighborhoods</h4>
+                <div className="max-h-[180px] overflow-y-auto">
+                  {(allFiltersShowAllNeighborhoods ? neighborhoodOptions : neighborhoodOptions.slice(0, 8)).map((neighborhood) => {
+                    const checked = selectedNeighborhoods.has(neighborhood);
+                    return (
+                      <label key={`sidebar-neighborhood-${neighborhood}`} className="flex items-center gap-[8px] rounded-[10px] px-[10px] py-[9px] text-[14px] text-[#12303B] cursor-pointer hover:bg-[#F7FAFC]">
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          className="h-[16px] w-[16px] rounded-[4px] border-[#AFC1D3] text-brand-primary focus:ring-brand-primary"
+                          onChange={() => {
+                            const nextNeighborhoods = new Set(selectedNeighborhoods);
+                            if (nextNeighborhoods.has(neighborhood)) {
+                              nextNeighborhoods.delete(neighborhood);
+                            } else {
+                              nextNeighborhoods.add(neighborhood);
+                            }
+                            updateSearchFilters({
+                              neighborhoods: nextNeighborhoods.size > 0 ? serializeDelimitedParam([...nextNeighborhoods]) : null,
+                            });
+                          }}
+                        />
+                        <span className="font-medium">{neighborhood}</span>
+                      </label>
+                    );
+                  })}
+                </div>
+                {neighborhoodOptions.length > 8 && (
+                  <button
+                    type="button"
+                    onClick={() => setAllFiltersShowAllNeighborhoods((prev) => !prev)}
+                    className="mt-[6px] inline-flex items-center gap-[6px] text-[13px] font-semibold text-[#12303B] underline decoration-[#12303B] underline-offset-[4px]"
+                  >
+                    {allFiltersShowAllNeighborhoods ? "Show less" : "Show all"}
+                    <ChevronDown className={`h-[14px] w-[14px] transition-transform ${allFiltersShowAllNeighborhoods ? "rotate-180" : ""}`} />
+                  </button>
+                )}
+              </section>
+            </div>
+
+            <div className="sticky bottom-0 border-t border-[#DDE6EE] bg-white px-[16px] py-[12px]">
+              <div className="flex items-center justify-between gap-[10px]">
+                <button
+                  type="button"
+                  onClick={() => {
+                    clearAllFilters();
+                    setAllFiltersOpen(false);
+                  }}
+                  className="rounded-[12px] border border-[#AFC1D3] px-[14px] py-[9px] text-[13px] font-semibold text-[#12303B] hover:bg-[#F7FAFC]"
+                >
+                  Clear all
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const nextMin = minPriceDraft.trim() ? Number(minPriceDraft) : null;
+                    const nextMax = maxPriceDraft.trim() ? Number(maxPriceDraft) : null;
+                    const sanitizedMin = nextMin !== null && Number.isFinite(nextMin)
+                      ? Math.max(absoluteMinPrice, Math.min(nextMin, absoluteMaxPrice))
+                      : null;
+                    const sanitizedMax = nextMax !== null && Number.isFinite(nextMax)
+                      ? Math.max(absoluteMinPrice, Math.min(nextMax, absoluteMaxPrice))
+                      : null;
+                    const safeMin = sanitizedMin !== null && sanitizedMax !== null
+                      ? Math.min(sanitizedMin, sanitizedMax)
+                      : sanitizedMin;
+                    const safeMax = sanitizedMin !== null && sanitizedMax !== null
+                      ? Math.max(sanitizedMin, sanitizedMax)
+                      : sanitizedMax;
+
+                    updateSearchFilters({
+                      minPrice: safeMin,
+                      maxPrice: safeMax,
+                    });
+                    setAllFiltersOpen(false);
+                  }}
+                  className="rounded-[12px] bg-brand-primary px-[14px] py-[9px] text-[13px] font-semibold text-white shadow-[0_10px_22px_rgba(11,165,199,0.24)] hover:bg-brand-primary-dark"
+                >
+                  Apply filters
+                </button>
+              </div>
+            </div>
+          </aside>
+        </>
+      )}
+
+      
+
       {/* Breadcrumb */}
       <div className="bg-[#F4F7FA] border-b border-[#E3E8EE]">
-        <div className="max-w-[1440px] mx-auto px-[32px] py-[16px]">
+        <div className="max-w-[1440px] mx-auto px-[16px] sm:px-[24px] lg:px-[32px] py-[14px] sm:py-[16px]">
           <div className="flex items-center gap-[8px] text-[13px]">
             <Link to="/" className="text-[#0891B2] hover:underline font-semibold">
               ReserveHousing
@@ -1409,21 +1720,21 @@ export function SearchResults() {
 
       {/* Results Header */}
       <div id="results-header" className="bg-white border-b border-[#E3E8EE]">
-        <div className="max-w-[1440px] mx-auto px-[32px] py-[24px]">
-          <div className="flex items-center justify-between gap-[20px] flex-wrap">
-            <h1 className="text-[#1A1A1A] text-[20px] font-semibold">
+        <div className="max-w-[1440px] mx-auto px-[16px] sm:px-[24px] lg:px-[32px] py-[18px] sm:py-[24px]">
+          <div className="flex flex-col gap-[14px] sm:flex-row sm:items-center sm:justify-between sm:gap-[20px]">
+            <h1 className="text-[#1A1A1A] text-[16px] sm:text-[20px] font-semibold leading-[1.35]">
               {filteredProperties.length} listings for rent in {cityLabel} ({listingTypeBreakdown})
             </h1>
 
-            <div className="ml-auto flex items-center gap-[10px]">
+            <div className="ml-0 sm:ml-auto flex items-center gap-[10px]">
               <div ref={sortMenuRef} className="relative">
                 <button
                   type="button"
                   onClick={() => setSortOpen((prev) => !prev)}
-                  className={`inline-flex items-center justify-between gap-[8px] min-w-[190px] rounded-[12px] px-[16px] py-[12px] border text-[14px] font-semibold transition-colors ${
+                  className={`inline-flex items-center justify-between gap-[8px] w-full sm:min-w-[190px] rounded-[14px] px-[14px] sm:px-[16px] py-[10px] sm:py-[12px] border text-[13px] sm:text-[14px] font-semibold transition-colors ${
                     viewMode === "list"
-                      ? "bg-white text-[#1A1A1A] border-[rgba(0,0,0,0.20)]"
-                      : "bg-white text-[#1A1A1A] border-[rgba(0,0,0,0.14)] hover:border-[rgba(0,0,0,0.24)]"
+                      ? "bg-white text-[#12303B] border-[#12303B]"
+                      : "bg-white text-[#12303B] border-[rgba(11,45,58,0.24)] hover:border-[#12303B]"
                   }`}
                 >
                   <div className="flex items-center gap-[8px]">
@@ -1433,7 +1744,7 @@ export function SearchResults() {
                   <ChevronDown className="w-[16px] h-[16px]" />
                 </button>
                 {sortOpen && (
-                  <div className="absolute right-0 mt-[4px] min-w-[220px] bg-white border border-[rgba(0,0,0,0.14)] shadow-[0_8px_24px_rgba(0,0,0,0.12)] z-50">
+                  <div className="absolute right-0 mt-[8px] min-w-[240px] max-w-[calc(100vw-24px)] overflow-hidden rounded-[18px] bg-white border border-[rgba(11,45,58,0.12)] shadow-[0_18px_44px_rgba(0,0,0,0.14)] z-50">
                     {sortOptions.map((option) => {
                       const isActive = sortOption === option.value;
                       return (
@@ -1441,9 +1752,9 @@ export function SearchResults() {
                           key={option.value}
                           type="button"
                           onClick={() => handleSelectSort(option.value)}
-                          className={`w-full flex items-center justify-between px-[14px] py-[10px] text-[15px] text-left transition-colors ${
+                          className={`w-full flex items-center justify-between px-[16px] py-[12px] text-[18px] text-left transition-colors ${
                             isActive
-                              ? "text-[#12303B] bg-[#F1F5F9]"
+                              ? "text-[#12303B] bg-[#EDF3F8]"
                               : "text-[#12303B] hover:bg-[#F8FAFC]"
                           }`}
                         >
@@ -1459,7 +1770,7 @@ export function SearchResults() {
                 <button
                   type="button"
                   onClick={handleShowMap}
-                  className="inline-flex items-center justify-center gap-[8px] min-w-[120px] rounded-[12px] px-[16px] py-[12px] border text-[14px] font-semibold transition-colors bg-white text-[#1A1A1A] border-[rgba(0,0,0,0.14)] hover:border-[rgba(0,0,0,0.24)]"
+                  className="inline-flex items-center justify-center gap-[8px] min-w-[104px] rounded-[12px] px-[14px] py-[10px] sm:px-[16px] sm:py-[12px] border text-[13px] sm:text-[14px] font-semibold transition-colors bg-white text-[#1A1A1A] border-[rgba(0,0,0,0.14)] hover:border-[rgba(0,0,0,0.24)]"
                 >
                   <Map className="w-[16px] h-[16px]" />
                   <span>Map</span>
@@ -1472,10 +1783,10 @@ export function SearchResults() {
 
       {/* Property Grid */}
       <div id="results-content" className="bg-[#F4F7FA]">
-        <div className={`max-w-[1440px] mx-auto px-[32px] py-[32px] ${isSplitMapMode ? "xl:pb-[20px]" : ""}`}>
+        <div className={`max-w-[1440px] mx-auto px-[16px] sm:px-[24px] lg:px-[32px] py-[18px] sm:py-[24px] lg:py-[32px] ${isSplitMapMode ? "xl:pb-[20px]" : ""}`}>
           {(viewMode === "list" || viewMode === "map") && (
             <div className={viewMode === "map" ? (isMapExpanded ? "" : "grid grid-cols-1 xl:grid-cols-[58%_42%] xl:gap-0 items-start") : ""}>
-              <div className={viewMode === "map" ? (isMapExpanded ? "hidden" : "grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-[20px] xl:pr-[24px] xl:border-r xl:border-[rgba(0,0,0,0.10)] xl:max-h-[calc(100vh-140px)] xl:overflow-y-auto xl:overscroll-contain") : "grid grid-cols-4 gap-[24px]"}>
+              <div className={viewMode === "map" ? (isMapExpanded ? "hidden" : "grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-[16px] xl:pr-[24px] xl:border-r xl:border-[rgba(0,0,0,0.10)] xl:max-h-[calc(100vh-140px)] xl:overflow-y-auto xl:overscroll-contain") : "grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-[16px] sm:gap-[20px]"}>
               {isLoading &&
                 Array.from({ length: viewMode === "map" ? 6 : 8 }, (_, index) => (
                   <div key={`listing-skeleton-${index}`} className="animate-pulse">
@@ -1486,7 +1797,7 @@ export function SearchResults() {
                 <div
                   key={property.id}
                   onClick={() => setPropertyDatePickerId(property.id)}
-                  className="group cursor-pointer overflow-hidden rounded-[8px] border border-[rgba(15,45,54,0.16)] bg-white transition-shadow duration-200 hover:shadow-[0_10px_24px_rgba(15,45,54,0.10)]"
+                  className="group cursor-pointer overflow-hidden rounded-[12px] border border-[rgba(15,45,54,0.16)] bg-white transition-shadow duration-200 hover:shadow-[0_10px_24px_rgba(15,45,54,0.10)]"
                 >
                   {/* Image Container */}
                   <div 
@@ -1508,7 +1819,7 @@ export function SearchResults() {
                         apiBase
                       )}
                       alt={property.title}
-                      className="w-full h-[220px] object-cover object-center bg-[#F3F4F6]"
+                      className="w-full h-[192px] sm:h-[220px] object-cover object-center bg-[#F3F4F6]"
                     />
                     
                     {/* New Badge */}
@@ -1600,9 +1911,9 @@ export function SearchResults() {
                   </div>
 
                   {/* Property Info */}
-                  <div className="px-[16px] pt-[14px] pb-[12px]">
+                  <div className="px-[14px] sm:px-[16px] pt-[12px] sm:pt-[14px] pb-[12px]">
                     {/* Title */}
-                    <h3 className="mb-[10px] text-[16px] font-semibold leading-[1.25] text-[#12303B] line-clamp-2">
+                    <h3 className="mb-[8px] text-[15px] sm:text-[16px] font-semibold leading-[1.25] text-[#12303B] line-clamp-2">
                       {property.title}, {property.city}
                     </h3>
 
@@ -1614,7 +1925,7 @@ export function SearchResults() {
                     </div>
 
                     {/* Size and Housemates */}
-                    <div className="mb-[12px] flex items-center gap-[12px] text-[13px] text-[#3E5963]">
+                    <div className="mb-[12px] flex items-center gap-[12px] text-[12px] sm:text-[13px] text-[#3E5963]">
                       <div className="flex items-center gap-[4px]">
                         <HomeIcon className="w-[14px] h-[14px]" />
                         <span>{property.area} m²</span>
@@ -1627,12 +1938,12 @@ export function SearchResults() {
 
                     {/* Price */}
                     <div className="mb-[10px] flex items-baseline gap-[4px]">
-                      <span className="text-[18px] font-bold text-[#12303B]">€{property.monthlyRent}</span>
-                      <span className="text-[14px] text-[#4F6771]">/month, excl. utilities</span>
+                      <span className="text-[17px] sm:text-[18px] font-bold text-[#12303B]">€{property.monthlyRent}</span>
+                      <span className="text-[13px] sm:text-[14px] text-[#4F6771]">/month, excl. utilities</span>
                     </div>
 
                     {/* Availability */}
-                    <div className="mt-[8px] flex items-center gap-[8px] border-t border-[rgba(15,45,54,0.12)] pt-[12px] text-[14px] font-semibold text-[#12303B]">
+                    <div className="mt-[8px] flex items-center gap-[8px] border-t border-[rgba(15,45,54,0.12)] pt-[12px] text-[13px] sm:text-[14px] font-semibold text-[#12303B]">
                       <div className="h-[10px] w-[10px] rounded-full bg-[#17A45A]" />
                       <span>Available from {new Date(property.availableFrom).toLocaleDateString("en-GB")}</span>
                     </div>

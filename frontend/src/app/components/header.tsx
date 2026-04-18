@@ -1,5 +1,5 @@
 import { Link, useNavigate } from "react-router";
-import { Globe, MessageCircle, Heart, CreditCard, HelpCircle, Settings, LogOut, TrendingUp, LayoutDashboard, FileText, Menu, X, House, BadgeDollarSign, Headset, ChevronDown, LogIn, UserRoundPlus, Bell, KeyRound, Star } from "lucide-react";
+import { Globe, MessageCircle, Heart, CreditCard, HelpCircle, Settings, LogOut, TrendingUp, LayoutDashboard, FileText, Menu, X, House, BadgeDollarSign, Headset, ChevronDown, LogIn, UserRoundPlus, Bell, KeyRound, Star, Search } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { useAuth } from "../contexts/auth-context";
@@ -8,6 +8,7 @@ import { changeSiteLanguage, getSavedLanguageLabel, SUPPORTED_LANGUAGES } from "
 import { API_BASE } from "../config";
 import { useLocation } from "react-router";
 import { BrandLogo } from "./brand-logo";
+import faviconLogo from "../../assets/favicon.png";
 
 interface HeaderConversationItem {
   unread: number;
@@ -15,9 +16,12 @@ interface HeaderConversationItem {
 
 interface HeaderProps {
   variant?: "default" | "dashboard";
+  logoVariant?: "brand" | "favicon" | "mobile-favicon";
+  forceSearchBar?: boolean;
+  searchPlaceholder?: string;
 }
 
-export function Header({ variant = "default" }: HeaderProps) {
+export function Header({ variant = "default", logoVariant = "brand", forceSearchBar = false, searchPlaceholder = "Search" }: HeaderProps) {
   const { user, isAuthenticated, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -133,8 +137,12 @@ export function Header({ variant = "default" }: HeaderProps) {
   const inboxHref = user?.role === "landlord" ? "/landlord/inbox" : "/tenant/inbox";
   const isOnLandlordDashboard = location.pathname.startsWith("/landlord/dashboard");
   const isHowItWorksPage = location.pathname.startsWith("/how-it-works");
+  const isSearchHeaderVariant = isDashboardVariant && (forceSearchBar || location.pathname.startsWith("/listings"));
+  const searchPlaceholderText = searchPlaceholder.trim().length > 0 ? searchPlaceholder : "Search";
   const useDashboardSizedButton = isDashboardVariant || isHowItWorksPage;
   const useFilledDashboardButton = isHowItWorksPage && !isDashboardVariant;
+  const showMobileFaviconLogo = logoVariant === "favicon" || logoVariant === "mobile-favicon";
+  const showDesktopBrandLogo = logoVariant !== "favicon";
   const isPathActive = (paths: string[]) =>
     paths.some((path) => location.pathname === path || location.pathname.startsWith(`${path}/`));
   const mobileItemBaseClass = "flex items-center gap-[12px] rounded-[10px] px-[14px] py-[11px] text-[16px] font-medium transition-colors";
@@ -166,20 +174,70 @@ export function Header({ variant = "default" }: HeaderProps) {
       active: isPathActive(["/landlord/rentals", "/tenant/applications"]),
     },
   ];
+  const getInitialSearchValue = () => {
+    const cityMatch = location.pathname.match(/^\/listings\/([^/]+)/i);
+    if (cityMatch?.[1]) {
+      return decodeURIComponent(cityMatch[1]).replace(/-/g, " ");
+    }
+
+    return "";
+  };
+  const [headerSearchValue, setHeaderSearchValue] = useState(getInitialSearchValue());
+
+  useEffect(() => {
+    setHeaderSearchValue(getInitialSearchValue());
+  }, [location.pathname]);
+
+  const handleHeaderSearchSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const nextValue = headerSearchValue.trim();
+    if (!nextValue) {
+      return;
+    }
+
+    const normalizedCity = nextValue.toLowerCase().replace(/\s+/g, "-");
+    navigate(`/listings/${normalizedCity}`);
+  };
 
   return (
     <header className={isDashboardVariant ? "bg-white border-b border-[#E3E8EE] shadow-[0_1px_2px_rgba(15,23,42,0.04)] sticky top-0 z-[80]" : "sticky top-0 z-[80] bg-white/96 backdrop-blur-md shadow-[0_10px_30px_rgba(2,22,33,0.08)] rounded-b-[30px] border-b border-[rgba(11,165,199,0.14)]"}>
-      <div className={isDashboardVariant ? "max-w-[1440px] mx-auto px-[12px] sm:px-[20px] lg:px-[28px] py-[12px] sm:py-[16px] flex items-center justify-between" : "relative max-w-[1440px] mx-auto px-[16px] sm:px-[32px] py-[14px] sm:py-[18px] flex items-center justify-between"}>
+      <div className={isDashboardVariant ? "max-w-[1440px] mx-auto px-[10px] sm:px-[20px] lg:px-[28px] py-[12px] sm:py-[16px] flex items-center justify-between gap-[10px] sm:gap-[20px]" : "relative max-w-[1440px] mx-auto px-[16px] sm:px-[32px] py-[14px] sm:py-[18px] flex items-center justify-between"}>
         {!isDashboardVariant && (
           <div className="pointer-events-none absolute inset-x-[18px] bottom-[8px] h-[1px] bg-[linear-gradient(90deg,transparent,rgba(11,165,199,0.26),transparent)]" />
         )}
         {/* Logo */}
-        <Link to="/" className={`flex items-center gap-[8px] ${isDashboardVariant ? "" : "pl-[6px] sm:pl-[28px]"}`}>
-          <BrandLogo className={isDashboardVariant ? "h-[48px] sm:h-[62px] lg:h-[72px]" : isAuthenticated ? "h-[56px] sm:h-[72px] lg:h-[90px]" : "h-[48px] sm:h-[62px] lg:h-[72px]"} />
+        <Link to="/" className={`flex items-center gap-[8px] ${isDashboardVariant ? "pl-[2px] sm:pl-0" : "pl-[6px] sm:pl-[28px]"}`}>
+          {showMobileFaviconLogo ? (
+            <img
+              src={faviconLogo}
+              alt="ReserveHousing"
+              className={`${showDesktopBrandLogo ? "md:hidden" : ""} h-[34px] w-[34px] object-contain`}
+            />
+          ) : (
+            <BrandLogo className={isDashboardVariant ? "h-[48px] sm:h-[62px] lg:h-[72px]" : isAuthenticated ? "h-[56px] sm:h-[72px] lg:h-[90px]" : "h-[48px] sm:h-[62px] lg:h-[72px]"} />
+          )}
+          {showMobileFaviconLogo && showDesktopBrandLogo && (
+            <BrandLogo className="hidden md:block h-[48px] sm:h-[62px] lg:h-[72px]" />
+          )}
         </Link>
 
         {isAuthenticated ? (
-          <div className="md:hidden flex items-center gap-[10px]">
+          <div className={`md:hidden flex items-center ${isSearchHeaderVariant ? "gap-[8px]" : "gap-[10px]"}`}>
+            {isSearchHeaderVariant && (
+              <form onSubmit={handleHeaderSearchSubmit} className="min-w-0 flex-1">
+                <label className="flex h-[40px] w-full items-center gap-[10px] rounded-[14px] border border-[#AFC1D3] bg-white px-[10px] shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
+                  <Search className="h-[18px] w-[18px] flex-shrink-0 text-[#0F2D36]" />
+                  <input
+                    type="text"
+                    value={headerSearchValue}
+                    onChange={(event) => setHeaderSearchValue(event.target.value)}
+                    placeholder={searchPlaceholderText}
+                    aria-label="Search city"
+                    className="min-w-0 w-full bg-transparent text-[14px] font-medium text-[#0F2D36] placeholder:text-[#0F2D36] outline-none"
+                  />
+                </label>
+              </form>
+            )}
             <Link
               to={inboxHref}
               className="relative inline-flex h-[42px] w-[42px] items-center justify-center rounded-full text-[#11354B] hover:bg-[#EEF2F7]"
@@ -290,6 +348,21 @@ export function Header({ variant = "default" }: HeaderProps) {
         {/* Right Actions - Logged In */}
         {isAuthenticated && (
           <div className="hidden md:flex items-center gap-[16px]">
+            {isSearchHeaderVariant && (
+              <form onSubmit={handleHeaderSearchSubmit} className="min-w-0 w-[320px] lg:w-[380px] xl:w-[440px] mr-[4px] lg:mr-[8px]">
+                <label className="flex h-[62px] items-center gap-[14px] rounded-[18px] border border-[#AFC1D3] bg-white px-[14px] shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
+                  <Search className="h-[20px] w-[20px] flex-shrink-0 text-[#0F2D36]" />
+                  <input
+                    type="text"
+                    value={headerSearchValue}
+                    onChange={(event) => setHeaderSearchValue(event.target.value)}
+                    placeholder={searchPlaceholderText}
+                    aria-label="Search city"
+                    className="min-w-0 w-full bg-transparent text-[20px] font-medium text-[#0F2D36] placeholder:text-[#0F2D36] outline-none"
+                  />
+                </label>
+              </form>
+            )}
             {/* Show appropriate landlord button based on status */}
             {user?.isLandlord ? (
               <Link 

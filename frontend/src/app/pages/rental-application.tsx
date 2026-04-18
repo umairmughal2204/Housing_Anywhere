@@ -1,10 +1,11 @@
 import { Link, useParams, useNavigate, useLocation } from "react-router";
 import { useState, useEffect, useMemo } from "react";
-import { ChevronLeft, Info, ChevronDown, Shield, Check, Plus, Upload, FileText, User, GraduationCap, Briefcase, Sparkles, LogOut, Pencil, Heart, CheckCircle2, Calendar, CircleDollarSign, Building2, Eye, Users, Bath, Utensils, Sofa, Bed, Tv, Wifi, CreditCard } from "lucide-react";
+import { ChevronLeft, Info, ChevronDown, Shield, Check, Plus, Upload, FileText, User, GraduationCap, Briefcase, Sparkles, LogOut, Pencil, Heart, CheckCircle2, Calendar, CircleDollarSign, Building2, Eye, Users, Bath, Utensils, Sofa, Bed, Tv, Wifi, CreditCard, X } from "lucide-react";
 import { DatePicker } from "../components/date-picker";
 import { useAuth } from "../contexts/auth-context";
 import { API_BASE } from "../config";
 import { BrandLogo } from "../components/brand-logo";
+import faviconLogo from "../../assets/favicon.png";
 
 interface ListingSummary {
   id: string;
@@ -144,6 +145,7 @@ export function RentalApplication() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState("");
   const [stepOneError, setStepOneError] = useState("");
+  const [isStepSheetOpen, setIsStepSheetOpen] = useState(false);
   const [showLandlordMore, setShowLandlordMore] = useState(false);
   const [isProtectionExpanded, setIsProtectionExpanded] = useState(false);
   const [isDatePickerModalOpen, setIsDatePickerModalOpen] = useState(false);
@@ -348,6 +350,17 @@ export function RentalApplication() {
       setCurrentStep(3);
       window.scrollTo(0, 0);
     }
+  };
+
+  const handleStepSelection = (step: number) => {
+    if (step > currentStep) {
+      return;
+    }
+
+    setCurrentStep(step);
+    setShowAskQuestionForm(false);
+    setIsStepSheetOpen(false);
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const handleSendQuestion = async () => {
@@ -664,22 +677,23 @@ export function RentalApplication() {
     <div className="min-h-screen bg-white">
       {/* Header */}
       <header className="border-b border-[rgba(0,0,0,0.08)] bg-white sticky top-0 z-50">
-        <div className="max-w-[1440px] mx-auto px-[32px] py-[16px] flex items-center justify-between">
+        <div className="max-w-[1440px] mx-auto px-[16px] md:px-[32px] py-[12px] md:py-[16px] flex items-center justify-between">
           <button
             onClick={() => navigate(`/property/${id}`)}
             className="flex items-center gap-[8px] text-neutral-black hover:text-brand-primary transition-colors"
           >
-            <ChevronLeft className="w-[16px] h-[16px]" />
-            <span className="text-[15px] font-semibold">Back to listing</span>
+            <ChevronLeft className="w-[20px] h-[20px] md:w-[16px] md:h-[16px]" />
+            <span className="hidden md:inline text-[15px] font-semibold">Back to listing</span>
           </button>
 
           <Link to="/" className="flex items-center gap-[8px]">
-            <BrandLogo className="h-[68px] sm:h-[76px]" />
+            <img src={faviconLogo} alt="App icon" className="h-[44px] w-[44px] object-contain md:hidden" />
+            <BrandLogo className="hidden md:block h-[68px]" alt="App logo" />
           </Link>
 
-          <div className="flex items-center gap-[16px]">
+          <div className="flex items-center gap-[12px] md:gap-[16px]">
             {/* Language Dropdown */}
-            <div className="relative language-dropdown">
+            <div className="relative language-dropdown hidden md:block">
               <button
                 onClick={() => {
                   setIsLanguageOpen(!isLanguageOpen);
@@ -829,19 +843,19 @@ export function RentalApplication() {
       {!user?.isLandlord && isLoadingListing && (
         <>
           <div className="bg-neutral-light-gray border-b border-[rgba(0,0,0,0.08)]">
-            <div className="max-w-[1200px] mx-auto px-[32px] py-[32px]">
+            <div className="max-w-[1200px] mx-auto px-[16px] md:px-[32px] py-[16px] md:py-[32px]">
               <div className="animate-pulse">
-                <div className="h-[2px] w-full bg-[rgba(0,0,0,0.08)] mb-[16px]" />
+                <div className="hidden md:block h-[2px] w-full bg-[rgba(0,0,0,0.08)] mb-[16px]" />
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-[12px]">
                     <div className="w-[32px] h-[32px] rounded-full bg-[#E8EDF2]" />
                     <div className="h-[14px] w-[170px] rounded-[4px] bg-[#E8EDF2]" />
                   </div>
-                  <div className="flex items-center gap-[12px]">
+                  <div className="hidden md:flex items-center gap-[12px]">
                     <div className="w-[32px] h-[32px] rounded-full bg-[#E8EDF2]" />
                     <div className="h-[14px] w-[120px] rounded-[4px] bg-[#E8EDF2]" />
                   </div>
-                  <div className="flex items-center gap-[12px]">
+                  <div className="hidden md:flex items-center gap-[12px]">
                     <div className="w-[32px] h-[32px] rounded-full bg-[#E8EDF2]" />
                     <div className="h-[14px] w-[140px] rounded-[4px] bg-[#E8EDF2]" />
                   </div>
@@ -850,8 +864,8 @@ export function RentalApplication() {
             </div>
           </div>
 
-          <div className="max-w-[1200px] mx-auto px-[32px] pt-[48px] pb-[48px]">
-            <div className="animate-pulse flex gap-[64px]">
+          <div className="max-w-[1200px] mx-auto px-[16px] md:px-[32px] pt-[24px] md:pt-[48px] pb-[48px]">
+            <div className="animate-pulse flex flex-col lg:flex-row gap-[12px] lg:gap-[64px]">
               <div className="flex-[2] space-y-[26px]">
                 <div>
                   <div className="h-[34px] w-[58%] rounded-[4px] bg-[#E8EDF2] mb-[14px]" />
@@ -882,8 +896,8 @@ export function RentalApplication() {
                 </div>
               </div>
 
-              <div className="flex-[1]">
-                <div className="sticky top-[100px] space-y-[12px]">
+              <div className="flex-[1] mt-0">
+                <div className="lg:sticky lg:top-[100px] space-y-[12px]">
                   <div className="border border-[rgba(15,45,54,0.14)] rounded-[6px] bg-white p-[16px]">
                     <div className="h-[84px] w-full rounded-[8px] bg-[#E8EDF2] mb-[12px]" />
                     <div className="h-[16px] w-[72%] rounded-[4px] bg-[#E8EDF2] mb-[8px]" />
@@ -938,8 +952,19 @@ export function RentalApplication() {
       {/* Progress Steps */}
       {!isAskQuestionMode && currentStep !== 3 && (
       <div className="bg-neutral-light-gray border-b border-[rgba(0,0,0,0.08)]">
-        <div className="max-w-[1200px] mx-auto px-[32px] py-[32px]">
-          <div className="flex items-center justify-between relative">
+        <div className="max-w-[1200px] mx-auto px-[16px] md:px-[32px] py-[20px] md:py-[32px]">
+          <div className="md:hidden">
+            <button
+              type="button"
+              onClick={() => setIsStepSheetOpen(true)}
+              className="inline-flex items-center gap-[6px] h-[34px] px-[12px] rounded-full bg-[#DEE7EE] text-[#0F2D36] text-[14px] font-semibold"
+            >
+              Step {currentStep} of 3
+              <ChevronDown className="w-[14px] h-[14px]" />
+            </button>
+          </div>
+
+          <div className="hidden md:flex items-center justify-between relative">
             {/* Progress Line */}
             <div className="absolute top-[16px] left-0 right-0 h-[2px] bg-[rgba(0,0,0,0.08)]" style={{ width: "calc(100% - 32px)", left: "16px" }} />
             <div
@@ -994,13 +1019,13 @@ export function RentalApplication() {
       )}
 
       {/* Main Content */}
-      <div className={`max-w-[1200px] mx-auto px-[32px] pt-[48px] ${currentStep === 1 && !showAskQuestionForm ? "pb-[180px]" : "pb-[48px]"}`}>
-        <div className="flex gap-[64px]">
+      <div className={`max-w-[1200px] mx-auto px-[16px] md:px-[32px] pt-[28px] md:pt-[48px] ${(currentStep === 1 && !showAskQuestionForm) || currentStep === 2 || currentStep === 3 ? "pb-[180px] md:pb-[48px]" : "pb-[48px]"}`}>
+        <div className="flex flex-col lg:flex-row gap-[10px] lg:gap-[64px]">
           {/* Left Column */}
           <div className="flex-[2]">
             {/* STEP 1: Fill in rental application */}
             {currentStep === 1 && (
-              <div className="pb-[180px]">
+              <div className="pb-[10px] md:pb-[180px]">
                 {!showAskQuestionForm && (<>
                 <h1 className="text-[#1A1A1A] text-[32px] font-bold tracking-[-0.02em] mb-[16px]">
                   Fill in your rental application in 5 minutes
@@ -1022,11 +1047,11 @@ export function RentalApplication() {
 
                   <div className="mb-[24px]">
                     <label className="block text-[#1A1A1A] text-[15px] font-semibold mb-[8px]">Date of birth*</label>
-                    <div className="grid grid-cols-3 gap-[16px]">
+                    <div className="grid grid-cols-3 gap-[8px] md:gap-[16px]">
                       <select
                         value={dateOfBirth.day}
                         onChange={(e) => setDateOfBirth({ ...dateOfBirth, day: e.target.value })}
-                        className="px-[16px] py-[12px] border border-[rgba(0,0,0,0.16)] text-[#1A1A1A] text-[15px] bg-white"
+                        className="px-[10px] md:px-[16px] py-[12px] border border-[rgba(0,0,0,0.16)] rounded-[8px] text-[#1A1A1A] text-[14px] md:text-[15px] bg-white"
                       >
                         <option value="">Day</option>
                         {Array.from({ length: 31 }, (_, i) => i + 1).map((day) => (
@@ -1036,7 +1061,7 @@ export function RentalApplication() {
                       <select
                         value={dateOfBirth.month}
                         onChange={(e) => setDateOfBirth({ ...dateOfBirth, month: e.target.value })}
-                        className="px-[16px] py-[12px] border border-[rgba(0,0,0,0.16)] text-[#1A1A1A] text-[15px] bg-white"
+                        className="px-[10px] md:px-[16px] py-[12px] border border-[rgba(0,0,0,0.16)] rounded-[8px] text-[#1A1A1A] text-[14px] md:text-[15px] bg-white"
                       >
                         <option value="">Month</option>
                         {["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"].map((month, idx) => (
@@ -1046,7 +1071,7 @@ export function RentalApplication() {
                       <select
                         value={dateOfBirth.year}
                         onChange={(e) => setDateOfBirth({ ...dateOfBirth, year: e.target.value })}
-                        className="px-[16px] py-[12px] border border-[rgba(0,0,0,0.16)] text-[#1A1A1A] text-[15px] bg-white"
+                        className="px-[10px] md:px-[16px] py-[12px] border border-[rgba(0,0,0,0.16)] rounded-[8px] text-[#1A1A1A] text-[14px] md:text-[15px] bg-white"
                       >
                         <option value="">Year</option>
                         {Array.from({ length: 80 }, (_, i) => 2010 - i).map((year) => (
@@ -1058,7 +1083,7 @@ export function RentalApplication() {
 
                   <div className="mb-[24px]">
                     <label className="block text-[#1A1A1A] text-[15px] font-semibold mb-[8px]">Gender*</label>
-                    <div className="flex items-center gap-[12px]">
+                    <div className="grid grid-cols-3 gap-[8px] md:flex md:items-center md:gap-[12px]">
                       {[
                         { value: "male", label: "Male", symbol: "♂" },
                         { value: "female", label: "Female", symbol: "♀" },
@@ -1067,12 +1092,12 @@ export function RentalApplication() {
                         <button
                           key={value}
                           onClick={() => setGender(value as any)}
-                          className={`px-[24px] py-[10px] border transition-colors ${
+                          className={`w-full px-[10px] md:px-[24px] py-[10px] border rounded-[8px] transition-colors ${
                             gender === value ? "border-brand-primary bg-brand-light" : "border-[rgba(0,0,0,0.16)] bg-white hover:bg-neutral-light-gray"
                           }`}
                         >
-                          <span className={`inline-flex items-center gap-[8px] text-[15px] font-semibold ${gender === value ? "text-brand-primary" : "text-neutral-black"}`}>
-                            <span className="text-[22px] leading-none" aria-hidden="true">{symbol}</span>
+                          <span className={`inline-flex items-center gap-[6px] text-[14px] md:text-[15px] font-semibold ${gender === value ? "text-brand-primary" : "text-neutral-black"}`}>
+                            <span className="text-[18px] md:text-[22px] leading-none" aria-hidden="true">{symbol}</span>
                             {label}
                           </span>
                         </button>
@@ -1179,7 +1204,7 @@ export function RentalApplication() {
 
                   <div className="mb-[24px]">
                     <label className="block text-[#1A1A1A] text-[15px] font-semibold mb-[8px]">Occupation*</label>
-                    <div className="flex items-center gap-[12px]">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-[8px] md:gap-[12px]">
                       {[
                         { value: "student", label: "Student", icon: GraduationCap },
                         { value: "professional", label: "Working professional", icon: Briefcase },
@@ -1188,11 +1213,11 @@ export function RentalApplication() {
                         <button
                           key={value}
                           onClick={() => setOccupation(value as any)}
-                          className={`px-[24px] py-[10px] border transition-colors ${
+                          className={`w-full px-[14px] py-[10px] border rounded-[8px] transition-colors ${
                             occupation === value ? "border-brand-primary bg-brand-light" : "border-[rgba(0,0,0,0.16)] bg-white hover:bg-neutral-light-gray"
                           }`}
                         >
-                          <span className={`inline-flex items-center gap-[8px] text-[15px] font-semibold ${occupation === value ? "text-brand-primary" : "text-neutral-black"}`}>
+                          <span className={`inline-flex items-center gap-[8px] text-[14px] md:text-[15px] font-semibold ${occupation === value ? "text-brand-primary" : "text-neutral-black"}`}>
                             <Icon className="w-[16px] h-[16px]" />
                             {label}
                           </span>
@@ -1228,7 +1253,7 @@ export function RentalApplication() {
 
                       <div className="mb-[24px]">
                         <label className="block text-[#1A1A1A] text-[15px] font-semibold mb-[8px]">What is your visa status?</label>
-                        <div className="grid grid-cols-2 gap-[12px]">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-[12px]">
                           {[
                             { value: "no_visa", label: "I don't need a visa" },
                             { value: "approved", label: "My visa is already approved" },
@@ -1302,7 +1327,7 @@ export function RentalApplication() {
                             placeholder=""
                             min={0}
                             step="1"
-                            className="w-[250px] pl-[32px] pr-[16px] py-[12px] border border-[rgba(0,0,0,0.16)] text-[#1A1A1A] text-[15px]"
+                            className="w-full md:w-[250px] pl-[32px] pr-[16px] py-[12px] border border-[rgba(0,0,0,0.16)] rounded-[8px] text-[#1A1A1A] text-[15px]"
                           />
                         </div>
 
@@ -1341,7 +1366,7 @@ export function RentalApplication() {
                             placeholder=""
                             min={0}
                             step="1"
-                            className="w-[250px] pl-[32px] pr-[16px] py-[12px] border border-[rgba(0,0,0,0.16)] text-neutral-black text-[15px]"
+                            className="w-full md:w-[250px] pl-[32px] pr-[16px] py-[12px] border border-[rgba(0,0,0,0.16)] rounded-[8px] text-neutral-black text-[15px]"
                           />
                         </div>
 
@@ -1355,7 +1380,7 @@ export function RentalApplication() {
 
                       <div className="mb-[24px]">
                         <label className="block text-neutral-black text-[15px] font-semibold mb-[8px]">What is your visa status?</label>
-                        <div className="grid grid-cols-2 gap-[12px]">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-[12px]">
                           {[
                             { value: "no_visa", label: "I don't need a visa" },
                             { value: "approved", label: "My visa is already approved" },
@@ -1419,6 +1444,7 @@ export function RentalApplication() {
                       </p>
                     </div>
                   </div>
+
                 </div>
                 </>)}
 
@@ -1851,7 +1877,7 @@ export function RentalApplication() {
                   </label>
                 </div>
 
-                <div className="flex items-center gap-[12px]">
+                <div className="hidden md:flex items-center gap-[12px]">
                   <button
                     onClick={() => {
                       if (!requiresIdentityProof) {
@@ -1866,7 +1892,7 @@ export function RentalApplication() {
                         : "bg-[#EDEDED] text-[#8A969C] cursor-not-allowed"
                     }`}
                   >
-                    Share and continue
+                    Share documents
                   </button>
                   <button
                     type="button"
@@ -1876,7 +1902,7 @@ export function RentalApplication() {
                     }}
                     className="h-[44px] px-[18px] rounded-[4px] border border-[rgba(15,45,54,0.24)] bg-[#F3F6F9] text-[#0F2D36] text-[16px] font-semibold hover:bg-[#E9EEF3] transition-colors"
                   >
-                    I'll do it later
+                    Skip for now
                   </button>
                 </div>
               </>
@@ -2164,12 +2190,12 @@ export function RentalApplication() {
                 <button
                   onClick={handleSubmit}
                   disabled={isSubmitting || !canSubmitBilling}
-                  className={`w-full font-bold py-[13px] transition-colors text-[16px] rounded-[6px] ${isSubmitting || !canSubmitBilling ? "bg-[#D6DEE5] text-[#90A3B3] cursor-not-allowed" : "bg-brand-primary text-white hover:bg-brand-primary-dark"}`}
+                  className={`hidden md:block w-full font-bold py-[13px] transition-colors text-[16px] rounded-[6px] ${isSubmitting || !canSubmitBilling ? "bg-[#D6DEE5] text-[#90A3B3] cursor-not-allowed" : "bg-brand-primary text-white hover:bg-brand-primary-dark"}`}
                 >
                   {isSubmitting ? "Submitting..." : "Submit rental application"}
                 </button>
 
-                {!canSubmitBilling && <p className="text-[#0F2D36] text-[14px] text-center mt-[10px]">Add a billing address first.</p>}
+                {!canSubmitBilling && <p className="hidden md:block text-[#0F2D36] text-[14px] text-center mt-[10px]">Add a billing address first.</p>}
 
                 <div className="mt-[18px] space-y-[10px] text-[#5D7380] text-[14px] leading-[1.65]">
                   <p>By selecting submit application, you agree to pay {landlordFirstName} if {landlordFirstName} accepts your application and confirms your stay. You can withdraw your application anytime before it's accepted - you won't be charged. After it's accepted, this listing's cancellation policy will apply.</p>
@@ -2183,8 +2209,8 @@ export function RentalApplication() {
           </div>
 
           {/* Right Column - Property & Payment Summary */}
-          <div className="flex-[1]">
-            <div className="sticky top-[100px]">
+          <div className="flex-[1] mt-0">
+            <div className="lg:sticky lg:top-[100px]">
               <div className="rounded-[6px] bg-white overflow-hidden">
                 <div className="px-[12px] py-[12px] flex items-start gap-[12px] bg-white">
                   <div className="relative w-[86px] h-[86px] shrink-0">
@@ -2213,7 +2239,7 @@ export function RentalApplication() {
                   <div className="min-w-0">
                     <h3 className="text-[#0F2D36] text-[22px] leading-[1.1] font-bold truncate">{listing?.title ?? "Listing"}</h3>
                     <p className="text-[#596E76] text-[15px] mt-[4px]">{listing?.city}{listing?.country ? `, ${listing.country}` : ""}</p>
-                    <p className="text-[#0F2D36] text-[18px] mt-[10px]">Published by {listing?.landlordName ?? "Landlord"}</p>
+                    <p className="text-[#0F2D36] text-[14px] md:text-[18px] mt-[10px]">Published by {listing?.landlordName ?? "Landlord"}</p>
                   </div>
                 </div>
 
@@ -2223,19 +2249,19 @@ export function RentalApplication() {
                     <button
                       type="button"
                       onClick={() => setIsDatePickerModalOpen(true)}
-                      className="inline-flex items-center gap-[8px] text-[#0F2D36] text-[40px] md:text-[16px] leading-[1.2] underline decoration-dotted underline-offset-[8px] cursor-pointer hover:text-[#0A2530] hover:underline-offset-[10px] transition-all duration-150"
+                      className="inline-flex items-center gap-[8px] text-[#0F2D36] text-[16px] leading-[1.2] underline decoration-dotted underline-offset-[8px] cursor-pointer hover:text-[#0A2530] hover:underline-offset-[10px] transition-all duration-150"
                     >
                       {selectedRangeLabel}
                       <Pencil className="w-[16px] h-[16px]" />
                     </button>
                   ) : (
-                    <div className="inline-flex items-center gap-[8px] text-[#0F2D36] text-[40px] md:text-[16px] leading-[1.2]">
+                    <div className="inline-flex items-center gap-[8px] text-[#0F2D36] text-[16px] leading-[1.2]">
                       {selectedRangeLabel}
                     </div>
                   )}
 
                   <div className={`mt-[14px] pt-[14px] ${currentStep === 1 ? "order-1" : "order-2"}`}>
-                    <p className="text-[#001F33] text-[44px] md:text-[16px] leading-[1.2] font-bold mb-[10px]">
+                    <p className="text-[#001F33] text-[16px] leading-[1.2] font-bold mb-[10px]">
                       You <span className="text-[#8DA0AB]">-&gt;</span>{" "}
                       <span className="inline-flex items-center gap-[8px]">
                         <span className="w-[24px] h-[24px] rounded-full overflow-hidden border border-[rgba(15,45,54,0.18)] bg-[#EAF2FF]">
@@ -2254,21 +2280,21 @@ export function RentalApplication() {
                         <span>{listing?.landlordName ?? "Landlord"}</span>
                       </span>
                     </p>
-                    <p className="text-[#0F2D36] text-[36px] md:text-[16px] leading-[1.45] mb-[14px]">
+                    <p className="text-[#0F2D36] text-[16px] leading-[1.45] mb-[14px]">
                       Future rental costs to the landlord. You'll pay these directly, per your contract.
                     </p>
 
                     <div className="space-y-[10px] pb-[12px]">
                       <div className="flex items-center justify-between gap-[12px]">
-                        <p className="text-[#0F2D36] text-[38px] md:text-[16px] leading-[1.2] flex items-center gap-[6px]">
+                        <p className="text-[#0F2D36] text-[16px] leading-[1.2] flex items-center gap-[6px]">
                           Security deposit <span className="text-[#8194A0]">before move-in</span>
                           <Info className="w-[14px] h-[14px] text-[#8194A0]" />
                         </p>
-                        <p className="text-[#0F2D36] text-[38px] md:text-[16px] leading-[1.2] font-semibold">{"\u20AC"}{(listing?.deposit ?? 0).toFixed(2)}</p>
+                        <p className="text-[#0F2D36] text-[16px] leading-[1.2] font-semibold">{"\u20AC"}{(listing?.deposit ?? 0).toFixed(2)}</p>
                       </div>
                       <div className="flex items-center justify-between gap-[12px]">
-                        <p className="text-[#0F2D36] text-[38px] md:text-[16px] leading-[1.2]">Utilities</p>
-                        <p className="text-[#0F2D36] text-[38px] md:text-[16px] leading-[1.2] font-semibold">
+                        <p className="text-[#0F2D36] text-[16px] leading-[1.2]">Utilities</p>
+                        <p className="text-[#0F2D36] text-[16px] leading-[1.2] font-semibold">
                           {listing?.utilitiesIncluded
                             ? listing.utilitiesCost > 0
                               ? `\u20AC${listing.utilitiesCost.toFixed(2)}`
@@ -2281,8 +2307,8 @@ export function RentalApplication() {
                         <>
                           {listing.utilities.map((utility) => (
                             <div key={utility.type} className="flex items-center justify-between gap-[12px] pl-[16px]">
-                              <p className="text-[#0F2D36] text-[34px] md:text-[16px] leading-[1.2]">{utility.type}</p>
-                              <p className="text-[#8194A0] text-[34px] md:text-[16px] leading-[1.2] inline-flex items-center gap-[6px]">
+                              <p className="text-[#0F2D36] text-[16px] leading-[1.2]">{utility.type}</p>
+                              <p className="text-[#8194A0] text-[16px] leading-[1.2] inline-flex items-center gap-[6px]">
                                 {utility.included && <Check className="w-[14px] h-[14px] text-[#0E7A48]" />}
                                 {utility.included ? "Included" : `\u20AC${utility.amount.toFixed(2)}`}
                               </p>
@@ -2290,12 +2316,12 @@ export function RentalApplication() {
                           ))}
 
                           <div className="pt-[4px]">
-                            <p className="text-[#0F2D36] text-[34px] md:text-[16px] leading-[1.2] mb-[6px]">Rent</p>
+                            <p className="text-[#0F2D36] text-[16px] leading-[1.2] mb-[6px]">Rent</p>
                             <div className="space-y-[6px] pl-[16px]">
                               {rentBreakdownRows.map((row, index) => (
                                 <div key={row.label} className="flex items-center justify-between gap-[12px]">
-                                  <p className="text-[#0F2D36] text-[32px] md:text-[16px] leading-[1.2]">{row.label}</p>
-                                  <p className="text-[#0F2D36] text-[32px] md:text-[16px] leading-[1.2] font-semibold inline-flex items-center gap-[6px]">
+                                  <p className="text-[#0F2D36] text-[16px] leading-[1.2]">{row.label}</p>
+                                  <p className="text-[#0F2D36] text-[16px] leading-[1.2] font-semibold inline-flex items-center gap-[6px]">
                                     {row.original && (
                                       <span className="inline-flex items-center gap-[6px]">
                                         <span className="relative inline-flex items-center group">
@@ -2322,7 +2348,7 @@ export function RentalApplication() {
                     <button
                       type="button"
                       onClick={() => setShowLandlordMore((prev) => !prev)}
-                      className="inline-flex items-center gap-[6px] text-[#0F2D36] text-[34px] md:text-[16px] leading-[1.2] font-semibold underline decoration-dotted underline-offset-[8px] cursor-pointer hover:text-[#0A2530] hover:underline-offset-[10px] transition-all duration-150"
+                      className="inline-flex items-center gap-[6px] text-[#0F2D36] text-[16px] leading-[1.2] font-semibold underline decoration-dotted underline-offset-[8px] cursor-pointer hover:text-[#0A2530] hover:underline-offset-[10px] transition-all duration-150"
                     >
                       View {showLandlordMore ? "less" : "more"}
                       <ChevronDown className={`w-[16px] h-[16px] transition-transform ${showLandlordMore ? "rotate-180" : ""}`} />
@@ -2383,25 +2409,25 @@ export function RentalApplication() {
                   </div>
 
                   <div className={`mt-[14px] pt-[14px] ${currentStep === 1 ? "order-2" : "order-1"}`}>
-                    <p className="text-[#001F33] text-[44px] md:text-[16px] leading-[1.2] font-bold mb-[8px]">You <span className="text-[#8DA0AB]">-&gt;</span> ReserveHousing</p>
-                    <p className="text-[#0F2D36] text-[36px] md:text-[16px] leading-[1.45] mb-[14px]">Pay this now to secure your place.</p>
+                    <p className="text-[#001F33] text-[16px] leading-[1.2] font-bold mb-[8px]">You <span className="text-[#8DA0AB]">-&gt;</span> ReserveHousing</p>
+                    <p className="text-[#0F2D36] text-[16px] leading-[1.45] mb-[14px]">Pay this now to secure your place.</p>
 
                     <div className="space-y-[10px] pb-[12px]">
                       <div className="flex items-center justify-between gap-[12px]">
-                        <p className="text-[#0F2D36] text-[38px] md:text-[16px] leading-[1.2]">{rentLineLabel}</p>
-                        <p className="text-[#0F2D36] text-[38px] md:text-[16px] leading-[1.2] font-semibold">{"\u20AC"}{rentForSelectedPeriod.toFixed(2)}</p>
+                        <p className="text-[#0F2D36] text-[16px] leading-[1.2]">{rentLineLabel}</p>
+                        <p className="text-[#0F2D36] text-[16px] leading-[1.2] font-semibold">{"\u20AC"}{rentForSelectedPeriod.toFixed(2)}</p>
                       </div>
                       <div className="flex items-center justify-between gap-[12px]">
-                        <p className="text-[#0F2D36] text-[38px] md:text-[16px] leading-[1.2] flex items-center gap-[6px]">
+                        <p className="text-[#0F2D36] text-[16px] leading-[1.2] flex items-center gap-[6px]">
                           Tenant Protection fee
                           <Info className="w-[14px] h-[14px]" />
                         </p>
-                        <p className="text-[#0F2D36] text-[38px] md:text-[16px] leading-[1.2] font-semibold">{"\u20AC"}{tenantProtectionFee.toFixed(2)}</p>
+                        <p className="text-[#0F2D36] text-[16px] leading-[1.2] font-semibold">{"\u20AC"}{tenantProtectionFee.toFixed(2)}</p>
                       </div>
                       {addRentGuarantee && (
                         <div className="flex items-center justify-between gap-[12px]">
-                          <p className="text-[#0F2D36] text-[38px] md:text-[16px] leading-[1.2]">Rent Guarantee</p>
-                          <p className="text-[#0F2D36] text-[38px] md:text-[16px] leading-[1.2] font-semibold">{"\u20AC"}{RENT_GUARANTEE_FEE.toFixed(2)}</p>
+                          <p className="text-[#0F2D36] text-[16px] leading-[1.2]">Rent Guarantee</p>
+                          <p className="text-[#0F2D36] text-[16px] leading-[1.2] font-semibold">{"\u20AC"}{RENT_GUARANTEE_FEE.toFixed(2)}</p>
                         </div>
                       )}
                     </div>
@@ -2427,14 +2453,124 @@ export function RentalApplication() {
 
       {currentStep === 1 && !showAskQuestionForm && (
         <div className="fixed left-0 right-0 bottom-0 z-40 bg-[#F7F7F9] border-t border-[rgba(0,0,0,0.12)]">
-          <div className="max-w-[1200px] mx-auto px-[32px] py-[14px]">
+          <div className="max-w-[1200px] mx-auto px-[16px] md:px-[32px] pt-[10px] pb-[calc(10px+env(safe-area-inset-bottom))]">
             <button
               onClick={handleContinue}
-              className="w-full max-w-[620px] font-semibold py-[13px] transition-colors text-[15px] bg-brand-primary text-white hover:bg-brand-primary-dark"
+              className="w-full md:max-w-[620px] h-[54px] rounded-[14px] font-semibold text-[16px] transition-colors bg-brand-primary text-white hover:bg-brand-primary-dark"
             >
               Continue
             </button>
-            {stepOneError && <p className="text-brand-primary text-[15px] mt-[10px]">{stepOneError}</p>}
+            {stepOneError && <p className="text-brand-primary text-[14px] mt-[8px]">{stepOneError}</p>}
+          </div>
+        </div>
+      )}
+
+      {currentStep === 2 && (
+        <div className="fixed left-0 right-0 bottom-0 z-40 bg-[#F7F7F9] border-t border-[rgba(0,0,0,0.12)] md:hidden">
+          <div className="max-w-[1200px] mx-auto px-[16px] pt-[10px] pb-[calc(10px+env(safe-area-inset-bottom))] space-y-[8px]">
+            <button
+              onClick={() => {
+                if (!requiresIdentityProof) {
+                  setIdVerified(false);
+                }
+                handleContinue();
+              }}
+              disabled={!shareDocuments || !hasRequiredDocuments}
+              className={`w-full h-[52px] rounded-[12px] font-semibold transition-colors text-[16px] ${
+                shareDocuments && hasRequiredDocuments
+                  ? "bg-brand-primary text-white hover:bg-brand-primary-dark"
+                  : "bg-[#EDEDED] text-[#8A969C] cursor-not-allowed"
+              }`}
+            >
+              Share documents
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setCurrentStep(3);
+                window.scrollTo(0, 0);
+              }}
+              className="w-full h-[48px] rounded-[12px] border border-[rgba(15,45,54,0.24)] bg-[#F3F6F9] text-[#0F2D36] text-[15px] font-semibold hover:bg-[#E9EEF3] transition-colors"
+            >
+              Skip for now
+            </button>
+          </div>
+        </div>
+      )}
+
+      {currentStep === 3 && (
+        <div className="fixed left-0 right-0 bottom-0 z-40 bg-[#F7F7F9] border-t border-[rgba(0,0,0,0.12)] md:hidden">
+          <div className="max-w-[1200px] mx-auto px-[16px] pt-[10px] pb-[calc(10px+env(safe-area-inset-bottom))]">
+            <button
+              onClick={handleSubmit}
+              disabled={isSubmitting || !canSubmitBilling}
+              className={`w-full h-[52px] rounded-[12px] font-bold transition-colors text-[16px] ${
+                isSubmitting || !canSubmitBilling
+                  ? "bg-[#D6DEE5] text-[#90A3B3] cursor-not-allowed"
+                  : "bg-brand-primary text-white hover:bg-brand-primary-dark"
+              }`}
+            >
+              {isSubmitting ? "Submitting..." : "Submit rental application"}
+            </button>
+            {!canSubmitBilling && <p className="text-[#0F2D36] text-[13px] text-center mt-[8px]">Add a billing address first.</p>}
+            {submitError && <p className="text-brand-primary text-[13px] mt-[8px]">{submitError}</p>}
+          </div>
+        </div>
+      )}
+
+      {isStepSheetOpen && !isAskQuestionMode && currentStep !== 3 && (
+        <div className="fixed inset-0 z-[90] md:hidden">
+          <button
+            type="button"
+            aria-label="Close rental process"
+            onClick={() => setIsStepSheetOpen(false)}
+            className="absolute inset-0 bg-black/35"
+          />
+
+          <div className="absolute left-0 right-0 bottom-0 bg-white rounded-t-[16px] overflow-hidden">
+            <div className="flex items-center justify-between px-[20px] py-[16px] border-b border-[rgba(15,45,54,0.12)]">
+              <h3 className="text-[#0F2D36] text-[22px] font-bold">Rental process</h3>
+              <button
+                type="button"
+                onClick={() => setIsStepSheetOpen(false)}
+                className="text-[#0F2D36] hover:text-[#0A2530] transition-colors"
+                aria-label="Close"
+              >
+                <X className="w-[24px] h-[24px]" />
+              </button>
+            </div>
+
+            <div className="px-[20px] pt-[14px] pb-[calc(16px+env(safe-area-inset-bottom))]">
+              {[
+                { step: 1, title: "Review application", subtitle: "Introduce yourself to the landlord" },
+                { step: 2, title: "Add documents", subtitle: "Apply to rent." },
+                { step: 3, title: "Submit application", subtitle: "Wait for the landlord to accept" },
+              ].map(({ step, title, subtitle }) => {
+                const isCompletedOrCurrent = step <= currentStep;
+                const isLocked = step > currentStep;
+                return (
+                  <div key={step} className="relative pl-[32px] pb-[14px] last:pb-0">
+                    {step !== 3 && <span className="absolute left-[12px] top-[24px] w-[1px] h-[34px] bg-[#D8E1E8]" />}
+                    <button
+                      type="button"
+                      disabled={isLocked}
+                      onClick={() => handleStepSelection(step)}
+                      className={`text-left ${isLocked ? "cursor-not-allowed" : "cursor-pointer"}`}
+                    >
+                      <span
+                        className={`absolute left-0 top-[2px] w-[24px] h-[24px] rounded-full flex items-center justify-center text-[13px] font-bold ${
+                          isCompletedOrCurrent ? "bg-[#0F2D36] text-white" : "bg-[#D8E1E8] text-[#6F8794]"
+                        }`}
+                      >
+                        {step}
+                      </span>
+                      <p className={`text-[16px] font-semibold ${isCompletedOrCurrent ? "text-[#0F2D36]" : "text-[#9AACB7]"}`}>{title}</p>
+                      <p className={`text-[14px] mt-[2px] ${isCompletedOrCurrent ? "text-[#334E5A]" : "text-[#A8B8C2]"}`}>{subtitle}</p>
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         </div>
       )}
