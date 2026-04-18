@@ -4,6 +4,7 @@ import { ChevronLeft, Info, ChevronDown, Shield, Check, Plus, Upload, FileText, 
 import { DatePicker } from "../components/date-picker";
 import { useAuth } from "../contexts/auth-context";
 import { API_BASE } from "../config";
+import { BrandLogo } from "../components/brand-logo";
 
 interface ListingSummary {
   id: string;
@@ -673,21 +674,7 @@ export function RentalApplication() {
           </button>
 
           <Link to="/" className="flex items-center gap-[8px]">
-            <div className="w-[32px] h-[32px] bg-brand-primary flex items-center justify-center">
-              <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                <path
-                  d="M10 2L3 7V17H8V12H12V17H17V7L10 2Z"
-                  fill="white"
-                  stroke="white"
-                  strokeWidth="1.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-            </div>
-            <span className="text-neutral-black text-[18px] font-bold">
-              Easy<span className="text-brand-primary">Rent</span>
-            </span>
+            <BrandLogo className="h-[68px] sm:h-[76px]" />
           </Link>
 
           <div className="flex items-center gap-[16px]">
@@ -1428,7 +1415,7 @@ export function RentalApplication() {
                     <div className="mt-[16px] rounded-[6px] bg-[#EEF3F7] px-[16px] py-[14px] flex items-start gap-[12px]">
                       <Info className="w-[22px] h-[22px] text-[#0F2D36] mt-[2px] shrink-0" />
                       <p className="text-[#0F2D36] text-[15px] leading-[1.55]">
-                        Viewings aren't possible, but you can ask the landlord for video tours, floor plans, and more. When you message and pay on EasyRent, you're covered by Tenant Protection. <button type="button" className="underline underline-offset-[4px] hover:text-[#0A2530] transition-colors cursor-pointer">How you're protected</button>
+                        Viewings aren't possible, but you can ask the landlord for video tours, floor plans, and more. When you message and pay on ReserveHousing, you're covered by Tenant Protection. <button type="button" className="underline underline-offset-[4px] hover:text-[#0A2530] transition-colors cursor-pointer">How you're protected</button>
                       </p>
                     </div>
                   </div>
@@ -1510,7 +1497,7 @@ export function RentalApplication() {
                           <div className="space-y-[12px]">
                             <div className="flex items-start gap-[8px]">
                               <span className="text-[15px]">•</span>
-                              <span>To protect your money, always pay on EasyRent. We'll transfer your first month's rent to the landlord 48 hours after you move in. If the place isn't as advertised, you're covered by <button className="text-[#0F2D36] underline underline-offset-[2px] hover:text-[#0A2530]">Tenant Protection</button>.</span>
+                              <span>To protect your money, always pay on ReserveHousing. We'll transfer your first month's rent to the landlord 48 hours after you move in. If the place isn't as advertised, you're covered by <button className="text-[#0F2D36] underline underline-offset-[2px] hover:text-[#0A2530]">Tenant Protection</button>.</span>
                             </div>
                             <div className="flex items-start gap-[8px]">
                               <span className="text-[15px]">•</span>
@@ -1524,7 +1511,7 @@ export function RentalApplication() {
 
                           <div className="border-t border-[rgba(0,0,0,0.12)] pt-[16px]">
                             <h6 className="text-[15px] font-bold mb-[12px]">Additional fees and charges from landlords</h6>
-                            <p className="mb-[12px]">Landlords may have additional fees due after your rental is confirmed on EasyRent. We found references to the following fees in the listing description. Please message the landlord to confirm any fees and agree on payment terms.</p>
+                            <p className="mb-[12px]">Landlords may have additional fees due after your rental is confirmed on ReserveHousing. We found references to the following fees in the listing description. Please message the landlord to confirm any fees and agree on payment terms.</p>
                             <ul className="space-y-[8px]">
                               <li className="flex items-start gap-[8px]">
                                 <span className="text-[15px]">•</span>
@@ -1602,21 +1589,21 @@ export function RentalApplication() {
                           <ChevronDown className="w-[24px] h-[24px] text-[#0F2D36]" />
                         </button>
                         <div className="mt-[16px] space-y-[12px] text-[#0F2D36] text-[15px] leading-[1.6]">
-                          <p>At EasyRent, in-person viewings are not supported. So everyone has an equal chance to rent, no matter where you are in the world.</p>
-                          <p>To stay safe, always message and pay on EasyRent. This helps us verify everyone's details, and prevents off-platform agreements that could compromise your safety.</p>
+                          <p>At ReserveHousing, in-person viewings are not supported. So everyone has an equal chance to rent, no matter where you are in the world.</p>
+                          <p>To stay safe, always message and pay on ReserveHousing. This helps us verify everyone's details, and prevents off-platform agreements that could compromise your safety.</p>
 
                           <div className="pt-[6px]">
                             <h6 className="text-[15px] font-bold mb-[8px]">Find your next home without a viewing</h6>
                             <p className="mb-[8px]">To help you make an informed decision, we recommend:</p>
                             <ul className="space-y-[8px]">
-                              <li className="flex items-start gap-[8px]"><span>•</span><span>Messaging the landlord on EasyRent to ask any questions.</span></li>
+                              <li className="flex items-start gap-[8px]"><span>•</span><span>Messaging the landlord on ReserveHousing to ask any questions.</span></li>
                               <li className="flex items-start gap-[8px]"><span>•</span><span>Requesting more photos, video tours, or floor plans.</span></li>
                             </ul>
                           </div>
 
                           <div className="pt-[6px]">
                             <h6 className="text-[15px] font-bold mb-[8px]">Your rental is covered by Tenant Protection</h6>
-                            <p className="mb-[8px]">We know that renting without seeing a place in person can feel like a big step. That's why every rental on EasyRent is backed by <button className="text-[#0F2D36] underline underline-offset-[2px] hover:text-[#0A2530]">Tenant Protection</button>.</p>
+                            <p className="mb-[8px]">We know that renting without seeing a place in person can feel like a big step. That's why every rental on ReserveHousing is backed by <button className="text-[#0F2D36] underline underline-offset-[2px] hover:text-[#0A2530]">Tenant Protection</button>.</p>
                             <ul className="space-y-[8px]">
                               <li className="flex items-start gap-[8px]"><span>•</span><span>If the place is not as advertised when you move in, you can <button className="text-[#0F2D36] underline underline-offset-[2px] hover:text-[#0A2530]">cancel within 48 hours</button>.</span></li>
                               <li className="flex items-start gap-[8px]"><span>•</span><span>If your reason for cancelling is covered by our policies, we'll help you find a new place to stay. If needed, we can also provide a temporary hotel stay.</span></li>
@@ -1859,7 +1846,7 @@ export function RentalApplication() {
                       className="w-[18px] h-[18px] border border-[rgba(0,0,0,0.2)] rounded-[2px] mt-[2px]"
                     />
                     <span className="text-[#1A1A1A] text-[15px] leading-[1.6]">
-                      I agree to share these documents only with {landlordFirstName}, in accordance with EasyRent's <button type="button" className="underline hover:text-[#0A2530]">Terms &amp; Conditions</button> and <button type="button" className="underline hover:text-[#0A2530]">Privacy Policy</button>.
+                      I agree to share these documents only with {landlordFirstName}, in accordance with ReserveHousing's <button type="button" className="underline hover:text-[#0A2530]">Terms &amp; Conditions</button> and <button type="button" className="underline hover:text-[#0A2530]">Privacy Policy</button>.
                     </span>
                   </label>
                 </div>
@@ -2140,7 +2127,7 @@ export function RentalApplication() {
                   <div className="p-[20px]">
                     <div className="flex items-start justify-between gap-[12px] mb-[14px]">
                       <div>
-                        <h3 className="text-[#0F2D36] text-[22px] md:text-[20px] font-bold leading-[1.2]">EasyRent Rent Guarantee</h3>
+                        <h3 className="text-[#0F2D36] text-[22px] md:text-[20px] font-bold leading-[1.2]">ReserveHousing Rent Guarantee</h3>
                         <p className="text-[#0F2D36] text-[22px] md:text-[20px] font-bold leading-[1.2] mt-[4px]">+€251.54 <span className="text-[16px] md:text-[15px] font-medium">paid once, only if your application is accepted</span></p>
                       </div>
 
@@ -2396,7 +2383,7 @@ export function RentalApplication() {
                   </div>
 
                   <div className={`mt-[14px] pt-[14px] ${currentStep === 1 ? "order-2" : "order-1"}`}>
-                    <p className="text-[#001F33] text-[44px] md:text-[16px] leading-[1.2] font-bold mb-[8px]">You <span className="text-[#8DA0AB]">-&gt;</span> EasyRent</p>
+                    <p className="text-[#001F33] text-[44px] md:text-[16px] leading-[1.2] font-bold mb-[8px]">You <span className="text-[#8DA0AB]">-&gt;</span> ReserveHousing</p>
                     <p className="text-[#0F2D36] text-[36px] md:text-[16px] leading-[1.45] mb-[14px]">Pay this now to secure your place.</p>
 
                     <div className="space-y-[10px] pb-[12px]">

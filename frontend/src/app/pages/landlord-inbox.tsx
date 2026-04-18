@@ -103,7 +103,7 @@ function ChatPanel({ conversation, onClose }: ChatPanelProps) {
   const myRole: "landlord" = "landlord";
 
   return (
-    <div className="flex-1 flex flex-col h-full overflow-hidden">
+    <div className="flex-1 flex min-h-0 flex-col overflow-hidden">
       {/* Panel header */}
       <div className="p-[16px] border-b border-[rgba(0,0,0,0.08)] bg-white flex items-center gap-[12px]">
         <div className="w-[40px] h-[40px] rounded-full flex-shrink-0 flex items-center justify-center text-white text-[14px] font-bold"
@@ -130,7 +130,7 @@ function ChatPanel({ conversation, onClose }: ChatPanelProps) {
       </div>
 
       {/* Messages */}
-      <div ref={messagesContainerRef} className="flex-1 overflow-y-auto p-[20px] bg-neutral-light-gray">
+      <div ref={messagesContainerRef} className="flex-1 overflow-y-auto p-[14px] sm:p-[20px] bg-neutral-light-gray">
         {hasMoreMessages && (
           <button onClick={() => void loadMoreMessages()} disabled={isLoadingHistory}
             className="block mx-auto mb-[12px] text-[12px] text-brand-primary font-semibold hover:underline">
@@ -169,7 +169,7 @@ function ChatPanel({ conversation, onClose }: ChatPanelProps) {
                       )}
                     </div>
                   )}
-                  <div className={`max-w-[65%] flex flex-col ${isMe ? "items-end" : "items-start"}`}>
+                  <div className={`max-w-[82%] sm:max-w-[70%] lg:max-w-[65%] flex flex-col ${isMe ? "items-end" : "items-start"}`}>
                     <ChatMessageBubble message={msg} isMe={isMe} />
                     <span className="text-[10px] text-[#9B9B9B] mt-[3px] px-[2px]">
                       {formatMsgTime(msg.createdAt)}
@@ -198,8 +198,8 @@ function ChatPanel({ conversation, onClose }: ChatPanelProps) {
       </div>
 
       {/* Input */}
-      <div className="p-[16px] bg-white border-t border-[rgba(0,0,0,0.08)]">
-        <div className="flex items-end gap-[10px] bg-neutral-light-gray px-[14px] py-[10px] border-2 border-transparent focus-within:border-brand-primary transition-colors">
+      <div className="p-[12px] sm:p-[16px] bg-white border-t border-[rgba(0,0,0,0.08)]">
+        <div className="flex items-end gap-[8px] sm:gap-[10px] bg-neutral-light-gray px-[10px] sm:px-[14px] py-[10px] border-2 border-transparent focus-within:border-brand-primary transition-colors">
           <textarea
             value={inputText}
             onChange={(e) => { setInputText(e.target.value); emitTyping(); }}
@@ -212,7 +212,7 @@ function ChatPanel({ conversation, onClose }: ChatPanelProps) {
           <button
             onClick={() => void handleSend()}
             disabled={!inputText.trim() || isSending}
-            className={`flex items-center gap-[6px] px-[16px] py-[9px] text-[13px] font-semibold rounded-[8px] transition-colors flex-shrink-0 ${
+            className={`flex items-center gap-[6px] px-[12px] sm:px-[16px] py-[9px] text-[12px] sm:text-[13px] font-semibold rounded-[8px] transition-colors flex-shrink-0 ${
               inputText.trim() && !isSending ? "bg-brand-primary text-white hover:bg-brand-primary-dark" : "bg-[#EDEDED] text-[#9B9B9B] cursor-not-allowed"
             }`}
           >
@@ -347,7 +347,7 @@ export function LandlordInbox() {
 
   return (
     <LandlordPortalLayout>
-      <main className="flex-1 px-[20px] py-[20px] lg:px-[28px] lg:py-[24px]">
+      <main className="flex-1 px-[12px] py-[14px] sm:px-[16px] sm:py-[18px] lg:px-[28px] lg:py-[24px]">
         <div className="flex flex-col gap-[16px] xl:flex-row xl:items-start xl:justify-between xl:gap-[20px]">
           <div>
             <h1 className="text-neutral-black text-[28px] font-bold tracking-[-0.03em]">Messages</h1>
@@ -363,9 +363,9 @@ export function LandlordInbox() {
           </div>
         </div>
 
-        <div className="mt-[20px] flex h-[calc(100vh-200px)] min-h-[620px] overflow-hidden rounded-[22px] border border-[rgba(11,45,58,0.08)] bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
+        <div className="mt-[14px] md:mt-[20px] flex min-h-[calc(100vh-210px)] md:min-h-[620px] overflow-hidden rounded-[16px] md:rounded-[22px] border border-[rgba(11,45,58,0.08)] bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
           {/* Conversation list */}
-          <div className="w-[390px] border-r border-[rgba(0,0,0,0.08)] flex flex-col flex-shrink-0 bg-[#F7FAFC]">
+          <div className={`${selectedConversation ? "hidden md:flex" : "flex"} w-full md:w-[360px] lg:w-[390px] border-r border-[rgba(0,0,0,0.08)] flex-col flex-shrink-0 bg-[#F7FAFC]`}>
             <div className="p-[16px] border-b border-[rgba(0,0,0,0.08)] bg-white">
               <div className="relative">
                 <Search className="absolute left-[14px] top-1/2 -translate-y-1/2 h-[18px] w-[18px] text-[#0B2D3A]" />
@@ -379,7 +379,7 @@ export function LandlordInbox() {
               </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-[12px] space-y-[10px]">
+            <div className="flex-1 overflow-y-auto p-[10px] sm:p-[12px] space-y-[10px]">
             {isLoading && (
               <div className="space-y-[12px]">
                 {[0, 1, 2, 3, 4].map((item) => (
@@ -440,9 +440,11 @@ export function LandlordInbox() {
 
           {/* Main panel */}
           {selectedConversation ? (
-            <ChatPanel key={selectedConversation.id} conversation={selectedConversation} onClose={() => setSelectedId(null)} />
+            <div className="flex min-h-0 flex-1">
+              <ChatPanel key={selectedConversation.id} conversation={selectedConversation} onClose={() => setSelectedId(null)} />
+            </div>
           ) : (
-            <div className="flex-1 flex items-center justify-center bg-[#F7FAFC]">
+            <div className="hidden md:flex flex-1 items-center justify-center bg-[#F7FAFC]">
               <div className="text-center max-w-[320px]">
                 <div className="w-[80px] h-[80px] rounded-full bg-white mx-auto mb-[16px] flex items-center justify-center border border-[rgba(0,0,0,0.08)]">
                   <Send className="w-[36px] h-[36px] text-[#D0D0D0]" />

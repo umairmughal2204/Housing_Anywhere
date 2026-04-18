@@ -202,17 +202,17 @@ export function ChatMessageBubble({ message, isMe, onOfferAction, actionInProgre
 
   const heading =
     offer.kind === "invitation"
-      ? `${offer.listingTitle} invitation from EasyRent`
+      ? `${offer.listingTitle} invitation from ReserveHousing`
       : offer.kind === "special_offer"
       ? `Updated offer for ${offer.listingTitle}`
       : `Application update for ${offer.listingTitle}`;
 
   const subheading =
     offer.kind === "invitation"
-      ? "Review this EasyRent listing and confirm your booking to move forward."
+      ? "Review this ReserveHousing listing and confirm your booking to move forward."
       : offer.kind === "special_offer"
-      ? "EasyRent has updated the terms. Review and respond in chat if you'd like to accept."
-      : "The landlord has sent an update on your EasyRent application.";
+      ? "ReserveHousing has updated the terms. Review and respond in chat if you'd like to accept."
+      : "The landlord has sent an update on your ReserveHousing application.";
 
   return (
     <div className={`w-full max-w-[420px] rounded-[18px] border px-[16px] py-[14px] shadow-[0_10px_24px_rgba(15,23,42,0.08)] ${accentStyle}`}>

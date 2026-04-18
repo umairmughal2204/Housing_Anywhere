@@ -1,7 +1,8 @@
 import { Link, useNavigate, useSearchParams } from "react-router";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Mail, Lock, Eye, EyeOff, AlertCircle } from "lucide-react";
 import { useAuth } from "../contexts/auth-context";
+import { BrandLogo } from "../components/brand-logo";
 
 const GOOGLE_SCRIPT_ID = "google-identity-service";
 
@@ -74,20 +75,10 @@ export function Login() {
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   
-  const { user, login, loginWithGoogle, isLoading: isAuthLoading } = useAuth();
+  const { login, loginWithGoogle, isLoading: isAuthLoading } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const redirect = searchParams.get("redirect") || searchParams.get("returnTo");
-
-  useEffect(() => {
-    if (user) {
-      if (user.isLandlord) {
-        navigate("/landlord/dashboard");
-      } else {
-        navigate(redirect || "/");
-      }
-    }
-  }, [user]);
 
   const handleGoogleLogin = async () => {
     setError("");
@@ -107,15 +98,16 @@ export function Login() {
             id?: {
               initialize: (config: {
                 client_id: string;
-                callback: (response: { credential?: string; error?: string }) => void;
+                callback: (response: { credential?: string }) => void;
               }) => void;
-              prompt: (callback?: (notification: { isNotDisplayed: () => boolean; isSkippedMoment: () => boolean }) => void) => void;
+              prompt: () => void;
             };
           };
         };
       }).google;
 
-      if (!google?.accounts?.id) {
+      const googleIdentity = google?.accounts?.id;
+      if (!googleIdentity) {
         throw new Error("Google sign-in is unavailable right now");
       }
 
@@ -129,47 +121,31 @@ export function Login() {
           }
         }, 30000);
 
-        google.accounts.id.initialize({
+        googleIdentity.initialize({
           client_id: googleClientId,
           callback: (response) => {
             if (settled) {
               return;
             }
-
-            if (response.error) {
-              settled = true;
-              window.clearTimeout(timeout);
-              reject(new Error(response.error));
-              return;
-            }
-
-            if (!response.credential) {
-              return;
-            }
-
             settled = true;
             window.clearTimeout(timeout);
+
+            if (!response.credential) {
+              reject(new Error("No Google credential received"));
+              return;
+            }
+
             resolve(response.credential);
           },
         });
 
-        google.accounts.id.prompt((notification) => {
-          if (settled) {
-            return;
-          }
-
-          if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
-            settled = true;
-            window.clearTimeout(timeout);
-            reject(new Error("Google sign-in UI could not be displayed. Please ensure Google is not blocked."));
-          }
-        });
+        googleIdentity.prompt();
       });
 
       await loginWithGoogle(credential, rememberMe);
+      navigate(redirect || "/");
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Google sign-in failed. Please try again.";
-      setError(message);
+      setError(err instanceof Error ? err.message : "Google sign-in failed. Please try again.");
     } finally {
       setIsGoogleLoading(false);
     }
@@ -188,6 +164,8 @@ export function Login() {
 
     try {
       await login(email, password, rememberMe);
+      // Redirect to specified page or home after successful login
+      navigate(redirect || "/");
     } catch (err) {
       const message = err instanceof Error ? err.message : "Invalid email or password. Please try again.";
       if (message.toLowerCase().includes("failed to fetch")) {
@@ -209,21 +187,7 @@ export function Login() {
         <div className="w-full max-w-[480px]">
           {/* Logo */}
           <Link to="/" className="flex items-center gap-[8px] mb-[48px]">
-            <div className="w-[38px] h-[38px] bg-brand-primary rounded-[14px] flex items-center justify-center shadow-[0_8px_18px_rgba(11,165,199,0.22)]">
-              <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                <path
-                  d="M10 2L3 7V17H8V12H12V17H17V7L10 2Z"
-                  fill="white"
-                  stroke="white"
-                  strokeWidth="1.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-            </div>
-            <span className="text-neutral-black text-[18px] font-bold tracking-[-0.02em]">
-              Easy<span className="text-brand-primary">Rent</span>
-            </span>
+            <BrandLogo className="h-[80px]" />
           </Link>
 
           <h1 className="text-neutral-black text-[32px] font-bold tracking-[-0.02em] mb-[8px]">

@@ -711,7 +711,7 @@ export function Account() {
                     <div>
                       <h3 className="text-[#1A1A1A] text-[16px] font-bold mb-[8px]">Other documents</h3>
                       <p className="text-[#6B6B6B] text-[14px] leading-[1.6] mb-[16px]">
-                        Upload other documents that relate to your account on HousingAnywhere.
+                        Upload other documents that relate to your account on ReserveHousing.
                       </p>
                       <div className="flex items-start gap-[16px]">
                         <button className="px-[20px] py-[8px] border border-[rgba(0,0,0,0.16)] bg-white text-[#1A1A1A] text-[13px] font-semibold hover:bg-[#F7F7F9] transition-colors">

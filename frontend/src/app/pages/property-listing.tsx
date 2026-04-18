@@ -266,9 +266,9 @@ export function PropertyListing() {
     {
       question: "Can I view this property?",
       answerTitle:
-        "At EasyRent, in person viewings are not supported - so everyone has an equal chance to rent, no matter where you are in the world. To help you make an informed decision, we recommend:",
+        "At ReserveHousing, in person viewings are not supported - so everyone has an equal chance to rent, no matter where you are in the world. To help you make an informed decision, we recommend:",
       lines: [
-        "1. Messaging the landlord on EasyRent to ask any questions.",
+        "1. Messaging the landlord on ReserveHousing to ask any questions.",
         "2. Requesting more photos, video tours, or floor plans.",
         "3. Read up on Tenant Protection to learn how you're covered if something goes wrong.",
       ],
@@ -278,14 +278,14 @@ export function PropertyListing() {
       answerTitle:
         "Use the 'Message landlord' button to start a secure conversation on our platform. You can ask questions, discuss terms, and safely exchange documents.",
       lines: [
-        "Keeping your conversation on EasyRent private protects your privacy and helps you avoid scams. All your messages are also saved in one place for easy access and as a record of your agreements.",
+        "Keeping your conversation on ReserveHousing private protects your privacy and helps you avoid scams. All your messages are also saved in one place for easy access and as a record of your agreements.",
         "Once your rental is confirmed, we'll share the landlord's contact info so you can arrange your move in.",
       ],
     },
     {
       question: "What happens after the rental confirmation?",
       answerTitle:
-        "After your rental is confirmed on EasyRent, you and the landlord will receive each other's contact details. You can then contact them outside our platform, or continue messaging on EasyRent. You can pay future months' rent and other rental costs using our payment request feature.",
+        "After your rental is confirmed on ReserveHousing, you and the landlord will receive each other's contact details. You can then contact them outside our platform, or continue messaging on ReserveHousing. You can pay future months' rent and other rental costs using our payment request feature.",
       lines: [],
     },
     {
@@ -1053,7 +1053,7 @@ export function PropertyListing() {
         <div className="max-w-[1440px] mx-auto px-[32px] py-[12px]">
           <div className="flex items-center gap-[8px] text-[13px]">
             <Link to="/" className="text-brand-primary hover:underline font-semibold">
-              EasyRent
+              ReserveHousing
             </Link>
             <span className="text-neutral-gray">&gt;</span>
             <Link to={`/listings/${(listing?.city ?? "city").toLowerCase()}`} className="text-brand-primary hover:underline font-semibold">
@@ -1445,9 +1445,9 @@ export function PropertyListing() {
                   <Shield className="w-[16px] h-[16px]" />
                 </div>
                 <div>
-                  <h3 className="text-[#0F2D36] text-[18px] leading-[1.3] font-bold mb-[6px]">No guarantor? Choose EasyRent Rent Guarantee</h3>
+                  <h3 className="text-[#0F2D36] text-[18px] leading-[1.3] font-bold mb-[6px]">No guarantor? Choose ReserveHousing Rent Guarantee</h3>
                   <p className="text-[#425F69] text-[14px] leading-[1.6]">
-                    This landlord may ask for a guarantor. EasyRent Rent Guarantee saves you the hassle of finding one and comes with extra damage protection. It costs only 3% of your total contract value.
+                    This landlord may ask for a guarantor. ReserveHousing Rent Guarantee saves you the hassle of finding one and comes with extra damage protection. It costs only 3% of your total contract value.
                     <button className="ml-[4px] text-[#0F2D36] text-[14px] font-semibold underline decoration-dotted underline-offset-[4px] hover:text-[#0A2530] transition-colors cursor-pointer">Learn more</button>
                   </p>
                 </div>
@@ -1850,7 +1850,7 @@ export function PropertyListing() {
             <div className="px-[24px] py-[22px]">
               <p className="text-[#173743] text-[16px] leading-[1.55] mb-[18px]">A breakdown of all costs for your stay.</p>
 
-              <p className="text-[#0F2D36] text-[33px] leading-[1.1] font-bold mb-[14px]">You <span className="text-[#6A7F88]">-&gt;</span> EasyRent</p>
+              <p className="text-[#0F2D36] text-[33px] leading-[1.1] font-bold mb-[14px]">You <span className="text-[#6A7F88]">-&gt;</span> ReserveHousing</p>
               <p className="text-[#173743] text-[16px] leading-[1.55] mb-[14px]">Pay this now to secure your place.</p>
 
               {hasSelectedDateRange ? (

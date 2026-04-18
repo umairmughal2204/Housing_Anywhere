@@ -1397,7 +1397,7 @@ export function SearchResults() {
         <div className="max-w-[1440px] mx-auto px-[32px] py-[16px]">
           <div className="flex items-center gap-[8px] text-[13px]">
             <Link to="/" className="text-[#0891B2] hover:underline font-semibold">
-              EasyRent
+              ReserveHousing
             </Link>
             <span className="text-[#6B6B6B]">&gt;</span>
             <span className="text-[#1A1A1A] font-semibold">

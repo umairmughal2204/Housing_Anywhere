@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Mail, Lock, Eye, EyeOff, User, AlertCircle } from "lucide-react";
 import { useAuth } from "../contexts/auth-context";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "../components/ui/input-otp";
+import { BrandLogo } from "../components/brand-logo";
 
 const GOOGLE_SCRIPT_ID = "google-identity-service";
 
@@ -110,7 +111,8 @@ export function Signup() {
         };
       }).google;
 
-      if (!google?.accounts?.id) {
+      const googleIdentity = google?.accounts?.id;
+      if (!googleIdentity) {
         throw new Error("Google sign-up is unavailable right now");
       }
 
@@ -124,7 +126,7 @@ export function Signup() {
           }
         }, 30000);
 
-        google.accounts.id.initialize({
+        googleIdentity.initialize({
           client_id: googleClientId,
           callback: (response) => {
             if (settled) {
@@ -148,7 +150,7 @@ export function Signup() {
           },
         });
 
-        google.accounts.id.prompt((notification) => {
+        googleIdentity.prompt((notification) => {
           if (settled) {
             return;
           }
@@ -265,21 +267,7 @@ export function Signup() {
         <div className="w-full max-w-[480px]">
           {/* Logo */}
           <Link to="/" className="flex items-center gap-[8px] mb-[48px]">
-            <div className="w-[38px] h-[38px] bg-brand-primary rounded-[14px] flex items-center justify-center shadow-[0_8px_18px_rgba(11,165,199,0.22)]">
-              <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                <path
-                  d="M10 2L3 7V17H8V12H12V17H17V7L10 2Z"
-                  fill="white"
-                  stroke="white"
-                  strokeWidth="1.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-            </div>
-            <span className="text-neutral-black text-[18px] font-bold tracking-[-0.02em]">
-              Easy<span className="text-brand-primary">Rent</span>
-            </span>
+            <BrandLogo className="h-[84px]" />
           </Link>
 
           <h1 className="text-neutral-black text-[32px] font-bold tracking-[-0.02em] mb-[8px]">

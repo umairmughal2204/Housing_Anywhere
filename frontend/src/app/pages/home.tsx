@@ -196,13 +196,13 @@ const cities: CitySuggestion[] = [
 const faqs: FaqItem[] = [
   {
     id: "agency",
-    question: "Is HousingAnywhere a rental agency?",
+    question: "Is ReserveHousing a rental agency?",
     answer:
-      "No, we’re not a real estate agency. HousingAnywhere.com is an online platform connecting people looking for their next home with landlords looking for tenants.",
+      "No, we’re not a real estate agency. ReserveHousing is an online platform connecting people looking for their next home with landlords looking for tenants.",
   },
   {
     id: "how",
-    question: "How does HousingAnywhere work?",
+    question: "How does ReserveHousing work?",
     answer:
       "You can find and rent your next home safely and entirely online. Watch the short video below to see how the process works, from searching for a place to moving in with our Tenant Protection. For more details, you can also read our step-by-step guide to renting.",
   },
@@ -419,14 +419,14 @@ function ParallaxFeatureSection({ dark = false, imageSrc, imageAlt, title, body,
   const glowOpacity = useTransform(scrollYProgress, [0, 0.5, 1], [0.1, 0.35, 0.1]);
 
   return (
-    <section ref={sectionRef} className="relative overflow-hidden py-[88px]">
+    <section ref={sectionRef} className="relative overflow-hidden py-[64px] md:py-[76px]">
       <motion.div
         className={`pointer-events-none absolute inset-0 ${dark ? "bg-[radial-gradient(circle_at_68%_45%,rgba(56,189,248,0.18),transparent_56%)]" : "bg-[radial-gradient(circle_at_68%_45%,rgba(56,189,248,0.16),transparent_56%)]"}`}
         style={{ opacity: glowOpacity }}
       />
       <div className="relative z-10 mx-auto grid max-w-[1440px] grid-cols-1 items-center gap-[48px] px-[32px] lg:grid-cols-[1fr_1.1fr]">
         <motion.div className="flex justify-center lg:justify-start" style={{ y: imageY, scale: imageScale }}>
-          <img src={imageSrc} alt={imageAlt} className="w-full max-w-[560px] object-contain" />
+          <img src={imageSrc} alt={imageAlt} className="w-full max-w-[440px] lg:max-w-[500px] object-contain" />
         </motion.div>
         <motion.div style={{ y: contentY, opacity: contentOpacity, filter: contentFilter }}>
           <h2 className={`${dark ? "text-white" : "text-[#042B38]"} mb-[24px] text-[40px] font-bold leading-[1.15] tracking-[-0.02em]`}>
@@ -826,21 +826,21 @@ export function Home() {
       <Header variant={isAuthenticated ? "dashboard" : "default"} />
 
       {/* Hero Section */}
-      <section className="relative overflow-x-clip bg-gradient-to-br from-brand-primary via-[#0BA5C7] to-brand-primary text-white pt-[104px] pb-[168px]">
-        <div className="max-w-[1440px] mx-auto px-[32px]">
-          <div className="relative z-10 max-w-[1000px] mx-auto">
-            <h1 className="text-[56px] font-bold leading-[1.1] tracking-[-0.02em] mb-[16px] text-center">
+      <section className="relative overflow-x-clip bg-gradient-to-br from-brand-primary via-[#0BA5C7] to-brand-primary text-white pt-[72px] pb-[84px] md:pt-[104px] md:pb-[108px]">
+        <div className="max-w-[1440px] mx-auto px-[16px] sm:px-[24px] md:px-[32px]">
+          <div className="relative z-10 max-w-[430px] md:max-w-[1000px] mx-auto">
+            <h1 className="text-[38px] md:text-[56px] font-bold leading-[1.05] md:leading-[1.1] tracking-[-0.02em] mb-[12px] md:mb-[16px] text-center">
               Book Your Next Home.<br />
               <span className="text-white">No Viewing Required.</span>
             </h1>
-            <p className="text-[18px] text-white/90 mb-[48px] leading-[1.6] text-center max-w-[720px] mx-auto">
+            <p className="text-[16px] md:text-[18px] text-white/90 mb-[26px] md:mb-[48px] leading-[1.6] text-center max-w-[640px] mx-auto">
               Secure, verified mid-to-long-term rentals for digital nomads, expatriates, and international students.
             </p>
 
             {/* Search Form */}
-            <form onSubmit={handleSearch} className="relative flex items-stretch gap-[8px] rounded-[22px] border border-[rgba(255,255,255,0.7)] bg-white/95 p-[10px] shadow-[0_14px_36px_rgba(2,22,33,0.18)] backdrop-blur">
+            <form onSubmit={handleSearch} className="relative flex flex-col md:flex-row items-stretch gap-[10px] md:gap-[8px] rounded-[24px] md:rounded-[22px] border border-[rgba(255,255,255,0.7)] bg-white/95 p-[12px] md:p-[10px] shadow-[0_14px_36px_rgba(2,22,33,0.18)] backdrop-blur">
               <div className="flex-1 relative">
-                <div className="flex h-full items-center gap-[14px] rounded-[14px] border border-[#E3E8EE] bg-[#F7F9FC] px-[20px]">
+                <div className="flex h-[56px] md:h-full items-center gap-[12px] md:gap-[14px] rounded-[14px] border border-[#E3E8EE] bg-[#F7F9FC] px-[16px] md:px-[20px]">
                   <MapPin className="w-[20px] h-[20px] text-[#6B6B6B]" />
                   <input
                     type="text"
@@ -851,7 +851,7 @@ export function Home() {
                       setIsCityDropdownOpen(true);
                     }}
                     onFocus={() => setIsCityDropdownOpen(true)}
-                    className="flex-1 bg-transparent py-[18px] text-[16px] text-[#1A1A1A] placeholder:text-[#6B6B6B] outline-none"
+                    className="flex-1 bg-transparent py-[12px] md:py-[18px] text-[15px] md:text-[16px] text-[#1A1A1A] placeholder:text-[#6B6B6B] outline-none"
                   />
                 </div>
 
@@ -898,17 +898,17 @@ export function Home() {
               <button
                 type="button"
                 onClick={() => setIsDatePickerOpen(!isDatePickerOpen)}
-                className="flex items-center gap-[12px] rounded-[14px] border border-[#E3E8EE] bg-white px-[20px] hover:bg-[#F7F9FC] transition-colors"
+                className="w-full md:w-auto flex items-center gap-[12px] rounded-[14px] border border-[#E3E8EE] bg-white px-[16px] md:px-[20px] py-[15px] md:py-0 hover:bg-[#F7F9FC] transition-colors"
               >
                 <Calendar className="w-[20px] h-[20px] text-[#1A1A1A]" />
-                <span className="text-[#1A1A1A] text-[16px] font-semibold whitespace-nowrap">
+                <span className="text-[#1A1A1A] text-[15px] md:text-[16px] font-semibold whitespace-nowrap">
                   {formatDateRange()}
                 </span>
               </button>
 
               <button
                 type="submit"
-                className="rounded-[14px] px-[34px] py-[18px] bg-brand-primary text-white font-bold shadow-[0_8px_18px_rgba(11,165,199,0.32)] hover:bg-brand-primary-dark transition-colors"
+                className="w-full md:w-auto rounded-[14px] px-[34px] py-[16px] md:py-[18px] bg-brand-primary text-white font-bold shadow-[0_8px_18px_rgba(11,165,199,0.32)] hover:bg-brand-primary-dark transition-colors"
               >
                 Search
               </button>
@@ -926,63 +926,65 @@ export function Home() {
             </form>
 
             {/* Landlord Link */}
-            <div className="text-center mt-[16px]">
-              <span className="text-white/80 text-[14px]">Looking for tenants? </span>
-              <Link to="/landlord" className="text-white text-[14px] font-bold underline hover:no-underline">
+            <div className="text-center mt-[14px] md:mt-[16px]">
+              <span className="text-white/80 text-[13px] md:text-[14px]">Looking for tenants? </span>
+              <Link to="/landlord" className="text-white text-[13px] md:text-[14px] font-bold underline hover:no-underline">
                 Rent out
               </Link>
             </div>
           </div>
         </div>
 
-        <div className="pointer-events-none absolute left-1/2 bottom-[-260px] z-0 h-[390px] w-[1800px] -translate-x-1/2 rounded-[50%] bg-white" />
+        <div className="pointer-events-none absolute left-1/2 bottom-[-92px] md:bottom-[-136px] z-0 h-[140px] md:h-[220px] w-[1200px] md:w-[1800px] -translate-x-1/2 rounded-[50%] bg-white" />
       </section>
 
       {/* Personalized Recommendations - Only show when logged in */}
       {isAuthenticated && (
-        <section className="bg-white pt-[40px] pb-[64px] border-b border-[rgba(0,0,0,0.08)]">
+        <section className="bg-white pt-[8px] md:pt-[14px] pb-[64px] border-b border-[rgba(0,0,0,0.08)]">
           <div className="max-w-[1200px] mx-auto px-[32px]">
             {/* Tabs */}
-            <div className="mx-auto mb-[36px] flex w-full max-w-[760px] items-center justify-center gap-[56px] border-b border-[rgba(0,0,0,0.16)]">
-              <button
-                onClick={() => setActiveTab("recommendations")}
-                className={`relative px-[6px] pb-[14px] text-[22px] font-semibold leading-[1.2] transition-colors ${
-                  activeTab === "recommendations"
-                    ? "text-[#1A1A1A]"
-                    : "text-[#6B6B6B] hover:text-[#1A1A1A]"
-                }`}
-              >
-                Recommendations
-                {activeTab === "recommendations" && (
-                  <div className="absolute bottom-0 left-0 right-0 h-[3px] bg-[#1A1A1A]" />
-                )}
-              </button>
-              <button
-                onClick={() => setActiveTab("recently")}
-                className={`relative px-[6px] pb-[14px] text-[22px] font-semibold leading-[1.2] transition-colors ${
-                  activeTab === "recently"
-                    ? "text-[#1A1A1A]"
-                    : "text-[#6B6B6B] hover:text-[#1A1A1A]"
-                }`}
-              >
-                Recently viewed
-                {activeTab === "recently" && (
-                  <div className="absolute bottom-0 left-0 right-0 h-[3px] bg-[#1A1A1A]" />
-                )}
-              </button>
-              <button
-                onClick={() => setActiveTab("favorites")}
-                className={`relative px-[6px] pb-[14px] text-[22px] font-semibold leading-[1.2] transition-colors ${
-                  activeTab === "favorites"
-                    ? "text-[#1A1A1A]"
-                    : "text-[#6B6B6B] hover:text-[#1A1A1A]"
-                }`}
-              >
-                Your favorites
-                {activeTab === "favorites" && (
-                  <div className="absolute bottom-0 left-0 right-0 h-[3px] bg-[#1A1A1A]" />
-                )}
-              </button>
+            <div className="mx-auto mb-[36px] w-full max-w-[760px] border-b border-[rgba(0,0,0,0.16)]">
+              <div className="flex items-center gap-[10px] md:gap-[56px] overflow-x-auto md:overflow-visible md:justify-center px-[2px] [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                <button
+                  onClick={() => setActiveTab("recommendations")}
+                  className={`relative min-w-[108px] md:min-w-0 max-w-[108px] md:max-w-none truncate px-[6px] pb-[12px] md:pb-[14px] text-[14px] md:text-[22px] font-semibold leading-[1.2] transition-colors ${
+                    activeTab === "recommendations"
+                      ? "text-[#1A1A1A]"
+                      : "text-[#6B6B6B] hover:text-[#1A1A1A]"
+                  }`}
+                >
+                  Recommendations
+                  {activeTab === "recommendations" && (
+                    <div className="absolute bottom-0 left-0 right-0 h-[3px] bg-[#1A1A1A]" />
+                  )}
+                </button>
+                <button
+                  onClick={() => setActiveTab("recently")}
+                  className={`relative min-w-[108px] md:min-w-0 max-w-[108px] md:max-w-none truncate px-[6px] pb-[12px] md:pb-[14px] text-[14px] md:text-[22px] font-semibold leading-[1.2] transition-colors ${
+                    activeTab === "recently"
+                      ? "text-[#1A1A1A]"
+                      : "text-[#6B6B6B] hover:text-[#1A1A1A]"
+                  }`}
+                >
+                  Recently viewed
+                  {activeTab === "recently" && (
+                    <div className="absolute bottom-0 left-0 right-0 h-[3px] bg-[#1A1A1A]" />
+                  )}
+                </button>
+                <button
+                  onClick={() => setActiveTab("favorites")}
+                  className={`relative min-w-[108px] md:min-w-0 max-w-[108px] md:max-w-none truncate px-[6px] pb-[12px] md:pb-[14px] text-[14px] md:text-[22px] font-semibold leading-[1.2] transition-colors ${
+                    activeTab === "favorites"
+                      ? "text-[#1A1A1A]"
+                      : "text-[#6B6B6B] hover:text-[#1A1A1A]"
+                  }`}
+                >
+                  Your favorites
+                  {activeTab === "favorites" && (
+                    <div className="absolute bottom-0 left-0 right-0 h-[3px] bg-[#1A1A1A]" />
+                  )}
+                </button>
+              </div>
             </div>
 
             {/* Property Cards */}
@@ -1001,7 +1003,7 @@ export function Home() {
                         className="group overflow-hidden rounded-[8px] border border-[rgba(15,45,54,0.16)] bg-white transition-shadow duration-200 hover:shadow-[0_10px_24px_rgba(15,45,54,0.10)]"
                       >
                         <div
-                    className="relative aspect-[4/3] overflow-hidden bg-[#F7F7F9] group/carousel"
+                      className="relative aspect-[16/10] overflow-hidden bg-[#F7F7F9] group/carousel"
                     onWheel={(e) => {
                       const previewImages = getListingCardImages(property.id, property.images);
                       if (previewImages.length <= 1) return;
@@ -1192,7 +1194,7 @@ export function Home() {
                         to={`/listing/${property.id}`}
                         className="group overflow-hidden rounded-[8px] border border-[rgba(15,45,54,0.16)] bg-white transition-shadow duration-200 hover:shadow-[0_10px_24px_rgba(15,45,54,0.10)]"
                       >
-                        <div className="relative aspect-[4/3] overflow-hidden bg-[#F7F7F9]">
+                        <div className="relative aspect-[16/10] overflow-hidden bg-[#F7F7F9]">
                           <img
                             src={property.image || "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800&q=80"}
                             alt={property.title}
@@ -1260,7 +1262,7 @@ export function Home() {
         />
       </motion.div>
 
-      <section className="py-[84px]">
+      <section className="bg-white py-[62px] md:py-[72px]">
         <div className="mx-auto max-w-[980px] px-[32px] text-center">
           <h2 className="mb-[30px] text-[44px] font-bold leading-[1.14] tracking-[-0.02em] text-[#052F3C]">
             Your next base could be here
@@ -1280,8 +1282,8 @@ export function Home() {
             <span>Los Angeles</span>
           </div>
 
-          <div className="mx-auto mb-[24px] flex w-full max-w-[760px] items-center justify-center rounded-[12px] bg-white p-[10px] shadow-[0_10px_24px_rgba(15,45,54,0.10)]">
-            <img src={mapImage} alt="Top cities map" className="w-full max-w-[740px] object-contain" />
+          <div className="mx-auto mb-[20px] flex w-full max-w-[660px] items-center justify-center">
+            <img src={mapImage} alt="Top cities map" className="w-full max-w-[620px] object-contain opacity-95 mix-blend-multiply" />
           </div>
 
           <div className="mb-[8px] text-[54px] font-bold leading-[1] tracking-[-0.02em] text-[#052F3C]">150+ CITIES</div>
@@ -1289,11 +1291,11 @@ export function Home() {
         </div>
       </section>
 
-      <section ref={tenantProtectionRef} className="bg-gradient-to-r from-[#0AA9C8] via-[#08A2C3] to-[#0B9BBC] py-[86px]">
+      <section ref={tenantProtectionRef} className="bg-gradient-to-r from-[#0AA9C8] via-[#08A2C3] to-[#0B9BBC] py-[66px] md:py-[76px]">
         <div className="mx-auto grid max-w-[1440px] grid-cols-1 items-center gap-[48px] px-[32px] lg:grid-cols-[1.06fr_0.94fr]">
           <div>
             <h2 className="mb-[26px] text-[44px] font-bold uppercase leading-[1.05] tracking-[-0.02em] text-white">
-              Tenant protection
+              Tenant Protection
             </h2>
 
             <div className="space-y-[24px] text-white">
@@ -1301,7 +1303,7 @@ export function Home() {
                 <span className="mt-[4px] flex h-[30px] w-[30px] items-center justify-center rounded-full border border-white/70 text-[16px] font-bold">✓</span>
                 <div>
                   <h3 className="mb-[8px] text-[34px] font-bold leading-[1.2]">Protection against the unexpected</h3>
-                  <p className="text-[16px] leading-[1.55] text-white/95">If the landlord cancels last minute or delays your move-in, you will get help finding another place or a temporary hotel stay.</p>
+                  <p className="text-[16px] leading-[1.55] text-white/95">If a landlord cancels at the last minute or delays your move-in, we help you find another place or a temporary hotel stay.</p>
                 </div>
               </div>
 
@@ -1309,7 +1311,7 @@ export function Home() {
                 <span className="mt-[4px] flex h-[30px] w-[30px] items-center justify-center rounded-full border border-white/70 text-[16px] font-bold">✓</span>
                 <div>
                   <h3 className="mb-[8px] text-[34px] font-bold leading-[1.2]">Quick support</h3>
-                  <p className="text-[16px] leading-[1.55] text-white/95">If something goes wrong with your rental, we can help make it right.</p>
+                  <p className="text-[16px] leading-[1.55] text-white/95">If something goes wrong with your rental, our team helps you resolve it quickly.</p>
                 </div>
               </div>
 
@@ -1317,7 +1319,7 @@ export function Home() {
                 <span className="mt-[4px] flex h-[30px] w-[30px] items-center justify-center rounded-full border border-white/70 text-[16px] font-bold">✓</span>
                 <div>
                   <h3 className="mb-[8px] text-[34px] font-bold leading-[1.2]">Move-in with confidence</h3>
-                  <p className="text-[16px] leading-[1.55] text-white/95">We keep your payment safe until you move in. If the place does not match the description, you will get a refund.</p>
+                  <p className="text-[16px] leading-[1.55] text-white/95">We keep your payment safe until you move in. If the place does not match the listing, you can request a refund.</p>
                 </div>
               </div>
             </div>
@@ -1331,14 +1333,14 @@ export function Home() {
             <motion.img
               src={guaranteedImage}
               alt="Tenant protection"
-              className="w-full max-w-[650px] rounded-[6px] object-cover shadow-[0_18px_36px_rgba(2,22,33,0.24)]"
+              className="w-full max-w-[520px] rounded-[6px] object-cover shadow-[0_18px_36px_rgba(2,22,33,0.24)]"
               style={{ y: tenantProtectionImageY, scale: tenantProtectionImageScale }}
             />
           </div>
         </div>
       </section>
 
-      <section className="bg-[#F2F3F4] py-[88px]">
+      <section className="bg-[#F2F3F4] py-[66px] md:py-[76px]">
         <div className="mx-auto max-w-[1440px] px-[32px]">
           <h2 className="mb-[30px] text-[24px] font-bold leading-[1.15] tracking-[-0.02em] text-[#032D3A] md:text-[32px]">
             It&apos;s quick. All online. 100% safe.
@@ -1380,7 +1382,7 @@ export function Home() {
         </div>
       </section>
 
-      <section className="relative overflow-hidden bg-[#012F3B] pt-[92px] pb-[170px] text-white min-h-[680px] md:min-h-[760px]">
+      <section className="relative overflow-hidden bg-[#012F3B] pt-[72px] pb-[120px] text-white min-h-[560px] md:min-h-[640px]">
         <div className="mx-auto flex max-w-[1040px] flex-col items-center px-[32px] text-center">
           <div className={`mb-[12px] flex h-[78px] w-[78px] items-center justify-center rounded-full text-[30px] font-black text-black ${currentTestimonial.avatarBg}`}>
             {currentTestimonial.initials}
@@ -1442,7 +1444,7 @@ export function Home() {
         <div className="pointer-events-none absolute bottom-[-112px] left-1/2 h-[224px] w-[130%] -translate-x-1/2 rounded-[50%] bg-[#F2F3F4]" />
       </section>
 
-      <section className="bg-[#F2F3F4] py-[86px]">
+      <section className="bg-[#F2F3F4] py-[64px] md:py-[74px]">
         <div className="mx-auto max-w-[1240px] px-[32px]">
           <h2 className="text-center text-[50px] font-black uppercase leading-[1] tracking-[-0.02em] text-[#032D3A] md:text-[70px]">
             Endless searching ends now
@@ -1451,7 +1453,7 @@ export function Home() {
           <div className="mt-[34px] flex justify-center">
             <Link
               to="/listings"
-              className="inline-flex items-center justify-center rounded-[16px] bg-[#FF532C] px-[26px] py-[15px] text-[15px] font-bold text-white transition-colors hover:bg-[#E84924]"
+              className="inline-flex items-center justify-center rounded-[16px] bg-brand-primary px-[26px] py-[15px] text-[15px] font-bold text-white transition-colors hover:bg-brand-primary-dark"
             >
               Find your next home
             </Link>
@@ -1549,7 +1551,7 @@ export function Home() {
         </div>
       </section>
 
-      <section className="bg-white py-[72px]">
+      <section className="bg-white py-[56px] md:py-[64px]">
         <div className="mx-auto max-w-[1180px] px-[32px]">
           <h2 className="mb-[24px] text-center text-[32px] font-bold leading-[1.1] tracking-[-0.02em] text-[#052F3C] md:text-[42px]">
             Your questions, answered

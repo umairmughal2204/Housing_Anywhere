@@ -390,7 +390,7 @@ export function LandlordRentals() {
       deposit: application.listing.deposit,
       moveInDate: application.moveInDate,
       moveOutDate: application.moveOutDate,
-      note: "Please complete your booking in EasyRent within 24 hours.",
+      note: "Please complete your booking in ReserveHousing within 24 hours.",
     });
   };
 
@@ -519,7 +519,7 @@ export function LandlordRentals() {
           updatedRent: offerRent,
           moveInDate: specialOfferMoveInDate?.toISOString() ?? null,
           moveOutDate: specialOfferMoveOutDate?.toISOString() ?? null,
-          note: specialOfferMessage.trim() || "Please review the updated offer and reply in EasyRent.",
+          note: specialOfferMessage.trim() || "Please review the updated offer and reply in ReserveHousing.",
         }),
         token
       );
@@ -917,7 +917,7 @@ export function LandlordRentals() {
                         <div className="bg-[#f7f8f9] border-l border-[rgba(0,0,0,0.08)] p-[24px] space-y-[16px]">
                           <div className="bg-white border border-[rgba(0,0,0,0.10)] rounded-[8px] p-[16px]">
                             <p className="text-[12px] text-neutral-gray uppercase tracking-[0.08em] mb-[6px]">Preview</p>
-                            <h4 className="text-neutral-black text-[18px] font-bold mb-[8px]">EasyRent Special Offer</h4>
+                            <h4 className="text-neutral-black text-[18px] font-bold mb-[8px]">ReserveHousing Special Offer</h4>
                             <p className="text-[13px] text-neutral-gray leading-[1.6]">
                               {selectedApplication.tenant.name} can review the updated terms directly in chat.
                             </p>

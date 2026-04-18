@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { ChevronLeft, Lock, Info, Shield, Check, CreditCard, User, LogOut } from "lucide-react";
 import { useAuth } from "../contexts/auth-context";
 import { API_BASE } from "../config";
+import { BrandLogo } from "../components/brand-logo";
 
 interface ListingSummary {
   id: string;
@@ -101,21 +102,7 @@ export function Payment() {
           </button>
 
           <Link to="/" className="flex items-center gap-[8px]">
-            <div className="w-[32px] h-[32px] bg-brand-primary flex items-center justify-center">
-              <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                <path
-                  d="M10 2L3 7V17H8V12H12V17H17V7L10 2Z"
-                  fill="white"
-                  stroke="white"
-                  strokeWidth="1.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-            </div>
-            <span className="text-neutral-black text-[18px] font-bold">
-              Easy<span className="text-brand-primary">Rent</span>
-            </span>
+            <BrandLogo className="h-[68px] sm:h-[76px]" />
           </Link>
 
           <div className="flex items-center gap-[16px]">
@@ -404,7 +391,7 @@ export function Payment() {
                 <span className="text-[#1A1A1A] text-[14px] leading-[1.6]">
                   I agree to the{" "}
                   <button className="text-[#0066CC] underline hover:no-underline font-semibold">
-                    HousingAnywhere Terms & Conditions
+                    ReserveHousing Terms & Conditions
                   </button>
                   ,{" "}
                   <button className="text-[#0066CC] underline hover:no-underline font-semibold">
@@ -425,7 +412,7 @@ export function Payment() {
                 <Info className="w-[20px] h-[20px] text-[#0066CC] flex-shrink-0 mt-[2px]" />
                 <div>
                   <p className="text-[#1A1A1A] text-[14px] leading-[1.6] mb-[8px]">
-                    <strong>Your payment is secure:</strong> Your payment will be held securely by HousingAnywhere until 
+                    <strong>Your payment is secure:</strong> Your payment will be held securely by ReserveHousing until 
                     24 hours after you move in. The landlord only receives payment if everything goes as planned.
                   </p>
                   <button className="text-[#0066CC] text-[13px] font-semibold hover:underline">

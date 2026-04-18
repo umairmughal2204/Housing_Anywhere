@@ -34,10 +34,10 @@ const HELP_CONTACTS: HelpContact[] = [
   },
   {
     title: "Email Support",
-    description: "support@easyrent.com",
+    description: "support@reservehousing.com",
     detail: "Response within 2 hours",
     actionLabel: "Send email",
-    href: "mailto:support@easyrent.com",
+    href: "mailto:support@reservehousing.com",
     icon: Mail,
     accentClassName: "bg-brand-primary",
     keywords: ["email", "mail", "support", "reply"],
@@ -173,7 +173,7 @@ function HelpTopicCard({ topic, tone }: { topic: HelpTopic; tone: "brand" | "acc
   const iconClassName = tone === "brand" ? "text-brand-primary" : "text-accent-blue";
 
   return (
-    <details className="group rounded-[18px] border border-[rgba(0,0,0,0.08)] bg-white p-[20px] shadow-[0_1px_0_rgba(0,0,0,0.02)] transition-shadow hover:shadow-[0_8px_24px_rgba(0,0,0,0.06)]">
+    <details className="group rounded-[24px] border border-[rgba(0,0,0,0.08)] bg-white p-[20px] shadow-[0_1px_0_rgba(0,0,0,0.02)] transition-shadow hover:shadow-[0_8px_24px_rgba(0,0,0,0.06)]">
       <summary className="flex cursor-pointer list-none items-start justify-between gap-[16px]">
         <div>
           <div className={`mb-[8px] flex items-center gap-[8px] text-[12px] font-semibold uppercase tracking-[0.12em] ${iconClassName}`}>
@@ -297,7 +297,7 @@ export function Help() {
                   href={contact.href}
                   target={contact.openInNewTab ? "_blank" : undefined}
                   rel={contact.openInNewTab ? "noreferrer" : undefined}
-                  className="block bg-neutral-light-gray p-[32px] text-center transition-all hover:-translate-y-[2px] hover:bg-brand-primary-light focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary"
+                  className="block rounded-[24px] bg-neutral-light-gray p-[32px] text-center transition-all hover:-translate-y-[2px] hover:bg-brand-primary-light focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary"
                 >
                   <div className={`w-[56px] h-[56px] flex items-center justify-center mx-auto mb-[24px] ${contact.accentClassName}`}>
                     <Icon className="w-[28px] h-[28px] text-white" />
@@ -360,7 +360,7 @@ export function Help() {
             </div>
           ) : (
             <div className="grid grid-cols-2 gap-[32px]">
-              <div className="bg-white p-[32px]">
+              <div className="rounded-[28px] bg-white p-[32px]">
                 <div className="flex items-center gap-[12px] mb-[24px]">
                   <HelpCircle className="w-[24px] h-[24px] text-brand-primary" />
                   <h3 className="text-neutral-black text-[20px] font-bold">
@@ -377,7 +377,7 @@ export function Help() {
                 </div>
               </div>
 
-              <div className="bg-white p-[32px]">
+              <div className="rounded-[28px] bg-white p-[32px]">
                 <div className="flex items-center gap-[12px] mb-[24px]">
                   <FileText className="w-[24px] h-[24px] text-accent-blue" />
                   <h3 className="text-neutral-black text-[20px] font-bold">

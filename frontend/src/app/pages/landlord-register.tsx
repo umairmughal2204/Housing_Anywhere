@@ -167,7 +167,7 @@ export function LandlordRegister() {
           <div className="max-w-[620px]">
           <div className="mb-[24px] lg:mb-[32px]">
             <h1 className="mb-[8px] text-[#244A57] text-[26px] lg:text-[30px] font-bold leading-[1.15]">
-              Welcome to EasyRent!
+              Welcome to ReserveHousing!
             </h1>
             <p className="text-[#6C7A89] text-[15px] lg:text-[16px]">
               We need some basic information before you can start listing properties

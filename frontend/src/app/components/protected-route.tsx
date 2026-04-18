@@ -1,6 +1,7 @@
 import { ReactNode, useEffect } from "react";
 import { useNavigate } from "react-router";
 import { useAuth } from "../contexts/auth-context";
+import { BrandLogo } from "./brand-logo";
 
 interface ProtectedRouteProps {
   children: ReactNode;
@@ -20,20 +21,8 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#F7F7F9]">
         <div className="text-center">
-          <div className="w-[64px] h-[64px] bg-brand-primary flex items-center justify-center mx-auto mb-[16px]">
-            <svg width="32" height="32" viewBox="0 0 20 20" fill="none">
-              <path
-                d="M10 2L3 7V17H8V12H12V17H17V7L10 2Z"
-                fill="white"
-                stroke="white"
-                strokeWidth="1.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
-          </div>
-          <div className="text-[16px] font-semibold text-[#12303B] mb-[4px]">
-            Easy<span className="text-brand-primary">Rent</span>
+          <div className="mb-[10px]">
+            <BrandLogo className="h-[104px] mx-auto" />
           </div>
           <div className="text-[#6B6B6B] text-[14px]">Loading...</div>
         </div>

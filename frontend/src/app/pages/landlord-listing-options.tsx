@@ -275,7 +275,7 @@ export function LandlordListingOptions() {
                     Duplicate an existing listing
                   </h2>
                   <p className="text-neutral-gray text-[13px] leading-[1.6] max-w-[620px]">
-                    Select this option if you want to create a listing that is quite similar to a listing that you already listed on HousingAnywhere.
+                    Select this option if you want to create a listing that is quite similar to a listing that you already listed on ReserveHousing.
                   </p>
                 </div>
               </div>

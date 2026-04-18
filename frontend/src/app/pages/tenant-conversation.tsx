@@ -6,6 +6,7 @@ import { ImageWithFallback } from "../components/figma/ImageWithFallback";
 import { useConversation } from "../hooks/use-conversation";
 import { buildOfferMessage, ChatMessageBubble, type OfferActionType, type OfferMessagePayload } from "../components/chat-offer-message";
 import { API_BASE } from "../config";
+import { BrandLogo } from "../components/brand-logo";
 
 interface ConversationMeta {
   id: string;
@@ -261,14 +262,7 @@ export function TenantConversation() {
           <div className="flex-1" />
 
           <Link to="/" className="flex items-center gap-[8px]">
-            <div className="w-[30px] h-[30px] bg-brand-primary flex items-center justify-center">
-              <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
-                <path d="M10 2L3 7V17H8V12H12V17H17V7L10 2Z" fill="white" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            </div>
-            <span className="text-[#1A1A1A] text-[18px] font-bold">
-              Easy<span className="text-brand-primary">Rent</span>
-            </span>
+            <BrandLogo className="h-[60px] sm:h-[68px]" />
           </Link>
 
           <div className="flex-1 flex justify-end">

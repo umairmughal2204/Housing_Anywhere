@@ -17,7 +17,7 @@ export function Pricing() {
   const landlordFaqs = [
     {
       q: "Why do I have to pay a commission fee?",
-      a: "Our fees allow us to operate our platform and services: a dedicated customer support team, secure payment processing, API integrations and fraud detection. We only charge this small commission fee when a tenant successfully books your place. And remember, on HousingAnywhere you can list an unlimited number of properties and chat with potential tenants for free.",
+      a: "Our fees allow us to operate our platform and services: a dedicated customer support team, secure payment processing, API integrations and fraud detection. We only charge this small commission fee when a tenant successfully books your place. And remember, on ReserveHousing you can list an unlimited number of properties and chat with potential tenants for free.",
     },
     {
       q: "What happens if a tenant cancels a booking?",
@@ -57,22 +57,22 @@ export function Pricing() {
       <Header />
 
       {/* Hero Section */}
-      <section className="relative overflow-hidden bg-[#D8DFE9] pt-[50px] pb-[136px] md:pt-[64px] md:pb-[164px]">
+      <section className="relative overflow-hidden bg-[#D8DFE9] pt-[50px] pb-[104px] md:pt-[64px] md:pb-[124px]">
         <div className="max-w-[1200px] mx-auto px-[32px] text-center">
           <h1 className="text-[#032E3D] text-[42px] md:text-[58px] font-bold tracking-[-0.04em] leading-[1]">
             Pricing
           </h1>
           <p className="mt-[16px] text-[#0D3747] text-[15px] md:text-[18px] font-semibold max-w-[840px] mx-auto leading-[1.45]">
-            Learn about the benefits of using HousingAnywhere
+            Learn about the benefits of using ReserveHousing
           </p>
           
-          <div className="mx-auto mt-[42px] flex w-full max-w-[700px] rounded-full border border-[rgba(255,255,255,0.9)] bg-[rgba(255,255,255,0.52)] p-[4px] shadow-[0_14px_28px_rgba(15,23,42,0.06)]">
+          <div className="mx-auto mt-[42px] flex w-full max-w-[620px] rounded-full border border-[rgba(255,255,255,0.9)] bg-[rgba(255,255,255,0.52)] p-[4px] shadow-[0_14px_28px_rgba(15,23,42,0.06)]">
             <button
               onClick={() => {
                 setActiveTab("tenants");
                 setOpenFaq(null);
               }}
-              className={`h-[52px] flex-1 rounded-full text-[16px] md:text-[18px] font-medium transition-colors ${
+              className={`h-[40px] md:h-[44px] flex-1 rounded-full text-[14px] md:text-[16px] font-medium transition-colors ${
                 activeTab === "tenants"
                   ? "bg-[#032E3D] text-white"
                   : "bg-transparent text-[#0D3747] hover:bg-[rgba(255,255,255,0.32)]"
@@ -85,7 +85,7 @@ export function Pricing() {
                 setActiveTab("landlords");
                 setOpenFaq(null);
               }}
-              className={`h-[52px] flex-1 rounded-full text-[16px] md:text-[18px] font-semibold transition-colors ${
+              className={`h-[40px] md:h-[44px] flex-1 rounded-full text-[14px] md:text-[16px] font-semibold transition-colors ${
                 activeTab === "landlords"
                   ? "bg-[#032E3D] text-white"
                   : "bg-transparent text-[#0D3747] hover:bg-[rgba(255,255,255,0.32)]"
@@ -96,11 +96,11 @@ export function Pricing() {
           </div>
         </div>
 
-        <div className="pointer-events-none absolute left-1/2 bottom-[-210px] h-[340px] w-[1800px] -translate-x-1/2 rounded-[50%] bg-white" />
+        <div className="pointer-events-none absolute left-1/2 bottom-[-90px] h-[155px] w-[1800px] -translate-x-1/2 rounded-[50%] bg-white" />
       </section>
 
       {/* Main Content Section */}
-      <section className="py-[80px] bg-white">
+      <section className="pt-[18px] pb-[80px] bg-white md:pt-[24px]">
         <div className="max-w-[1200px] mx-auto px-[32px]">
           {activeTab === "tenants" ? (
             <>
@@ -148,7 +148,7 @@ export function Pricing() {
                         Chat in real-time with verified landlords
                       </h3>
                       <p className="text-neutral-gray text-[15px] leading-[1.6] mb-[8px]">
-                        All properties on EasyRent have been cross-checked and most come from
+                        All properties on ReserveHousing have been cross-checked and most come from
                         verified landlords who are approved by our team. And even if you're not sure
                         where to start, you can always ask our customer support for help.
                       </p>
@@ -156,7 +156,7 @@ export function Pricing() {
                         For apartment-finders in countries where a landlord fee is not a standard
                         practice (see the right column), you'll also be exempt from paying a landlord
                         fee if a property is verified. This means you'll only be charged the
-                        EasyRent service fee.
+                        ReserveHousing service fee.
                       </p>
                       <p className="text-neutral-gray text-[13px] uppercase tracking-[0.05em] font-semibold">
                         Free to get in touch with landlords
@@ -231,7 +231,7 @@ export function Pricing() {
                     <div className="space-y-[8px]">
                       <div className="flex justify-between items-baseline">
                         <span className="text-neutral-gray text-[14px]">
-                          EasyRent service fee
+                          ReserveHousing service fee
                         </span>
                       </div>
                       <div className="flex justify-between items-baseline">
@@ -260,7 +260,7 @@ export function Pricing() {
                     <div className="space-y-[8px]">
                       <div className="flex justify-between items-baseline">
                         <span className="text-neutral-gray text-[14px]">
-                          EasyRent service fee
+                          ReserveHousing service fee
                         </span>
                       </div>
                       <p className="text-neutral-gray text-[12px] leading-[1.5] mt-[8px]">
@@ -302,7 +302,7 @@ export function Pricing() {
                     Rent out your properties in 3 easy steps
                   </h2>
                   <p className="mx-auto mt-[14px] max-w-[900px] text-[18px] md:text-[22px] leading-[1.5] text-[#6B849B]">
-                    Find your ideal tenant and get your property booked in a matter of days. Renting out on HousingAnywhere is quick, easy and safe. Start generating revenue now!
+                    Find your ideal tenant and get your property booked in a matter of days. Renting out on ReserveHousing is quick, easy and safe. Start generating revenue now!
                   </p>
 
                   <div className="mt-[44px] grid grid-cols-1 gap-[28px] md:grid-cols-3 md:gap-[36px]">
@@ -362,7 +362,7 @@ export function Pricing() {
                 Choose the right plan for your rental business
               </h2>
               <p className="text-neutral-gray text-[16px] text-center max-w-[700px] mx-auto mb-[64px]">
-                List your properties on EasyRent and reach thousands of verified tenants worldwide. Transparent pricing with no hidden fees.
+                List your properties on ReserveHousing and reach thousands of verified tenants worldwide. Transparent pricing with no hidden fees.
               </p>
 
               {/* Pricing Cards */}
@@ -581,7 +581,7 @@ export function Pricing() {
           <div className="max-w-[600px]">
             <h2 className="text-white text-[40px] font-bold tracking-[-0.02em] mb-[16px]">This is Suzie. She just rented her new home</h2>
             <p className="text-white text-[18px] leading-[1.6] mb-[32px]">
-              "I was looking for a place in Lagos. Then I discovered EasyRent. With my very
+              "I was looking for a place in Lagos. Then I discovered ReserveHousing. With my very
               first search, I was flooded with quality offers."
             </p>
             <button className="px-[32px] py-[14px] bg-brand-primary text-white font-bold hover:bg-brand-primary-dark transition-colors">Find the Perfect Place</button>

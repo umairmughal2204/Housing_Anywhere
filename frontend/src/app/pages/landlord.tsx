@@ -39,7 +39,7 @@ export function Landlord() {
                 with confidence
               </h1>
               <p className="text-[18px] text-white/90 mb-[40px] leading-[1.6]">
-                Join thousands of landlords who trust EasyRent to find reliable tenants for mid-to-long-term rentals.
+                Join thousands of landlords who trust ReserveHousing to find reliable tenants for mid-to-long-term rentals.
               </p>
               <button
                 onClick={handleGetStarted}
@@ -326,7 +326,7 @@ export function Landlord() {
             Start earning with a verified tenant today
           </h2>
           <p className="text-[18px] text-white/90 mb-[40px] max-w-[720px] mx-auto leading-[1.6]">
-            Join 75,000+ landlords who've rented out their properties through EasyRent
+            Join 75,000+ landlords who've rented out their properties through ReserveHousing
           </p>
           <Link
             to={isAuthenticated ? "/landlord/inbox" : "/signup"}

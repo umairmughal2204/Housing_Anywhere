@@ -2,6 +2,7 @@ import { Link, useNavigate } from "react-router";
 import { useState, useEffect } from "react";
 import { Mail, Lock, Eye, EyeOff, User, Home } from "lucide-react";
 import { useAuth } from "../contexts/auth-context";
+import { BrandLogo } from "../components/brand-logo";
 
 export function LandlordSignup() {
   const [firstName, setFirstName] = useState("");
@@ -48,21 +49,7 @@ export function LandlordSignup() {
         <div className="w-full max-w-[480px]">
           {/* Logo */}
           <Link to="/" className="flex items-center gap-[8px] mb-[48px]">
-            <div className="w-[32px] h-[32px] bg-brand-primary flex items-center justify-center">
-              <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                <path
-                  d="M10 2L3 7V17H8V12H12V17H17V7L10 2Z"
-                  fill="white"
-                  stroke="white"
-                  strokeWidth="1.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-            </div>
-            <span className="text-[#1A1A1A] text-[18px] font-bold">
-              Easy<span className="text-brand-primary">Rent</span>
-            </span>
+            <BrandLogo className="h-[80px]" />
           </Link>
 
           <h1 className="text-[#1A1A1A] text-[32px] font-bold tracking-[-0.02em] mb-[8px]">
@@ -256,7 +243,7 @@ export function LandlordSignup() {
               Start Earning Today
             </h2>
             <p className="text-[18px] text-white/90 leading-[1.6] mb-[32px]">
-              Join 75,000+ landlords who trust HousingAnywhere to find reliable tenants.
+              Join 75,000+ landlords who trust ReserveHousing to find reliable tenants.
             </p>
             <div className="space-y-[16px]">
               <div className="flex items-center gap-[12px]">

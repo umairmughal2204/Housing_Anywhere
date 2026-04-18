@@ -58,7 +58,7 @@ export async function sendPasswordResetEmail(toEmail: string, firstName: string,
   await activeTransporter.sendMail({
     from: env.SMTP_FROM,
     to: toEmail,
-    subject: "Reset your EasyRent password",
+    subject: "Reset your ReserveHousing password",
     text,
     html,
   });
@@ -73,7 +73,7 @@ export async function sendSignupVerificationEmail(toEmail: string, firstName: st
   const text = [
     `Hi ${firstName},`,
     "",
-    "Use this verification code to finish creating your EasyRent account:",
+    "Use this verification code to finish creating your ReserveHousing account:",
     verificationCode,
     "",
     "This code expires in 15 minutes.",
@@ -82,7 +82,7 @@ export async function sendSignupVerificationEmail(toEmail: string, firstName: st
 
   const html = `
     <p>Hi ${firstName},</p>
-    <p>Use this verification code to finish creating your EasyRent account:</p>
+    <p>Use this verification code to finish creating your ReserveHousing account:</p>
     <p><strong style="font-size: 20px; letter-spacing: 2px;">${verificationCode}</strong></p>
     <p>This code expires in 15 minutes.</p>
     <p>If you did not request this code, you can ignore this email.</p>
@@ -91,7 +91,7 @@ export async function sendSignupVerificationEmail(toEmail: string, firstName: st
   await activeTransporter.sendMail({
     from: env.SMTP_FROM,
     to: toEmail,
-    subject: "Your EasyRent verification code",
+    subject: "Your ReserveHousing verification code",
     text,
     html,
   });
