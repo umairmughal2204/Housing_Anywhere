@@ -218,10 +218,18 @@ export function LandlordRentals() {
   const [specialOfferMessage, setSpecialOfferMessage] = useState("");
   const [specialOfferFeedback, setSpecialOfferFeedback] = useState("");
   const [isSpecialOfferSending, setIsSpecialOfferSending] = useState(false);
+  const [isProgressSheetOpen, setIsProgressSheetOpen] = useState(false);
   const selectedApplication = useMemo(
     () => applications.find((app) => app.id === selectedApplicationId),
     [applications, selectedApplicationId]
   );
+
+  const progressSteps = [
+    { step: 1, title: "Receive message", subtitle: "Review the tenant request, profile, and documents.", completed: true },
+    { step: 2, title: "Send invitation to book", subtitle: "Invite the tenant to book, decline, or send a special offer.", completed: false, active: true },
+    { step: 3, title: "Wait for confirmation", subtitle: "The tenant has 24 hours to accept or respond.", completed: false },
+    { step: 4, title: "Booking confirmed", subtitle: "The application becomes confirmed after acceptance and payment.", completed: false },
+  ] as const;
 
   useEffect(() => {
     const loadApplications = async () => {
@@ -269,6 +277,7 @@ export function LandlordRentals() {
     setSpecialOfferMoveOutDate(null);
     setSpecialOfferMessage("");
     setSpecialOfferFeedback("");
+    setIsProgressSheetOpen(false);
   }, [selectedApplicationId]);
 
   const filteredApplications = useMemo(() => {
@@ -534,9 +543,9 @@ export function LandlordRentals() {
 
   return (
     <LandlordPortalLayout>
-      <main className="flex-1 px-[20px] py-[20px] lg:px-[28px] lg:py-[24px]">
+      <main className="flex-1 px-[12px] py-[14px] sm:px-[16px] sm:py-[18px] lg:px-[28px] lg:py-[24px]">
         <div>
-          <h1 className="text-neutral-black text-[28px] font-bold tracking-[-0.03em]">Rentals</h1>
+          <h1 className="text-neutral-black text-[24px] sm:text-[28px] font-bold tracking-[-0.03em]">Rentals</h1>
           <p className="mt-[4px] text-neutral-gray text-[14px]">Tenant rental requests received for your listings</p>
           {!isLoading && error && <p className="text-brand-primary text-[13px] mt-[8px]">{error}</p>}
         </div>
@@ -571,12 +580,12 @@ export function LandlordRentals() {
         <div className="mt-[20px] space-y-[14px]">
           {isLoading && [0, 1, 2].map((item) => (
             <div key={item} className="rounded-[24px] border border-[rgba(11,45,58,0.08)] bg-white px-[16px] py-[16px] shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
-              <div className="flex gap-[16px] animate-pulse">
-                <Skeleton className="w-[136px] h-[100px] rounded-[12px]" />
+              <div className="flex flex-col sm:flex-row gap-[16px] animate-pulse">
+                <Skeleton className="w-full sm:w-[136px] h-[160px] sm:h-[100px] rounded-[12px]" />
                 <div className="flex-1 space-y-[12px]">
                   <Skeleton className="h-[16px] w-[56%]" />
                   <Skeleton className="h-[12px] w-[34%]" />
-                  <div className="grid grid-cols-3 gap-[12px]">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-[12px]">
                     <Skeleton className="h-[30px] w-full rounded-[8px]" />
                     <Skeleton className="h-[30px] w-full rounded-[8px]" />
                     <Skeleton className="h-[30px] w-full rounded-[8px]" />
@@ -593,9 +602,9 @@ export function LandlordRentals() {
               onClick={() => setSelectedApplicationId(application.id)}
               className="rounded-[24px] border border-[rgba(11,45,58,0.08)] bg-white px-[16px] py-[16px] shadow-[0_1px_2px_rgba(15,23,42,0.04)] cursor-pointer hover:shadow-[0_8px_24px_rgba(15,23,42,0.08)] transition-shadow"
             >
-              <div className="flex gap-[16px]">
+              <div className="flex flex-col sm:flex-row gap-[16px]">
                 {/* Property Image */}
-                <div className="w-[136px] h-[100px] overflow-hidden bg-neutral-light-gray flex-shrink-0 rounded-[12px]">
+                <div className="w-full sm:w-[136px] h-[170px] sm:h-[100px] overflow-hidden bg-neutral-light-gray flex-shrink-0 rounded-[12px]">
                   <ImageWithFallback
                     src={application.listing.image}
                     alt={application.listing.title}
@@ -605,7 +614,7 @@ export function LandlordRentals() {
 
                 {/* Main Info */}
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-start justify-between gap-[12px] mb-[8px]">
+                  <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-[10px] mb-[8px]">
                     <div className="flex-1 min-w-0">
                       <h3 className="text-neutral-black text-[15px] font-bold">{application.listing.title}</h3>
                       <div className="flex items-center gap-[4px] text-neutral-gray text-[12px] mt-[2px]">
@@ -619,7 +628,7 @@ export function LandlordRentals() {
                   </div>
 
                   {/* Tenant and Key Details */}
-                  <div className="grid grid-cols-3 gap-[12px] text-[12px]">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-[10px] sm:gap-[12px] text-[12px]">
                     <div>
                       <div className="text-neutral-gray text-[10px] uppercase font-semibold mb-[2px]">Tenant</div>
                       <div className="text-neutral-black font-semibold">{application.tenant.name}</div>
@@ -630,15 +639,15 @@ export function LandlordRentals() {
                         {application.moveInDate ? formatOptionalDate(application.moveInDate).split(" ").slice(0, 2).join(" ") : "Not set"}
                       </div>
                     </div>
-                    <div className="text-right">
+                    <div className="sm:text-right">
                       <div className="text-neutral-gray text-[10px] uppercase font-semibold mb-[2px]">Rent / Deposit</div>
                       <div className="text-neutral-black font-semibold">€{application.listing.monthlyRent.toLocaleString()} / €{application.listing.deposit.toLocaleString()}</div>
                     </div>
                   </div>
 
                   {/* Meta Row */}
-                  <div className="flex items-center justify-between gap-[12px] mt-[10px] pt-[10px] border-t border-[rgba(0,0,0,0.04)]">
-                    <div className="flex items-center gap-[16px] text-[11px] text-neutral-gray">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-[10px] mt-[10px] pt-[10px] border-t border-[rgba(0,0,0,0.04)]">
+                    <div className="flex flex-wrap items-center gap-[10px] sm:gap-[16px] text-[11px] text-neutral-gray">
                       <div className="flex items-center gap-[4px]">
                         <User className="w-[12px] h-[12px]" />
                         {application.moveInCount} person{application.moveInCount !== 1 ? 's' : ''}
@@ -661,7 +670,7 @@ export function LandlordRentals() {
           ))}
 
           {!isLoading && filteredApplications.length === 0 && (
-            <div className="rounded-[24px] border border-[rgba(11,45,58,0.08)] bg-white p-[56px] text-center shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
+            <div className="rounded-[24px] border border-[rgba(11,45,58,0.08)] bg-white p-[28px] sm:p-[56px] text-center shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
               <FileText className="w-[48px] h-[48px] text-neutral-gray mx-auto mb-[16px]" />
               <h3 className="text-neutral-black text-[18px] font-bold mb-[8px]">No rental requests found</h3>
               <p className="text-neutral-gray text-[14px]">
@@ -674,8 +683,8 @@ export function LandlordRentals() {
         </div>
 
         {confirmTarget && (
-          <div className="fixed inset-0 z-[70] bg-black/40 flex items-center justify-center p-[24px]">
-            <div className="w-full max-w-[520px] bg-white border border-[rgba(0,0,0,0.12)] p-[24px]">
+          <div className="fixed inset-0 z-[70] bg-black/40 flex items-center justify-center p-[12px] sm:p-[24px]">
+            <div className="w-full max-w-[520px] bg-white border border-[rgba(0,0,0,0.12)] p-[16px] sm:p-[24px]">
               <h3 className="text-neutral-black text-[20px] font-bold mb-[8px]">
                 Confirm {confirmTarget.status === "approved" ? "Approval" : "Rejection"}
               </h3>
@@ -714,8 +723,8 @@ export function LandlordRentals() {
       </main>
       {selectedApplication && (
         <div className="fixed inset-0 z-[60] bg-white overflow-y-auto">
-          <div className="flex items-center justify-between px-[32px] py-[16px] border-b border-[rgba(0,0,0,0.08)] sticky top-0 bg-white">
-            <h2 className="text-neutral-black text-[20px] font-bold">Application</h2>
+          <div className="flex items-center justify-between px-[14px] sm:px-[20px] lg:px-[32px] py-[14px] sm:py-[16px] border-b border-[rgba(0,0,0,0.08)] sticky top-0 bg-white">
+            <h2 className="text-neutral-black text-[18px] sm:text-[20px] font-bold">Application</h2>
             <button
               onClick={() => setSelectedApplicationId(null)}
               className="text-neutral-gray hover:text-neutral-black transition-colors"
@@ -724,60 +733,117 @@ export function LandlordRentals() {
             </button>
           </div>
 
-          <div className="max-w-[1400px] mx-auto px-[32px] py-[32px]">
-            <div className="grid grid-cols-3 gap-[40px]">
+          <div className="max-w-[1400px] mx-auto px-[14px] sm:px-[20px] lg:pl-[48px] lg:pr-[32px] py-[18px] sm:py-[24px] lg:py-[32px]">
+            <div className="grid grid-cols-1 xl:grid-cols-3 gap-[24px] xl:gap-[40px]">
               {/* Main content - 2 columns */}
-              <div className="col-span-2 space-y-[32px]">
+              <div className="xl:col-span-2 space-y-[20px] sm:space-y-[28px] lg:space-y-[32px]">
                 {/* Progress bar */}
-                <div className="pb-[24px]">
-                  <div className="flex items-center justify-between mb-[24px]">
-                    {[
-                      { step: 1, label: "Receive message", completed: true },
-                      { step: 2, label: "Send invitation to book", completed: false, active: true },
-                      { step: 3, label: "Wait for confirmation", completed: false },
-                      { step: 4, label: "Booking confirmed", completed: false },
-                    ].map((item, index, array) => (
-                      <div key={item.step} className="flex items-center flex-1">
-                        {/* Step circle */}
-                        <div className={`flex items-center justify-center w-[40px] h-[40px] rounded-full font-bold text-[14px] flex-shrink-0 ${
-                          item.completed
-                            ? "bg-accent-blue text-white"
-                            : item.active
-                            ? "bg-accent-blue text-white"
-                            : "bg-neutral-light-gray text-neutral-gray"
-                        }`}>
-                          {item.completed ? "✓" : item.step}
-                        </div>
-                        
-                        {/* Connector line */}
-                        {index < array.length - 1 && (
-                          <div className={`flex-1 h-[2px] mx-[16px] ${
-                            item.completed ? "bg-accent-blue" : "bg-neutral-light-gray"
-                          }`} />
-                        )}
-                      </div>
-                    ))}
+                <div className="pb-[16px] sm:pb-[24px]">
+                  <div className="md:hidden mb-[12px]">
+                    <button
+                      type="button"
+                      onClick={() => setIsProgressSheetOpen(true)}
+                      className="inline-flex items-center gap-[6px] rounded-full bg-[#DEE7EE] px-[12px] py-[8px] text-[14px] font-semibold text-[#0F2D36]"
+                    >
+                      Step 1 of 4
+                      <ChevronDown className="h-[14px] w-[14px]" />
+                    </button>
                   </div>
-                  
-                  {/* Labels */}
-                  <div className="flex items-start justify-between gap-[16px]">
-                    {[
-                      "Receive message",
-                      "Send invitation to book",
-                      "Wait for confirmation",
-                      "Booking confirmed",
-                    ].map((label) => (
-                      <div key={label} className="flex-1 text-center">
-                        <p className="text-neutral-gray text-[12px] font-medium">{label}</p>
+
+                  <div className="hidden md:block rounded-[24px] border border-[rgba(15,45,54,0.08)] bg-white px-[24px] lg:px-[32px] py-[22px] lg:py-[26px] shadow-[0_10px_32px_rgba(15,23,42,0.05)]">
+                    <div className="flex items-end justify-between gap-[20px] mb-[18px]">
+                      <div>
+                        <p className="text-[12px] font-semibold uppercase tracking-[0.12em] text-[#6F8794]">Application flow</p>
+                        <h3 className="text-[#0F2D36] text-[20px] lg:text-[22px] font-bold mt-[4px]">Follow the booking steps</h3>
                       </div>
-                    ))}
+                      <p className="text-[13px] text-[#6F8794] text-right max-w-[280px]">The current step is highlighted so you can see exactly where this request is in the booking process.</p>
+                    </div>
+
+                    <div className="relative pt-[14px]">
+                      <span className="absolute left-[7.5%] right-[7.5%] top-[34px] h-[2px] bg-[#E3EAF0]" />
+                      <div className="grid grid-cols-4 gap-[18px] relative">
+                        {progressSteps.map((item) => {
+                          const isCurrent = item.completed || item.active;
+                          return (
+                            <div key={item.step} className="flex flex-col items-center text-center">
+                              <div
+                                className={`relative z-[1] flex items-center justify-center w-[42px] h-[42px] rounded-full font-bold text-[14px] shadow-sm ${
+                                  item.completed
+                                    ? "bg-accent-blue text-white"
+                                    : item.active
+                                    ? "bg-accent-blue text-white"
+                                    : "bg-neutral-light-gray text-neutral-gray"
+                                }`}
+                              >
+                                {item.completed ? "✓" : item.step}
+                              </div>
+                              <div className="mt-[14px] max-w-[170px]">
+                                <p className={`text-[13px] font-semibold ${isCurrent ? "text-[#0F2D36]" : "text-[#8C9CAA]"}`}>
+                                  {item.title}
+                                </p>
+                                <p className={`mt-[4px] text-[12px] leading-[1.5] ${isCurrent ? "text-[#4F6674]" : "text-[#B0BDC7]"}`}>
+                                  {item.subtitle}
+                                </p>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
                   </div>
                 </div>
 
+                {isProgressSheetOpen && (
+                  <div className="fixed inset-0 z-[95] md:hidden">
+                    <button
+                      type="button"
+                      aria-label="Close rental progress"
+                      onClick={() => setIsProgressSheetOpen(false)}
+                      className="absolute inset-0 bg-black/35"
+                    />
+
+                    <div className="absolute left-0 right-0 bottom-0 bg-white rounded-t-[16px] overflow-hidden shadow-[0_-14px_36px_rgba(0,0,0,0.22)]">
+                      <div className="flex items-center justify-between px-[20px] py-[16px] border-b border-[rgba(15,45,54,0.12)]">
+                        <h3 className="text-[#0F2D36] text-[22px] font-bold">Application flow</h3>
+                        <button
+                          type="button"
+                          onClick={() => setIsProgressSheetOpen(false)}
+                          className="text-[#0F2D36] hover:text-[#0A2530] transition-colors"
+                          aria-label="Close"
+                        >
+                          <XCircle className="w-[24px] h-[24px]" />
+                        </button>
+                      </div>
+
+                      <div className="px-[20px] pt-[14px] pb-[calc(16px+env(safe-area-inset-bottom))]">
+                        {progressSteps.map(({ step, title, subtitle, completed, active }) => {
+                          const isCurrent = completed || active;
+                          return (
+                            <div key={step} className="relative pl-[32px] pb-[14px] last:pb-0">
+                              {step !== progressSteps.length && <span className="absolute left-[12px] top-[24px] w-[1px] h-[34px] bg-[#D8E1E8]" />}
+                              <button type="button" className="text-left cursor-default">
+                                <span
+                                  className={`absolute left-0 top-[2px] w-[24px] h-[24px] rounded-full flex items-center justify-center text-[13px] font-bold ${
+                                    isCurrent ? "bg-[#0F2D36] text-white" : "bg-[#D8E1E8] text-[#6F8794]"
+                                  }`}
+                                >
+                                  {step}
+                                </span>
+                                <p className={`text-[16px] font-semibold ${isCurrent ? "text-[#0F2D36]" : "text-[#9AACB7]"}`}>{title}</p>
+                                <p className={`text-[14px] mt-[2px] ${isCurrent ? "text-[#334E5A]" : "text-[#A8B8C2]"}`}>{subtitle}</p>
+                              </button>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 {/* Invitation section */}
-                <div className="bg-[#f6f7f8] border border-[rgba(0,0,0,0.08)] rounded-[6px] px-[24px] py-[28px]">
-                  <div className="text-center mb-[24px]">
-                    <h3 className="text-neutral-black text-[28px] leading-[1.1] font-bold mb-[10px]">Send {selectedApplication.tenant.name} an invitation to book</h3>
+                <div className="bg-[#f6f7f8] border border-[rgba(0,0,0,0.08)] rounded-[6px] px-[14px] sm:px-[20px] lg:px-[24px] py-[18px] sm:py-[24px] lg:py-[28px]">
+                  <div className="text-center mb-[18px] sm:mb-[24px]">
+                    <h3 className="text-neutral-black text-[22px] sm:text-[26px] lg:text-[28px] leading-[1.1] font-bold mb-[10px]">Send {selectedApplication.tenant.name} an invitation to book</h3>
                     <p className="text-neutral-gray text-[14px] leading-[1.5] max-w-[760px] mx-auto">
                       {selectedApplication.tenant.name} will have 24 hours to accept it. To suggest new dates or adjust the rent, send a special offer.
                     </p>
@@ -785,10 +851,10 @@ export function LandlordRentals() {
 
                   <div className="max-w-[520px] mx-auto border border-[rgba(0,0,0,0.12)] rounded-[6px] bg-white overflow-hidden mb-[26px]">
                     <div className="px-[20px] py-[18px] border-b border-[rgba(0,0,0,0.12)]">
-                      <h4 className="text-neutral-black text-[28px] leading-[1.1] font-bold">{selectedApplication.listing.title}</h4>
+                      <h4 className="text-neutral-black text-[22px] sm:text-[26px] lg:text-[28px] leading-[1.1] font-bold">{selectedApplication.listing.title}</h4>
                     </div>
                     <div className="p-[20px]">
-                      <div className="grid grid-cols-2 gap-[24px]">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-[14px] sm:gap-[24px]">
                         <div>
                           <p className="text-neutral-gray text-[13px] font-semibold mb-[6px]">Move-in date</p>
                           <p className="text-neutral-black text-[14px] font-bold">{formatOptionalDate(selectedApplication.moveInDate)}</p>
@@ -805,7 +871,7 @@ export function LandlordRentals() {
                     </div>
                   </div>
 
-                  <div className="flex items-center justify-center gap-[10px] flex-wrap">
+                  <div className="flex flex-wrap items-center justify-center gap-[12px] px-[4px] sm:px-0">
                     <button
                       type="button"
                       aria-label="Help with invitation actions"
@@ -820,7 +886,7 @@ export function LandlordRentals() {
                         void sendTemplateAction("invite");
                       }}
                       disabled={isTemplateSending !== null}
-                      className="px-[20px] py-[12px] bg-brand-primary text-white text-[14px] font-semibold rounded-[6px] border border-brand-primary transition-all duration-200 hover:bg-brand-primary-dark hover:shadow-md hover:-translate-y-[1px] disabled:opacity-60 disabled:hover:translate-y-0 disabled:hover:shadow-none"
+                      className="w-full sm:w-auto px-[22px] py-[12px] bg-brand-primary text-white text-[14px] font-semibold rounded-[6px] border border-brand-primary transition-all duration-200 hover:bg-brand-primary-dark hover:shadow-md hover:-translate-y-[1px] disabled:opacity-60 disabled:hover:translate-y-0 disabled:hover:shadow-none"
                     >
                       {isTemplateSending === "invite" ? "Sending invitation..." : "Send invitation to book"}
                     </button>
@@ -830,14 +896,14 @@ export function LandlordRentals() {
                         void sendTemplateAction("decline");
                       }}
                       disabled={isTemplateSending !== null}
-                      className="px-[20px] py-[12px] bg-white text-neutral-black text-[14px] font-semibold rounded-[6px] border border-[rgba(0,0,0,0.18)] transition-all duration-200 hover:bg-red-50 hover:text-red-700 hover:border-red-300 hover:shadow-md hover:-translate-y-[1px] disabled:opacity-60 disabled:hover:translate-y-0 disabled:hover:shadow-none"
+                      className="w-full sm:w-auto px-[22px] py-[12px] bg-white text-neutral-black text-[14px] font-semibold rounded-[6px] border border-[rgba(0,0,0,0.18)] transition-all duration-200 hover:bg-red-50 hover:text-red-700 hover:border-red-300 hover:shadow-md hover:-translate-y-[1px] disabled:opacity-60 disabled:hover:translate-y-0 disabled:hover:shadow-none"
                     >
                       {isTemplateSending === "decline" ? "Sending decline..." : "Decline"}
                     </button>
                     <button
                       type="button"
                       onClick={() => setIsSpecialOfferOpen(true)}
-                      className="px-[20px] py-[12px] bg-white text-neutral-black text-[14px] font-semibold rounded-[6px] border border-[rgba(0,0,0,0.18)] transition-all duration-200 hover:bg-neutral-light-gray hover:shadow-md hover:-translate-y-[1px]"
+                      className="w-full sm:w-auto px-[22px] py-[12px] bg-white text-neutral-black text-[14px] font-semibold rounded-[6px] border border-[rgba(0,0,0,0.18)] transition-all duration-200 hover:bg-neutral-light-gray hover:shadow-md hover:-translate-y-[1px]"
                     >
                       Special offer
                     </button>
@@ -856,11 +922,11 @@ export function LandlordRentals() {
                 </div>
 
                 {isSpecialOfferOpen && selectedApplication && (
-                  <div className="fixed inset-0 z-[80] bg-black/40 flex items-center justify-center p-[24px]">
-                    <div className="w-full max-w-[680px] bg-white border border-[rgba(0,0,0,0.12)] shadow-[0_20px_60px_rgba(0,0,0,0.18)] overflow-hidden rounded-[8px]">
-                      <div className="flex items-center justify-between px-[24px] py-[18px] border-b border-[rgba(0,0,0,0.08)] bg-[#f8f9fa]">
+                  <div className="fixed inset-0 z-[80] bg-black/40 flex items-center justify-center p-[10px] sm:p-[24px]">
+                    <div className="w-full max-w-[680px] max-h-[92vh] overflow-y-auto bg-white border border-[rgba(0,0,0,0.12)] shadow-[0_20px_60px_rgba(0,0,0,0.18)] rounded-[8px]">
+                      <div className="flex items-center justify-between px-[14px] sm:px-[24px] py-[14px] sm:py-[18px] border-b border-[rgba(0,0,0,0.08)] bg-[#f8f9fa]">
                         <div>
-                          <h3 className="text-neutral-black text-[22px] font-bold">Create special offer</h3>
+                          <h3 className="text-neutral-black text-[20px] sm:text-[22px] font-bold">Create special offer</h3>
                           <p className="text-neutral-gray text-[13px] mt-[4px]">Send a new rental proposal to {selectedApplication.tenant.name}.</p>
                         </div>
                         <button
@@ -873,8 +939,8 @@ export function LandlordRentals() {
                         </button>
                       </div>
 
-                      <div className="grid grid-cols-[1.2fr_1fr] gap-[0px]">
-                        <div className="p-[24px] space-y-[16px]">
+                      <div className="grid grid-cols-1 lg:grid-cols-[1.2fr_1fr] gap-[0px]">
+                        <div className="p-[14px] sm:p-[24px] space-y-[16px]">
                           <div>
                             <label className="block text-[13px] font-semibold text-neutral-black mb-[6px]">New rent</label>
                             <input
@@ -887,7 +953,7 @@ export function LandlordRentals() {
                               className="w-full px-[14px] py-[11px] border border-[rgba(0,0,0,0.14)] rounded-[6px] text-[14px] outline-none focus:border-brand-primary"
                             />
                           </div>
-                          <div className="grid grid-cols-2 gap-[12px]">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-[12px]">
                             <div>
                               <label className="block text-[13px] font-semibold text-neutral-black mb-[6px]">Move-in and move-out dates</label>
                               <button
@@ -914,7 +980,7 @@ export function LandlordRentals() {
                           {specialOfferFeedback && <p className="text-[12px] text-neutral-gray">{specialOfferFeedback}</p>}
                         </div>
 
-                        <div className="bg-[#f7f8f9] border-l border-[rgba(0,0,0,0.08)] p-[24px] space-y-[16px]">
+                        <div className="bg-[#f7f8f9] lg:border-l border-t lg:border-t-0 border-[rgba(0,0,0,0.08)] p-[14px] sm:p-[24px] space-y-[16px]">
                           <div className="bg-white border border-[rgba(0,0,0,0.10)] rounded-[8px] p-[16px]">
                             <p className="text-[12px] text-neutral-gray uppercase tracking-[0.08em] mb-[6px]">Preview</p>
                             <h4 className="text-neutral-black text-[18px] font-bold mb-[8px]">ReserveHousing Special Offer</h4>
@@ -945,7 +1011,7 @@ export function LandlordRentals() {
                 )}
 
                 {isSpecialOfferCalendarOpen && (
-                  <div className="fixed inset-0 z-[90] bg-black/40 flex items-start justify-center p-[24px] pt-[48px]">
+                  <div className="fixed inset-0 z-[90] bg-black/40 flex items-start justify-center p-[10px] sm:p-[24px] pt-[28px] sm:pt-[48px]">
                     <div className="w-full max-w-[980px] relative">
                       <div className="mb-[8px] flex justify-end">
                         <button
@@ -987,7 +1053,7 @@ export function LandlordRentals() {
                     </p>
                   </div>
                   <div className="p-[14px]">
-                    <div className="flex gap-[12px] items-start">
+                    <div className="flex flex-col sm:flex-row gap-[12px] items-start">
                       <div className="w-[54px] h-[54px] rounded-full bg-white border border-[rgba(0,0,0,0.12)] flex items-center justify-center text-neutral-black font-bold text-[16px] flex-shrink-0">
                         {selectedApplication.tenant.name.charAt(0).toUpperCase()}
                       </div>
@@ -1023,7 +1089,7 @@ export function LandlordRentals() {
               <div className="space-y-[16px]">
                 <div className="flex items-start justify-between border-b border-[rgba(0,0,0,0.10)] pb-[14px]">
                   <div>
-                    <h4 className="text-neutral-black text-[30px] leading-[1.05] font-bold mb-[6px]">{selectedApplication.tenant.name}</h4>
+                    <h4 className="text-neutral-black text-[24px] sm:text-[30px] leading-[1.05] font-bold mb-[6px]">{selectedApplication.tenant.name}</h4>
                     <p className="text-neutral-black text-[14px]">
                       From {selectedApplication.billingAddress?.city || selectedApplication.listing.city || "Not specified"}
                     </p>

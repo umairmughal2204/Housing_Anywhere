@@ -1,7 +1,8 @@
 import { Header } from "../components/header";
 import { Footer } from "../components/footer";
 import { Search, Mail, Phone, MessageCircle, FileText, HelpCircle, ArrowRight, ShieldCheck, LifeBuoy, Sparkles } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useLocation } from "react-router";
 
 type HelpContact = {
   title: string;
@@ -194,8 +195,16 @@ function HelpTopicCard({ topic, tone }: { topic: HelpTopic; tone: "brand" | "acc
 }
 
 export function Help() {
+  const location = useLocation();
   const [searchQuery, setSearchQuery] = useState("");
   const normalizedQuery = searchQuery.trim().toLowerCase();
+
+  useEffect(() => {
+    const queryFromUrl = new URLSearchParams(location.search).get("q");
+    if (queryFromUrl !== null) {
+      setSearchQuery(queryFromUrl);
+    }
+  }, [location.search]);
 
   const filteredContacts = useMemo(
     () => HELP_CONTACTS.filter((contact) => matchesQuery(contact.title, contact.description, contact.keywords, normalizedQuery)),
@@ -297,23 +306,23 @@ export function Help() {
                   href={contact.href}
                   target={contact.openInNewTab ? "_blank" : undefined}
                   rel={contact.openInNewTab ? "noreferrer" : undefined}
-                  className="block rounded-[24px] bg-neutral-light-gray p-[32px] text-center transition-all hover:-translate-y-[2px] hover:bg-brand-primary-light focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary"
+                  className="group block rounded-[28px] border border-[rgba(11,45,58,0.08)] bg-[linear-gradient(180deg,#F9FCFF_0%,#F4F7FA_100%)] p-[24px] md:p-[32px] text-center shadow-[0_10px_30px_rgba(15,23,42,0.06)] transition-all hover:-translate-y-[3px] hover:border-[rgba(11,165,199,0.32)] hover:shadow-[0_16px_36px_rgba(15,23,42,0.12)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary"
                 >
-                  <div className={`w-[56px] h-[56px] flex items-center justify-center mx-auto mb-[24px] ${contact.accentClassName}`}>
+                  <div className={`w-[56px] h-[56px] rounded-full flex items-center justify-center mx-auto mb-[20px] md:mb-[24px] shadow-[0_10px_20px_rgba(11,165,199,0.22)] ${contact.accentClassName}`}>
                     <Icon className="w-[28px] h-[28px] text-white" />
                   </div>
-                  <h3 className="text-neutral-black text-[20px] font-bold mb-[12px]">
+                  <h3 className="text-neutral-black text-[20px] font-bold mb-[10px]">
                     {contact.title}
                   </h3>
-                  <p className="text-neutral-gray text-[14px] mb-[16px]">
+                  <p className="text-neutral-gray text-[14px] mb-[12px] md:mb-[16px]">
                     {contact.description}
                   </p>
                   <p className="text-neutral-black text-[13px] font-semibold">
                     {contact.detail}
                   </p>
-                  <span className="mt-[18px] inline-flex items-center gap-[8px] rounded-full bg-white px-[14px] py-[8px] text-[13px] font-semibold text-[#1A1A1A]">
+                  <span className="mt-[18px] inline-flex items-center gap-[8px] rounded-full bg-white px-[16px] py-[9px] text-[13px] font-semibold text-[#1A1A1A] shadow-[0_1px_0_rgba(0,0,0,0.04)] transition-all group-hover:bg-[#032E3D] group-hover:text-white">
                     {contact.actionLabel}
-                    <ArrowRight className="h-[14px] w-[14px]" />
+                    <ArrowRight className="h-[14px] w-[14px] transition-transform group-hover:translate-x-[2px]" />
                   </span>
                 </a>
               );

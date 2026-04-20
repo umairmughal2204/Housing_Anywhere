@@ -379,7 +379,7 @@ export function Header({ variant = "default", logoVariant = "brand", forceSearch
             ) : (
               <Link 
                 to="/landlord" 
-                className="px-[16px] py-[10px] border border-neutral-hover text-neutral-black text-[14px] font-semibold hover:bg-neutral-light-gray transition-colors"
+                className="rounded-full px-[16px] py-[10px] border border-neutral-hover text-neutral-black text-[14px] font-semibold hover:bg-neutral-light-gray transition-colors"
               >
                 I'm a landlord
               </Link>

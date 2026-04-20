@@ -2,7 +2,7 @@ import { Header } from "../components/header";
 import { Footer } from "../components/footer";
 import { HandCoins, HandMetal, MessageCircle, MousePointer2, PencilLine, Send, ShieldCheck } from "lucide-react";
 import { useEffect, useState } from "react";
-import { useLocation } from "react-router";
+import { useLocation, useNavigate } from "react-router";
 import { useAuth } from "../contexts/auth-context";
 import effortlessListingImage from "../../assets/Effortless-Listing.webp";
 import remoteTenantMatchingImage from "../../assets/Remote-tenant-matching.webp";
@@ -85,6 +85,7 @@ const AUDIENCE_COPY: Record<
 export function HowItWorks() {
   const { user } = useAuth();
   const location = useLocation();
+  const navigate = useNavigate();
 
   const resolveAudience = (search: string, role?: "tenant" | "landlord"): Audience => {
     const queryAudience = new URLSearchParams(search).get("audience");
@@ -104,6 +105,12 @@ export function HowItWorks() {
   );
   const [expandedFaq, setExpandedFaq] = useState<number | null>(0);
   const content = AUDIENCE_COPY[activeAudience];
+
+  const goToListings = () => navigate("/listings");
+  const goToLandlordRegister = () => navigate("/landlord/register");
+  const goToAccount = () => navigate("/account");
+  const goToHelp = () => navigate("/help");
+  const openHelpSearch = (query: string) => navigate(`/help?q=${encodeURIComponent(query)}`);
 
   useEffect(() => {
     setActiveAudience(resolveAudience(location.search, user?.role));
@@ -128,19 +135,19 @@ export function HowItWorks() {
     <div className="min-h-screen bg-white">
       <Header />
 
-      <section className="relative overflow-hidden bg-[#D8DFE9] pt-[50px] pb-[152px] md:pt-[64px] md:pb-[182px]">
-        <div className="mx-auto max-w-[1200px] px-[32px] text-center">
-          <h1 className="text-[#032E3D] text-[42px] md:text-[58px] font-bold tracking-[-0.04em] leading-[1]">
+      <section className="relative overflow-hidden bg-[#D8DFE9] pt-[42px] pb-[120px] md:pt-[64px] md:pb-[182px]">
+        <div className="mx-auto max-w-[1200px] px-[16px] sm:px-[24px] md:px-[32px] text-center">
+          <h1 className="text-[#032E3D] text-[34px] sm:text-[42px] md:text-[58px] font-bold tracking-[-0.04em] leading-[1]">
             {content.title}
           </h1>
-          <p className="mx-auto mt-[16px] max-w-[840px] text-[#0D3747] text-[15px] md:text-[18px] leading-[1.45] font-semibold">
+          <p className="mx-auto mt-[12px] max-w-[840px] text-[#0D3747] text-[14px] sm:text-[15px] md:text-[18px] leading-[1.45] font-semibold">
             {content.description}
           </p>
 
-          <div className="mx-auto mt-[42px] flex w-full max-w-[620px] rounded-full border border-[rgba(255,255,255,0.9)] bg-[rgba(255,255,255,0.52)] p-[4px] shadow-[0_14px_28px_rgba(15,23,42,0.06)]">
+          <div className="mx-auto mt-[30px] md:mt-[42px] flex w-full max-w-[620px] rounded-full border border-[rgba(255,255,255,0.9)] bg-[rgba(255,255,255,0.52)] p-[4px] shadow-[0_14px_28px_rgba(15,23,42,0.06)]">
             <button
               type="button"
-              className={`h-[40px] md:h-[44px] flex-1 rounded-full text-[14px] md:text-[16px] font-medium transition-colors ${
+              className={`h-[38px] sm:h-[40px] md:h-[44px] flex-1 rounded-full text-[13px] sm:text-[14px] md:text-[16px] font-medium transition-colors ${
                 activeAudience === "tenant"
                   ? "bg-[#032E3D] text-white"
                   : "bg-transparent text-[#0D3747] hover:bg-[rgba(255,255,255,0.32)]"
@@ -151,7 +158,7 @@ export function HowItWorks() {
             </button>
             <button
               type="button"
-              className={`h-[40px] md:h-[44px] flex-1 rounded-full text-[14px] md:text-[16px] font-semibold transition-colors ${
+              className={`h-[38px] sm:h-[40px] md:h-[44px] flex-1 rounded-full text-[13px] sm:text-[14px] md:text-[16px] font-semibold transition-colors ${
                 activeAudience === "landlord"
                   ? "bg-[#032E3D] text-white"
                   : "bg-transparent text-[#0D3747] hover:bg-[rgba(255,255,255,0.32)]"
@@ -166,17 +173,17 @@ export function HowItWorks() {
         <div className="pointer-events-none absolute left-1/2 bottom-[-170px] h-[275px] w-[1800px] -translate-x-1/2 rounded-[50%] bg-white" />
       </section>
 
-      <section className="mt-[10px] md:mt-[14px] relative z-10 pb-[52px] md:pb-[64px]">
+      <section className="mt-[8px] md:mt-[14px] relative z-10 pb-[42px] md:pb-[64px]">
         <div className="mx-auto max-w-[1180px] px-[20px] md:px-[28px]">
           <div className="grid grid-cols-1 gap-[20px] md:grid-cols-3 md:gap-[22px]">
             {content.cards.map((card) => (
               <article
                 key={card.title}
-                className="rounded-[12px] border border-[rgba(11,45,58,0.06)] bg-[#D4DAE2] px-[20px] py-[18px] shadow-[0_1px_2px_rgba(15,23,42,0.03)]"
+                className="min-w-0 rounded-[12px] border border-[rgba(11,45,58,0.06)] bg-[#D4DAE2] px-[18px] md:px-[20px] py-[16px] md:py-[18px] shadow-[0_1px_2px_rgba(15,23,42,0.03)]"
               >
                 <card.icon className="h-[36px] w-[36px] text-[#113646]" />
-                <h2 className="mt-[12px] text-[#0B3242] text-[20px] md:text-[16px] font-bold leading-[1.2]">{card.title}</h2>
-                <p className="mt-[8px] text-[#355361] text-[16px] md:text-[13px] leading-[1.5]">{card.description}</p>
+                <h2 className="mt-[10px] text-[#0B3242] text-[18px] md:text-[16px] font-bold leading-[1.2]">{card.title}</h2>
+                <p className="mt-[8px] text-[#355361] text-[14px] md:text-[13px] leading-[1.5]">{card.description}</p>
               </article>
             ))}
           </div>
@@ -184,29 +191,30 @@ export function HowItWorks() {
       </section>
 
       {activeAudience === "tenant" ? (
-      <section className="pb-[56px] md:pb-[72px]">
+      <section className="pb-[52px] md:pb-[72px]">
         <div className="mx-auto max-w-[1180px] px-[20px] md:px-[28px] space-y-[40px]">
           <div className="grid grid-cols-1 items-center gap-[24px] lg:grid-cols-[1.02fr_0.98fr] lg:gap-[36px]">
             <div className="overflow-hidden rounded-[8px] border border-[rgba(3,46,61,0.16)] bg-black">
               <iframe
                 title="How it works | ReserveHousing"
                 src="https://www.youtube.com/embed/dQw4w9WgXcQ"
-                className="h-[280px] w-full"
+                className="h-[220px] sm:h-[280px] w-full"
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                 allowFullScreen
               />
             </div>
 
-            <div>
-              <h2 className="text-[#0B3242] text-[28px] md:text-[32px] font-bold leading-[1.12] tracking-[-0.02em]">
+            <div className="min-w-0">
+              <h2 className="text-[#0B3242] text-[24px] sm:text-[28px] md:text-[32px] font-bold leading-[1.12] tracking-[-0.02em]">
                 Join over 100,000 people who&apos;ve found their home with us.
               </h2>
-              <p className="mt-[12px] text-[#4E6470] text-[15px] leading-[1.5]">
+              <p className="mt-[12px] text-[#4E6470] text-[14px] md:text-[15px] leading-[1.5]">
                 Whether you&apos;re a student, a professional, or someone looking for temporary accommodation, ReserveHousing securely connects you with landlords and property managers.
               </p>
               <button
                 type="button"
-                className="mt-[16px] inline-flex items-center justify-center gap-[6px] rounded-[8px] bg-[#FF5630] px-[16px] py-[10px] text-white text-[13px] font-bold tracking-[0.01em] hover:bg-[#E64520] transition-colors"
+                onClick={goToListings}
+                className="mt-[16px] inline-flex max-w-full items-center justify-center gap-[6px] rounded-full bg-[#FF5630] px-[20px] py-[11px] text-white text-[13px] font-bold tracking-[0.01em] shadow-[0_10px_20px_rgba(255,86,48,0.2)] hover:bg-[#E64520] hover:shadow-[0_14px_26px_rgba(255,86,48,0.26)] transition-all"
               >
                 Find a place that feels like home
               </button>
@@ -214,16 +222,17 @@ export function HowItWorks() {
           </div>
 
           <div className="grid grid-cols-1 items-center gap-[24px] lg:grid-cols-[0.98fr_1.02fr] lg:gap-[36px]">
-            <div>
-              <h2 className="text-[#0B3242] text-[28px] md:text-[32px] font-bold leading-[1.12] tracking-[-0.02em]">
+            <div className="min-w-0">
+              <h2 className="text-[#0B3242] text-[24px] sm:text-[28px] md:text-[32px] font-bold leading-[1.12] tracking-[-0.02em]">
                 Tenant Protection
               </h2>
-              <p className="mt-[12px] text-[#4E6470] text-[15px] leading-[1.5]">
+              <p className="mt-[12px] text-[#4E6470] text-[14px] md:text-[15px] leading-[1.5]">
                 All rentals on ReserveHousing come with Tenant Protection, which ensures a secure and stress-free rental experience from start to finish. For example, if a landlord cancels or delays your move-in, we will help you find alternative accommodations or a temporary stay. We also protect your payment by holding your first month's rent for 48 hours after you move in. This allows you to confirm that everything is as promised.
               </p>
               <button
                 type="button"
-                className="mt-[16px] border-b border-[#0B3242] pb-[2px] text-[#0B3242] text-[13px] font-bold uppercase tracking-[0.02em]"
+                onClick={() => openHelpSearch("tenant protection")}
+                className="mt-[16px] inline-flex max-w-full border-b border-[#0B3242] pb-[2px] text-[#0B3242] text-[12px] md:text-[13px] font-bold uppercase tracking-[0.02em] break-words text-left"
               >
                 Learn more about Tenant Protection
               </button>
@@ -233,7 +242,7 @@ export function HowItWorks() {
               <img
                 src={tenantProtectionImage}
                 alt="Tenant Protection"
-                className="w-full max-w-[450px] rounded-[10px] object-cover"
+                className="w-full max-w-[450px] mx-auto rounded-[10px] object-cover"
               />
             </div>
           </div>
@@ -243,20 +252,21 @@ export function HowItWorks() {
               <img
                 src={onlineViewingImage}
                 alt="Safe way to rent a place remotely"
-                className="w-full max-w-[450px] rounded-[10px] object-cover"
+                className="w-full max-w-[450px] mx-auto rounded-[10px] object-cover"
               />
             </div>
 
-            <div>
-              <h2 className="text-[#0B3242] text-[28px] md:text-[32px] font-bold leading-[1.12] tracking-[-0.02em]">
+            <div className="min-w-0">
+              <h2 className="text-[#0B3242] text-[24px] sm:text-[28px] md:text-[32px] font-bold leading-[1.12] tracking-[-0.02em]">
                 Safe way to rent a place remotely
               </h2>
-              <p className="mt-[12px] text-[#4E6470] text-[15px] leading-[1.5]">
+              <p className="mt-[12px] text-[#4E6470] text-[14px] md:text-[15px] leading-[1.5]">
                 Find, rent, and manage your stay entirely online with no in-person visits. Choose from a wide selection of properties in major cities and university towns, with multilingual support available for your destination.
               </p>
               <button
                 type="button"
-                className="mt-[16px] border-b border-[#0B3242] pb-[2px] text-[#0B3242] text-[13px] font-bold uppercase tracking-[0.02em]"
+                onClick={() => openHelpSearch("online viewings")}
+                className="mt-[16px] inline-flex max-w-full border-b border-[#0B3242] pb-[2px] text-[#0B3242] text-[12px] md:text-[13px] font-bold uppercase tracking-[0.02em] break-words text-left"
               >
                 Learn more about online viewings
               </button>
@@ -264,16 +274,17 @@ export function HowItWorks() {
           </div>
 
           <div className="grid grid-cols-1 items-center gap-[24px] lg:grid-cols-[0.98fr_1.02fr] lg:gap-[36px]">
-            <div>
-              <h2 className="text-[#0B3242] text-[28px] md:text-[32px] font-bold leading-[1.12] tracking-[-0.02em]">
+            <div className="min-w-0">
+              <h2 className="text-[#0B3242] text-[24px] sm:text-[28px] md:text-[32px] font-bold leading-[1.12] tracking-[-0.02em]">
                 Search, save and set alerts
               </h2>
-              <p className="mt-[12px] text-[#4E6470] text-[15px] leading-[1.5]">
+              <p className="mt-[12px] text-[#4E6470] text-[14px] md:text-[15px] leading-[1.5]">
                 Browse thousands of rental properties, save favorites and set up alerts to get real-time availability updates and plan your move with confidence.
               </p>
               <button
                 type="button"
-                className="mt-[16px] border-b border-[#0B3242] pb-[2px] text-[#0B3242] text-[13px] font-bold uppercase tracking-[0.02em]"
+                onClick={goToListings}
+                className="mt-[16px] inline-flex max-w-full border-b border-[#0B3242] pb-[2px] text-[#0B3242] text-[12px] md:text-[13px] font-bold uppercase tracking-[0.02em] break-words text-left"
               >
                 How to find a perfect place
               </button>
@@ -283,7 +294,7 @@ export function HowItWorks() {
               <img
                 src={searchSaveAlertGif}
                 alt="Search, save and set alerts"
-                className="w-full max-w-[450px] rounded-[10px] object-cover"
+                className="w-full max-w-[450px] mx-auto rounded-[10px] object-cover"
               />
             </div>
           </div>
@@ -293,20 +304,21 @@ export function HowItWorks() {
               <img
                 src={getNoticedByLandlordsImage}
                 alt="Get noticed by landlords"
-                className="w-full max-w-[450px] rounded-[10px] object-cover"
+                className="w-full max-w-[450px] mx-auto rounded-[10px] object-cover"
               />
             </div>
 
-            <div>
-              <h2 className="text-[#0B3242] text-[28px] md:text-[32px] font-bold leading-[1.12] tracking-[-0.02em]">
+            <div className="min-w-0">
+              <h2 className="text-[#0B3242] text-[24px] sm:text-[28px] md:text-[32px] font-bold leading-[1.12] tracking-[-0.02em]">
                 Get noticed by landlords
               </h2>
-              <p className="mt-[12px] text-[#4E6470] text-[15px] leading-[1.5]">
+              <p className="mt-[12px] text-[#4E6470] text-[14px] md:text-[15px] leading-[1.5]">
                 A verified ID builds trust and shows landlords you're a serious renter. Complete your ID verification to stand out and secure your place faster.
               </p>
               <button
                 type="button"
-                className="mt-[16px] border-b border-[#0B3242] pb-[2px] text-[#0B3242] text-[13px] font-bold uppercase tracking-[0.02em]"
+                onClick={goToAccount}
+                className="mt-[16px] inline-flex max-w-full border-b border-[#0B3242] pb-[2px] text-[#0B3242] text-[12px] md:text-[13px] font-bold uppercase tracking-[0.02em] break-words text-left"
               >
                 Verify your profile
               </button>
@@ -314,11 +326,11 @@ export function HowItWorks() {
           </div>
 
           <div className="grid grid-cols-1 items-center gap-[24px] lg:grid-cols-[0.98fr_1.02fr] lg:gap-[36px]">
-            <div>
-              <h2 className="text-[#0B3242] text-[28px] md:text-[32px] font-bold leading-[1.12] tracking-[-0.02em]">
+            <div className="min-w-0">
+              <h2 className="text-[#0B3242] text-[24px] sm:text-[28px] md:text-[32px] font-bold leading-[1.12] tracking-[-0.02em]">
                 Trust and safety
               </h2>
-              <p className="mt-[12px] text-[#4E6470] text-[15px] leading-[1.5]">
+              <p className="mt-[12px] text-[#4E6470] text-[14px] md:text-[15px] leading-[1.5]">
                 We verify landlords through a robust process including email verification, ID and selfie checks, and KYC verification. This ensures you're renting with trusted landlords, giving you the confidence to make the move.
               </p>
             </div>
@@ -327,7 +339,7 @@ export function HowItWorks() {
               <img
                 src={trustAndSafetyImage}
                 alt="Trust and safety checks"
-                className="w-full max-w-[450px] rounded-[10px] object-cover"
+                className="w-full max-w-[450px] mx-auto rounded-[10px] object-cover"
               />
             </div>
           </div>
@@ -337,20 +349,21 @@ export function HowItWorks() {
               <img
                 src={chatAndShareGif}
                 alt="Chat and share documents securely"
-                className="w-full max-w-[450px] rounded-[10px] object-cover"
+                className="w-full max-w-[450px] mx-auto rounded-[10px] object-cover"
               />
             </div>
 
-            <div>
-              <h2 className="text-[#0B3242] text-[28px] md:text-[32px] font-bold leading-[1.12] tracking-[-0.02em]">
+            <div className="min-w-0">
+              <h2 className="text-[#0B3242] text-[24px] sm:text-[28px] md:text-[32px] font-bold leading-[1.12] tracking-[-0.02em]">
                 Chat and share documents securely
               </h2>
-              <p className="mt-[12px] text-[#4E6470] text-[15px] leading-[1.5]">
+              <p className="mt-[12px] text-[#4E6470] text-[14px] md:text-[15px] leading-[1.5]">
                 Communicate directly with landlords using our platform's secure chat feature. Ask questions, negotiate terms, and share important documents safely, all within a protected environment.
               </p>
               <button
                 type="button"
-                className="mt-[16px] border-b border-[#0B3242] pb-[2px] text-[#0B3242] text-[13px] font-bold tracking-[0.02em]"
+                onClick={() => openHelpSearch("secure chat")}
+                className="mt-[16px] inline-flex max-w-full border-b border-[#0B3242] pb-[2px] text-[#0B3242] text-[12px] md:text-[13px] font-bold tracking-[0.02em] break-words text-left"
               >
                 Learn more about communicating with landlords and property managers
               </button>
@@ -359,42 +372,42 @@ export function HowItWorks() {
 
           <section className="pt-[16px] md:pt-[24px]">
             <div className="mx-auto max-w-[1020px] grid grid-cols-1 gap-[18px] md:grid-cols-2 xl:grid-cols-3">
-              <article className="rounded-[12px] bg-[#DDE3E8] px-[20px] py-[18px]">
+              <article className="rounded-[12px] bg-[#DDE3E8] px-[18px] md:px-[20px] py-[16px] md:py-[18px]">
                 <MousePointer2 className="h-[36px] w-[36px] text-[#0B3242]" />
-                <h3 className="mt-[12px] text-[#0B3242] text-[20px] md:text-[16px] font-bold leading-[1.2]">1. Pick a few places</h3>
-                <p className="mt-[8px] text-[#4E6470] text-[16px] md:text-[13px] leading-[1.5]">
+                <h3 className="mt-[10px] text-[#0B3242] text-[18px] md:text-[16px] font-bold leading-[1.2]">1. Pick a few places</h3>
+                <p className="mt-[8px] text-[#4E6470] text-[14px] md:text-[13px] leading-[1.5]">
                   Browse rooms, studios, and apartments online. With photos, videos, and descriptions, viewings are not needed - renting from anywhere is quick and easy.
                 </p>
               </article>
 
-              <article className="rounded-[12px] bg-[#DDE3E8] px-[20px] py-[18px]">
+              <article className="rounded-[12px] bg-[#DDE3E8] px-[18px] md:px-[20px] py-[16px] md:py-[18px]">
                 <MessageCircle className="h-[36px] w-[36px] text-[#0B3242]" />
-                <h3 className="mt-[12px] text-[#0B3242] text-[20px] md:text-[16px] font-bold leading-[1.2]">2. Message the landlord</h3>
-                <p className="mt-[8px] text-[#4E6470] text-[16px] md:text-[13px] leading-[1.5]">
+                <h3 className="mt-[10px] text-[#0B3242] text-[18px] md:text-[16px] font-bold leading-[1.2]">2. Message the landlord</h3>
+                <p className="mt-[8px] text-[#4E6470] text-[14px] md:text-[13px] leading-[1.5]">
                   Send a message to the landlord through private chat. Ask questions, share information, and see how well you both match.
                 </p>
               </article>
 
-              <article className="rounded-[12px] bg-[#DDE3E8] px-[20px] py-[18px] md:col-span-2 xl:col-span-1">
+              <article className="rounded-[12px] bg-[#DDE3E8] px-[18px] md:px-[20px] py-[16px] md:py-[18px] md:col-span-2 xl:col-span-1">
                 <Send className="h-[36px] w-[36px] text-[#0B3242]" />
-                <h3 className="mt-[12px] text-[#0B3242] text-[20px] md:text-[16px] font-bold leading-[1.2]">3. Apply to rent</h3>
-                <p className="mt-[8px] text-[#4E6470] text-[16px] md:text-[13px] leading-[1.5]">
+                <h3 className="mt-[10px] text-[#0B3242] text-[18px] md:text-[16px] font-bold leading-[1.2]">3. Apply to rent</h3>
+                <p className="mt-[8px] text-[#4E6470] text-[14px] md:text-[13px] leading-[1.5]">
                   Like a place and want to call it home? Apply to rent it, and you'll know if it's yours within 48 hours.
                 </p>
               </article>
 
-              <article className="rounded-[12px] bg-[#DDE3E8] px-[20px] py-[18px] md:col-start-1 xl:col-start-1 xl:col-span-1">
+              <article className="rounded-[12px] bg-[#DDE3E8] px-[18px] md:px-[20px] py-[16px] md:py-[18px] md:col-start-1 xl:col-start-1 xl:col-span-1">
                 <HandCoins className="h-[36px] w-[36px] text-[#0B3242]" />
-                <h3 className="mt-[12px] text-[#0B3242] text-[20px] md:text-[16px] font-bold leading-[1.2]">4. Pay, and it's yours</h3>
-                <p className="mt-[8px] text-[#4E6470] text-[16px] md:text-[13px] leading-[1.5]">
+                <h3 className="mt-[10px] text-[#0B3242] text-[18px] md:text-[16px] font-bold leading-[1.2]">4. Pay, and it's yours</h3>
+                <p className="mt-[8px] text-[#4E6470] text-[14px] md:text-[13px] leading-[1.5]">
                   Pay the first month's rent to confirm your stay. Congratulations! You found your next home.
                 </p>
               </article>
 
-              <article className="rounded-[12px] bg-[#DDE3E8] px-[20px] py-[18px] md:col-start-2 xl:col-start-2 xl:col-span-1">
+              <article className="rounded-[12px] bg-[#DDE3E8] px-[18px] md:px-[20px] py-[16px] md:py-[18px] md:col-start-2 xl:col-start-2 xl:col-span-1">
                 <HandMetal className="h-[36px] w-[36px] text-[#0B3242]" />
-                <h3 className="mt-[12px] text-[#0B3242] text-[20px] md:text-[16px] font-bold leading-[1.2]">5. Move in with peace of mind</h3>
-                <p className="mt-[8px] text-[#4E6470] text-[16px] md:text-[13px] leading-[1.5]">
+                <h3 className="mt-[10px] text-[#0B3242] text-[18px] md:text-[16px] font-bold leading-[1.2]">5. Move in with peace of mind</h3>
+                <p className="mt-[8px] text-[#4E6470] text-[14px] md:text-[13px] leading-[1.5]">
                   Your payment is safe with us until you move in and check everything out. With our Tenant Protection, you're in safe hands from start to finish.
                 </p>
               </article>
@@ -403,27 +416,28 @@ export function HowItWorks() {
         </div>
       </section>
       ) : (
-      <section className="pb-[56px] md:pb-[72px]">
+      <section className="pb-[52px] md:pb-[72px]">
         <div className="mx-auto max-w-[1180px] px-[20px] md:px-[28px] space-y-[40px]">
           <div className="grid grid-cols-1 items-center gap-[24px] lg:grid-cols-[1.02fr_0.98fr] lg:gap-[36px]">
             <div className="overflow-hidden rounded-[8px] border border-[rgba(3,46,61,0.16)] bg-black">
               <iframe
                 title="How it works landlord video preview"
                 src="about:blank"
-                className="h-[280px] w-full"
+                className="h-[220px] sm:h-[280px] w-full"
               />
             </div>
 
-            <div>
-              <h2 className="text-[#0B3242] text-[28px] md:text-[32px] font-bold leading-[1.12] tracking-[-0.02em]">
+            <div className="min-w-0">
+              <h2 className="text-[#0B3242] text-[24px] sm:text-[28px] md:text-[32px] font-bold leading-[1.12] tracking-[-0.02em]">
                 Extensive reach and exposure
               </h2>
-              <p className="mt-[12px] text-[#4E6470] text-[15px] leading-[1.5]">
+              <p className="mt-[12px] text-[#4E6470] text-[14px] md:text-[15px] leading-[1.5]">
                 Access millions of potential tenants worldwide, supported by our partnerships with over 300+ international universities.
               </p>
               <button
                 type="button"
-                className="mt-[16px] border-b border-[#0B3242] pb-[2px] text-[#0B3242] text-[13px] font-bold uppercase tracking-[0.02em]"
+                onClick={() => openHelpSearch("audience reach")}
+                className="mt-[16px] inline-flex max-w-full border-b border-[#0B3242] pb-[2px] text-[#0B3242] text-[12px] md:text-[13px] font-bold uppercase tracking-[0.02em] break-words text-left"
               >
                 More about our audience reach
               </button>
@@ -431,16 +445,17 @@ export function HowItWorks() {
           </div>
 
           <div className="grid grid-cols-1 items-center gap-[24px] lg:grid-cols-[0.98fr_1.02fr] lg:gap-[36px]">
-            <div>
-              <h2 className="text-[#0B3242] text-[28px] md:text-[32px] font-bold leading-[1.12] tracking-[-0.02em]">
+            <div className="min-w-0">
+              <h2 className="text-[#0B3242] text-[24px] sm:text-[28px] md:text-[32px] font-bold leading-[1.12] tracking-[-0.02em]">
                 Effortless listing and management
               </h2>
-              <p className="mt-[12px] text-[#4E6470] text-[15px] leading-[1.5]">
+              <p className="mt-[12px] text-[#4E6470] text-[14px] md:text-[15px] leading-[1.5]">
                 Create and manage property listings with ease. Listings are automatically translated into multiple languages, and our advanced calendar sync saves you time and effort.
               </p>
               <button
                 type="button"
-                className="mt-[16px] border-b border-[#0B3242] pb-[2px] text-[#0B3242] text-[13px] font-bold uppercase tracking-[0.02em]"
+                onClick={() => openHelpSearch("property management")}
+                className="mt-[16px] inline-flex max-w-full border-b border-[#0B3242] pb-[2px] text-[#0B3242] text-[12px] md:text-[13px] font-bold uppercase tracking-[0.02em] break-words text-left"
               >
                 More about property management
               </button>
@@ -450,7 +465,7 @@ export function HowItWorks() {
               <img
                 src={effortlessListingImage}
                 alt="Effortless listing and management"
-                className="w-full max-w-[450px] rounded-[10px] object-cover"
+                className="w-full max-w-[450px] mx-auto rounded-[10px] object-cover"
               />
             </div>
           </div>
@@ -460,20 +475,21 @@ export function HowItWorks() {
               <img
                 src={remoteTenantMatchingImage}
                 alt="Remote tenant matching and communication"
-                className="w-full max-w-[450px] rounded-[10px] object-cover"
+                className="w-full max-w-[450px] mx-auto rounded-[10px] object-cover"
               />
             </div>
 
-            <div>
-              <h2 className="text-[#0B3242] text-[28px] md:text-[32px] font-bold leading-[1.12] tracking-[-0.02em]">
+            <div className="min-w-0">
+              <h2 className="text-[#0B3242] text-[24px] sm:text-[28px] md:text-[32px] font-bold leading-[1.12] tracking-[-0.02em]">
                 Remote tenant matching and communication
               </h2>
-              <p className="mt-[12px] text-[#4E6470] text-[15px] leading-[1.5]">
+              <p className="mt-[12px] text-[#4E6470] text-[14px] md:text-[15px] leading-[1.5]">
                 Use filters to set tenant preferences and find the right match. Communicate with verified tenants via our secure messaging system and skip property tours by creating detailed listings with photos and videos.
               </p>
               <button
                 type="button"
-                className="mt-[16px] border-b border-[#0B3242] pb-[2px] text-[#0B3242] text-[13px] font-bold uppercase tracking-[0.02em]"
+                onClick={() => openHelpSearch("tenant matching")}
+                className="mt-[16px] inline-flex max-w-full border-b border-[#0B3242] pb-[2px] text-[#0B3242] text-[12px] md:text-[13px] font-bold uppercase tracking-[0.02em] break-words text-left"
               >
                 More about tenant matching
               </button>
@@ -481,16 +497,17 @@ export function HowItWorks() {
           </div>
 
           <div className="grid grid-cols-1 items-center gap-[24px] lg:grid-cols-[0.98fr_1.02fr] lg:gap-[36px]">
-            <div>
-              <h2 className="text-[#0B3242] text-[28px] md:text-[32px] font-bold leading-[1.12] tracking-[-0.02em]">
+            <div className="min-w-0">
+              <h2 className="text-[#0B3242] text-[24px] sm:text-[28px] md:text-[32px] font-bold leading-[1.12] tracking-[-0.02em]">
                 Securely collect all payments
               </h2>
-              <p className="mt-[12px] text-[#4E6470] text-[15px] leading-[1.5]">
+              <p className="mt-[12px] text-[#4E6470] text-[14px] md:text-[15px] leading-[1.5]">
                 Collect rent, deposits, utility bills and other fees securely on our platform. With several international payment methods, collecting payments is easy, regardless of your location or your tenant's.
               </p>
               <button
                 type="button"
-                className="mt-[16px] border-b border-[#0B3242] pb-[2px] text-[#0B3242] text-[13px] font-bold uppercase tracking-[0.02em]"
+                onClick={() => openHelpSearch("online rent collection")}
+                className="mt-[16px] inline-flex max-w-full border-b border-[#0B3242] pb-[2px] text-[#0B3242] text-[12px] md:text-[13px] font-bold uppercase tracking-[0.02em] break-words text-left"
               >
                 More about online rent collection
               </button>
@@ -500,7 +517,7 @@ export function HowItWorks() {
               <img
                 src={securePaymentsImage}
                 alt="Securely collect all payments"
-                className="w-full max-w-[450px] rounded-[10px] object-cover"
+                className="w-full max-w-[450px] mx-auto rounded-[10px] object-cover"
               />
             </div>
           </div>
@@ -510,20 +527,21 @@ export function HowItWorks() {
               <img
                 src={getSupportImage}
                 alt="Get support from our international team"
-                className="w-full max-w-[450px] rounded-[10px] object-cover"
+                className="w-full max-w-[450px] mx-auto rounded-[10px] object-cover"
               />
             </div>
 
-            <div>
-              <h2 className="text-[#0B3242] text-[28px] md:text-[32px] font-bold leading-[1.12] tracking-[-0.02em]">
+            <div className="min-w-0">
+              <h2 className="text-[#0B3242] text-[24px] sm:text-[28px] md:text-[32px] font-bold leading-[1.12] tracking-[-0.02em]">
                 Get support from our international team
               </h2>
-              <p className="mt-[12px] text-[#4E6470] text-[15px] leading-[1.5]">
+              <p className="mt-[12px] text-[#4E6470] text-[14px] md:text-[15px] leading-[1.5]">
                 Benefit from our dedicated customer support team, available to assist you with any questions or issues. Get the most out of ReserveHousing with our library of resources. Maximize your rental income by reading other landlord's success stories.
               </p>
               <button
                 type="button"
-                className="mt-[16px] border-b border-[#0B3242] pb-[2px] text-[#0B3242] text-[13px] font-bold uppercase tracking-[0.02em]"
+                onClick={goToHelp}
+                className="mt-[16px] inline-flex max-w-full border-b border-[#0B3242] pb-[2px] text-[#0B3242] text-[12px] md:text-[13px] font-bold uppercase tracking-[0.02em] break-words text-left"
               >
                 Contact us
               </button>
@@ -531,16 +549,17 @@ export function HowItWorks() {
           </div>
 
           <div className="grid grid-cols-1 items-center gap-[24px] lg:grid-cols-[0.98fr_1.02fr] lg:gap-[36px]">
-            <div>
-              <h2 className="text-[#0B3242] text-[28px] md:text-[32px] font-bold leading-[1.12] tracking-[-0.02em]">
+            <div className="min-w-0">
+              <h2 className="text-[#0B3242] text-[24px] sm:text-[28px] md:text-[32px] font-bold leading-[1.12] tracking-[-0.02em]">
                 Sync calendars and connect to other platforms
               </h2>
-              <p className="mt-[12px] text-[#4E6470] text-[15px] leading-[1.5]">
+              <p className="mt-[12px] text-[#4E6470] text-[14px] md:text-[15px] leading-[1.5]">
                 Keep your property details and availability up-to-date with calendar integration, and easily integrate with property and channel managers.
               </p>
               <button
                 type="button"
-                className="mt-[16px] inline-flex items-center justify-center gap-[6px] rounded-[8px] bg-[#032E3D] px-[16px] py-[10px] text-white text-[13px] font-bold uppercase tracking-[0.02em] hover:bg-[#022633] transition-colors"
+                onClick={() => openHelpSearch("calendar sync")}
+                className="mt-[16px] inline-flex max-w-full items-center justify-center gap-[6px] rounded-full bg-[#032E3D] px-[20px] py-[11px] text-white text-[12px] md:text-[13px] font-bold uppercase tracking-[0.02em] shadow-[0_10px_20px_rgba(3,46,61,0.2)] hover:bg-[#022633] hover:shadow-[0_14px_26px_rgba(3,46,61,0.28)] transition-all break-words text-left"
               >
                 Learn more about integrations
               </button>
@@ -550,7 +569,7 @@ export function HowItWorks() {
               <iframe
                 title="Update property availability status"
                 src="https://www.youtube.com/embed/dQw4w9WgXcQ"
-                className="h-[280px] w-full"
+                className="h-[220px] sm:h-[280px] w-full"
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                 allowFullScreen
               />
@@ -571,7 +590,8 @@ export function HowItWorks() {
           </p>
           <button
             type="button"
-            className="mt-[22px] inline-flex items-center justify-center rounded-[8px] bg-[#032E3D] px-[22px] py-[11px] text-white text-[13px] font-bold uppercase tracking-[0.02em] hover:bg-[#022633] transition-colors"
+            onClick={goToLandlordRegister}
+            className="mt-[22px] inline-flex items-center justify-center rounded-full bg-[#032E3D] px-[24px] py-[11px] text-white text-[13px] font-bold uppercase tracking-[0.02em] shadow-[0_10px_20px_rgba(3,46,61,0.2)] hover:bg-[#022633] hover:shadow-[0_14px_26px_rgba(3,46,61,0.28)] transition-all"
           >
             Get started now
           </button>
@@ -611,18 +631,18 @@ export function HowItWorks() {
       )}
 
       {activeAudience === "landlord" && (
-      <section className="py-[52px] md:py-[72px]">
+      <section className="py-[46px] md:py-[72px]">
         <div className="mx-auto max-w-[1180px] px-[20px] md:px-[28px]">
           <div className="grid grid-cols-1 items-center gap-[32px] lg:grid-cols-[1fr_1.2fr]">
             <div className="rounded-[12px] overflow-hidden">
               <img
                 src={mariaSuccessStoryImage}
                 alt="Maria's success story"
-                className="w-full max-w-[500px] object-cover"
+                className="w-full max-w-[500px] mx-auto object-cover"
               />
             </div>
 
-            <div>
+            <div className="min-w-0">
               <h2 className="text-[#0B3242] text-[24px] md:text-[28px] font-bold leading-[1.2] tracking-[-0.02em]">
                 Maria's toolkit for safe, secure and efficient rental
               </h2>
@@ -631,6 +651,7 @@ export function HowItWorks() {
               </blockquote>
               <button
                 type="button"
+                onClick={() => openHelpSearch("landlord success story")}
                 className="mt-[16px] border-b border-[#0B3242] pb-[2px] text-[#0B3242] text-[13px] font-bold uppercase tracking-[0.02em] hover:border-b-2"
               >
                 Read more
