@@ -523,7 +523,35 @@ export function RentalApplication() {
         throw new Error(payload.message ?? "Failed to submit rental application");
       }
 
-      const payload = (await response.json()) as { conversationId?: string };
+      const payload = (await response.json()) as {
+        conversationId?: string;
+        application?: { id?: string };
+      };
+
+      if (payload.application?.id) {
+        const checkoutResponse = await fetch(`${apiBase}/api/payments/mollie/create-checkout`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ applicationId: payload.application.id }),
+        });
+
+        if (!checkoutResponse.ok) {
+          const checkoutPayload = (await checkoutResponse.json().catch(() => ({}))) as { message?: string };
+          throw new Error(checkoutPayload.message ?? "Failed to start Mollie checkout");
+        }
+
+        const checkoutPayload = (await checkoutResponse.json()) as { checkoutUrl?: string };
+        if (!checkoutPayload.checkoutUrl) {
+          throw new Error("Mollie checkout URL is missing");
+        }
+
+        window.location.assign(checkoutPayload.checkoutUrl);
+        return;
+      }
+
       if (payload.conversationId) {
         navigate(`/property/${id}/success?conversationId=${encodeURIComponent(payload.conversationId)}`);
       } else {

@@ -6,6 +6,9 @@ import { PropertyListing } from "./pages/property-listing";
 import { RentalApplication } from "./pages/rental-application";
 import { ApplicationSuccess } from "./pages/application-success";
 import { Payment } from "./pages/payment";
+import { PaymentReturn } from "./pages/payment-return";
+import { PaymentSuccess } from "./pages/payment-success";
+import { PaymentFailed } from "./pages/payment-failed";
 import { TenantConversation } from "./pages/tenant-conversation";
 import { TenantInbox } from "./pages/tenant-inbox";
 import { TenantApplications } from "./pages/tenant-applications";
@@ -208,6 +211,21 @@ export const router = createBrowserRouter([
   {
     path: "/property/:id/payment",
     Component: ProtectedPropertyPayment,
+    ErrorBoundary,
+  },
+  {
+    path: "/property/:id/payment/return",
+    Component: PaymentReturn,
+    ErrorBoundary,
+  },
+  {
+    path: "/property/:id/payment/success",
+    Component: PaymentSuccess,
+    ErrorBoundary,
+  },
+  {
+    path: "/property/:id/payment/failed",
+    Component: PaymentFailed,
     ErrorBoundary,
   },
   {

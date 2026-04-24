@@ -8,6 +8,8 @@ const envSchema = z.object({
   PORT: z.coerce.number().default(4000),
   JWT_SECRET: z.string().min(8),
   CLIENT_ORIGIN: z.string().default("http://localhost:5173"),
+  SERVER_PUBLIC_URL: z.string().url().optional(),
+  MOLLIE_API_KEY: z.string().min(1).optional(),
   GOOGLE_CLIENT_ID: z.string().min(1).optional(),
   PASSWORD_RESET_URL_BASE: z.string().min(1).optional(),
   SMTP_HOST: z.string().min(1).optional(),
@@ -31,4 +33,5 @@ export const env = {
   SMTP_PORT: parsed.data.SMTP_PORT ?? 587,
   SMTP_SECURE: parsed.data.SMTP_SECURE === "true",
   SMTP_FROM: parsed.data.SMTP_FROM ?? parsed.data.SMTP_USER,
+  SERVER_PUBLIC_URL: parsed.data.SERVER_PUBLIC_URL?.replace(/\/$/, ""),
 };

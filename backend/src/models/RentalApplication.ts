@@ -33,10 +33,15 @@ const billingAddressSchema = new Schema(
 const paymentDetailsSchema = new Schema(
   {
     method: { type: String, enum: ["card", "ideal", "bancontact"], default: "card" },
+    provider: { type: String, default: "" },
+    providerPaymentId: { type: String, default: "" },
+    checkoutUrl: { type: String, default: "" },
+    paymentStatus: { type: String, default: "" },
     cardLast4: { type: String, default: "" },
     expiryDate: { type: String, default: "" },
     cardholderName: { type: String, default: "" },
     isPaid: { type: Boolean, default: false },
+    paidAt: { type: Date },
     paidAmount: { type: Number, default: 0 },
     currency: { type: String, default: "EUR" },
     addRentGuarantee: { type: Boolean, default: false },
