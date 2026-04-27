@@ -1,0 +1,109 @@
+{
+  "name": "Reserve Housing - Trusted Rental Marketplace",
+  "short_name": "Reserve Housing",
+  "description": "Discover verified rental properties and connect with trusted landlords on Reserve Housing - Your trusted rental marketplace.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "theme_color": "#0B3A45",
+  "background_color": "#FFFFFF",
+  "categories": ["business", "real_estate"],
+  "screenshots": [
+    {
+      "src": "/screenshot-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/screenshot-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/screenshot-192x192-maskable.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/screenshot-512x512-maskable.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "icons": [
+    {
+      "src": "/favicon-32x32.png",
+      "sizes": "32x32",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/favicon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/favicon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/favicon-192x192-maskable.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/favicon-512x512-maskable.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Browse Listings",
+      "short_name": "Browse",
+      "description": "Browse available rental properties",
+      "url": "/listings",
+      "icons": [{ "src": "/shortcut-browse.png", "sizes": "192x192", "type": "image/png" }]
+    },
+    {
+      "name": "My Account",
+      "short_name": "Account",
+      "description": "View your account and applications",
+      "url": "/account",
+      "icons": [{ "src": "/shortcut-account.png", "sizes": "192x192", "type": "image/png" }]
+    },
+    {
+      "name": "Messages",
+      "short_name": "Messages",
+      "description": "Check your messages",
+      "url": "/inbox",
+      "icons": [{ "src": "/shortcut-messages.png", "sizes": "192x192", "type": "image/png" }]
+    }
+  ],
+  "share_target": {
+    "action": "/share",
+    "method": "POST",
+    "enctype": "multipart/form-data",
+    "params": {
+      "title": "title",
+      "text": "text",
+      "url": "url",
+      "files": [
+        {
+          "name": "files",
+          "accept": ["image/png", "image/jpeg", "image/webp", "image/gif", "application/pdf"]
+        }
+      ]
+    }
+  }
+}

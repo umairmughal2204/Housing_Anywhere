@@ -34,33 +34,35 @@ const statusStyle: Record<ApplicationStatus, string> = {
   rejected: "bg-red-50 text-red-600",
 };
 
+import { Skeleton } from "../components/ui/skeleton";
+
 function ApplicationsSkeleton() {
   return (
     <div className="space-y-[16px]" aria-hidden="true">
       {[0, 1, 2].map((index) => (
-        <div key={index} className="bg-white border border-[rgba(0,0,0,0.08)] p-[20px] animate-pulse">
-          <div className="flex gap-[16px]">
-            <div className="w-[180px] h-[120px] bg-[#E8E8E8] overflow-hidden flex-shrink-0" />
+        <div key={index} className="bg-white border border-[rgba(0,0,0,0.08)] rounded-[16px] p-[20px]">
+          <div className="flex flex-col sm:flex-row gap-[16px]">
+            <Skeleton className="w-full sm:w-[180px] h-[160px] sm:h-[120px] rounded-[8px] flex-shrink-0" />
 
-            <div className="flex-1 min-w-0">
-              <div className="flex items-start justify-between gap-[12px] mb-[8px]">
-                <div className="flex-1 min-w-0">
-                  <div className="h-[22px] w-[55%] bg-[#E8E8E8] mb-[8px]" />
-                  <div className="h-[16px] w-[72%] bg-[#E8E8E8]" />
+            <div className="flex-1 min-w-0 space-y-[12px] w-full">
+              <div className="flex items-start justify-between gap-[12px]">
+                <div className="flex-1 min-w-0 space-y-[8px]">
+                  <Skeleton className="h-[24px] w-[60%]" />
+                  <Skeleton className="h-[16px] w-[80%]" />
                 </div>
-                <div className="h-[24px] w-[90px] bg-[#E8E8E8] flex-shrink-0 rounded-full" />
+                <Skeleton className="h-[26px] w-[90px] flex-shrink-0 rounded-full" />
               </div>
 
-              <div className="flex items-center gap-[18px] mb-[14px]">
-                <div className="h-[16px] w-[170px] bg-[#E8E8E8]" />
-                <div className="h-[16px] w-[150px] bg-[#E8E8E8]" />
+              <div className="flex items-center gap-[18px]">
+                <Skeleton className="h-[16px] w-[140px]" />
+                <Skeleton className="h-[16px] w-[120px]" />
               </div>
 
-              <div className="h-[48px] bg-[#F1F1F1] rounded-[4px] mb-[14px]" />
+              <Skeleton className="h-[52px] w-full rounded-[4px]" />
 
               <div className="flex items-center gap-[10px]">
-                <div className="h-[36px] w-[146px] bg-[#E8E8E8] rounded-[4px]" />
-                <div className="h-[36px] w-[120px] bg-[#E8E8E8] rounded-[4px]" />
+                <Skeleton className="h-[38px] w-[146px] rounded-[4px]" />
+                <Skeleton className="h-[38px] w-[120px] rounded-[4px]" />
               </div>
             </div>
           </div>
@@ -162,7 +164,7 @@ export function TenantApplications() {
       <main className="flex-1 bg-[#F7F7F9] py-[48px]">
         <div className="max-w-[1100px] mx-auto px-[32px]">
           {!isAuthLoading && user?.isLandlord && (
-            <div className="bg-white border border-[rgba(0,0,0,0.08)] p-[32px] mb-[24px]">
+            <div className="bg-white border border-[rgba(0,0,0,0.08)] rounded-[16px] p-[32px] mb-[24px]">
               <h1 className="text-[#1A1A1A] text-[30px] font-bold tracking-[-0.02em] mb-[10px]">
                 Tenant applications are not available for landlord accounts
               </h1>
@@ -192,9 +194,9 @@ export function TenantApplications() {
             {isLoading && <ApplicationsSkeleton />}
 
             {!isLoading && applications.map((application) => (
-              <div key={application.id} className="bg-white border border-[rgba(0,0,0,0.08)] p-[20px]">
+              <div key={application.id} className="bg-white border border-[rgba(0,0,0,0.08)] rounded-[16px] p-[20px]">
                 <div className="flex gap-[16px]">
-                  <div className="w-[180px] h-[120px] bg-[#F1F1F1] overflow-hidden flex-shrink-0">
+                  <div className="w-[180px] h-[120px] bg-[#F1F1F1] rounded-[12px] overflow-hidden flex-shrink-0">
                     <ImageWithFallback src={application.listing.image} alt={application.listing.title} className="w-full h-full object-cover" />
                   </div>
 
@@ -261,8 +263,8 @@ export function TenantApplications() {
                     <div className="flex items-center gap-[10px]">
                       {application.status === "approved" && (
                         <Link
-                          to={`/property/${application.listingId}/payment`}
-                          className="inline-flex items-center gap-[8px] px-[16px] py-[9px] bg-green-600 text-white text-[13px] font-semibold hover:bg-green-700 transition-colors"
+                          to={`/property/${application.listingId}/payment?applicationId=${application.id}`}
+                          className="inline-flex items-center gap-[8px] px-[16px] py-[9px] rounded-[8px] bg-green-600 text-white text-[13px] font-semibold hover:bg-green-700 transition-colors"
                         >
                           <CreditCard className="w-[13px] h-[13px]" />
                           Proceed to payment
@@ -273,7 +275,7 @@ export function TenantApplications() {
                           type="button"
                           onClick={() => void handleMessageLandlord(application.id, application.listingId)}
                           disabled={startingConversationId === application.listingId}
-                          className="inline-flex items-center gap-[8px] px-[16px] py-[9px] bg-brand-primary text-white text-[13px] font-semibold hover:bg-brand-primary-dark transition-colors disabled:opacity-60"
+                          className="inline-flex items-center gap-[8px] px-[16px] py-[9px] rounded-[8px] bg-brand-primary text-white text-[13px] font-semibold hover:bg-brand-primary-dark transition-colors disabled:opacity-60"
                         >
                           <MessageCircle className="w-[13px] h-[13px]" />
                           {startingConversationId === application.listingId ? "Opening chat..." : "Message landlord"}
@@ -282,7 +284,7 @@ export function TenantApplications() {
                       {application.status === "rejected" && (
                         <Link
                           to="/"
-                          className="inline-flex items-center gap-[8px] px-[16px] py-[9px] bg-brand-primary text-white text-[13px] font-semibold hover:bg-brand-primary-dark transition-colors"
+                          className="inline-flex items-center gap-[8px] px-[16px] py-[9px] rounded-[8px] bg-brand-primary text-white text-[13px] font-semibold hover:bg-brand-primary-dark transition-colors"
                         >
                           <Search className="w-[13px] h-[13px]" />
                           Browse other properties
@@ -293,7 +295,7 @@ export function TenantApplications() {
                           type="button"
                           onClick={() => void handleMessageLandlord(application.id, application.listingId)}
                           disabled={startingConversationId === application.listingId}
-                          className="inline-flex items-center gap-[8px] px-[16px] py-[9px] border border-[rgba(0,0,0,0.16)] text-[#1A1A1A] text-[13px] font-semibold hover:bg-[#F7F7F9] transition-colors disabled:opacity-60"
+                          className="inline-flex items-center gap-[8px] px-[16px] py-[9px] rounded-[8px] border border-[rgba(0,0,0,0.16)] text-[#1A1A1A] text-[13px] font-semibold hover:bg-[#F7F7F9] transition-colors disabled:opacity-60"
                         >
                           <MessageCircle className="w-[13px] h-[13px]" />
                           {startingConversationId === application.listingId ? "Opening chat..." : "Message landlord"}
@@ -301,7 +303,7 @@ export function TenantApplications() {
                       )}
                       <Link
                         to={`/property/${application.listingId}`}
-                        className="px-[14px] py-[8px] border border-[rgba(0,0,0,0.16)] text-[#1A1A1A] text-[13px] font-semibold hover:bg-[#F7F7F9] transition-colors"
+                        className="px-[14px] py-[8px] rounded-[8px] border border-[rgba(0,0,0,0.16)] text-[#1A1A1A] text-[13px] font-semibold hover:bg-[#F7F7F9] transition-colors"
                       >
                         {application.listing.isAvailable ? "View listing" : "View status"}
                       </Link>
@@ -312,13 +314,13 @@ export function TenantApplications() {
             ))}
 
             {!isLoading && !error && applications.length === 0 && (
-              <div className="bg-white border border-[rgba(0,0,0,0.08)] p-[56px] text-center">
+              <div className="bg-white border border-[rgba(0,0,0,0.08)] rounded-[16px] p-[56px] text-center">
                 <FileText className="w-[48px] h-[48px] text-[#B5B5B5] mx-auto mb-[14px]" />
                 <h3 className="text-[#1A1A1A] text-[20px] font-bold mb-[8px]">No applications yet</h3>
                 <p className="text-[#6B6B6B] text-[14px] mb-[20px]">When you apply for a property, it will show up here.</p>
                 <Link
                   to="/"
-                  className="inline-flex px-[22px] py-[10px] bg-brand-primary text-white font-semibold hover:bg-brand-primary-dark transition-colors"
+                  className="inline-flex px-[22px] py-[10px] rounded-[8px] bg-brand-primary text-white font-semibold hover:bg-brand-primary-dark transition-colors"
                 >
                   Browse properties
                 </Link>

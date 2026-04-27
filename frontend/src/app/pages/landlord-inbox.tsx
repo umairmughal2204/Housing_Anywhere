@@ -363,7 +363,7 @@ export function LandlordInbox() {
           </div>
         </div>
 
-        <div className="mt-[14px] md:mt-[20px] flex min-h-[calc(100vh-210px)] md:min-h-[620px] overflow-hidden rounded-[16px] md:rounded-[22px] border border-[rgba(11,45,58,0.08)] bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
+        <div className="mt-[14px] md:mt-[20px] flex h-[calc(100vh-210px)] md:h-[620px] overflow-hidden rounded-[16px] md:rounded-[22px] border border-[rgba(11,45,58,0.08)] bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
           {/* Conversation list */}
           <div className={`${selectedConversation ? "hidden md:flex" : "flex"} w-full md:w-[360px] lg:w-[390px] border-r border-[rgba(0,0,0,0.08)] flex-col flex-shrink-0 bg-[#F7FAFC]`}>
             <div className="p-[16px] border-b border-[rgba(0,0,0,0.08)] bg-white">

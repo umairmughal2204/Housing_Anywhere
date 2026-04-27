@@ -1,5 +1,6 @@
 ﻿import { Header } from "../components/header";
 import { Footer } from "../components/footer";
+import { Skeleton } from "../components/ui/skeleton";
 import {
   Search,
   Mail,
@@ -291,12 +292,45 @@ export function TenantInbox() {
           </div>
         </div>
 
-        {isLoading && <p className="text-[#6B6B6B] text-[14px]">Loading your conversations...</p>}
+        {isLoading && (
+          <div className="grid grid-cols-1 lg:grid-cols-[260px_1fr] gap-[20px] items-start">
+            <aside className="bg-[#F7F7F8] p-[12px] rounded-[16px] border border-[rgba(0,0,0,0.05)] lg:sticky lg:top-[96px]">
+              <div className="space-y-[4px]">
+                {[0, 1, 2, 3, 4, 5].map(i => (
+                  <Skeleton key={i} className="h-[44px] w-full rounded-[8px]" />
+                ))}
+              </div>
+            </aside>
+            <div className="space-y-[12px]">
+              {[0, 1, 2, 3].map(i => (
+                <div key={i} className="block bg-[#F7F7F8] p-[20px] rounded-[16px] border border-[rgba(0,0,0,0.04)]">
+                  <div className="flex items-start gap-[16px]">
+                    <Skeleton className="w-[44px] h-[44px] rounded-full flex-shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between gap-[10px] mb-[8px]">
+                        <Skeleton className="h-[20px] w-[140px]" />
+                        <Skeleton className="h-[16px] w-[60px] flex-shrink-0" />
+                      </div>
+                      <div className="flex items-center gap-[5px] mb-[12px]">
+                        <Skeleton className="h-[14px] w-[200px]" />
+                      </div>
+                      <Skeleton className="h-[18px] w-[60%] mb-[12px]" />
+                      <div className="flex items-center justify-between">
+                        <Skeleton className="h-[14px] w-[40%]" />
+                        <Skeleton className="h-[14px] w-[40px]" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
         {!isLoading && error && <p className="text-brand-primary text-[14px]">{error}</p>}
 
         {!isLoading && !error && (
           <div className="grid grid-cols-1 lg:grid-cols-[260px_1fr] gap-[20px] items-start">
-            <aside className="bg-[#F7F7F8] p-[12px] rounded-[8px] border border-[rgba(0,0,0,0.05)] lg:sticky lg:top-[96px]">
+            <aside className="bg-[#F7F7F8] p-[12px] rounded-[16px] border border-[rgba(0,0,0,0.05)] lg:sticky lg:top-[96px]">
               <nav className="space-y-[4px]">
                 {sidebarSections.map((section) => {
                   const Icon = section.icon;
@@ -336,7 +370,7 @@ export function TenantInbox() {
                 <Link
                   key={c.id}
                   to={`/tenant/inbox/conversation/${c.id}`}
-                  className="block bg-[#F0EEFB] hover:bg-[#E8E3FA] transition-colors p-[20px] rounded-[6px] border border-[rgba(0,0,0,0.04)]"
+                  className="block bg-[#F0EEFB] hover:bg-[#E8E3FA] transition-colors p-[20px] rounded-[16px] border border-[rgba(0,0,0,0.04)]"
                 >
                   <div className="flex items-start gap-[16px]">
                     <div
@@ -382,7 +416,7 @@ export function TenantInbox() {
               ))}
 
               {filtered.length === 0 && !searchQuery && activeFilter === "unread" && (
-                <div className="text-center py-[60px] bg-[#F7F7F8] rounded-[8px] border border-[rgba(0,0,0,0.06)]">
+                <div className="text-center py-[60px] bg-[#F7F7F8] rounded-[16px] border border-[rgba(0,0,0,0.06)]">
                   <Mail className="w-[48px] h-[48px] text-[#C5C5CC] mx-auto mb-[12px]" />
                   <h3 className="text-[#1A1A1A] text-[18px] font-bold mb-[6px]">No unread messages</h3>
                   <p className="text-[#6B6B6B] text-[14px]">You are all caught up.</p>
@@ -390,7 +424,7 @@ export function TenantInbox() {
               )}
 
               {filtered.length === 0 && !searchQuery && activeFilter === "read" && (
-                <div className="text-center py-[60px] bg-[#F7F7F8] rounded-[8px] border border-[rgba(0,0,0,0.06)]">
+                <div className="text-center py-[60px] bg-[#F7F7F8] rounded-[16px] border border-[rgba(0,0,0,0.06)]">
                   <CheckSquare className="w-[48px] h-[48px] text-[#C5C5CC] mx-auto mb-[12px]" />
                   <h3 className="text-[#1A1A1A] text-[18px] font-bold mb-[6px]">No read conversations</h3>
                   <p className="text-[#6B6B6B] text-[14px]">Read conversations will appear here.</p>
@@ -398,7 +432,7 @@ export function TenantInbox() {
               )}
 
               {filtered.length === 0 && !searchQuery && !["unread", "read"].includes(activeFilter) && conversations.length > 0 && (
-                <div className="text-center py-[60px] bg-[#F7F7F8] rounded-[8px] border border-[rgba(0,0,0,0.06)]">
+                <div className="text-center py-[60px] bg-[#F7F7F8] rounded-[16px] border border-[rgba(0,0,0,0.06)]">
                   <MessageSquare className="w-[48px] h-[48px] text-[#C5C5CC] mx-auto mb-[12px]" />
                   <h3 className="text-[#1A1A1A] text-[18px] font-bold mb-[6px]">No messages in this section</h3>
                   <p className="text-[#6B6B6B] text-[14px]">Try another filter from the left menu.</p>
@@ -414,7 +448,7 @@ export function TenantInbox() {
                   </p>
                   <Link
                     to="/"
-                    className="inline-block px-[24px] py-[11px] bg-brand-primary text-white font-semibold hover:bg-brand-primary-dark transition-colors"
+                    className="inline-block px-[24px] py-[11px] rounded-[12px] bg-brand-primary text-white font-semibold hover:bg-brand-primary-dark transition-colors"
                   >
                     Browse properties
                   </Link>
@@ -422,7 +456,7 @@ export function TenantInbox() {
               )}
 
               {filtered.length === 0 && searchQuery && (
-                <div className="text-center py-[60px] bg-[#F7F7F8] rounded-[8px] border border-[rgba(0,0,0,0.06)]">
+                <div className="text-center py-[60px] bg-[#F7F7F8] rounded-[16px] border border-[rgba(0,0,0,0.06)]">
                   <MessageSquare className="w-[48px] h-[48px] text-[#D0D0D0] mx-auto mb-[12px]" />
                   <p className="text-[#6B6B6B] text-[14px]">
                     No conversations match &ldquo;{searchQuery}&rdquo;

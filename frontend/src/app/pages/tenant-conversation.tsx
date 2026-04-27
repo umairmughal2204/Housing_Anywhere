@@ -4,6 +4,7 @@ import { ChevronLeft, Send, MapPin, Home, Wifi } from "lucide-react";
 import { useAuth } from "../contexts/auth-context";
 import { ImageWithFallback } from "../components/figma/ImageWithFallback";
 import { useConversation } from "../hooks/use-conversation";
+import { Skeleton } from "../components/ui/skeleton";
 import { buildOfferMessage, ChatMessageBubble, type OfferActionType, type OfferMessagePayload } from "../components/chat-offer-message";
 import { API_BASE } from "../config";
 import { BrandLogo } from "../components/brand-logo";
@@ -176,7 +177,7 @@ export function TenantConversation() {
               note: "Tenant opened the payment page to continue booking.",
             })
           );
-          navigate(`/property/${meta.listingId}/payment`);
+          navigate(`/property/${meta.listingId}/payment?applicationId=${applicationStatus?.applicationId}`);
           return;
         }
 
@@ -297,7 +298,7 @@ export function TenantConversation() {
           <div className="flex-[2] flex flex-col min-h-0">
             {/* Other user header */}
             {meta && (
-              <div className="flex items-center gap-[12px] mb-[16px] p-[16px] bg-[#F7F7F9] border border-[rgba(0,0,0,0.08)]">
+              <div className="flex items-center gap-[12px] mb-[16px] p-[16px] bg-[#F7F7F9] rounded-[16px] border border-[rgba(0,0,0,0.08)]">
                 <div
                   className="w-[40px] h-[40px] rounded-full flex-shrink-0 flex items-center justify-center text-white text-[15px] font-bold"
                   style={{ backgroundColor: avatarColor(meta.otherUser.initials) }}
@@ -322,13 +323,23 @@ export function TenantConversation() {
               </button>
             )}
             {isLoadingHistory && messages.length === 0 && (
-              <p className="text-[#6B6B6B] text-[13px] text-center mb-[12px]">Loading messages...</p>
+              <div className="flex-1 overflow-y-auto bg-white rounded-[16px] border border-[rgba(0,0,0,0.08)] p-[20px] min-h-[400px] max-h-[560px] space-y-[24px]">
+                {[0, 1, 2].map((i) => (
+                  <div key={i} className={`flex items-end gap-[8px] ${i % 2 === 0 ? "justify-start" : "justify-end"}`}>
+                    {i % 2 === 0 && <Skeleton className="w-[28px] h-[28px] rounded-full flex-shrink-0" />}
+                    <div className={`max-w-[65%] flex flex-col ${i % 2 === 0 ? "items-start" : "items-end"}`}>
+                      <Skeleton className={`h-[60px] rounded-[16px] ${i % 2 === 0 ? "w-[240px]" : "w-[180px]"}`} />
+                      <Skeleton className="h-[12px] w-[60px] mt-[6px]" />
+                    </div>
+                  </div>
+                ))}
+              </div>
             )}
 
             {/* Messages area */}
             <div
               ref={messagesContainerRef}
-              className="flex-1 overflow-y-auto bg-white border border-[rgba(0,0,0,0.08)] p-[20px] min-h-[400px] max-h-[560px] space-y-[4px]"
+              className={`flex-1 overflow-y-auto bg-white rounded-[16px] border border-[rgba(0,0,0,0.08)] p-[20px] min-h-[400px] max-h-[560px] space-y-[4px] ${isLoadingHistory && messages.length === 0 ? 'hidden' : ''}`}
             >
               {grouped.length === 0 && !isLoadingHistory && (
                 <div className="h-full flex items-center justify-center">
@@ -404,7 +415,7 @@ export function TenantConversation() {
             </div>
 
             {/* Input area */}
-            <div className="mt-[12px] border border-[rgba(0,0,0,0.12)] bg-white">
+            <div className="mt-[12px] rounded-[16px] overflow-hidden border border-[rgba(0,0,0,0.12)] bg-white">
               <textarea
                 value={inputText}
                 onChange={handleInput}
@@ -420,7 +431,7 @@ export function TenantConversation() {
                 <button
                   onClick={() => void handleSend()}
                   disabled={!inputText.trim() || isSending}
-                  className={`flex items-center gap-[8px] px-[20px] py-[9px] text-[13px] font-semibold transition-colors ${
+                  className={`flex items-center gap-[8px] px-[20px] py-[9px] rounded-[8px] text-[13px] font-semibold transition-colors ${
                     inputText.trim() && !isSending
                       ? "bg-brand-primary text-white hover:bg-brand-primary-dark"
                       : "bg-[#EDEDED] text-[#9B9B9B] cursor-not-allowed"
@@ -438,7 +449,7 @@ export function TenantConversation() {
             {meta && (
               <>
                 {/* Listing card */}
-                <div className="border border-[rgba(0,0,0,0.08)]">
+                <div className="border border-[rgba(0,0,0,0.08)] rounded-[16px] overflow-hidden">
                   <div className="h-[140px] overflow-hidden bg-[#F1F1F1]">
                     <ImageWithFallback
                       src={meta.listing.image}
@@ -461,7 +472,7 @@ export function TenantConversation() {
                     </div>
                     <Link
                       to={`/property/${meta.listingId}`}
-                      className="block text-center py-[8px] border border-[rgba(0,0,0,0.16)] text-[#1A1A1A] text-[12px] font-semibold hover:bg-[#F7F7F9] transition-colors"
+                      className="block text-center py-[8px] rounded-[8px] border border-[rgba(0,0,0,0.16)] text-[#1A1A1A] text-[12px] font-semibold hover:bg-[#F7F7F9] transition-colors"
                     >
                       View listing
                     </Link>
@@ -470,7 +481,7 @@ export function TenantConversation() {
 
                 {/* Apply CTA */}
                 {applicationStatus?.hasApplied ? (
-                  <div className="bg-[#F0FDF4] border border-[#86EFAC] p-[14px]">
+                  <div className="bg-[#F0FDF4] border border-[#86EFAC] rounded-[16px] p-[14px]">
                     <p className="text-[13px] text-[#166534] font-bold mb-[4px]">
                       Application submitted
                     </p>
@@ -483,14 +494,14 @@ export function TenantConversation() {
                     </p>
                   </div>
                 ) : (
-                  <div className="bg-brand-light border border-brand-primary/20 p-[14px]">
+                  <div className="bg-brand-light border border-brand-primary/20 rounded-[16px] p-[14px]">
                     <p className="text-[13px] text-[#1A1A1A] font-semibold mb-[6px]">Ready to apply?</p>
                     <p className="text-[12px] text-[#6B6B6B] mb-[10px] leading-[1.5]">
                       Submit an application to secure this place.
                     </p>
                     <Link
                       to={`/property/${meta.listingId}/apply`}
-                      className="block text-center py-[8px] bg-brand-primary text-white text-[12px] font-semibold hover:bg-brand-primary-dark transition-colors"
+                      className="block text-center py-[8px] rounded-[8px] bg-brand-primary text-white text-[12px] font-semibold hover:bg-brand-primary-dark transition-colors"
                     >
                       Apply to rent
                     </Link>
@@ -500,7 +511,7 @@ export function TenantConversation() {
                 {/* My applications */}
                 <Link
                   to="/tenant/applications"
-                  className="block text-center py-[9px] border border-[rgba(0,0,0,0.16)] text-[#1A1A1A] text-[12px] font-semibold hover:bg-[#F7F7F9] transition-colors"
+                  className="block text-center py-[9px] rounded-[8px] border border-[rgba(0,0,0,0.16)] text-[#1A1A1A] text-[12px] font-semibold hover:bg-[#F7F7F9] transition-colors"
                 >
                   View my applications
                 </Link>

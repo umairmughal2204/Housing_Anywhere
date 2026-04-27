@@ -1,6 +1,6 @@
 import { Link, useParams, useNavigate, useLocation } from "react-router";
 import { useState, useEffect, useMemo } from "react";
-import { ChevronLeft, Info, ChevronDown, Shield, Check, Plus, Upload, FileText, User, GraduationCap, Briefcase, Sparkles, LogOut, Pencil, Heart, CheckCircle2, Calendar, CircleDollarSign, Building2, Eye, Users, Bath, Utensils, Sofa, Bed, Tv, Wifi, CreditCard, X } from "lucide-react";
+import { ChevronLeft, Info, ChevronDown, Shield, ShieldCheck, Check, Plus, Upload, FileText, User, GraduationCap, Briefcase, Sparkles, LogOut, Pencil, Heart, CheckCircle2, Calendar, CircleDollarSign, Building2, Eye, Users, Bath, Utensils, Sofa, Bed, Tv, Wifi, CreditCard, X } from "lucide-react";
 import { DatePicker } from "../components/date-picker";
 import { useAuth } from "../contexts/auth-context";
 import { API_BASE } from "../config";
@@ -2096,77 +2096,23 @@ export function RentalApplication() {
                 <div className="h-[1px] bg-[rgba(15,45,54,0.16)] mb-[26px]" />
 
                 <h2 className="text-[#0F2D36] text-[40px] md:text-[32px] font-bold mb-[14px]">2. Payment method</h2>
-                <h3 className="text-[#0F2D36] text-[20px] font-bold mb-[10px]">Payment method</h3>
-
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-[10px] mb-[12px]">
-                  <button
-                    type="button"
-                    onClick={() => setBillingPaymentMethod("card")}
-                    className={`h-[64px] rounded-[4px] border px-[12px] text-left transition-colors ${billingPaymentMethod === "card" ? "border-[#0F2D36] bg-white" : "border-[rgba(15,45,54,0.18)] bg-white"}`}
-                  >
-                    <CreditCard className="w-[16px] h-[16px] mb-[6px] text-[#0F2D36]" />
-                    <p className="text-[#0F2D36] text-[15px] font-medium">Card</p>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setBillingPaymentMethod("ideal")}
-                    className={`h-[64px] rounded-[4px] border px-[12px] text-left transition-colors ${billingPaymentMethod === "ideal" ? "border-[#0F2D36] bg-white" : "border-[rgba(15,45,54,0.18)] bg-white"}`}
-                  >
-                    <p className="text-[#B80F3D] text-[11px] font-bold mb-[6px]">iDEAL</p>
-                    <p className="text-[#0F2D36] text-[15px] font-medium">iDEAL | Wero</p>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setBillingPaymentMethod("bancontact")}
-                    className={`h-[64px] rounded-[4px] border px-[12px] text-left transition-colors ${billingPaymentMethod === "bancontact" ? "border-[#0F2D36] bg-white" : "border-[rgba(15,45,54,0.18)] bg-white"}`}
-                  >
-                    <div className="w-[24px] h-[6px] rounded-[999px] bg-[#0F57B5] mb-[8px]" />
-                    <p className="text-[#0F2D36] text-[15px] font-medium">Bancontact</p>
-                  </button>
-                </div>
-
-                <div className="mb-[10px]">
-                  <label className="block text-[#0F2D36] text-[14px] font-medium mb-[6px]">Card number</label>
-                  <div className="relative">
-                    <input
-                      type="text"
-                      value={billingCardNumber}
-                      onChange={(e) => setBillingCardNumber(e.target.value)}
-                      placeholder="1234 1234 1234 1234"
-                      className="w-full h-[44px] px-[12px] pr-[120px] border border-[rgba(15,45,54,0.24)] rounded-[4px] text-[#0F2D36] text-[15px]"
-                    />
-                    <div className="absolute right-[10px] top-1/2 -translate-y-1/2 flex items-center gap-[4px] text-[10px]">
-                      <span className="px-[4px] py-[1px] rounded bg-[#111827] text-white">MC</span>
-                      <span className="px-[4px] py-[1px] rounded bg-[#1D4ED8] text-white">VISA</span>
-                      <span className="px-[4px] py-[1px] rounded bg-[#0EA5E9] text-white">AMEX</span>
-                      <span className="px-[4px] py-[1px] rounded bg-[#047857] text-white">UNP</span>
-                    </div>
+                
+                <div className="bg-white border border-[rgba(0,0,0,0.08)] shadow-[0_4px_12px_rgba(0,0,0,0.04)] rounded-[16px] p-[24px] text-center mb-[26px]">
+                  <div className="mx-auto w-[64px] h-[64px] rounded-full flex items-center justify-center mb-[16px] bg-[#EEF5FF]">
+                    <ShieldCheck className="w-[32px] h-[32px] text-brand-primary" />
                   </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-[12px] mb-[22px]">
-                  <div>
-                    <label className="block text-[#0F2D36] text-[14px] font-medium mb-[6px]">Expiry date</label>
-                    <input
-                      type="text"
-                      value={billingExpiryDate}
-                      onChange={(e) => setBillingExpiryDate(e.target.value)}
-                      placeholder="MM / YY"
-                      className="w-full h-[44px] px-[12px] border border-[rgba(15,45,54,0.24)] rounded-[4px] text-[#0F2D36] text-[15px]"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-[#0F2D36] text-[14px] font-medium mb-[6px]">Security code</label>
-                    <div className="relative">
-                      <input
-                        type="text"
-                        value={billingSecurityCode}
-                        onChange={(e) => setBillingSecurityCode(e.target.value)}
-                        placeholder="CVC"
-                        className="w-full h-[44px] px-[12px] pr-[56px] border border-[rgba(15,45,54,0.24)] rounded-[4px] text-[#0F2D36] text-[15px]"
-                      />
-                      <span className="absolute right-[12px] top-1/2 -translate-y-1/2 text-[#5F7D89] text-[12px] font-semibold">123</span>
-                    </div>
+                  
+                  <h3 className="text-[20px] font-bold text-neutral-black mb-[8px]">
+                    Secure checkout with Mollie
+                  </h3>
+                  
+                  <p className="text-[15px] leading-[1.6] text-neutral-gray max-w-[440px] mx-auto">
+                    We process all payments securely through Mollie. You will be redirected to choose your preferred payment method (such as iDEAL, Bancontact, or Credit Card) after submitting your application.
+                  </p>
+                  
+                  <div className="mt-[20px] flex items-center justify-center gap-[8px] text-[13px] text-[#008A52] font-medium">
+                    <CheckCircle2 className="w-[16px] h-[16px]" />
+                    We do not store your payment details
                   </div>
                 </div>
 
@@ -2188,7 +2134,11 @@ export function RentalApplication() {
                       <button
                         type="button"
                         onClick={() => setAddRentGuarantee((prev) => !prev)}
-                        className={`inline-flex items-center gap-[10px] ${addRentGuarantee ? "text-[#0E7A48]" : "text-[#6B7F88]"}`}
+                        className={`inline-flex items-center gap-[10px] rounded-full border px-[10px] py-[6px] transition-colors ${
+                          addRentGuarantee
+                            ? "border-[#0E7A48] bg-[#EAF8F1] text-[#0E7A48]"
+                            : "border-[rgba(15,45,54,0.2)] bg-white text-[#4F6670] hover:bg-[#F6FAFC]"
+                        }`}
                         aria-label="Toggle rent guarantee"
                         role="switch"
                         aria-checked={addRentGuarantee}
@@ -2196,7 +2146,7 @@ export function RentalApplication() {
                         <span className={`relative w-[46px] h-[24px] rounded-full transition-colors ${addRentGuarantee ? "bg-[#0F2D36]" : "bg-[#D8DEE3]"}`}>
                           <span className={`absolute top-[2px] w-[20px] h-[20px] rounded-full bg-white shadow transition-transform ${addRentGuarantee ? "translate-x-[24px]" : "translate-x-[2px]"}`} />
                         </span>
-                        <span className="hidden sm:inline text-[13px] font-semibold whitespace-nowrap">{addRentGuarantee ? "Added" : "Add"}</span>
+                        <span className="text-[13px] font-semibold whitespace-nowrap">{addRentGuarantee ? "Added" : "Add"}</span>
                       </button>
                     </div>
 

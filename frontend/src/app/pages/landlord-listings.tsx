@@ -20,6 +20,7 @@ import {
 import { LandlordPortalLayout } from "../components/landlord-portal-layout";
 import { ImageWithFallback } from "../components/figma/ImageWithFallback";
 import { API_BASE } from "../config";
+import houseImage from "../../assets/house_image.svg";
 
 type ListingStatus = "active" | "inactive";
 type ActiveInactiveStatus = "active" | "inactive";
@@ -341,14 +342,16 @@ export function LandlordListings() {
 
         {!isLoading && !error && filteredListings.length === 0 && (
           <div className="mt-[20px] rounded-[22px] border border-[rgba(11,45,58,0.08)] bg-white px-[22px] py-[40px] text-center shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
-            <Home className="mx-auto mb-[12px] h-[40px] w-[40px] text-[#A8B2BF]" />
+            <div className="flex justify-center mb-[16px]">
+              <img src={houseImage} alt="No listings" className="w-[100px] h-[100px] object-contain" />
+            </div>
             <h2 className="text-[18px] font-bold text-neutral-black">
-              No listings found
+              You can view and manage all your listings here.
             </h2>
             <p className="mx-auto mt-[6px] max-w-[520px] text-[14px] text-neutral-gray">
               {searchQuery || filterStatus !== "all" || selectedCity !== "all"
                 ? "Try adjusting your search or filters."
-                : "Create your first listing to get started."}
+                : "Create your first listing to get started and start earning!"}
             </p>
             <Link
               to="/landlord/add-listing"

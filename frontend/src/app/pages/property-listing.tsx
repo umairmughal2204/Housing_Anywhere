@@ -32,6 +32,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { API_BASE } from "../config";
+import favicon from "../../assets/favicon.png";
 
 const fallbackPropertyImages = [
   "https://images.unsplash.com/photo-1649740718655-3c70b0e3d431?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxwYXJpcyUyMGFwYXJ0bWVudCUyMGJlZHJvb20lMjB3aW5kb3d8ZW58MXx8fHwxNzczMDg5ODczfDA&ixlib=rb-4.1.0&q=80&w=1080",
@@ -248,6 +249,8 @@ export function PropertyListing() {
   const [selectedStartDate, setSelectedStartDate] = useState<Date | null>(null);
   const [selectedEndDate, setSelectedEndDate] = useState<Date | null>(null);
   const [isMoveInAvailabilityChecked, setIsMoveInAvailabilityChecked] = useState(false);
+  const [isFavoriteSplashActive, setIsFavoriteSplashActive] = useState(false);
+  const [isSharePulseActive, setIsSharePulseActive] = useState(false);
   const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(null);
   const paymentsCloseTimerRef = useRef<number | null>(null);
 
@@ -475,6 +478,24 @@ export function PropertyListing() {
       }
     };
   }, []);
+
+  useEffect(() => {
+    if (!isFavoriteSplashActive) {
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => setIsFavoriteSplashActive(false), 520);
+    return () => window.clearTimeout(timeoutId);
+  }, [isFavoriteSplashActive]);
+
+  useEffect(() => {
+    if (!isSharePulseActive) {
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => setIsSharePulseActive(false), 360);
+    return () => window.clearTimeout(timeoutId);
+  }, [isSharePulseActive]);
 
   useEffect(() => {
     if (!listing) {
@@ -921,6 +942,7 @@ export function PropertyListing() {
       const next = !isFavorited;
       setIsFavorited(next);
       setIsFavoriteBusy(true);
+      setIsFavoriteSplashActive(true);
 
       try {
         const response = await fetch(
@@ -954,6 +976,8 @@ export function PropertyListing() {
       toast.error("Listing details are not available yet.");
       return;
     }
+
+    setIsSharePulseActive(true);
 
     const listingUrl = `${window.location.origin}/property/${id}`;
     const sharePayload = {
@@ -1061,8 +1085,8 @@ export function PropertyListing() {
       <div className="bg-neutral-light-gray border-b border-[rgba(0,0,0,0.08)]">
         <div className="max-w-[1440px] mx-auto px-[16px] sm:px-[24px] lg:px-[32px] py-[10px] sm:py-[12px]">
           <div className="hidden md:flex items-center gap-[8px] text-[13px]">
-            <Link to="/" className="text-brand-primary hover:underline font-semibold">
-              ReserveHousing
+            <Link to="/" className="inline-flex items-center">
+              <img src={favicon} alt="ReserveHousing" className="h-[18px] w-[18px] object-contain" />
             </Link>
             <span className="text-neutral-gray">&gt;</span>
             <Link to={`/listings/${(listing?.city ?? "city").toLowerCase()}`} className="text-brand-primary hover:underline font-semibold">
@@ -1076,7 +1100,9 @@ export function PropertyListing() {
             <span className="text-neutral-black font-semibold">{listing?.title ?? "Listing"}</span>
           </div>
           <div className="md:hidden flex items-center gap-[8px] text-[12px]">
-            <Link to="/" className="text-brand-primary font-semibold">ReserveHousing</Link>
+            <Link to="/" className="inline-flex items-center">
+              <img src={favicon} alt="ReserveHousing" className="h-[16px] w-[16px] object-contain" />
+            </Link>
             <span className="text-neutral-gray">&gt;</span>
             <span className="text-neutral-black font-semibold truncate">{listing?.title ?? "Listing"}</span>
           </div>
@@ -1180,7 +1206,7 @@ export function PropertyListing() {
             {/* Image Gallery */}
             <div className="mb-[18px] sm:mb-[24px]">
               {/* Main Image */}
-              <div className="relative mb-[16px] bg-[#F7F7F9]">
+              <div className="relative mb-[16px] overflow-hidden rounded-[22px] sm:rounded-[28px] lg:rounded-[34px] bg-[#F7F7F9] shadow-[0_14px_30px_rgba(15,45,54,0.14)]">
                 <img
                   src={propertyImages[currentImageIndex]}
                   alt="Property"
@@ -1190,13 +1216,13 @@ export function PropertyListing() {
                 {/* Navigation Arrows */}
                 <button
                   onClick={previousImage}
-                  className="absolute left-[10px] sm:left-[16px] top-1/2 -translate-y-1/2 w-[34px] h-[34px] sm:w-[40px] sm:h-[40px] bg-white/90 hover:bg-white flex items-center justify-center transition-colors"
+                  className="absolute left-[10px] sm:left-[16px] top-1/2 -translate-y-1/2 w-[34px] h-[34px] sm:w-[40px] sm:h-[40px] bg-white/90 hover:bg-white flex items-center justify-center rounded-full shadow-[0_8px_18px_rgba(15,45,54,0.16)] transition-all hover:scale-105 active:scale-95"
                 >
                   <ChevronLeft className="w-[18px] h-[18px] sm:w-[20px] sm:h-[20px] text-[#1A1A1A]" />
                 </button>
                 <button
                   onClick={nextImage}
-                  className="absolute right-[10px] sm:right-[16px] top-1/2 -translate-y-1/2 w-[34px] h-[34px] sm:w-[40px] sm:h-[40px] bg-white/90 hover:bg-white flex items-center justify-center transition-colors"
+                  className="absolute right-[10px] sm:right-[16px] top-1/2 -translate-y-1/2 w-[34px] h-[34px] sm:w-[40px] sm:h-[40px] bg-white/90 hover:bg-white flex items-center justify-center rounded-full shadow-[0_8px_18px_rgba(15,45,54,0.16)] transition-all hover:scale-105 active:scale-95"
                 >
                   <ChevronRight className="w-[18px] h-[18px] sm:w-[20px] sm:h-[20px] text-[#1A1A1A]" />
                 </button>
@@ -1206,20 +1232,26 @@ export function PropertyListing() {
                   <button
                     type="button"
                     onClick={() => void handleShareListing()}
-                    className="w-[40px] h-[40px] bg-white/90 hover:bg-white flex items-center justify-center transition-colors"
+                    aria-label="Share listing"
+                    className={`relative w-[40px] h-[40px] flex items-center justify-center rounded-full shadow-[0_8px_18px_rgba(15,45,54,0.16)] transition-all active:scale-95 ${
+                      isSharePulseActive ? "bg-[#D9F3F8] scale-110" : "bg-white/92 hover:bg-white hover:scale-105"
+                    }`}
                   >
-                    <Share2 className="w-[18px] h-[18px] text-[#1A1A1A]" />
+                    <Share2 className={`w-[18px] h-[18px] ${isSharePulseActive ? "text-[#0E7490]" : "text-[#1A1A1A]"}`} />
+                    {isSharePulseActive && <span className="absolute inset-0 rounded-full border-2 border-[#38BDF8] animate-ping" />}
                   </button>
                   <button
                     type="button"
                     onClick={handleToggleFavorite}
-                    className="w-[40px] h-[40px] bg-white/90 hover:bg-white flex items-center justify-center transition-colors"
+                    aria-label={isFavorited ? "Remove from favorites" : "Add to favorites"}
+                    className="relative w-[40px] h-[40px] bg-white/92 hover:bg-white flex items-center justify-center rounded-full shadow-[0_8px_18px_rgba(15,45,54,0.16)] transition-all hover:scale-105 active:scale-95"
                   >
                     <Heart
                       className={`w-[18px] h-[18px] ${
                         isFavorited ? "fill-brand-primary text-brand-primary" : "text-neutral-black"
                       }`}
                     />
+                    {isFavoriteSplashActive && <span className="absolute inset-0 rounded-full border-2 border-[#0891B2] animate-ping" />}
                   </button>
                 </div>
 
@@ -1240,7 +1272,7 @@ export function PropertyListing() {
                   <button
                     key={index}
                     onClick={() => setCurrentImageIndex(index)}
-                    className={`relative w-[120px] h-[80px] overflow-hidden ${
+                    className={`relative w-[120px] h-[80px] overflow-hidden rounded-[12px] transition-transform hover:scale-[1.02] ${
                       currentImageIndex === index ? "ring-2 ring-brand-primary" : ""
                     }`}
                   >
@@ -1917,7 +1949,7 @@ export function PropertyListing() {
             }`}
           >
             <div className="sticky top-0 z-[2] bg-white border-b border-[rgba(15,45,54,0.14)] px-[24px] py-[20px] flex items-center justify-between">
-              <h3 className="text-[#0F2D36] text-[38px] leading-[1.05] font-bold">Total payments</h3>
+              <h3 className="text-[#0F2D36] text-[30px] leading-[1.05] font-bold">Total payments</h3>
               <button
                 type="button"
                 onClick={handleClosePaymentsDrawer}
@@ -1930,7 +1962,11 @@ export function PropertyListing() {
             <div className="px-[24px] py-[22px]">
               <p className="text-[#173743] text-[16px] leading-[1.55] mb-[18px]">A breakdown of all costs for your stay.</p>
 
-              <p className="text-[#0F2D36] text-[33px] leading-[1.1] font-bold mb-[14px]">You <span className="text-[#6A7F88]">-&gt;</span> ReserveHousing</p>
+              <div className="mb-[14px] flex items-center gap-[10px] text-[#0F2D36] text-[27px] sm:text-[29px] leading-[1.1] font-bold">
+                <span>You</span>
+                <span className="text-[#6A7F88]">-&gt;</span>
+                <img src={favicon} alt="ReserveHousing" className="h-[30px] w-[30px] object-contain" />
+              </div>
               <p className="text-[#173743] text-[16px] leading-[1.55] mb-[14px]">Pay this now to secure your place.</p>
 
               {hasSelectedDateRange ? (
@@ -2000,7 +2036,16 @@ export function PropertyListing() {
               )}
 
               <div className="pt-[16px] border-t border-[rgba(15,45,54,0.12)]">
-                <p className="text-[#0F2D36] text-[33px] leading-[1.1] font-bold mb-[14px]">You <span className="text-[#6A7F88]">-&gt;</span> {listing.landlord?.name ?? "Landlord"}</p>
+                <div className="mb-[14px] flex items-center gap-[10px] text-[#0F2D36] text-[27px] sm:text-[29px] leading-[1.1] font-bold">
+                  <span>You</span>
+                  <span className="text-[#6A7F88]">-&gt;</span>
+                  <img
+                    src="https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=120&q=80"
+                    alt="Brand Co"
+                    className="h-[42px] w-[42px] rounded-full border border-[rgba(15,45,54,0.18)] object-cover"
+                  />
+                  <span>Brand Co</span>
+                </div>
                 <p className="text-[#173743] text-[16px] leading-[1.55] mb-[14px]">Future rental costs to the landlord. You'll pay these directly, per your contract.</p>
 
                 <div className="space-y-[10px] mb-[12px]">

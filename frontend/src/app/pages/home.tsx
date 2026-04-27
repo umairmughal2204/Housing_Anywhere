@@ -9,6 +9,7 @@ import ups2Image from "../../assets/ups-2.avif";
 import ups3Image from "../../assets/ups-3.avif";
 import mapImage from "../../assets/map.avif";
 import guaranteedImage from "../../assets/guaranteed.avif";
+import houseImage from "../../assets/house_image.svg";
 import { 
   MapPin, 
   Calendar, 
@@ -419,7 +420,7 @@ function ParallaxFeatureSection({ dark = false, imageSrc, imageAlt, title, body,
   const glowOpacity = useTransform(scrollYProgress, [0, 0.5, 1], [0.1, 0.35, 0.1]);
 
   return (
-    <section ref={sectionRef} className="relative overflow-hidden py-[64px] md:py-[76px]">
+    <section ref={sectionRef} className="relative overflow-hidden py-[36px] md:py-[44px]">
       <motion.div
         className={`pointer-events-none absolute inset-0 ${dark ? "bg-[radial-gradient(circle_at_68%_45%,rgba(56,189,248,0.18),transparent_56%)]" : "bg-[radial-gradient(circle_at_68%_45%,rgba(56,189,248,0.16),transparent_56%)]"}`}
         style={{ opacity: glowOpacity }}
@@ -1128,29 +1129,29 @@ export function Home() {
                     ))}
                   </div>
                 )}
-                {!isListingsTabLoading && isListingsTabEmpty && isRecommendationsTab && (
-                  <div className="rounded-[20px] border border-[rgba(0,0,0,0.08)] bg-[#F7F7F9] p-[24px] text-center">
-                    <div className="text-[#1A1A1A] text-[18px] font-semibold mb-[8px]">No recommendations yet</div>
-                    <div className="text-[#6B6B6B] text-[14px] max-w-[560px] mx-auto mb-[16px]">
-                      Start exploring listings, save a few favorites, or message landlords to help us personalize your recommendations.
+                {!isListingsTabLoading && isListingsTabEmpty && (
+                  <div className="rounded-[20px] border border-[rgba(0,0,0,0.08)] bg-[#F7F7F9] p-[40px] text-center">
+                    <div className="flex justify-center mb-[24px]">
+                      <img src={houseImage} alt="No listings" className="w-[120px] h-[120px] object-contain" />
                     </div>
-                    <Link
-                      to="/listings"
-                      className="inline-flex items-center gap-[8px] px-[16px] py-[10px] bg-[#1A1A1A] text-white text-[14px] font-semibold hover:bg-[#0891B2] transition-colors"
-                    >
-                      Explore listings
-                      <ArrowRight className="w-[16px] h-[16px]" />
-                    </Link>
-                  </div>
-                )}
-                {!isListingsTabLoading && isListingsTabEmpty && isRecentlyViewedTab && (
-                  <div className="rounded-[20px] border border-[rgba(0,0,0,0.08)] bg-[#F7F7F9] p-[24px] text-center">
-                    <div className="text-[#1A1A1A] text-[18px] font-semibold mb-[8px]">No recently viewed listings yet</div>
-                    <div className="text-[#6B6B6B] text-[14px] max-w-[560px] mx-auto mb-[16px]">
-                      Once you open a property, it will appear here so you can jump back to it quickly.
-                    </div>
+                    {isRecommendationsTab && (
+                      <>
+                        <div className="text-[#1A1A1A] text-[18px] font-semibold mb-[8px]">No recommendations yet</div>
+                        <div className="text-[#6B6B6B] text-[14px] max-w-[560px] mx-auto mb-[16px]">
+                          Start exploring listings, save a few favorites, or message landlords to help us personalize your recommendations.
+                        </div>
+                      </>
+                    )}
+                    {isRecentlyViewedTab && (
+                      <>
+                        <div className="text-[#1A1A1A] text-[18px] font-semibold mb-[8px]">No recently viewed listings yet</div>
+                        <div className="text-[#6B6B6B] text-[14px] max-w-[560px] mx-auto mb-[16px]">
+                          Once you open a property, it will appear here so you can jump back to it quickly.
+                        </div>
+                      </>
+                    )}
                     <div className="flex items-center justify-center gap-[12px] flex-wrap">
-                      {recommendations.length > 0 && (
+                      {recommendations.length > 0 && isRecentlyViewedTab && (
                         <button
                           type="button"
                           onClick={() => setActiveTab("recommendations")}
@@ -1169,12 +1170,12 @@ export function Home() {
                     </div>
                   </div>
                 )}
-                <div className="mt-[24px] flex justify-end">
+                <div className="mt-[16px] md:mt-[24px] flex justify-center">
                   <Link
                     to="/listings"
-                    className="inline-flex items-center gap-[8px] rounded-full border border-[rgba(15,45,54,0.18)] bg-white px-[18px] py-[10px] text-[14px] font-semibold text-[#12303B] shadow-[0_1px_2px_rgba(15,23,42,0.04)] transition-colors hover:border-[rgba(15,45,54,0.32)] hover:bg-[#F7F9FC]"
+                    className="text-[14px] md:text-[16px] font-semibold text-brand-primary hover:text-brand-primary-dark transition-colors flex items-center gap-[6px] pb-[2px] border-b border-transparent hover:border-brand-primary"
                   >
-                    View all listings
+                    Browse all listings
                     <ArrowRight className="w-[16px] h-[16px]" />
                   </Link>
                 </div>
@@ -1226,7 +1227,22 @@ export function Home() {
                   </div>
                 )}
                 {!isLoadingFavorites && favorites.length === 0 && (
-                  <div className="text-[#6B6B6B] text-[14px] py-[8px]">You haven't saved any favorites yet. Heart a listing to save it here.</div>
+                  <div className="rounded-[20px] border border-[rgba(0,0,0,0.08)] bg-[#F7F7F9] p-[40px] text-center">
+                    <div className="flex justify-center mb-[24px]">
+                      <img src={houseImage} alt="No favorites" className="w-[120px] h-[120px] object-contain" />
+                    </div>
+                    <div className="text-[#1A1A1A] text-[18px] font-semibold mb-[8px]">You haven't saved any favorites yet</div>
+                    <div className="text-[#6B6B6B] text-[14px] max-w-[560px] mx-auto mb-[16px]">
+                      Heart a listing to save it here. Start exploring and build your collection of dream homes.
+                    </div>
+                    <Link
+                      to="/listings"
+                      className="inline-flex items-center gap-[8px] px-[16px] py-[10px] bg-[#1A1A1A] text-white text-[14px] font-semibold hover:bg-[#0891B2] transition-colors"
+                    >
+                      Explore listings
+                      <ArrowRight className="w-[16px] h-[16px]" />
+                    </Link>
+                  </div>
                 )}
               </>
             )}

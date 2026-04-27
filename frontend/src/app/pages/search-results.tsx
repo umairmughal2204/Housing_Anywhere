@@ -316,9 +316,6 @@ export function SearchResults() {
   const apiBase = API_BASE;
   const [viewMode, setViewMode] = useState<"list" | "map">("list");
   const [dateOpen, setDateOpen] = useState(false);
-  const [propertyDatePickerId, setPropertyDatePickerId] = useState<string | null>(null);
-  const [propertyDatePickerStart, setPropertyDatePickerStart] = useState<string>("");
-  const [propertyDatePickerEnd, setPropertyDatePickerEnd] = useState<string>("");
   const [priceOpen, setPriceOpen] = useState(false);
   const [propertyTypeOpen, setPropertyTypeOpen] = useState(false);
   const [neighborhoodsOpen, setNeighborhoodsOpen] = useState(false);
@@ -970,23 +967,6 @@ export function SearchResults() {
   const handleToggleFavoriteWithSplash = async (listingId: string) => {
     triggerFavoriteSplash(listingId);
     await handleToggleFavorite(listingId);
-  };
-
-  const handlePropertyDateSelection = () => {
-    if (!propertyDatePickerId) return;
-    
-    const params: Record<string, string> = {};
-    if (propertyDatePickerStart) params.startDate = propertyDatePickerStart;
-    if (propertyDatePickerEnd) params.endDate = propertyDatePickerEnd;
-    
-    const queryString = Object.keys(params).length > 0 
-      ? `?${new URLSearchParams(params).toString()}`
-      : "";
-    
-    navigate(`/property/${propertyDatePickerId}${queryString}`);
-    setPropertyDatePickerId(null);
-    setPropertyDatePickerStart("");
-    setPropertyDatePickerEnd("");
   };
 
   const scrollToResultsHeader = () => {
@@ -1796,7 +1776,7 @@ export function SearchResults() {
               {!isLoading && sortedProperties.map((property) => (
                 <div
                   key={property.id}
-                  onClick={() => setPropertyDatePickerId(property.id)}
+                  onClick={() => window.open(`/property/${property.id}`, "_blank", "noopener,noreferrer")}
                   className="group cursor-pointer overflow-hidden rounded-[12px] border border-[rgba(15,45,54,0.16)] bg-white transition-shadow duration-200 hover:shadow-[0_10px_24px_rgba(15,45,54,0.10)]"
                 >
                   {/* Image Container */}
@@ -2071,59 +2051,6 @@ export function SearchResults() {
           )}
         </div>
       </div>
-
-      {/* Property Date Picker Modal */}
-      {propertyDatePickerId && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-[20px]">
-          <div className="bg-white rounded-[12px] shadow-[0_20px_40px_rgba(0,0,0,0.16)] w-full max-w-[500px] p-[32px]">
-            <h2 className="text-[20px] font-semibold text-[#1A1A1A] mb-[24px]">Select dates for this property</h2>
-            
-            <div className="space-y-[20px] mb-[32px]">
-              <div>
-                <label className="block text-[14px] font-medium text-[#1A1A1A] mb-[8px]">Check-in date</label>
-                <input
-                  type="date"
-                  value={propertyDatePickerStart}
-                  onChange={(e) => setPropertyDatePickerStart(e.target.value)}
-                  className="w-full px-[12px] py-[10px] border border-[rgba(0,0,0,0.16)] rounded-[6px] text-[14px] font-medium text-[#1A1A1A]"
-                />
-              </div>
-              
-              <div>
-                <label className="block text-[14px] font-medium text-[#1A1A1A] mb-[8px]">Check-out date</label>
-                <input
-                  type="date"
-                  value={propertyDatePickerEnd}
-                  onChange={(e) => setPropertyDatePickerEnd(e.target.value)}
-                  className="w-full px-[12px] py-[10px] border border-[rgba(0,0,0,0.16)] rounded-[6px] text-[14px] font-medium text-[#1A1A1A]"
-                />
-              </div>
-            </div>
-
-            <div className="flex gap-[12px]">
-              <button
-                type="button"
-                onClick={() => {
-                  setPropertyDatePickerId(null);
-                  setPropertyDatePickerStart("");
-                  setPropertyDatePickerEnd("");
-                }}
-                className="flex-1 px-[16px] py-[12px] border border-[rgba(0,0,0,0.16)] text-[14px] font-semibold text-[#1A1A1A] rounded-[6px] hover:bg-[#F7F7F9] transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={handlePropertyDateSelection}
-                className="flex-1 px-[16px] py-[12px] bg-[#0891B2] text-white text-[14px] font-semibold rounded-[6px] hover:bg-[#0E7490] transition-colors disabled:bg-[#CCCCCC] disabled:cursor-not-allowed"
-                disabled={!propertyDatePickerStart || !propertyDatePickerEnd}
-              >
-                View property
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       <Footer variant="dashboard" />
     </div>
