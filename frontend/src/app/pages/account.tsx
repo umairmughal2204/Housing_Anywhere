@@ -1,6 +1,6 @@
 import { Header } from "../components/header";
 import { Footer } from "../components/footer";
-import { User, FileText, Mail, Key, Bell, Plus, Trash2 } from "lucide-react";
+import { User, FileText, Mail, Key, Bell, Plus, Trash2, ChevronDown } from "lucide-react";
 import { ChangeEvent, FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router";
 import { useAuth } from "../contexts/auth-context";
@@ -72,6 +72,7 @@ export function Account() {
   const profilePictureInputRef = useRef<HTMLInputElement>(null);
 
   const [activeTab, setActiveTab] = useState<TabType>("profile");
+  const [isMobileTabsOpen, setIsMobileTabsOpen] = useState(false);
   const [profileForm, setProfileForm] = useState<ProfileFormState>(DEFAULT_PROFILE);
   const [contactForm, setContactForm] = useState<ContactFormState>({
     email: "",
@@ -322,20 +323,21 @@ export function Account() {
     <div className="min-h-screen flex flex-col bg-[#F7F7F9]">
       <Header />
 
-      <main className="flex-1 py-[40px]">
-        <div className="max-w-[1200px] mx-auto px-[32px]">
-          <div className="flex items-center justify-between mb-[32px]">
-            <h1 className="text-[#1A1A1A] text-[32px] font-bold tracking-[-0.02em]">Account</h1>
-            <button className="px-[16px] py-[8px] border border-[rgba(0,0,0,0.16)] bg-white text-[#1A1A1A] text-[13px] font-semibold hover:bg-[#F7F7F9] transition-colors">
+      <main className="flex-1 py-[24px] sm:py-[32px] md:py-[40px]">
+        <div className="max-w-[1200px] mx-auto px-[16px] sm:px-[20px] md:px-[32px]">
+          <div className="mb-[20px] sm:mb-[28px] flex flex-col gap-[12px] sm:flex-row sm:items-center sm:justify-between">
+            <h1 className="text-[#1A1A1A] text-[28px] sm:text-[32px] font-bold tracking-[-0.02em]">Account</h1>
+            <button className="w-full sm:w-auto px-[16px] py-[10px] border border-[rgba(0,0,0,0.16)] bg-white text-[#1A1A1A] text-[13px] font-semibold hover:bg-[#F7F7F9] transition-colors">
               VIEW PROFILE
             </button>
           </div>
 
-          <div className="grid grid-cols-[240px_1fr] gap-[24px]">
-            <div className="bg-white border border-[rgba(0,0,0,0.08)] p-[16px] h-fit">
+          <div className="grid grid-cols-1 lg:grid-cols-[240px_1fr] gap-[16px] lg:gap-[24px]">
+            {/* Desktop Sidebar */}
+            <div className="hidden lg:block bg-white border border-[rgba(0,0,0,0.08)] rounded-[16px] p-[12px] sm:p-[16px] h-fit">
               <button
                 onClick={() => setActiveTab("profile")}
-                className={`w-full flex items-center gap-[12px] px-[12px] py-[10px] text-left text-[14px] mb-[4px] transition-colors ${
+                className={`w-full flex items-center gap-[12px] px-[12px] py-[10px] text-left text-[14px] mb-[4px] rounded-[10px] transition-colors ${
                   activeTab === "profile"
                     ? "bg-[#F7F7F9] text-[#1A1A1A] font-semibold"
                     : "text-[#6B6B6B] hover:bg-[#F7F7F9]"
@@ -347,7 +349,7 @@ export function Account() {
               {user?.role === "landlord" ? (
                 <button
                   onClick={() => setActiveTab("documents")}
-                  className={`w-full flex items-center gap-[12px] px-[12px] py-[10px] text-left text-[14px] mb-[4px] transition-colors ${
+                  className={`w-full flex items-center gap-[12px] px-[12px] py-[10px] text-left text-[14px] mb-[4px] rounded-[10px] transition-colors ${
                     activeTab === "documents"
                       ? "bg-[#F7F7F9] text-[#1A1A1A] font-semibold"
                       : "text-[#6B6B6B] hover:bg-[#F7F7F9]"
@@ -359,7 +361,7 @@ export function Account() {
               ) : null}
               <button
                 onClick={() => setActiveTab("contact")}
-                className={`w-full flex items-center gap-[12px] px-[12px] py-[10px] text-left text-[14px] mb-[4px] transition-colors ${
+                className={`w-full flex items-center gap-[12px] px-[12px] py-[10px] text-left text-[14px] mb-[4px] rounded-[10px] transition-colors ${
                   activeTab === "contact"
                     ? "bg-[#F7F7F9] text-[#1A1A1A] font-semibold"
                     : "text-[#6B6B6B] hover:bg-[#F7F7F9]"
@@ -370,7 +372,7 @@ export function Account() {
               </button>
               <button
                 onClick={() => setActiveTab("password")}
-                className={`w-full flex items-center gap-[12px] px-[12px] py-[10px] text-left text-[14px] mb-[4px] transition-colors ${
+                className={`w-full flex items-center gap-[12px] px-[12px] py-[10px] text-left text-[14px] mb-[4px] rounded-[10px] transition-colors ${
                   activeTab === "password"
                     ? "bg-[#F7F7F9] text-[#1A1A1A] font-semibold"
                     : "text-[#6B6B6B] hover:bg-[#F7F7F9]"
@@ -381,7 +383,7 @@ export function Account() {
               </button>
               <button
                 onClick={() => setActiveTab("notifications")}
-                className={`w-full flex items-center gap-[12px] px-[12px] py-[10px] text-left text-[14px] transition-colors ${
+                className={`w-full flex items-center gap-[12px] px-[12px] py-[10px] text-left text-[14px] rounded-[10px] transition-colors ${
                   activeTab === "notifications"
                     ? "bg-[#F7F7F9] text-[#1A1A1A] font-semibold"
                     : "text-[#6B6B6B] hover:bg-[#F7F7F9]"
@@ -392,10 +394,93 @@ export function Account() {
               </button>
             </div>
 
-            <div className="bg-white border border-[rgba(0,0,0,0.08)] p-[32px]">
+            {/* Mobile Dropdown */}
+            <div className="lg:hidden">
+              <button
+                onClick={() => setIsMobileTabsOpen(!isMobileTabsOpen)}
+                className="w-full flex items-center justify-between px-[12px] py-[10px] bg-white border border-[rgba(0,0,0,0.08)] rounded-[16px] text-[#1A1A1A] text-[14px] font-semibold transition-colors hover:bg-[#F7F7F9]"
+              >
+                <span>
+                  {activeTab === "profile" && "Profile"}
+                  {activeTab === "documents" && "Supporting documents"}
+                  {activeTab === "contact" && "Contact details"}
+                  {activeTab === "password" && "Change password"}
+                  {activeTab === "notifications" && "Notification settings"}
+                </span>
+                <ChevronDown className={`w-[16px] h-[16px] transition-transform ${isMobileTabsOpen ? "rotate-180" : ""}`} />
+              </button>
+              {isMobileTabsOpen && (
+                <div className="absolute top-[calc(100%+4px)] left-[16px] right-[16px] bg-white border border-[rgba(0,0,0,0.08)] rounded-[16px] shadow-[0_4px_12px_rgba(0,0,0,0.1)] z-10">
+                  <button
+                    onClick={() => {
+                      setActiveTab("profile");
+                      setIsMobileTabsOpen(false);
+                    }}
+                    className={`w-full flex items-center gap-[12px] px-[12px] py-[10px] text-left text-[14px] text-[#6B6B6B] hover:bg-[#F7F7F9] transition-colors border-b border-[rgba(0,0,0,0.04)] ${
+                      activeTab === "profile" ? "bg-[#F7F7F9] text-[#1A1A1A] font-semibold" : ""
+                    }`}
+                  >
+                    <User className="w-[16px] h-[16px]" />
+                    Profile
+                  </button>
+                  {user?.role === "landlord" ? (
+                    <button
+                      onClick={() => {
+                        setActiveTab("documents");
+                        setIsMobileTabsOpen(false);
+                      }}
+                      className={`w-full flex items-center gap-[12px] px-[12px] py-[10px] text-left text-[14px] text-[#6B6B6B] hover:bg-[#F7F7F9] transition-colors border-b border-[rgba(0,0,0,0.04)] ${
+                        activeTab === "documents" ? "bg-[#F7F7F9] text-[#1A1A1A] font-semibold" : ""
+                      }`}
+                    >
+                      <FileText className="w-[16px] h-[16px]" />
+                      Supporting documents
+                    </button>
+                  ) : null}
+                  <button
+                    onClick={() => {
+                      setActiveTab("contact");
+                      setIsMobileTabsOpen(false);
+                    }}
+                    className={`w-full flex items-center gap-[12px] px-[12px] py-[10px] text-left text-[14px] text-[#6B6B6B] hover:bg-[#F7F7F9] transition-colors border-b border-[rgba(0,0,0,0.04)] ${
+                      activeTab === "contact" ? "bg-[#F7F7F9] text-[#1A1A1A] font-semibold" : ""
+                    }`}
+                  >
+                    <Mail className="w-[16px] h-[16px]" />
+                    Contact details
+                  </button>
+                  <button
+                    onClick={() => {
+                      setActiveTab("password");
+                      setIsMobileTabsOpen(false);
+                    }}
+                    className={`w-full flex items-center gap-[12px] px-[12px] py-[10px] text-left text-[14px] text-[#6B6B6B] hover:bg-[#F7F7F9] transition-colors border-b border-[rgba(0,0,0,0.04)] ${
+                      activeTab === "password" ? "bg-[#F7F7F9] text-[#1A1A1A] font-semibold" : ""
+                    }`}
+                  >
+                    <Key className="w-[16px] h-[16px]" />
+                    Change password
+                  </button>
+                  <button
+                    onClick={() => {
+                      setActiveTab("notifications");
+                      setIsMobileTabsOpen(false);
+                    }}
+                    className={`w-full flex items-center gap-[12px] px-[12px] py-[10px] text-left text-[14px] text-[#6B6B6B] hover:bg-[#F7F7F9] transition-colors ${
+                      activeTab === "notifications" ? "bg-[#F7F7F9] text-[#1A1A1A] font-semibold" : ""
+                    }`}
+                  >
+                    <Bell className="w-[16px] h-[16px]" />
+                    Notification settings
+                  </button>
+                </div>
+              )}
+            </div>
+
+            <div className="bg-white border border-[rgba(0,0,0,0.08)] rounded-[16px] p-[16px] sm:p-[24px] md:p-[32px]">
               {activeTab === "profile" && (
                 <div>
-                  <h2 className="text-[#1A1A1A] text-[20px] font-bold mb-[32px]">Personal information</h2>
+                  <h2 className="text-[#1A1A1A] text-[18px] sm:text-[20px] font-bold mb-[24px] sm:mb-[32px]">Personal information</h2>
 
                   <form className="space-y-[24px]" onSubmit={handleProfileSubmit}>
                     <input
@@ -405,7 +490,7 @@ export function Account() {
                       className="hidden"
                       onChange={handleProfilePictureSelect}
                     />
-                    <div className="flex items-center gap-[16px] mb-[32px]">
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-[12px] sm:gap-[16px] mb-[24px] sm:mb-[32px]">
                       <UserAvatar
                         name={user?.name}
                         profilePictureUrl={user?.profilePictureUrl}
@@ -422,7 +507,7 @@ export function Account() {
                       </button>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-[16px]">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-[16px]">
                       <div>
                         <label className="block text-[#1A1A1A] text-[13px] font-semibold mb-[8px]">
                           First Name <span className="text-[#0066CC]">*</span>
@@ -437,7 +522,7 @@ export function Account() {
                               firstName: e.target.value,
                             }))
                           }
-                          className="w-full px-[12px] py-[10px] border border-[rgba(0,0,0,0.16)] text-[#1A1A1A] text-[14px] focus:outline-none focus:border-[#0066CC]"
+                          className="w-full px-[12px] py-[10px] border border-[rgba(0,0,0,0.16)] rounded-[8px] text-[#1A1A1A] text-[14px] focus:outline-none focus:border-[#0066CC]"
                         />
                       </div>
                       <div>
@@ -454,18 +539,18 @@ export function Account() {
                               lastName: e.target.value,
                             }))
                           }
-                          className="w-full px-[12px] py-[10px] border border-[rgba(0,0,0,0.16)] text-[#1A1A1A] text-[14px] focus:outline-none focus:border-[#0066CC]"
+                          className="w-full px-[12px] py-[10px] border border-[rgba(0,0,0,0.16)] rounded-[8px] text-[#1A1A1A] text-[14px] focus:outline-none focus:border-[#0066CC]"
                         />
                       </div>
                     </div>
 
                     <div>
                       <label className="block text-[#1A1A1A] text-[13px] font-semibold mb-[8px]">Date of birth</label>
-                      <div className="grid grid-cols-3 gap-[12px]">
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-[12px]">
                         <select
                           value={profileForm.day}
                           onChange={(e) => setProfileForm((prev) => ({ ...prev, day: e.target.value }))}
-                          className="px-[12px] py-[10px] border border-[rgba(0,0,0,0.16)] text-[#1A1A1A] text-[14px] focus:outline-none focus:border-[#0066CC]"
+                          className="px-[12px] py-[10px] border border-[rgba(0,0,0,0.16)] rounded-[8px] text-[#1A1A1A] text-[14px] focus:outline-none focus:border-[#0066CC]"
                         >
                           <option value="">Day</option>
                           {Array.from({ length: 31 }, (_, i) => (
@@ -477,7 +562,7 @@ export function Account() {
                         <select
                           value={profileForm.month}
                           onChange={(e) => setProfileForm((prev) => ({ ...prev, month: e.target.value }))}
-                          className="px-[12px] py-[10px] border border-[rgba(0,0,0,0.16)] text-[#1A1A1A] text-[14px] focus:outline-none focus:border-[#0066CC]"
+                          className="px-[12px] py-[10px] border border-[rgba(0,0,0,0.16)] rounded-[8px] text-[#1A1A1A] text-[14px] focus:outline-none focus:border-[#0066CC]"
                         >
                           <option value="">Month</option>
                           {Array.from({ length: 12 }, (_, i) => (
@@ -489,7 +574,7 @@ export function Account() {
                         <select
                           value={profileForm.year}
                           onChange={(e) => setProfileForm((prev) => ({ ...prev, year: e.target.value }))}
-                          className="px-[12px] py-[10px] border border-[rgba(0,0,0,0.16)] text-[#1A1A1A] text-[14px] focus:outline-none focus:border-[#0066CC]"
+                          className="px-[12px] py-[10px] border border-[rgba(0,0,0,0.16)] rounded-[8px] text-[#1A1A1A] text-[14px] focus:outline-none focus:border-[#0066CC]"
                         >
                           <option value="">Year</option>
                           {years.map((year) => (
@@ -558,7 +643,7 @@ export function Account() {
 
                     <div>
                       <label className="block text-[#1A1A1A] text-[13px] font-semibold mb-[12px]">Occupation</label>
-                      <div className="flex items-center gap-[24px] mb-[16px]">
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-[12px] sm:gap-[24px] mb-[16px]">
                         {(["student", "working", "other"] as Occupation[]).map((option) => (
                           <label key={option} className="flex items-center gap-[8px] cursor-pointer">
                             <input
@@ -650,19 +735,19 @@ export function Account() {
                     {profileError ? <p className="text-[#C81E1E] text-[13px]">{profileError}</p> : null}
                     {profileStatus ? <p className="text-[#008A52] text-[13px]">{profileStatus}</p> : null}
 
-                    <div className="pt-[24px] border-t border-[rgba(0,0,0,0.08)] flex items-center justify-between">
+                    <div className="pt-[24px] border-t border-[rgba(0,0,0,0.08)] flex flex-col-reverse sm:flex-row sm:items-center justify-between gap-[12px]">
                       <button
                         type="button"
                         onClick={handleDeleteAccount}
                         disabled={isDeletingAccount}
-                        className="text-[#FF4B27] text-[13px] font-semibold hover:underline disabled:opacity-60"
+                        className="text-[#FF4B27] text-[13px] font-semibold hover:underline disabled:opacity-60 text-left"
                       >
                         {isDeletingAccount ? "Deleting account..." : "Delete account"}
                       </button>
                       <button
                         type="submit"
                         disabled={isSavingProfile}
-                        className="px-[32px] py-[12px] bg-[#0066CC] text-white text-[14px] font-bold hover:bg-[#0052A3] transition-colors disabled:opacity-70"
+                        className="w-full sm:w-auto px-[32px] py-[12px] bg-[#0066CC] text-white text-[14px] font-bold hover:bg-[#0052A3] transition-colors disabled:opacity-70"
                       >
                         {isSavingProfile ? "SAVING..." : "SAVE CHANGES"}
                       </button>
@@ -673,15 +758,15 @@ export function Account() {
 
               {user?.role === "landlord" && activeTab === "documents" && (
                 <div>
-                  <h2 className="text-[#1A1A1A] text-[20px] font-bold mb-[32px]">Supporting documents</h2>
+                  <h2 className="text-[#1A1A1A] text-[18px] sm:text-[20px] font-bold mb-[24px] sm:mb-[32px]">Supporting documents</h2>
 
-                  <div className="space-y-[32px]">
-                    <div className="pb-[32px] border-b border-[rgba(0,0,0,0.08)]">
+                  <div className="space-y-[24px] sm:space-y-[32px]">
+                    <div className="pb-[24px] sm:pb-[32px] border-b border-[rgba(0,0,0,0.08)]">
                       <h3 className="text-[#1A1A1A] text-[16px] font-bold mb-[8px]">Rental agreements</h3>
                       <p className="text-[#6B6B6B] text-[14px] leading-[1.6] mb-[16px]">
                         Upload a copy of your rental agreements to easily share with future tenants.
                       </p>
-                      <div className="flex items-start gap-[16px]">
+                      <div className="flex flex-col sm:flex-row items-start gap-[12px] sm:gap-[16px]">
                         <button className="px-[20px] py-[8px] border border-[rgba(0,0,0,0.16)] bg-white text-[#1A1A1A] text-[13px] font-semibold hover:bg-[#F7F7F9] transition-colors">
                           UPLOAD
                         </button>
@@ -692,12 +777,12 @@ export function Account() {
                       </div>
                     </div>
 
-                    <div className="pb-[32px] border-b border-[rgba(0,0,0,0.08)]">
+                    <div className="pb-[24px] sm:pb-[32px] border-b border-[rgba(0,0,0,0.08)]">
                       <h3 className="text-[#1A1A1A] text-[16px] font-bold mb-[8px]">Rules and requirements</h3>
                       <p className="text-[#6B6B6B] text-[14px] leading-[1.6] mb-[16px]">
                         Upload documents that inform your future tenants about the requirements for renting your properties.
                       </p>
-                      <div className="flex items-start gap-[16px]">
+                      <div className="flex flex-col sm:flex-row items-start gap-[12px] sm:gap-[16px]">
                         <button className="px-[20px] py-[8px] border border-[rgba(0,0,0,0.16)] bg-white text-[#1A1A1A] text-[13px] font-semibold hover:bg-[#F7F7F9] transition-colors">
                           UPLOAD
                         </button>
@@ -729,7 +814,7 @@ export function Account() {
 
               {activeTab === "contact" && (
                 <div>
-                  <h2 className="text-[#1A1A1A] text-[20px] font-bold mb-[32px]">Contact details</h2>
+                  <h2 className="text-[#1A1A1A] text-[18px] sm:text-[20px] font-bold mb-[24px] sm:mb-[32px]">Contact details</h2>
 
                   <form className="space-y-[24px]" onSubmit={handleContactSubmit}>
                     <div>
@@ -752,7 +837,7 @@ export function Account() {
 
                     <div>
                       <label className="block text-[#1A1A1A] text-[13px] font-semibold mb-[8px]">Mobile number</label>
-                      <div className="flex items-center gap-[12px] mb-[8px]">
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-[12px] mb-[8px]">
                         <select
                           value={contactForm.phoneCountryCode}
                           onChange={(e) =>
@@ -792,7 +877,7 @@ export function Account() {
                     <button
                       type="submit"
                       disabled={isSavingContact}
-                      className="px-[32px] py-[12px] bg-[#0066CC] text-white text-[14px] font-bold hover:bg-[#0052A3] transition-colors disabled:opacity-70"
+                      className="w-full sm:w-auto px-[32px] py-[12px] bg-[#0066CC] text-white text-[14px] font-bold hover:bg-[#0052A3] transition-colors disabled:opacity-70"
                     >
                       {isSavingContact ? "SAVING..." : "SAVE CONTACT DETAILS"}
                     </button>
@@ -802,7 +887,7 @@ export function Account() {
 
               {activeTab === "password" && (
                 <div>
-                  <h2 className="text-[#1A1A1A] text-[20px] font-bold mb-[24px]">Change password</h2>
+                  <h2 className="text-[#1A1A1A] text-[18px] sm:text-[20px] font-bold mb-[20px] sm:mb-[24px]">Change password</h2>
                   {!requiresCurrentPassword ? (
                     <p className="text-[#6B6B6B] text-[13px] mb-[16px]">
                       You signed up with Google. Set a password here if you also want to log in with email and password.
@@ -845,7 +930,7 @@ export function Account() {
                     <button
                       type="submit"
                       disabled={isSavingPassword}
-                      className="px-[32px] py-[12px] bg-[#0066CC] text-white text-[14px] font-bold hover:bg-[#0052A3] transition-colors disabled:opacity-70"
+                      className="w-full sm:w-auto px-[32px] py-[12px] bg-[#0066CC] text-white text-[14px] font-bold hover:bg-[#0052A3] transition-colors disabled:opacity-70"
                     >
                       {isSavingPassword ? "UPDATING..." : "UPDATE PASSWORD"}
                     </button>
@@ -855,23 +940,23 @@ export function Account() {
 
               {activeTab === "notifications" && (
                 <div>
-                  <h2 className="text-[#1A1A1A] text-[20px] font-bold mb-[24px]">Notification settings</h2>
+                  <h2 className="text-[#1A1A1A] text-[18px] sm:text-[20px] font-bold mb-[20px] sm:mb-[24px]">Notification settings</h2>
                   <div className="space-y-[20px]">
-                    <div className="flex items-center justify-between py-[12px] border-b border-[rgba(0,0,0,0.08)]">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-[12px] py-[12px] border-b border-[rgba(0,0,0,0.08)]">
                       <div>
                         <p className="text-[#1A1A1A] text-[14px] font-semibold mb-[4px]">Email notifications</p>
                         <p className="text-[#6B6B6B] text-[13px]">Receive updates about messages and bookings</p>
                       </div>
                       <input type="checkbox" defaultChecked className="w-[20px] h-[20px] accent-[#0066CC]" />
                     </div>
-                    <div className="flex items-center justify-between py-[12px] border-b border-[rgba(0,0,0,0.08)]">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-[12px] py-[12px] border-b border-[rgba(0,0,0,0.08)]">
                       <div>
                         <p className="text-[#1A1A1A] text-[14px] font-semibold mb-[4px]">SMS notifications</p>
                         <p className="text-[#6B6B6B] text-[13px]">Get text messages for important updates</p>
                       </div>
                       <input type="checkbox" className="w-[20px] h-[20px] accent-[#0066CC]" />
                     </div>
-                    <div className="flex items-center justify-between py-[12px] border-b border-[rgba(0,0,0,0.08)]">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-[12px] py-[12px] border-b border-[rgba(0,0,0,0.08)]">
                       <div>
                         <p className="text-[#1A1A1A] text-[14px] font-semibold mb-[4px]">Marketing emails</p>
                         <p className="text-[#6B6B6B] text-[13px]">Receive tips, promotions, and special offers</p>

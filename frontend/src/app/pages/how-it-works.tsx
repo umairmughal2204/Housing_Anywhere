@@ -4,17 +4,18 @@ import { HandCoins, HandMetal, MessageCircle, MousePointer2, PencilLine, Send, S
 import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router";
 import { useAuth } from "../contexts/auth-context";
-import effortlessListingImage from "../../assets/Effortless-Listing.webp";
-import remoteTenantMatchingImage from "../../assets/Remote-tenant-matching.webp";
-import securePaymentsImage from "../../assets/Secure-Payments.webp";
-import getSupportImage from "../../assets/Get-Support.webp";
-import mariaSuccessStoryImage from "../../assets/Maria_Success_story.webp";
-import tenantProtectionImage from "../../assets/Tenant-Protection.webp";
-import onlineViewingImage from "../../assets/100--online.webp";
-import searchSaveAlertGif from "../../assets/SearchSaveAlert.gif";
-import getNoticedByLandlordsImage from "../../assets/Get-noticed-by-landlords.webp";
-import trustAndSafetyImage from "../../assets/Trust-_-Safety.webp";
-import chatAndShareGif from "../../assets/Chatandshare.gif";
+
+const effortlessListingImage = new URL("../../assets/Effortless-Listing.webp", import.meta.url).href;
+const remoteTenantMatchingImage = new URL("../../assets/Remote-tenant-matching.webp", import.meta.url).href;
+const securePaymentsImage = new URL("../../assets/Secure-Payments.webp", import.meta.url).href;
+const getSupportImage = new URL("../../assets/Get-Support.webp", import.meta.url).href;
+const mariaSuccessStoryImage = new URL("../../assets/Maria_Success_story.webp", import.meta.url).href;
+const tenantProtectionImage = new URL("../../assets/Tenant-Protection.webp", import.meta.url).href;
+const onlineViewingImage = new URL("../../assets/100--online.webp", import.meta.url).href;
+const searchSaveAlertGif = new URL("../../assets/SearchSaveAlert.gif", import.meta.url).href;
+const getNoticedByLandlordsImage = new URL("../../assets/Get-noticed-by-landlords.webp", import.meta.url).href;
+const trustAndSafetyImage = new URL("../../assets/Trust-_-Safety.webp", import.meta.url).href;
+const chatAndShareGif = new URL("../../assets/Chatandshare.gif", import.meta.url).href;
 
 type Audience = "tenant" | "landlord";
 
@@ -149,8 +150,8 @@ export function HowItWorks() {
               type="button"
               className={`h-[38px] sm:h-[40px] md:h-[44px] flex-1 rounded-full text-[13px] sm:text-[14px] md:text-[16px] font-medium transition-colors ${
                 activeAudience === "tenant"
-                  ? "bg-[#032E3D] text-white"
-                  : "bg-transparent text-[#0D3747] hover:bg-[rgba(255,255,255,0.32)]"
+                  ? "bg-brand-primary text-white hover:bg-brand-primary-dark"
+                  : "bg-transparent text-neutral-black hover:bg-brand-primary-light"
               }`}
               onClick={() => setActiveAudience("tenant")}
             >
@@ -160,8 +161,8 @@ export function HowItWorks() {
               type="button"
               className={`h-[38px] sm:h-[40px] md:h-[44px] flex-1 rounded-full text-[13px] sm:text-[14px] md:text-[16px] font-semibold transition-colors ${
                 activeAudience === "landlord"
-                  ? "bg-[#032E3D] text-white"
-                  : "bg-transparent text-[#0D3747] hover:bg-[rgba(255,255,255,0.32)]"
+                  ? "bg-brand-primary text-white hover:bg-brand-primary-dark"
+                  : "bg-transparent text-neutral-black hover:bg-brand-primary-light"
               }`}
               onClick={() => setActiveAudience("landlord")}
             >
@@ -214,7 +215,7 @@ export function HowItWorks() {
               <button
                 type="button"
                 onClick={goToListings}
-                className="mt-[16px] inline-flex max-w-full items-center justify-center gap-[6px] rounded-full bg-[#FF5630] px-[20px] py-[11px] text-white text-[13px] font-bold tracking-[0.01em] shadow-[0_10px_20px_rgba(255,86,48,0.2)] hover:bg-[#E64520] hover:shadow-[0_14px_26px_rgba(255,86,48,0.26)] transition-all"
+                className="mt-[16px] inline-flex max-w-full items-center justify-center gap-[6px] rounded-full bg-brand-primary px-[20px] py-[11px] text-white text-[13px] font-bold tracking-[0.01em] shadow-[0_10px_20px_rgba(3,46,61,0.2)] hover:bg-brand-primary-dark hover:shadow-[0_14px_26px_rgba(3,46,61,0.28)] transition-all"
               >
                 Find a place that feels like home
               </button>
@@ -559,7 +560,7 @@ export function HowItWorks() {
               <button
                 type="button"
                 onClick={() => openHelpSearch("calendar sync")}
-                className="mt-[16px] inline-flex max-w-full items-center justify-center gap-[6px] rounded-full bg-[#032E3D] px-[20px] py-[11px] text-white text-[12px] md:text-[13px] font-bold uppercase tracking-[0.02em] shadow-[0_10px_20px_rgba(3,46,61,0.2)] hover:bg-[#022633] hover:shadow-[0_14px_26px_rgba(3,46,61,0.28)] transition-all break-words text-left"
+                className="mt-[16px] inline-flex max-w-full items-center justify-center gap-[6px] rounded-full bg-brand-primary px-[20px] py-[11px] text-white text-[12px] md:text-[13px] font-bold uppercase tracking-[0.02em] shadow-[0_10px_20px_rgba(3,46,61,0.2)] hover:bg-brand-primary-dark hover:shadow-[0_14px_26px_rgba(3,46,61,0.28)] transition-all break-words text-left"
               >
                 Learn more about integrations
               </button>
@@ -591,7 +592,7 @@ export function HowItWorks() {
           <button
             type="button"
             onClick={goToLandlordRegister}
-            className="mt-[22px] inline-flex items-center justify-center rounded-full bg-[#032E3D] px-[24px] py-[11px] text-white text-[13px] font-bold uppercase tracking-[0.02em] shadow-[0_10px_20px_rgba(3,46,61,0.2)] hover:bg-[#022633] hover:shadow-[0_14px_26px_rgba(3,46,61,0.28)] transition-all"
+            className="mt-[22px] inline-flex items-center justify-center rounded-full bg-brand-primary px-[24px] py-[11px] text-white text-[13px] font-bold uppercase tracking-[0.02em] shadow-[0_10px_20px_rgba(3,46,61,0.2)] hover:bg-brand-primary-dark hover:shadow-[0_14px_26px_rgba(3,46,61,0.28)] transition-all"
           >
             Get started now
           </button>

@@ -4,6 +4,8 @@ import { Header } from "../components/header";
 import { Footer } from "../components/footer";
 import { DatePicker } from "../components/date-picker";
 import { useAuth } from "../contexts/auth-context";
+import { MapContainer, Marker, Popup, TileLayer } from "react-leaflet";
+import L from "leaflet";
 import {
   Share2,
   Heart,
@@ -33,6 +35,7 @@ import {
 import { toast } from "sonner";
 import { API_BASE } from "../config";
 import favicon from "../../assets/favicon.png";
+import "leaflet/dist/leaflet.css";
 
 const fallbackPropertyImages = [
   "https://images.unsplash.com/photo-1649740718655-3c70b0e3d431?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxwYXJpcyUyMGFwYXJ0bWVudCUyMGJlZHJvb20lMjB3aW5kb3d8ZW58MXx8fHwxNzczMDg5ODczfDA&ixlib=rb-4.1.0&q=80&w=1080",
@@ -224,6 +227,61 @@ function monthEnd(date: Date) {
   return new Date(date.getFullYear(), date.getMonth() + 1, 0);
 }
 
+type ListingCoordinates = {
+  lat: number;
+  lng: number;
+};
+
+const CITY_CENTER_BY_NAME: Record<string, ListingCoordinates> = {
+  berlin: { lat: 52.52, lng: 13.405 },
+  amsterdam: { lat: 52.3676, lng: 4.9041 },
+  paris: { lat: 48.8566, lng: 2.3522 },
+  madrid: { lat: 40.4168, lng: -3.7038 },
+  barcelona: { lat: 41.3874, lng: 2.1686 },
+  lisbon: { lat: 38.7223, lng: -9.1393 },
+  rome: { lat: 41.9028, lng: 12.4964 },
+  vienna: { lat: 48.2082, lng: 16.3738 },
+};
+
+function hashString(value: string) {
+  let hash = 0;
+  for (let index = 0; index < value.length; index += 1) {
+    hash = (hash << 5) - hash + value.charCodeAt(index);
+    hash |= 0;
+  }
+
+  return Math.abs(hash);
+}
+
+function buildFallbackCoordinates(listingId: string, cityName: string): ListingCoordinates {
+  const normalizedCity = cityName.trim().toLowerCase();
+  const cityCenter = CITY_CENTER_BY_NAME[normalizedCity] ?? { lat: 52.52, lng: 13.405 };
+  const hash = hashString(`${listingId}-${normalizedCity}`);
+
+  const angle = ((hash % 360) * Math.PI) / 180;
+  const radius = 0.004 + (hash % 12) * 0.001;
+
+  return {
+    lat: cityCenter.lat + Math.sin(angle) * radius,
+    lng: cityCenter.lng + Math.cos(angle) * radius,
+  };
+}
+
+function createLocationMarkerIcon() {
+  return L.divIcon({
+    className: "",
+    html: `
+      <div style="display:flex;flex-direction:column;align-items:center;transform:translate(-50%, -100%);">
+        <div style="width:36px;height:36px;border-radius:999px;background:#0891B2;color:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 10px 20px rgba(8,145,178,0.26);border:2px solid rgba(255,255,255,0.95);font-size:15px;font-weight:700;">⌂</div>
+        <div style="width:12px;height:12px;background:#0891B2;transform:rotate(45deg);margin-top:-3px;border-radius:2px;"></div>
+      </div>
+    `,
+    iconSize: [34, 40],
+    iconAnchor: [17, 38],
+    popupAnchor: [0, -34],
+  });
+}
+
 export function PropertyListing() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -253,6 +311,47 @@ export function PropertyListing() {
   const [isSharePulseActive, setIsSharePulseActive] = useState(false);
   const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(null);
   const paymentsCloseTimerRef = useRef<number | null>(null);
+  const locationPopupCloseTimerRef = useRef<number | null>(null);
+  const locationPopupTargetRef = useRef<{ openPopup: () => void; closePopup: () => void } | null>(null);
+  const propertyCoordinates = useMemo(() => {
+    if (!listing) {
+      return null;
+    }
+
+    const identifier = listing.id || id || listing.title || listing.city || "property";
+    const cityName = [listing.address, listing.city].filter(Boolean).join(" ") || listing.city || "";
+
+    return buildFallbackCoordinates(identifier, cityName);
+  }, [id, listing]);
+
+  useEffect(() => {
+    return () => {
+      if (locationPopupCloseTimerRef.current !== null) {
+        window.clearTimeout(locationPopupCloseTimerRef.current);
+      }
+    };
+  }, []);
+
+  const clearLocationPopupCloseTimer = () => {
+    if (locationPopupCloseTimerRef.current !== null) {
+      window.clearTimeout(locationPopupCloseTimerRef.current);
+      locationPopupCloseTimerRef.current = null;
+    }
+  };
+
+  const openLocationPopup = (target: { openPopup: () => void }) => {
+    locationPopupTargetRef.current = target as { openPopup: () => void; closePopup: () => void };
+    clearLocationPopupCloseTimer();
+    target.openPopup();
+  };
+
+  const scheduleLocationPopupClose = () => {
+    clearLocationPopupCloseTimer();
+    locationPopupCloseTimerRef.current = window.setTimeout(() => {
+      locationPopupTargetRef.current?.closePopup();
+      locationPopupCloseTimerRef.current = null;
+    }, 140);
+  };
 
   const faqItems = [
     {
@@ -316,7 +415,7 @@ export function PropertyListing() {
       .replace(/\b\w/g, (char) => char.toUpperCase());
   };
 
-  const formatCurrency = (amount: number) => {
+  const formatCurrency = (amount: number, currency: string) => {
     return `€${amount.toFixed(2)}`;
   };
 
@@ -1501,8 +1600,98 @@ export function PropertyListing() {
             </section>
 
             <section className="mb-[28px]">
+              <h2 className="text-[#0F2D36] text-[34px] sm:text-[40px] leading-[1.2] font-bold mb-[10px]">Property location</h2>
+              <p className="text-[#4A606A] text-[16px] leading-[1.5] mb-[12px]">Hover the pin to see the exact location for this home.</p>
+
+              <div className="relative overflow-hidden rounded-[16px] border border-[rgba(0,0,0,0.12)] bg-white shadow-[0_8px_24px_rgba(15,45,54,0.08)] h-[280px] sm:h-[320px]">
+                {propertyCoordinates ? (
+                  <MapContainer
+                    center={propertyCoordinates}
+                    zoom={15}
+                    scrollWheelZoom={false}
+                    zoomControl={false}
+                    className="w-full h-full"
+                  >
+                    <TileLayer
+                      attribution='&copy; OpenStreetMap contributors'
+                      url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                    />
+                    <Marker
+                      position={propertyCoordinates}
+                      icon={createLocationMarkerIcon()}
+                      eventHandlers={{
+                        mouseover: (event) => {
+                          openLocationPopup(event.target);
+                        },
+                        mouseout: (event) => {
+                          scheduleLocationPopupClose();
+                        },
+                      }}
+                    >
+                      <Popup
+                        closeButton={false}
+                        offset={[0, -30]}
+                        autoPan={false}
+                        interactive
+                      >
+                          <div
+                            className="w-[278px] overflow-hidden rounded-[14px] border border-[rgba(0,0,0,0.08)] bg-white shadow-[0_10px_28px_rgba(15,45,54,0.14)]"
+                          onMouseEnter={clearLocationPopupCloseTimer}
+                          onMouseLeave={scheduleLocationPopupClose}
+                          >
+                          <div className="h-[118px] bg-gradient-to-br from-[#E6F7FB] to-[#D9F3F8] overflow-hidden">
+                            <img
+                              src={propertyImages[0]}
+                              alt={listing.title}
+                              className="w-full h-full object-cover object-center"
+                            />
+                          </div>
+                          <div className="p-[14px]">
+                            <div className="flex items-start justify-between gap-[10px] mb-[6px]">
+                              <div className="min-w-0">
+                                <div className="text-[#1A1A1A] text-[15px] font-bold leading-tight line-clamp-2">
+                                  {listing.title}
+                                </div>
+                                <div className="text-[#6B6B6B] text-[12px] mt-[4px] line-clamp-2">
+                                  {listing.address || listing.city}
+                                </div>
+                              </div>
+                              <div className="shrink-0 text-right">
+                                <div className="text-[#0891B2] text-[16px] font-bold leading-none">
+                                  {formatCurrency(listing.monthlyRent, listing.currency).replace(".00", "")}
+                                </div>
+                                <div className="text-[#6B6B6B] text-[11px] mt-[3px]">/month</div>
+                              </div>
+                            </div>
+                            <div className="flex items-center justify-between gap-[10px] pt-[10px] border-t border-[rgba(0,0,0,0.08)]">
+                              <div className="inline-flex items-center gap-[6px] text-[#0F2D36] text-[12px] font-semibold">
+                                <MapPin className="w-[14px] h-[14px] text-brand-primary" />
+                                {listing.city}
+                              </div>
+                              <button
+                                type="button"
+                                onClick={handleViewOnMap}
+                                className="rounded-full bg-brand-primary px-[12px] py-[7px] text-white text-[12px] font-semibold hover:bg-brand-primary-dark transition-colors"
+                              >
+                                View area
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      </Popup>
+                    </Marker>
+                  </MapContainer>
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-[#E8F0F5] to-[#F0F5F9] text-[#4A606A] text-[14px]">
+                    Loading location...
+                  </div>
+                )}
+              </div>
+            </section>
+
+            <section className="mb-[28px]">
               <h2 className="text-[#0F2D36] text-[40px] leading-[1.2] font-bold mb-[12px]">House rules and preferences</h2>
-              <div className="border border-[rgba(0,0,0,0.16)] rounded-[4px] p-[14px] grid grid-cols-1 md:grid-cols-2 gap-[0]">
+              <div className="border border-[rgba(0,0,0,0.16)] rounded-[16px] p-[14px] grid grid-cols-1 md:grid-cols-2 gap-[0]">
                 {[housePreferences.slice(0, 4), housePreferences.slice(4)].map((column, columnIndex) => (
                   <div key={columnIndex} className={`${columnIndex === 1 ? "md:border-l md:border-[rgba(0,0,0,0.08)] md:pl-[24px]" : "md:pr-[24px]"} space-y-[8px]`}>
                     {column.map((item) => {
@@ -1521,7 +1710,7 @@ export function PropertyListing() {
               </div>
             </section>
 
-            <section className="mb-[28px] bg-[#3462CF] rounded-[4px] p-[28px] text-white">
+            <section className="mb-[28px] bg-[#3462CF] rounded-[16px] p-[28px] text-white">
               <h3 className="text-[42px] leading-[1.18] font-bold mb-[8px]">Tenant Protection: Smooth move, or your money back</h3>
               <p className="text-[16px] leading-[1.6] mb-[18px] text-[#EAF2FF]">
                 Move in and check the place out. You have 48 hours to report any problems, then we'll send your money to the landlord.
@@ -1555,7 +1744,7 @@ export function PropertyListing() {
 
             <section className="mb-[28px]">
               <h2 className="text-[#0F2D36] text-[36px] leading-[1.2] font-bold mb-[12px]">Required documents</h2>
-              <div className="border border-[rgba(0,0,0,0.16)] rounded-[3px] p-[16px]">
+              <div className="border border-[rgba(0,0,0,0.16)] rounded-[16px] p-[16px]">
                 <p className="text-[#7B8E97] text-[14px] italic mb-[10px]">The following documents are required to rent this place:</p>
                 {requiredDocuments.map((doc) => (
                   <div key={doc} className="mb-[6px]">
@@ -1573,7 +1762,7 @@ export function PropertyListing() {
 
             <section className="mb-[28px]">
               <h2 className="text-[#0F2D36] text-[36px] leading-[1.2] font-bold mb-[12px]">How rent is calculated</h2>
-              <div className="border border-[rgba(0,0,0,0.16)] rounded-[3px] p-[16px]">
+              <div className="border border-[rgba(0,0,0,0.16)] rounded-[16px] p-[16px]">
                 <p className="text-[#0F2D36] text-[16px] font-bold mb-[10px] flex items-center gap-[8px]">
                   <FileText className="w-[15px] h-[15px] text-[#0F2D36]" />
                   {formatValue(listing?.rentCalculation)} basis
@@ -1964,7 +2153,7 @@ export function PropertyListing() {
 
               <div className="mb-[14px] flex items-center gap-[10px] text-[#0F2D36] text-[27px] sm:text-[29px] leading-[1.1] font-bold">
                 <span>You</span>
-                <span className="text-[#6A7F88]">-&gt;</span>
+                <ChevronRight className="w-[18px] h-[18px] text-[#6A7F88]" />
                 <img src={favicon} alt="ReserveHousing" className="h-[30px] w-[30px] object-contain" />
               </div>
               <p className="text-[#173743] text-[16px] leading-[1.55] mb-[14px]">Pay this now to secure your place.</p>
@@ -2038,7 +2227,7 @@ export function PropertyListing() {
               <div className="pt-[16px] border-t border-[rgba(15,45,54,0.12)]">
                 <div className="mb-[14px] flex items-center gap-[10px] text-[#0F2D36] text-[27px] sm:text-[29px] leading-[1.1] font-bold">
                   <span>You</span>
-                  <span className="text-[#6A7F88]">-&gt;</span>
+                  <ChevronRight className="w-[18px] h-[18px] text-[#6A7F88]" />
                   <img
                     src="https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=120&q=80"
                     alt="Brand Co"

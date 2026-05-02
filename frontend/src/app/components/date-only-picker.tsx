@@ -101,7 +101,7 @@ export function DateOnlyPicker({ isOpen, onClose, selectedDate, onDateChange, mi
   return (
     <div
       ref={pickerRef}
-      className="absolute left-0 top-[calc(100%+8px)] z-[120] w-[420px] rounded-[12px] border border-[rgba(15,61,73,0.15)] bg-white shadow-[0_12px_32px_rgba(0,0,0,0.15)] p-[20px]"
+      className="absolute left-0 sm:left-auto top-[calc(100%+8px)] z-[120] w-[calc(100vw-24px)] sm:w-[420px] max-w-[420px] rounded-[12px] border border-[rgba(15,61,73,0.15)] bg-white shadow-[0_12px_32px_rgba(0,0,0,0.15)] p-[20px]"
     >
       {/* Header with Month/Year Selector */}
       <div className="mb-[20px] flex items-center justify-between">

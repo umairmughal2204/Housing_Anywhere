@@ -263,7 +263,7 @@ export function Help() {
                   key={term}
                   type="button"
                   onClick={() => setSearchQuery(term)}
-                  className="rounded-full border border-[rgba(11,165,199,0.14)] bg-white px-[12px] py-[6px] text-[12px] font-semibold text-[#0D3747] transition-colors hover:bg-[#032E3D] hover:text-white"
+                  className="rounded-full border border-[rgba(11,165,199,0.14)] bg-white px-[12px] py-[6px] text-[12px] font-semibold text-neutral-black transition-colors hover:bg-brand-primary hover:text-white"
                 >
                   {term}
                 </button>
@@ -320,7 +320,7 @@ export function Help() {
                   <p className="text-neutral-black text-[13px] font-semibold">
                     {contact.detail}
                   </p>
-                  <span className="mt-[18px] inline-flex items-center gap-[8px] rounded-full bg-white px-[16px] py-[9px] text-[13px] font-semibold text-[#1A1A1A] shadow-[0_1px_0_rgba(0,0,0,0.04)] transition-all group-hover:bg-[#032E3D] group-hover:text-white">
+                  <span className="mt-[18px] inline-flex items-center gap-[8px] rounded-full bg-white px-[16px] py-[9px] text-[13px] font-semibold text-[#1A1A1A] shadow-[0_1px_0_rgba(0,0,0,0.04)] transition-all group-hover:bg-brand-primary group-hover:text-white">
                     {contact.actionLabel}
                     <ArrowRight className="h-[14px] w-[14px] transition-transform group-hover:translate-x-[2px]" />
                   </span>

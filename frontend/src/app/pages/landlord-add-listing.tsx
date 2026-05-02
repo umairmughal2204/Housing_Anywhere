@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import { LandlordPortalLayout } from "../components/landlord-portal-layout";
 import { DateOnlyPicker } from "../components/date-only-picker";
+import { Skeleton } from "../components/ui/skeleton";
 import { API_BASE } from "../config";
 
 type TernaryArea = "" | "no" | "shared" | "private";
@@ -94,7 +95,7 @@ const agePreferenceOptions = [
 interface CostLine {
   type: string;
   includedInRent: "Included in rent" | "Paid separately";
-  frequency: "every month" | "one-time";
+  frequency: "every month";
   estimateType: "Estimate" | "Exact";
   amount: string;
 }
@@ -722,7 +723,7 @@ export function LandlordAddListing() {
             ? listing.utilities.map((line) => ({
                 type: line.type ?? "Other",
                 includedInRent: line.included ? "Included in rent" : "Paid separately",
-                frequency: line.frequency === "one-time" ? "one-time" : "every month",
+                frequency: "every month",
                 estimateType: "Estimate",
                 amount: String(line.amount ?? 0),
               }))
@@ -1162,11 +1163,11 @@ export function LandlordAddListing() {
   const availableDepositOptions = depositOptions.filter(
     (option) => !depositLines.some((line) => line.type === option)
   );
-  const contentBottomPaddingClass = currentSection === 1 ? "pb-[44px] md:pb-[56px]" : "pb-[120px] md:pb-[130px]";
+  const contentBottomPaddingClass = currentSection === 1 ? "pb-[188px] md:pb-[56px]" : "pb-[188px] md:pb-[130px]";
   const sectionLayoutClass = "max-w-[760px] w-full mr-auto md:ml-[24px] lg:ml-[56px] xl:ml-[96px] 2xl:ml-[140px]";
 
   return (
-    <LandlordPortalLayout hideSidebar hideFooter>
+    <LandlordPortalLayout hideSidebar hideFooter hideMobileBottomNav>
       <div className={`bg-[#F7F7F9] min-h-[calc(100vh-74px)] px-[20px] md:px-[28px] py-[24px] md:py-[32px] ${contentBottomPaddingClass}`}>
         <div className={sectionLayoutClass}>
         {submitError && (
@@ -1175,8 +1176,18 @@ export function LandlordAddListing() {
           </div>
         )}
         {isEditMode && isLoadingListing && (
-          <div className="mb-[20px] p-[12px] bg-slate-50 border border-slate-200 rounded text-slate-700 text-[13px]">
-            Loading listing details...
+          <div className="mb-[20px] rounded-[18px] border border-[rgba(0,0,0,0.08)] bg-white p-[16px] sm:p-[20px] shadow-[0_8px_24px_rgba(0,0,0,0.04)]">
+            <div className="space-y-[12px]">
+              <Skeleton className="h-[28px] w-[180px] sm:w-[240px]" />
+              <Skeleton className="h-[14px] w-[75%] sm:w-[60%]" />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-[12px] pt-[4px]">
+                <Skeleton className="h-[52px] w-full" />
+                <Skeleton className="h-[52px] w-full" />
+                <Skeleton className="h-[52px] w-full" />
+                <Skeleton className="h-[52px] w-full" />
+              </div>
+              <Skeleton className="h-[180px] w-full" />
+            </div>
           </div>
         )}
         {sectionError && (
@@ -1496,7 +1507,7 @@ export function LandlordAddListing() {
               </div>
             </div>
 
-            <div className="mt-[34px] flex items-center justify-between gap-[12px]">
+            <div className="mt-[34px] hidden items-center justify-between gap-[12px] md:flex">
               <button
                 type="button"
                 onClick={() => navigate("/landlord/dashboard")}
@@ -1516,6 +1527,30 @@ export function LandlordAddListing() {
               >
                 NEXT
               </button>
+            </div>
+
+            <div className="fixed left-0 right-0 bottom-0 z-[80] border-t border-[rgba(0,0,0,0.10)] bg-white shadow-[0_-8px_24px_rgba(0,0,0,0.08)] px-[16px] py-[12px] md:hidden">
+              <div className="mx-auto flex max-w-[760px] items-center gap-[10px]">
+                <button
+                  type="button"
+                  onClick={() => navigate("/landlord/dashboard")}
+                  className="h-[46px] flex-1 rounded-[12px] border border-[rgba(0,0,0,0.16)] bg-white text-[#12303B] text-[12px] font-semibold hover:bg-neutral-light-gray transition-colors"
+                >
+                  BACK
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (validateSectionOrShowError(1)) {
+                      setCurrentSection(2);
+                    }
+                  }}
+                  className="h-[46px] flex-1 rounded-[12px] bg-brand-primary text-white text-[12px] font-semibold hover:bg-brand-primary-dark transition-colors"
+                >
+                  NEXT
+                </button>
+              </div>
             </div>
           </div>
         )}
@@ -1751,12 +1786,12 @@ export function LandlordAddListing() {
         {currentSection === 5 && (
           <div className="w-full" ref={costMenusRef}>
 
-            <h1 className="text-[22px] leading-[1.08] font-bold text-[#12303B] tracking-[-0.02em]">Rental conditions</h1>
+            <h1 className="text-[20px] sm:text-[22px] leading-[1.08] font-bold text-[#12303B] tracking-[-0.02em]">Rental conditions</h1>
 
             <div className="mt-[16px]">
               <p className="text-[12px] font-semibold text-[#12303B] mb-[8px]">How rent is calculated</p>
 
-              <div className="max-w-[620px] border border-[#0F3D49] bg-[#F8FBFC] p-[12px]">
+              <div className="w-full max-w-[620px] border border-[#0F3D49] bg-[#F8FBFC] p-[12px]">
                 <p className="text-[12px] font-semibold text-[#12303B]">Monthly basis</p>
                 <p className="text-[11px] text-[#35515D] mt-[4px]">The tenant always pays the full month's rent, regardless of their move-in or move-out dates. E.g., If the tenant moves out on 10 April, they'll pay for the full month of April.</p>
               </div>
@@ -1823,35 +1858,37 @@ export function LandlordAddListing() {
               </div>
 
               {rentPricingMode === "advanced" && (
-                <div className="mt-[14px] max-w-[760px] border border-[rgba(0,0,0,0.14)] bg-white overflow-hidden">
-                  <table className="w-full text-left">
-                    <thead className="bg-[#F5F6F7]">
-                      <tr>
-                        <th className="px-[16px] py-[14px] text-[13px] font-semibold text-[#38586A]">Month</th>
-                        <th className="px-[16px] py-[14px] text-[13px] font-semibold text-[#38586A]">Rent (EUR)</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {advancedPricingMonths.map((month) => (
-                        <tr key={month} className="border-t border-[rgba(0,0,0,0.10)]">
-                          <td className="px-[16px] py-[12px] text-[13px] text-[#38586A]">{month}</td>
-                          <td className="px-[16px] py-[12px]">
-                            <input
-                              type="number"
-                              min="0"
-                              step="0.01"
-                              value={advancedMonthlyRates[month] ?? monthlyRent}
-                              onChange={(event) => {
-                                const nextValue = event.target.value;
-                                setAdvancedMonthlyRates((prev) => ({ ...prev, [month]: nextValue }));
-                              }}
-                              className="w-[116px] h-[28px] bg-transparent border-0 border-b border-[rgba(0,0,0,0.25)] text-[14px] text-[#38586A] focus:outline-none focus:border-brand-primary"
-                            />
-                          </td>
+                <div className="mt-[14px] w-full max-w-[760px] border border-[rgba(0,0,0,0.14)] bg-white overflow-hidden">
+                  <div className="overflow-x-auto">
+                    <table className="min-w-[540px] w-full text-left">
+                      <thead className="bg-[#F5F6F7]">
+                        <tr>
+                          <th className="px-[12px] py-[12px] text-[12px] font-semibold text-[#38586A] sm:px-[16px] sm:py-[14px] sm:text-[13px]">Month</th>
+                          <th className="px-[12px] py-[12px] text-[12px] font-semibold text-[#38586A] sm:px-[16px] sm:py-[14px] sm:text-[13px]">Rent (EUR)</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                      </thead>
+                      <tbody>
+                        {advancedPricingMonths.map((month) => (
+                          <tr key={month} className="border-t border-[rgba(0,0,0,0.10)]">
+                            <td className="px-[12px] py-[10px] text-[12px] text-[#38586A] sm:px-[16px] sm:py-[12px] sm:text-[13px]">{month}</td>
+                            <td className="px-[12px] py-[10px] sm:px-[16px] sm:py-[12px]">
+                              <input
+                                type="number"
+                                min="0"
+                                step="0.01"
+                                value={advancedMonthlyRates[month] ?? monthlyRent}
+                                onChange={(event) => {
+                                  const nextValue = event.target.value;
+                                  setAdvancedMonthlyRates((prev) => ({ ...prev, [month]: nextValue }));
+                                }}
+                                className="w-[104px] h-[28px] bg-transparent border-0 border-b border-[rgba(0,0,0,0.25)] text-[13px] text-[#38586A] focus:outline-none focus:border-brand-primary sm:w-[116px] sm:text-[14px]"
+                              />
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
               )}
             </div>
@@ -1896,7 +1933,6 @@ export function LandlordAddListing() {
                             className="w-full bg-transparent border-0 border-b border-[rgba(0,0,0,0.20)] h-[24px] focus:outline-none disabled:opacity-60 disabled:cursor-not-allowed"
                           >
                             <option value="every month">every month</option>
-                            <option value="one-time">one-time</option>
                           </select>
                         </td>
                         <td className="px-[8px] py-[6px]">
@@ -1956,7 +1992,7 @@ export function LandlordAddListing() {
                   + Add New Cost
                 </button>
                 {openCostMenu === "utility" && (
-                  <div className="absolute left-0 mt-[6px] min-w-[240px] bg-white border border-[rgba(0,0,0,0.16)] shadow-[0_8px_18px_rgba(0,0,0,0.14)] z-50 max-h-[320px] overflow-y-auto">
+                  <div className="absolute left-0 mt-[6px] w-[calc(100vw-32px)] max-w-[240px] bg-white border border-[rgba(0,0,0,0.16)] shadow-[0_8px_18px_rgba(0,0,0,0.14)] z-50 max-h-[320px] overflow-y-auto sm:w-[240px]">
                     {availableUtilityAddOptions.map((option) => (
                       <button
                         key={`utility-add-${option}`}
@@ -2056,7 +2092,7 @@ export function LandlordAddListing() {
                   + Add New Cost
                 </button>
                 {openCostMenu === "required" && (
-                  <div className="absolute left-0 mt-[6px] min-w-[220px] bg-white border border-[rgba(0,0,0,0.16)] shadow-[0_8px_18px_rgba(0,0,0,0.14)] z-50">
+                  <div className="absolute left-0 mt-[6px] w-[calc(100vw-32px)] max-w-[220px] bg-white border border-[rgba(0,0,0,0.16)] shadow-[0_8px_18px_rgba(0,0,0,0.14)] z-50 sm:w-[220px]">
                     {availableAdditionalRequiredCostOptions.map((option) => (
                       <button
                         key={`additional-required-${option}`}
@@ -2159,7 +2195,7 @@ export function LandlordAddListing() {
                   + Add New Cost
                 </button>
                 {openCostMenu === "optional" && (
-                  <div className="absolute left-0 mt-[6px] min-w-[260px] bg-white border border-[rgba(0,0,0,0.16)] shadow-[0_8px_18px_rgba(0,0,0,0.14)] z-50 max-h-[260px] overflow-y-auto">
+                  <div className="absolute left-0 mt-[6px] w-[calc(100vw-32px)] max-w-[260px] bg-white border border-[rgba(0,0,0,0.16)] shadow-[0_8px_18px_rgba(0,0,0,0.14)] z-50 max-h-[260px] overflow-y-auto sm:w-[260px]">
                     {availableOptionalServicesOptions.map((option) => (
                       <button
                         key={`optional-service-${option}`}
@@ -2250,7 +2286,7 @@ export function LandlordAddListing() {
                   + Add New Cost
                 </button>
                 {openCostMenu === "deposit" && (
-                  <div className="absolute left-0 mt-[6px] min-w-[220px] bg-white border border-[rgba(0,0,0,0.16)] shadow-[0_8px_18px_rgba(0,0,0,0.14)] z-50">
+                  <div className="absolute left-0 mt-[6px] w-[calc(100vw-32px)] max-w-[220px] bg-white border border-[rgba(0,0,0,0.16)] shadow-[0_8px_18px_rgba(0,0,0,0.14)] z-50 sm:w-[220px]">
                     {availableDepositOptions.map((option) => (
                       <button
                         key={`deposit-${option}`}
@@ -2551,11 +2587,11 @@ export function LandlordAddListing() {
             ></div>
           </div>
 
-          <div className="px-[20px] md:px-[28px] py-[14px] flex items-center justify-end gap-[12px]">
+            <div className="px-[16px] md:px-[28px] py-[14px] flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-[10px] sm:gap-[12px]">
             <button
               type="button"
               onClick={() => setCurrentSection((currentSection - 1) as 1 | 2 | 3 | 4 | 5 | 6 | 7)}
-              className="h-[40px] px-[16px] border border-[rgba(0,0,0,0.16)] bg-white text-[#12303B] text-[11px] font-semibold hover:bg-neutral-light-gray transition-colors"
+                className="h-[46px] w-full sm:w-auto px-[16px] rounded-[12px] border border-[rgba(0,0,0,0.16)] bg-white text-[#12303B] text-[12px] font-semibold hover:bg-neutral-light-gray transition-colors"
             >
               BACK
             </button>
@@ -2576,7 +2612,7 @@ export function LandlordAddListing() {
                 }
               }}
               disabled={isSubmitting}
-              className="h-[40px] px-[16px] bg-brand-primary text-white text-[11px] font-semibold hover:bg-brand-primary-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="h-[46px] w-full sm:w-auto px-[16px] rounded-[12px] bg-brand-primary text-white text-[12px] font-semibold hover:bg-brand-primary-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isSubmitting ? "PUBLISHING..." : currentSection === 7 ? "PUBLISH" : "NEXT"}
             </button>

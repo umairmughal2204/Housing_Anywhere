@@ -27,6 +27,7 @@ interface LandlordPortalLayoutProps {
   headerLeadingAction?: React.ReactNode;
   hideSidebar?: boolean;
   hideFooter?: boolean;
+  hideMobileBottomNav?: boolean;
 }
 
 export function LandlordPortalLayout({
@@ -34,6 +35,7 @@ export function LandlordPortalLayout({
   headerLeadingAction,
   hideSidebar = false,
   hideFooter = false,
+  hideMobileBottomNav = false,
 }: LandlordPortalLayoutProps) {
   const location = useLocation();
   const navigate = useNavigate();
@@ -563,7 +565,7 @@ export function LandlordPortalLayout({
         document.body
       )}
 
-      {typeof document !== "undefined" && createPortal(
+      {!hideMobileBottomNav && typeof document !== "undefined" && createPortal(
         <nav className="fixed bottom-0 left-0 right-0 z-[79] border-t border-[rgba(0,0,0,0.1)] bg-white md:hidden" aria-label="Mobile quick navigation">
           <div className="grid grid-cols-4 px-[6px] pt-[8px] pb-[max(10px,env(safe-area-inset-bottom))]">
             {mobileBottomNavItems.map((item) => {

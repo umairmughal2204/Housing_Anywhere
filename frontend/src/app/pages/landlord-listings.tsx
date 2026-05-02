@@ -290,12 +290,12 @@ export function LandlordListings() {
           </div>
         </div>
 
-        <div className="mt-[20px] grid grid-cols-1 gap-[12px] xl:grid-cols-[220px_220px_1fr]">
-          <div className="relative">
+        <div className="mt-[20px] grid grid-cols-1 gap-[12px] xl:grid-cols-[minmax(0,220px)_minmax(0,220px)_minmax(0,1fr)]">
+          <div className="relative min-w-0">
             <select
               value={filterStatus}
               onChange={(event) => setFilterStatus(event.target.value as ListingStatus | "all")}
-              className="h-[58px] w-full appearance-none rounded-[14px] border border-[#A8B2BF] bg-white px-[16px] pr-[40px] text-[15px] font-medium text-[#0B2D3A] outline-none transition-colors focus:border-brand-primary"
+              className="h-[54px] w-full min-w-0 appearance-none rounded-[14px] border border-[#A8B2BF] bg-white px-[14px] pr-[36px] text-[14px] font-medium text-[#0B2D3A] outline-none transition-colors focus:border-brand-primary sm:h-[58px] sm:px-[16px] sm:pr-[40px] sm:text-[15px]"
             >
               <option value="all">All status ({statusCounts.all})</option>
               <option value="active">Active ({statusCounts.active})</option>
@@ -304,11 +304,11 @@ export function LandlordListings() {
             <ChevronDown className="pointer-events-none absolute right-[16px] top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-[#0B2D3A]" />
           </div>
 
-          <div className="relative">
+          <div className="relative min-w-0">
             <select
               value={selectedCity}
               onChange={(event) => setSelectedCity(event.target.value)}
-              className="h-[58px] w-full appearance-none rounded-[14px] border border-[#A8B2BF] bg-white px-[16px] pr-[40px] text-[15px] font-medium text-[#0B2D3A] outline-none transition-colors focus:border-brand-primary"
+              className="h-[54px] w-full min-w-0 appearance-none rounded-[14px] border border-[#A8B2BF] bg-white px-[14px] pr-[36px] text-[14px] font-medium text-[#0B2D3A] outline-none transition-colors focus:border-brand-primary sm:h-[58px] sm:px-[16px] sm:pr-[40px] sm:text-[15px]"
             >
               <option value="all">All cities ({cityOptions.length})</option>
               {cityOptions.map((city) => (
@@ -320,14 +320,14 @@ export function LandlordListings() {
             <ChevronDown className="pointer-events-none absolute right-[16px] top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-[#0B2D3A]" />
           </div>
 
-          <label className="flex h-[58px] items-center gap-[10px] rounded-[14px] border border-[#A8B2BF] bg-white px-[16px]">
+          <label className="flex h-[54px] min-w-0 items-center gap-[10px] rounded-[14px] border border-[#A8B2BF] bg-white px-[14px] sm:h-[58px] sm:px-[16px]">
             <Search className="h-[18px] w-[18px] text-[#0B2D3A]" />
             <input
               type="text"
               placeholder="Search by street, city or alias"
               value={searchQuery}
               onChange={(event) => setSearchQuery(event.target.value)}
-              className="w-full border-0 bg-transparent text-[15px] font-medium text-[#0B2D3A] outline-none placeholder:text-[#9AA7B4]"
+              className="w-full min-w-0 border-0 bg-transparent text-[14px] font-medium text-[#0B2D3A] outline-none placeholder:text-[#9AA7B4] sm:text-[15px]"
             />
           </label>
         </div>

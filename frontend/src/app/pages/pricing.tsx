@@ -83,8 +83,8 @@ export function Pricing() {
               }}
               className={`h-[38px] sm:h-[40px] md:h-[44px] flex-1 rounded-full text-[13px] sm:text-[14px] md:text-[16px] font-medium transition-colors ${
                 activeTab === "tenants"
-                  ? "bg-[#032E3D] text-white"
-                  : "bg-transparent text-[#0D3747] hover:bg-[rgba(255,255,255,0.32)]"
+                  ? "bg-brand-primary text-white hover:bg-brand-primary-dark"
+                  : "bg-transparent text-neutral-black hover:bg-brand-primary-light"
               }`}
             >
               For tenants
@@ -96,8 +96,8 @@ export function Pricing() {
               }}
               className={`h-[38px] sm:h-[40px] md:h-[44px] flex-1 rounded-full text-[13px] sm:text-[14px] md:text-[16px] font-semibold transition-colors ${
                 activeTab === "landlords"
-                  ? "bg-[#032E3D] text-white"
-                  : "bg-transparent text-[#0D3747] hover:bg-[rgba(255,255,255,0.32)]"
+                  ? "bg-brand-primary text-white hover:bg-brand-primary-dark"
+                  : "bg-transparent text-neutral-black hover:bg-brand-primary-light"
               }`}
             >
               For landlords
@@ -371,7 +371,7 @@ export function Pricing() {
                     <button
                       type="button"
                       onClick={goToLandlordRegister}
-                      className="inline-flex items-center justify-center rounded-full bg-[#032E3D] px-[24px] py-[14px] text-[14px] font-bold uppercase tracking-[0.02em] text-white shadow-[0_10px_24px_rgba(3,46,61,0.18)] transition-colors hover:bg-[#0A4154]"
+                      className="inline-flex items-center justify-center rounded-full bg-brand-primary px-[24px] py-[14px] text-[14px] font-bold uppercase tracking-[0.02em] text-white shadow-[0_10px_24px_rgba(3,46,61,0.18)] transition-colors hover:bg-brand-primary-dark"
                     >
                       List your properties for free
                     </button>

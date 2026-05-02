@@ -30,20 +30,20 @@ export function Landlord() {
       <Header />
 
       {/* Hero Section */}
-      <section className="relative bg-gradient-to-br from-[#1A1A1A] to-[#2D2D2D] text-white py-[120px]">
-        <div className="max-w-[1440px] mx-auto px-[32px]">
-          <div className="grid grid-cols-2 gap-[64px] items-center">
+      <section className="relative bg-gradient-to-br from-[#1A1A1A] to-[#2D2D2D] text-white py-[72px] md:py-[120px]">
+        <div className="max-w-[1440px] mx-auto px-[20px] sm:px-[24px] md:px-[32px]">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-[28px] md:gap-[64px] items-center">
             <div>
-              <h1 className="text-[56px] font-bold leading-[1.1] tracking-[-0.02em] mb-[24px]">
+              <h1 className="text-[36px] sm:text-[44px] md:text-[56px] font-bold leading-[1.1] tracking-[-0.02em] mb-[16px] md:mb-[24px]">
                 Rent out quickly and<br />
                 with confidence
               </h1>
-              <p className="text-[18px] text-white/90 mb-[40px] leading-[1.6]">
+              <p className="text-[16px] md:text-[18px] text-white/90 mb-[24px] md:mb-[40px] leading-[1.6]">
                 Join thousands of landlords who trust ReserveHousing to find reliable tenants for mid-to-long-term rentals.
               </p>
               <button
                 onClick={handleGetStarted}
-                className="inline-block rounded-[14px] bg-brand-primary text-white px-[48px] py-[18px] font-bold hover:bg-brand-primary-dark transition-colors"
+                className="inline-block w-full sm:w-auto rounded-[14px] bg-brand-primary text-white px-[28px] md:px-[48px] py-[14px] md:py-[18px] font-bold hover:bg-brand-primary-dark transition-colors"
               >
                 {user?.isLandlord ? "Go to Dashboard" : isAuthenticated ? "Complete Registration" : "Get started for free"}
               </button>
@@ -55,7 +55,7 @@ export function Landlord() {
               <img
                 src="https://images.unsplash.com/photo-1743865318581-2e0e59e7292e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxwcm9mZXNzaW9uYWwlMjB3b21hbiUyMGxhcHRvcCUyMHdvcmtpbmclMjBob21lfGVufDF8fHx8MTc3MzE0NDQxM3ww&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral"
                 alt="Landlord"
-                className="w-full h-[500px] rounded-[18px] object-cover"
+                className="w-full h-[300px] sm:h-[380px] md:h-[500px] rounded-[18px] object-cover"
               />
             </div>
           </div>
@@ -63,11 +63,11 @@ export function Landlord() {
       </section>
 
       {/* Stats Section */}
-      <section className="bg-[#F7F7F9] py-[64px]">
-        <div className="max-w-[1440px] mx-auto px-[32px]">
-          <div className="grid grid-cols-3 gap-[48px]">
+      <section className="bg-[#F7F7F9] py-[48px] md:py-[64px]">
+        <div className="max-w-[1440px] mx-auto px-[20px] sm:px-[24px] md:px-[32px]">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-[24px] md:gap-[48px]">
             <div className="text-center">
-              <div className="text-brand-primary text-[56px] font-bold tracking-[-0.02em] mb-[8px]">
+              <div className="text-brand-primary text-[42px] sm:text-[48px] md:text-[56px] font-bold tracking-[-0.02em] mb-[8px]">
                 75,000+
               </div>
               <p className="text-[#1A1A1A] text-[16px] font-semibold">
@@ -75,7 +75,7 @@ export function Landlord() {
               </p>
             </div>
             <div className="text-center">
-              <div className="text-brand-primary text-[56px] font-bold tracking-[-0.02em] mb-[8px]">
+              <div className="text-brand-primary text-[42px] sm:text-[48px] md:text-[56px] font-bold tracking-[-0.02em] mb-[8px]">
                 3.8M+
               </div>
               <p className="text-[#1A1A1A] text-[16px] font-semibold">
@@ -83,7 +83,7 @@ export function Landlord() {
               </p>
             </div>
             <div className="text-center">
-              <div className="text-brand-primary text-[56px] font-bold tracking-[-0.02em] mb-[8px]">
+              <div className="text-brand-primary text-[42px] sm:text-[48px] md:text-[56px] font-bold tracking-[-0.02em] mb-[8px]">
                 14 days
               </div>
               <p className="text-[#1A1A1A] text-[16px] font-semibold">
@@ -95,20 +95,20 @@ export function Landlord() {
       </section>
 
       {/* Everything you need Section */}
-      <section className="py-[80px]">
-        <div className="max-w-[1440px] mx-auto px-[32px]">
-          <div className="text-center mb-[64px]">
-            <h2 className="text-[#1A1A1A] text-[48px] font-bold tracking-[-0.02em] mb-[16px]">
+      <section className="py-[56px] md:py-[80px]">
+        <div className="max-w-[1440px] mx-auto px-[20px] sm:px-[24px] md:px-[32px]">
+          <div className="text-center mb-[40px] md:mb-[64px]">
+            <h2 className="text-[#1A1A1A] text-[32px] sm:text-[40px] md:text-[48px] font-bold tracking-[-0.02em] mb-[12px] md:mb-[16px]">
               Everything you need to maximise your earnings
             </h2>
-            <p className="text-[#6B6B6B] text-[18px] max-w-[720px] mx-auto leading-[1.6]">
+            <p className="text-[#6B6B6B] text-[16px] md:text-[18px] max-w-[720px] mx-auto leading-[1.6]">
               We handle the complexity so you can focus on what matters
             </p>
           </div>
 
-          <div className="grid grid-cols-2 gap-[32px]">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-[16px] md:gap-[32px]">
             {/* Feature 1 */}
-            <div className="bg-white border border-[rgba(0,0,0,0.08)] rounded-[18px] p-[32px]">
+            <div className="bg-white border border-[rgba(0,0,0,0.08)] rounded-[18px] p-[20px] md:p-[32px]">
               <div className="w-[56px] h-[56px] rounded-[14px] bg-accent-blue flex items-center justify-center mb-[24px]">
                 <Users className="w-[32px] h-[32px] text-white" />
               </div>
@@ -121,7 +121,7 @@ export function Landlord() {
             </div>
 
             {/* Feature 2 */}
-            <div className="bg-white border border-[rgba(0,0,0,0.08)] rounded-[18px] p-[32px]">
+            <div className="bg-white border border-[rgba(0,0,0,0.08)] rounded-[18px] p-[20px] md:p-[32px]">
               <div className="w-[56px] h-[56px] rounded-[14px] bg-accent-blue flex items-center justify-center mb-[24px]">
                 <Shield className="w-[32px] h-[32px] text-white" />
               </div>
@@ -134,7 +134,7 @@ export function Landlord() {
             </div>
 
             {/* Feature 3 */}
-            <div className="bg-white border border-[rgba(0,0,0,0.08)] rounded-[18px] p-[32px]">
+            <div className="bg-white border border-[rgba(0,0,0,0.08)] rounded-[18px] p-[20px] md:p-[32px]">
               <div className="w-[56px] h-[56px] rounded-[14px] bg-accent-blue flex items-center justify-center mb-[24px]">
                 <FileText className="w-[32px] h-[32px] text-white" />
               </div>
@@ -147,7 +147,7 @@ export function Landlord() {
             </div>
 
             {/* Feature 4 */}
-            <div className="bg-white border border-[rgba(0,0,0,0.08)] rounded-[18px] p-[32px]">
+            <div className="bg-white border border-[rgba(0,0,0,0.08)] rounded-[18px] p-[20px] md:p-[32px]">
               <div className="w-[56px] h-[56px] rounded-[14px] bg-accent-blue flex items-center justify-center mb-[24px]">
                 <Clock className="w-[32px] h-[32px] text-white" />
               </div>
@@ -163,20 +163,20 @@ export function Landlord() {
       </section>
 
       {/* Image Section */}
-      <section className="py-[80px] bg-[#F7F7F9]">
-        <div className="max-w-[1440px] mx-auto px-[32px]">
-          <div className="grid grid-cols-2 gap-[64px] items-center">
+      <section className="py-[56px] md:py-[80px] bg-[#F7F7F9]">
+        <div className="max-w-[1440px] mx-auto px-[20px] sm:px-[24px] md:px-[32px]">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-[28px] md:gap-[64px] items-center">
             <img
               src="https://images.unsplash.com/photo-1758523669429-45723b96106c?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxjb3VwbGUlMjByZWxheGluZyUyMG1vZGVybiUyMGFwYXJ0bWVudCUyMGhvbWV8ZW58MXx8fHwxNzczMTQ0NDEyfDA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral"
               alt="Couple relaxing"
-              className="w-full h-[500px] rounded-[18px] object-cover"
+              className="w-full h-[300px] sm:h-[380px] md:h-[500px] rounded-[18px] object-cover"
             />
             <div>
-              <h2 className="text-[#1A1A1A] text-[48px] font-bold tracking-[-0.02em] mb-[24px]">
+              <h2 className="text-[#1A1A1A] text-[32px] sm:text-[40px] md:text-[48px] font-bold tracking-[-0.02em] mb-[16px] md:mb-[24px]">
                 Simply pricing for<br />
                 friction-costly rentals
               </h2>
-              <p className="text-[#6B6B6B] text-[18px] mb-[32px] leading-[1.6]">
+              <p className="text-[#6B6B6B] text-[16px] md:text-[18px] mb-[24px] md:mb-[32px] leading-[1.6]">
                 No upfront fees. No hidden costs. You only pay when we successfully find you a tenant.
               </p>
               <div className="space-y-[16px]">
@@ -203,18 +203,18 @@ export function Landlord() {
       </section>
 
       {/* How it works */}
-      <section className="py-[80px]">
-        <div className="max-w-[1440px] mx-auto px-[32px]">
-          <div className="text-center mb-[64px]">
-            <h2 className="text-[#1A1A1A] text-[48px] font-bold tracking-[-0.02em] mb-[16px]">
+      <section className="py-[56px] md:py-[80px]">
+        <div className="max-w-[1440px] mx-auto px-[20px] sm:px-[24px] md:px-[32px]">
+          <div className="text-center mb-[40px] md:mb-[64px]">
+            <h2 className="text-[#1A1A1A] text-[32px] sm:text-[40px] md:text-[48px] font-bold tracking-[-0.02em] mb-[12px] md:mb-[16px]">
               All online. 100% secure.
             </h2>
-            <p className="text-[#6B6B6B] text-[18px] max-w-[720px] mx-auto leading-[1.6]">
+            <p className="text-[#6B6B6B] text-[16px] md:text-[18px] max-w-[720px] mx-auto leading-[1.6]">
               From listing to lease signing, everything happens on our platform
             </p>
           </div>
 
-          <div className="grid grid-cols-3 gap-[48px]">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-[24px] md:gap-[48px]">
             {/* Step 1 */}
             <div className="text-center">
               <div className="w-[80px] h-[80px] bg-brand-primary rounded-full flex items-center justify-center mx-auto mb-[24px]">
@@ -255,10 +255,10 @@ export function Landlord() {
             </div>
           </div>
 
-          <div className="text-center mt-[48px]">
+          <div className="text-center mt-[36px] md:mt-[48px]">
             <Link
               to={isAuthenticated ? "/landlord/inbox" : "/signup"}
-              className="inline-flex items-center gap-[12px] rounded-[14px] bg-brand-primary text-white px-[48px] py-[18px] font-bold hover:bg-brand-primary-dark transition-colors"
+              className="inline-flex w-full sm:w-auto items-center justify-center gap-[12px] rounded-[14px] bg-brand-primary text-white px-[24px] md:px-[48px] py-[14px] md:py-[18px] font-bold hover:bg-brand-primary-dark transition-colors"
             >
               {isAuthenticated ? "Go to dashboard" : "Get started now"}
               <ArrowRight className="w-[20px] h-[20px]" />
@@ -268,26 +268,26 @@ export function Landlord() {
       </section>
 
       {/* Dashboard Preview */}
-      <section className="py-[80px] bg-[#F7F7F9]">
-        <div className="max-w-[1440px] mx-auto px-[32px]">
-          <div className="text-center mb-[48px]">
-            <h2 className="text-[#1A1A1A] text-[48px] font-bold tracking-[-0.02em] mb-[16px]">
+      <section className="py-[56px] md:py-[80px] bg-[#F7F7F9]">
+        <div className="max-w-[1440px] mx-auto px-[20px] sm:px-[24px] md:px-[32px]">
+          <div className="text-center mb-[36px] md:mb-[48px]">
+            <h2 className="text-[#1A1A1A] text-[32px] sm:text-[40px] md:text-[48px] font-bold tracking-[-0.02em] mb-[12px] md:mb-[16px]">
               All-in-one landlord dashboard
             </h2>
-            <p className="text-[#6B6B6B] text-[18px]">
+            <p className="text-[#6B6B6B] text-[16px] md:text-[18px]">
               Manage all your properties from one powerful dashboard
             </p>
           </div>
 
-          <div className="bg-white border border-[rgba(0,0,0,0.08)] rounded-[22px] p-[48px]">
+          <div className="bg-white border border-[rgba(0,0,0,0.08)] rounded-[22px] p-[16px] sm:p-[24px] md:p-[48px]">
             <img
               src="https://images.unsplash.com/photo-1663756915301-2ba688e078cf?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxtb2Rlcm4lMjBhcGFydG1lbnQlMjBpbnRlcmlvciUyMGxpdmluZyUyMHJvb218ZW58MXx8fHwxNzczMDU2NjkzfDA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral"
               alt="Dashboard Preview"
-              className="w-full h-[400px] object-cover rounded-[14px]"
+              className="w-full h-[240px] sm:h-[300px] md:h-[400px] object-cover rounded-[14px]"
             />
           </div>
 
-          <div className="grid grid-cols-3 gap-[32px] mt-[48px]">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-[16px] md:gap-[32px] mt-[24px] md:mt-[48px]">
             <div className="bg-white border border-[rgba(0,0,0,0.08)] rounded-[16px] p-[24px] text-center">
               <TrendingUp className="w-[40px] h-[40px] text-brand-primary mx-auto mb-[16px]" />
               <h3 className="text-[#1A1A1A] text-[18px] font-bold mb-[8px]">
@@ -320,17 +320,17 @@ export function Landlord() {
       </section>
 
       {/* CTA Section */}
-      <section className="py-[80px] bg-[#1A1A1A] text-white">
-        <div className="max-w-[1440px] mx-auto px-[32px] text-center">
-          <h2 className="text-[48px] font-bold tracking-[-0.02em] mb-[24px]">
+      <section className="py-[56px] md:py-[80px] bg-[#1A1A1A] text-white">
+        <div className="max-w-[1440px] mx-auto px-[20px] sm:px-[24px] md:px-[32px] text-center">
+          <h2 className="text-[32px] sm:text-[40px] md:text-[48px] font-bold tracking-[-0.02em] mb-[16px] md:mb-[24px]">
             Start earning with a verified tenant today
           </h2>
-          <p className="text-[18px] text-white/90 mb-[40px] max-w-[720px] mx-auto leading-[1.6]">
+          <p className="text-[16px] md:text-[18px] text-white/90 mb-[28px] md:mb-[40px] max-w-[720px] mx-auto leading-[1.6]">
             Join 75,000+ landlords who've rented out their properties through ReserveHousing
           </p>
           <Link
             to={isAuthenticated ? "/landlord/inbox" : "/signup"}
-            className="inline-block rounded-[14px] bg-brand-primary text-white px-[56px] py-[20px] font-bold text-[16px] hover:bg-brand-primary-dark transition-colors"
+            className="inline-block w-full sm:w-auto rounded-[14px] bg-brand-primary text-white px-[24px] md:px-[56px] py-[14px] md:py-[20px] font-bold text-[16px] hover:bg-brand-primary-dark transition-colors"
           >
             {isAuthenticated ? "Go to dashboard" : "List your property for free"}
           </Link>
@@ -338,23 +338,23 @@ export function Landlord() {
       </section>
 
       {/* FAQ Section */}
-      <section className="py-[80px] bg-white">
-        <div className="max-w-[1440px] mx-auto px-[32px]">
-          <div className="text-center mb-[64px]">
-            <h2 className="text-[#1A1A1A] text-[48px] font-bold tracking-[-0.02em] mb-[16px]">
+      <section className="py-[56px] md:py-[80px] bg-white">
+        <div className="max-w-[1440px] mx-auto px-[20px] sm:px-[24px] md:px-[32px]">
+          <div className="text-center mb-[40px] md:mb-[64px]">
+            <h2 className="text-[#1A1A1A] text-[32px] sm:text-[40px] md:text-[48px] font-bold tracking-[-0.02em] mb-[12px] md:mb-[16px]">
               Your questions, answered
             </h2>
           </div>
 
           <div className="max-w-[800px] mx-auto space-y-[16px]">
-            <details className="bg-[#F7F7F9] border border-[rgba(0,0,0,0.08)] rounded-[14px] p-[24px] cursor-pointer">
-              <summary className="text-[#1A1A1A] text-[18px] font-bold flex items-center justify-between">
+            <details className="bg-[#F7F7F9] border border-[rgba(0,0,0,0.08)] rounded-[14px] p-[16px] md:p-[24px] cursor-pointer">
+              <summary className="text-[#1A1A1A] text-[16px] md:text-[18px] font-bold flex items-center justify-between">
                 How much does it cost to list my property?
                 <svg className="w-[20px] h-[20px]" viewBox="0 0 20 20" fill="none">
                   <path d="M5 7.5L10 12.5L15 7.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                 </svg>
               </summary>
-              <p className="text-[#6B6B6B] text-[15px] mt-[16px] leading-[1.6]">
+              <p className="text-[#6B6B6B] text-[14px] md:text-[15px] mt-[12px] md:mt-[16px] leading-[1.6]">
                 Listing your property is completely free. We only charge a service fee (equivalent to one month's rent) when you successfully rent out your property. No upfront costs, no hidden fees.
               </p>
             </details>
