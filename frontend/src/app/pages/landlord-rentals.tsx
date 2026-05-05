@@ -21,7 +21,7 @@ import { ImageWithFallback } from "../components/figma/ImageWithFallback";
 import { API_BASE } from "../config";
 import { Skeleton } from "../components/ui/skeleton";
 
-type RequestStatus = "pending" | "approved" | "rejected";
+type RequestStatus = "pending" | "approved" | "rejected" | "paid";
 
 interface ApplicationDocument {
   id: string;
@@ -93,12 +93,14 @@ const statusLabel: Record<RequestStatus, string> = {
   pending: "Pending",
   approved: "Approved",
   rejected: "Rejected",
+  paid: "Paid",
 };
 
 const statusStyle: Record<RequestStatus, string> = {
   pending: "bg-brand-light text-brand-primary",
   approved: "bg-accent-blue/10 text-accent-blue",
   rejected: "bg-red-50 text-red-600",
+  paid: "bg-green-50 text-green-700",
 };
 
 const documentTypeLabel: Record<ApplicationDocument["type"], string> = {

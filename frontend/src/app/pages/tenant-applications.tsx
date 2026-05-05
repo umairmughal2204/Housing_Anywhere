@@ -7,7 +7,7 @@ import { ImageWithFallback } from "../components/figma/ImageWithFallback";
 import { API_BASE } from "../config";
 import { useAuth } from "../contexts/auth-context";
 
-type ApplicationStatus = "pending" | "approved" | "rejected";
+type ApplicationStatus = "pending" | "approved" | "rejected" | "paid";
 
 interface TenantApplication {
   id: string;
@@ -32,6 +32,7 @@ const statusStyle: Record<ApplicationStatus, string> = {
   pending: "bg-brand-light text-brand-primary",
   approved: "bg-accent-blue/10 text-accent-blue",
   rejected: "bg-red-50 text-red-600",
+  paid: "bg-green-50 text-green-700",
 };
 
 import { Skeleton } from "../components/ui/skeleton";
@@ -250,6 +251,14 @@ export function TenantApplications() {
                         </p>
                       </div>
                     )}
+                    {application.status === "paid" && (
+                      <div className="flex items-start gap-[10px] bg-green-50 border border-green-200 rounded-[4px] px-[14px] py-[10px] mb-[14px]">
+                        <CheckCircle2 className="w-[16px] h-[16px] text-green-600 mt-[1px] flex-shrink-0" />
+                        <p className="text-[13px] text-green-800 font-medium">
+                          Payment completed! Your booking is confirmed.
+                        </p>
+                      </div>
+                    )}
                     {!application.listing.isAvailable && (
                       <div className="flex items-start gap-[10px] bg-[#FFF7ED] border border-[#FDBA74] rounded-[4px] px-[14px] py-[10px] mb-[14px]">
                         <Clock className="w-[16px] h-[16px] text-[#C2410C] mt-[1px] flex-shrink-0" />
@@ -290,7 +299,7 @@ export function TenantApplications() {
                           Browse other properties
                         </Link>
                       )}
-                      {(application.status === "approved" || application.status === "rejected") && (
+                      {(application.status === "approved" || application.status === "rejected" || application.status === "paid") && (
                         <button
                           type="button"
                           onClick={() => void handleMessageLandlord(application.id, application.listingId)}

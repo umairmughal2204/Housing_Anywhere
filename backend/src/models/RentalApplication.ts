@@ -60,7 +60,7 @@ const rentalApplicationSchema = new Schema(
     tenantId: { type: Schema.Types.ObjectId, ref: "User", required: true, index: true },
     status: {
       type: String,
-      enum: ["pending", "approved", "rejected"],
+      enum: ["pending", "approved", "rejected", "paid"],
       default: "pending",
       index: true,
     },

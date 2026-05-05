@@ -137,6 +137,10 @@ router.post("/mollie/webhook", express.urlencoded({ extended: false }), async (r
     paidAt: isPaid ? new Date() : application.paymentDetails?.paidAt,
   };
 
+  if (isPaid) {
+    application.status = "paid" as any;
+  }
+
   await application.save();
 
   res.status(200).send("ok");
@@ -184,6 +188,11 @@ router.get("/mollie/application-status", async (req, res) => {
         currency,
         paidAt: isPaid ? new Date() : storedPaymentDetails.paidAt,
       };
+
+      if (isPaid) {
+        application.status = "paid" as any;
+      }
+
       await application.save();
     } catch (error) {
       console.error("Failed to refresh Mollie payment status", error);
