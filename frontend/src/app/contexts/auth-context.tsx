@@ -22,7 +22,7 @@ interface User {
   name: string;
   hasPassword?: boolean;
   profilePictureUrl?: string;
-  role: "tenant" | "landlord";
+  role: "tenant" | "landlord" | "admin";
   isLandlord: boolean;
   dateOfBirth?: string;
   gender?: "male" | "female" | "other";
@@ -61,6 +61,7 @@ interface ContactUpdateData {
 interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
+  isAdmin: boolean;
   isLoading: boolean;
   login: (email: string, password: string, rememberMe?: boolean) => Promise<void>;
   loginWithGoogle: (credential: string, rememberMe?: boolean) => Promise<void>;
@@ -506,6 +507,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       value={{
         user,
         isAuthenticated: !!user,
+        isAdmin: user?.role === "admin",
         isLoading,
         login,
         loginWithGoogle,

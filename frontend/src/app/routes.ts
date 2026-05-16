@@ -33,12 +33,29 @@ import { Account } from "./pages/account";
 import { Favorites } from "./pages/favorites";
 import { ErrorBoundary } from "./components/error-boundary";
 import { ProtectedRoute } from "./components/protected-route";
+import { AdminRoute } from "./components/admin-route";
+import { AdminLogin } from "./pages/admin-login";
+import { AdminDashboard } from "./pages/admin-dashboard";
+import { AdminUsers } from "./pages/admin-users";
+import { AdminListings } from "./pages/admin-listings";
+import { AdminApplications } from "./pages/admin-applications";
 
 function withProtectedRoute(Page: ComponentType) {
   return function ProtectedPage() {
     return createElement(ProtectedRoute, null, createElement(Page));
   };
 }
+
+function withAdminRoute(Page: ComponentType) {
+  return function AdminPage() {
+    return createElement(AdminRoute, null, createElement(Page));
+  };
+}
+
+const ProtectedAdminDashboard = withAdminRoute(AdminDashboard);
+const ProtectedAdminUsers = withAdminRoute(AdminUsers);
+const ProtectedAdminListings = withAdminRoute(AdminListings);
+const ProtectedAdminApplications = withAdminRoute(AdminApplications);
 
 const ProtectedLandlordDashboard = withProtectedRoute(LandlordDashboard);
 const ProtectedLandlordListings = withProtectedRoute(LandlordListings);
@@ -256,6 +273,31 @@ export const router = createBrowserRouter([
   {
     path: "/favorites",
     Component: ProtectedFavorites,
+    ErrorBoundary,
+  },
+  {
+    path: "/admin/login",
+    Component: AdminLogin,
+    ErrorBoundary,
+  },
+  {
+    path: "/admin",
+    Component: ProtectedAdminDashboard,
+    ErrorBoundary,
+  },
+  {
+    path: "/admin/users",
+    Component: ProtectedAdminUsers,
+    ErrorBoundary,
+  },
+  {
+    path: "/admin/listings",
+    Component: ProtectedAdminListings,
+    ErrorBoundary,
+  },
+  {
+    path: "/admin/applications",
+    Component: ProtectedAdminApplications,
     ErrorBoundary,
   },
 ]);

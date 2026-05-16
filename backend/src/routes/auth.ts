@@ -177,7 +177,7 @@ function toAuthUser(user: {
   email: string;
   firstName: string;
   lastName: string;
-  role: "tenant" | "landlord";
+  role: "tenant" | "landlord" | "admin";
   isLandlord: boolean;
   landlordProfile?: unknown;
   dateOfBirth?: string | null;
@@ -339,7 +339,7 @@ router.post("/signup/confirm", async (req, res) => {
 
   const token = signAccessToken({
     sub: user._id.toString(),
-    role: user.role,
+    role: user.role as "tenant" | "landlord" | "admin",
     email: user.email,
   });
 
@@ -378,7 +378,7 @@ router.post("/login", async (req, res) => {
   const token = signAccessToken(
     {
       sub: user._id.toString(),
-      role: user.role,
+      role: user.role as "tenant" | "landlord" | "admin",
       email: user.email,
     },
     rememberMe ? "10d" : "1d"
@@ -524,7 +524,7 @@ router.post("/google", async (req, res) => {
     const token = signAccessToken(
       {
         sub: user._id.toString(),
-        role: user.role,
+        role: user.role as "tenant" | "landlord" | "admin",
         email: user.email,
       },
       parsed.data.rememberMe ? "10d" : "1d"
@@ -584,13 +584,13 @@ router.post("/register-landlord", requireAuth, async (req, res) => {
 
   const token = signAccessToken({
     sub: user._id.toString(),
-    role: user.role,
+    role: user.role as "tenant" | "landlord" | "admin",
     email: user.email,
   });
 
   res.json({
     token,
-    user: toAuthUser(user),
+    user: toAuthUser(user as Parameters<typeof toAuthUser>[0]),
   });
 });
 
@@ -657,13 +657,13 @@ router.patch("/me/contact", requireAuth, async (req, res) => {
 
   const token = signAccessToken({
     sub: user._id.toString(),
-    role: user.role,
+    role: user.role as "tenant" | "landlord" | "admin",
     email: user.email,
   });
 
   res.json({
     token,
-    user: toAuthUser(user),
+    user: toAuthUser(user as Parameters<typeof toAuthUser>[0]),
   });
 });
 

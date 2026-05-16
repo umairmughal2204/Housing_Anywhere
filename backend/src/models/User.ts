@@ -43,7 +43,8 @@ const userSchema = new Schema(
     passwordResetExpiresAt: { type: Date, required: false },
     authProvider: { type: String, enum: ["local", "google"], required: true, default: "local" },
     googleId: { type: String, required: false, unique: true, sparse: true },
-    role: { type: String, enum: ["tenant", "landlord"], required: true, default: "tenant" },
+    role: { type: String, enum: ["tenant", "landlord", "admin"], required: true, default: "tenant" },
+    isBanned: { type: Boolean, default: false },
     isLandlord: { type: Boolean, default: false },
     favoriteListingIds: { type: [Schema.Types.ObjectId], ref: "Listing", default: [] },
     landlordProfile: { type: landlordProfileSchema, required: false },
@@ -51,5 +52,9 @@ const userSchema = new Schema(
   { timestamps: true }
 );
 
-export type UserDocument = InferSchemaType<typeof userSchema> & { _id: Schema.Types.ObjectId };
+export type UserDocument = Omit<InferSchemaType<typeof userSchema>, "role"> & {
+  _id: Schema.Types.ObjectId;
+  role: "tenant" | "landlord" | "admin";
+  isBanned?: boolean;
+};
 export const UserModel = model("User", userSchema);

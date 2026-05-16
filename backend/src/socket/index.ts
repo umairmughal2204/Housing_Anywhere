@@ -6,7 +6,7 @@ import { MessageModel } from "../models/Message.js";
 
 interface AuthenticatedSocket extends Socket {
   userId: string;
-  userRole: "tenant" | "landlord";
+  userRole: "tenant" | "landlord" | "admin";
   userEmail: string;
 }
 

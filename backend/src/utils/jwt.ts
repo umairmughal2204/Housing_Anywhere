@@ -3,7 +3,7 @@ import { env } from "../config/env.js";
 
 export interface JwtPayload {
   sub: string;
-  role: "tenant" | "landlord";
+  role: "tenant" | "landlord" | "admin";
   email: string;
 }
 
