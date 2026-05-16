@@ -11,9 +11,22 @@ async function bootstrap() {
   const app = createApp();
   const httpServer = createServer(app);
 
+  const allowedOrigins = [
+    env.CLIENT_ORIGIN,
+    env.CLIENT_ORIGIN.replace("://", "://www."),
+    "http://localhost:5173",
+    "http://localhost:4173",
+  ];
+
   const io = new Server(httpServer, {
-    cors: { origin: env.CLIENT_ORIGIN, credentials: true },
-    // Prefer WebSocket, fall back to long-polling
+    cors: {
+      origin: (origin, callback) => {
+        if (!origin) return callback(null, true);
+        if (allowedOrigins.includes(origin)) return callback(null, true);
+        callback(new Error(`Socket CORS blocked: ${origin}`));
+      },
+      credentials: true,
+    },
     transports: ["websocket", "polling"],
   });
 

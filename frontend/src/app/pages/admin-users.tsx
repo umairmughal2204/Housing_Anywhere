@@ -147,12 +147,26 @@ export function AdminUsers() {
               <tbody>
                 {isLoading ? (
                   [...Array(8)].map((_, i) => (
-                    <tr key={i} className="border-b border-[rgba(0,0,0,0.04)]">
-                      {[...Array(5)].map((__, j) => (
-                        <td key={j} className="px-[20px] py-[16px]">
-                          <div className="h-4 bg-neutral-light-gray rounded animate-pulse" />
-                        </td>
-                      ))}
+                    <tr key={i} className="border-b border-[rgba(0,0,0,0.04)] animate-pulse">
+                      <td className="px-[20px] py-[14px]">
+                        <div className="h-[14px] w-[120px] bg-neutral-light-gray rounded-full mb-[6px]" />
+                        <div className="h-[11px] w-[160px] bg-neutral-light-gray rounded-full" />
+                      </td>
+                      <td className="px-[20px] py-[14px]">
+                        <div className="h-[22px] w-[64px] bg-neutral-light-gray rounded-full" />
+                      </td>
+                      <td className="px-[20px] py-[14px]">
+                        <div className="h-[22px] w-[56px] bg-neutral-light-gray rounded-full" />
+                      </td>
+                      <td className="px-[20px] py-[14px]">
+                        <div className="h-[13px] w-[80px] bg-neutral-light-gray rounded-full" />
+                      </td>
+                      <td className="px-[20px] py-[14px]">
+                        <div className="flex items-center justify-end gap-[8px]">
+                          <div className="h-[28px] w-[56px] bg-neutral-light-gray rounded-[8px]" />
+                          <div className="h-[28px] w-[72px] bg-neutral-light-gray rounded-[8px]" />
+                        </div>
+                      </td>
                     </tr>
                   ))
                 ) : data?.users.length === 0 ? (

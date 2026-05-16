@@ -3,6 +3,57 @@
 
 @import 'tw-animate-css';
 
+@layer base {
+  /* Every interactive element gets a pointer cursor */
+  button,
+  [role="button"],
+  [type="button"],
+  [type="submit"],
+  [type="reset"],
+  select,
+  label,
+  summary,
+  a {
+    cursor: pointer;
+  }
+
+  /* Disabled elements revert to not-allowed */
+  button:disabled,
+  [role="button"][aria-disabled="true"],
+  input:disabled,
+  select:disabled,
+  textarea:disabled {
+    cursor: not-allowed;
+  }
+
+  /* Smooth transitions on all buttons and form controls */
+  button,
+  [role="button"],
+  input,
+  select,
+  textarea {
+    transition-property: color, background-color, border-color, box-shadow, opacity, transform;
+    transition-duration: 150ms;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  /* Subtle press effect on clickable buttons */
+  button:not(:disabled):active,
+  [role="button"]:not([aria-disabled="true"]):active {
+    transform: scale(0.97);
+  }
+
+  /* Focus ring for accessibility */
+  button:focus-visible,
+  a:focus-visible,
+  select:focus-visible,
+  input:focus-visible,
+  textarea:focus-visible {
+    outline: 2px solid var(--brand-primary);
+    outline-offset: 2px;
+  }
+}
+
 /* EasyRent Custom Color Utilities */
 @layer utilities {
   /* Brand Teal Colors */

@@ -78,7 +78,14 @@ export function AdminDashboard() {
         {isLoading ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-[16px]">
             {[...Array(6)].map((_, i) => (
-              <div key={i} className="bg-white border border-[rgba(0,0,0,0.06)] rounded-[16px] p-[24px] h-[100px] animate-pulse" />
+              <div key={i} className="bg-white border border-[rgba(0,0,0,0.06)] rounded-[16px] p-[24px] flex items-start gap-[16px] animate-pulse">
+                <div className="w-[48px] h-[48px] rounded-[12px] bg-neutral-light-gray flex-shrink-0" />
+                <div className="flex-1 space-y-[8px] pt-[4px]">
+                  <div className="h-[12px] w-[60%] bg-neutral-light-gray rounded-full" />
+                  <div className="h-[28px] w-[40%] bg-neutral-light-gray rounded-full" />
+                  <div className="h-[10px] w-[50%] bg-neutral-light-gray rounded-full" />
+                </div>
+              </div>
             ))}
           </div>
         ) : stats ? (

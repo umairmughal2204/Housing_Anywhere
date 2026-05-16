@@ -1,5 +1,5 @@
 import { Link } from "react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import {
   Bath,
   Bed,
@@ -94,9 +94,13 @@ function normalizeListing(raw: ApiListing): Listing {
 export function LandlordListings() {
   const apiBase = API_BASE;
   const [filterStatus, setFilterStatus] = useState<ListingStatus | "all">("all");
-  const [selectedCity, setSelectedCity] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
+  const [searchInput, setSearchInput] = useState("");
   const [listings, setListings] = useState<Listing[]>([]);
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
+  const [pages, setPages] = useState(1);
+  const LIMIT = 12;
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
   const [updatingStatusId, setUpdatingStatusId] = useState<string | null>(null);
@@ -104,41 +108,43 @@ export function LandlordListings() {
   const [deleteTarget, setDeleteTarget] = useState<Listing | null>(null);
   const [deleteConfirmationText, setDeleteConfirmationText] = useState("");
 
-  useEffect(() => {
-    const loadListings = async () => {
-      const token = localStorage.getItem("authToken");
-      if (!token) {
-        setError("Please log in to view listings");
-        setIsLoading(false);
-        return;
+  const loadListings = useCallback(async () => {
+    const token = localStorage.getItem("authToken");
+    if (!token) {
+      setError("Please log in to view listings");
+      setIsLoading(false);
+      return;
+    }
+
+    setIsLoading(true);
+    setError("");
+
+    try {
+      const params = new URLSearchParams({ page: String(page), limit: String(LIMIT) });
+      if (searchQuery) params.set("search", searchQuery);
+      if (filterStatus !== "all") params.set("status", filterStatus);
+
+      const response = await fetch(`${apiBase}/api/listings/mine?${params.toString()}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (!response.ok) {
+        const payload = (await response.json()) as { message?: string };
+        throw new Error(payload.message ?? "Failed to load listings");
       }
 
-      setIsLoading(true);
-      setError("");
+      const payload = (await response.json()) as { listings: ApiListing[]; total: number; page: number; pages: number };
+      setListings((payload.listings ?? []).map(normalizeListing));
+      setTotal(payload.total ?? 0);
+      setPages(payload.pages ?? 1);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to load listings");
+    } finally {
+      setIsLoading(false);
+    }
+  }, [apiBase, page, searchQuery, filterStatus]);
 
-      try {
-        const response = await fetch(`${apiBase}/api/listings/mine`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-
-        if (!response.ok) {
-          const payload = (await response.json()) as { message?: string };
-          throw new Error(payload.message ?? "Failed to load listings");
-        }
-
-        const payload = (await response.json()) as { listings: ApiListing[] };
-        setListings((payload.listings ?? []).map(normalizeListing));
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "Failed to load listings");
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    void loadListings();
-  }, [apiBase]);
+  useEffect(() => { void loadListings(); }, [loadListings]);
 
   const handleStatusToggle = async (listingId: string, currentStatus: ListingStatus) => {
     const token = localStorage.getItem("authToken");
@@ -208,9 +214,9 @@ export function LandlordListings() {
         throw new Error(payload.message ?? "Failed to delete listing");
       }
 
-      setListings((prev) => prev.filter((listing) => listing.id !== listingId));
       setDeleteTarget(null);
       setDeleteConfirmationText("");
+      void loadListings();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to delete listing");
     } finally {
@@ -218,25 +224,15 @@ export function LandlordListings() {
     }
   };
 
-  const filteredListings = listings.filter((listing) => {
-    const matchesStatus = filterStatus === "all" || listing.status === filterStatus;
-    const matchesCity = selectedCity === "all" || listing.city === selectedCity;
-    const searchValue = searchQuery.toLowerCase();
-    const matchesSearch =
-      listing.title.toLowerCase().includes(searchValue) ||
-      listing.address.toLowerCase().includes(searchValue) ||
-      listing.city.toLowerCase().includes(searchValue);
-    return matchesStatus && matchesCity && matchesSearch;
-  });
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setPage(1);
+    setSearchQuery(searchInput);
+  };
 
-  const cityOptions = Array.from(new Set(listings.map((listing) => listing.city).filter(Boolean))).sort(
-    (left, right) => left.localeCompare(right)
-  );
-
-  const statusCounts = {
-    all: listings.length,
-    active: listings.filter((l) => l.status === "active").length,
-    inactive: listings.filter((l) => l.status === "inactive").length,
+  const handleStatusChange = (val: ListingStatus | "all") => {
+    setFilterStatus(val);
+    setPage(1);
   };
 
   const renderSkeletonCard = (index: number) => (
@@ -294,42 +290,31 @@ export function LandlordListings() {
           <div className="relative min-w-0">
             <select
               value={filterStatus}
-              onChange={(event) => setFilterStatus(event.target.value as ListingStatus | "all")}
+              onChange={(event) => handleStatusChange(event.target.value as ListingStatus | "all")}
               className="h-[54px] w-full min-w-0 appearance-none rounded-[14px] border border-[#A8B2BF] bg-white px-[14px] pr-[36px] text-[14px] font-medium text-[#0B2D3A] outline-none transition-colors focus:border-brand-primary sm:h-[58px] sm:px-[16px] sm:pr-[40px] sm:text-[15px]"
             >
-              <option value="all">All status ({statusCounts.all})</option>
-              <option value="active">Active ({statusCounts.active})</option>
-              <option value="inactive">Inactive ({statusCounts.inactive})</option>
+              <option value="all">All statuses</option>
+              <option value="active">Active</option>
+              <option value="inactive">Inactive</option>
             </select>
             <ChevronDown className="pointer-events-none absolute right-[16px] top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-[#0B2D3A]" />
           </div>
 
-          <div className="relative min-w-0">
-            <select
-              value={selectedCity}
-              onChange={(event) => setSelectedCity(event.target.value)}
-              className="h-[54px] w-full min-w-0 appearance-none rounded-[14px] border border-[#A8B2BF] bg-white px-[14px] pr-[36px] text-[14px] font-medium text-[#0B2D3A] outline-none transition-colors focus:border-brand-primary sm:h-[58px] sm:px-[16px] sm:pr-[40px] sm:text-[15px]"
-            >
-              <option value="all">All cities ({cityOptions.length})</option>
-              {cityOptions.map((city) => (
-                <option key={city} value={city}>
-                  {city}
-                </option>
-              ))}
-            </select>
-            <ChevronDown className="pointer-events-none absolute right-[16px] top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-[#0B2D3A]" />
-          </div>
-
-          <label className="flex h-[54px] min-w-0 items-center gap-[10px] rounded-[14px] border border-[#A8B2BF] bg-white px-[14px] sm:h-[58px] sm:px-[16px]">
-            <Search className="h-[18px] w-[18px] text-[#0B2D3A]" />
-            <input
-              type="text"
-              placeholder="Search by street, city or alias"
-              value={searchQuery}
-              onChange={(event) => setSearchQuery(event.target.value)}
-              className="w-full min-w-0 border-0 bg-transparent text-[14px] font-medium text-[#0B2D3A] outline-none placeholder:text-[#9AA7B4] sm:text-[15px]"
-            />
-          </label>
+          <form onSubmit={handleSearchSubmit} className="col-span-full xl:col-span-2 flex items-center gap-[8px]">
+            <label className="flex flex-1 h-[54px] min-w-0 items-center gap-[10px] rounded-[14px] border border-[#A8B2BF] bg-white px-[14px] sm:h-[58px] sm:px-[16px]">
+              <Search className="h-[18px] w-[18px] text-[#0B2D3A] flex-shrink-0" />
+              <input
+                type="text"
+                placeholder="Search by title, city or address"
+                value={searchInput}
+                onChange={(event) => setSearchInput(event.target.value)}
+                className="w-full min-w-0 border-0 bg-transparent text-[14px] font-medium text-[#0B2D3A] outline-none placeholder:text-[#9AA7B4] sm:text-[15px]"
+              />
+            </label>
+            <button type="submit" className="h-[54px] px-[18px] rounded-[14px] bg-brand-primary text-white text-[14px] font-semibold hover:bg-brand-primary-dark transition-colors sm:h-[58px] flex-shrink-0">
+              Search
+            </button>
+          </form>
         </div>
 
         {isLoading && <div className="mt-[20px] space-y-[14px]">{[0, 1, 2].map(renderSkeletonCard)}</div>}
@@ -340,7 +325,7 @@ export function LandlordListings() {
           </div>
         )}
 
-        {!isLoading && !error && filteredListings.length === 0 && (
+        {!isLoading && !error && listings.length === 0 && (
           <div className="mt-[20px] rounded-[22px] border border-[rgba(11,45,58,0.08)] bg-white px-[22px] py-[40px] text-center shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
             <div className="flex justify-center mb-[16px]">
               <img src={houseImage} alt="No listings" className="w-[100px] h-[100px] object-contain" />
@@ -349,7 +334,7 @@ export function LandlordListings() {
               You can view and manage all your listings here.
             </h2>
             <p className="mx-auto mt-[6px] max-w-[520px] text-[14px] text-neutral-gray">
-              {searchQuery || filterStatus !== "all" || selectedCity !== "all"
+              {searchQuery || filterStatus !== "all"
                 ? "Try adjusting your search or filters."
                 : "Create your first listing to get started and start earning!"}
             </p>
@@ -363,9 +348,9 @@ export function LandlordListings() {
           </div>
         )}
 
-        {!isLoading && !error && filteredListings.length > 0 && (
+        {!isLoading && !error && listings.length > 0 && (
           <div className="mt-[20px] space-y-[14px]">
-            {filteredListings.map((listing) => (
+            {listings.map((listing) => (
               <article
                 key={listing.id}
                 className="rounded-[22px] border border-[rgba(11,45,58,0.08)] bg-white px-[16px] py-[16px] shadow-[0_1px_2px_rgba(15,23,42,0.04)] transition-shadow hover:shadow-[0_8px_24px_rgba(15,23,42,0.06)]"
@@ -500,6 +485,33 @@ export function LandlordListings() {
                 </div>
               </article>
             ))}
+          </div>
+        )}
+
+        {!isLoading && pages > 1 && (
+          <div className="mt-[24px] flex items-center justify-between">
+            <p className="text-[13px] text-neutral-gray">
+              Showing {((page - 1) * LIMIT) + 1}–{Math.min(page * LIMIT, total)} of {total} listings
+            </p>
+            <div className="flex items-center gap-[8px]">
+              <button
+                type="button"
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={page === 1}
+                className="px-[14px] py-[8px] rounded-[12px] border border-[#A8B2BF] text-[13px] font-semibold text-[#0B2D3A] hover:bg-neutral-light-gray disabled:opacity-40 transition-colors"
+              >
+                Previous
+              </button>
+              <span className="text-[13px] font-medium text-neutral-black px-[8px]">{page} / {pages}</span>
+              <button
+                type="button"
+                onClick={() => setPage((p) => Math.min(pages, p + 1))}
+                disabled={page === pages}
+                className="px-[14px] py-[8px] rounded-[12px] border border-[#A8B2BF] text-[13px] font-semibold text-[#0B2D3A] hover:bg-neutral-light-gray disabled:opacity-40 transition-colors"
+              >
+                Next
+              </button>
+            </div>
           </div>
         )}
 

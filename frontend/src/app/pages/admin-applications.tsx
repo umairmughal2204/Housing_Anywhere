@@ -102,12 +102,28 @@ export function AdminApplications() {
               <tbody>
                 {isLoading ? (
                   [...Array(8)].map((_, i) => (
-                    <tr key={i} className="border-b border-[rgba(0,0,0,0.04)]">
-                      {[...Array(6)].map((__, j) => (
-                        <td key={j} className="px-[20px] py-[16px]">
-                          <div className="h-4 bg-neutral-light-gray rounded animate-pulse" />
-                        </td>
-                      ))}
+                    <tr key={i} className="border-b border-[rgba(0,0,0,0.04)] animate-pulse">
+                      <td className="px-[20px] py-[14px]">
+                        <div className="h-[13px] w-[130px] bg-neutral-light-gray rounded-full mb-[6px]" />
+                        <div className="h-[11px] w-[100px] bg-neutral-light-gray rounded-full" />
+                      </td>
+                      <td className="px-[20px] py-[14px]">
+                        <div className="h-[13px] w-[120px] bg-neutral-light-gray rounded-full mb-[6px]" />
+                        <div className="h-[11px] w-[90px] bg-neutral-light-gray rounded-full" />
+                      </td>
+                      <td className="px-[20px] py-[14px]">
+                        <div className="h-[13px] w-[140px] bg-neutral-light-gray rounded-full mb-[6px]" />
+                        <div className="h-[11px] w-[70px] bg-neutral-light-gray rounded-full" />
+                      </td>
+                      <td className="px-[20px] py-[14px]">
+                        <div className="h-[22px] w-[68px] bg-neutral-light-gray rounded-full" />
+                      </td>
+                      <td className="px-[20px] py-[14px]">
+                        <div className="h-[13px] w-[56px] bg-neutral-light-gray rounded-full" />
+                      </td>
+                      <td className="px-[20px] py-[14px]">
+                        <div className="h-[13px] w-[72px] bg-neutral-light-gray rounded-full" />
+                      </td>
                     </tr>
                   ))
                 ) : data?.applications.length === 0 ? (

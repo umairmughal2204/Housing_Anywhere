@@ -1,5 +1,5 @@
 ﻿import { Link } from "react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import { LandlordPortalLayout } from "../components/landlord-portal-layout";
 import { DatePicker } from "../components/date-picker";
 import { buildOfferMessage } from "../components/chat-offer-message";
@@ -87,6 +87,10 @@ interface ApplicationRecord {
 
 interface RentalApplicationsResponse {
   applications: ApplicationRecord[];
+  total: number;
+  page: number;
+  pages: number;
+  limit: number;
 }
 
 const statusLabel: Record<RequestStatus, string> = {
@@ -199,7 +203,12 @@ export function LandlordRentals() {
   const apiBase = API_BASE;
   const [filterStatus, setFilterStatus] = useState<RequestStatus | "all">("pending");
   const [searchQuery, setSearchQuery] = useState("");
+  const [searchInput, setSearchInput] = useState("");
   const [applications, setApplications] = useState<ApplicationRecord[]>([]);
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
+  const [pages, setPages] = useState(1);
+  const LIMIT = 10;
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
   const [updatingApplicationId, setUpdatingApplicationId] = useState<string | null>(null);
@@ -233,38 +242,43 @@ export function LandlordRentals() {
     { step: 4, title: "Booking confirmed", subtitle: "The application becomes confirmed after acceptance and payment.", completed: false },
   ] as const;
 
-  useEffect(() => {
-    const loadApplications = async () => {
-      const token = localStorage.getItem("authToken");
-      if (!token) {
-        setError("Missing auth token");
-        setIsLoading(false);
-        return;
+  const loadApplications = useCallback(async () => {
+    const token = localStorage.getItem("authToken");
+    if (!token) {
+      setError("Missing auth token");
+      setIsLoading(false);
+      return;
+    }
+
+    setIsLoading(true);
+    setError("");
+
+    try {
+      const params = new URLSearchParams({ page: String(page), limit: String(LIMIT) });
+      if (filterStatus !== "all") params.set("status", filterStatus);
+      if (searchQuery) params.set("search", searchQuery);
+
+      const response = await fetch(`${apiBase}/api/rental-applications/landlord?${params.toString()}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (!response.ok) {
+        const payload = (await response.json()) as { message?: string };
+        throw new Error(payload.message ?? "Failed to load rental requests");
       }
 
-      try {
-        const response = await fetch(`${apiBase}/api/rental-applications/landlord`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
+      const payload = (await response.json()) as RentalApplicationsResponse;
+      setApplications(payload.applications);
+      setTotal(payload.total ?? 0);
+      setPages(payload.pages ?? 1);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to load rental requests");
+    } finally {
+      setIsLoading(false);
+    }
+  }, [apiBase, page, filterStatus, searchQuery]);
 
-        if (!response.ok) {
-          const payload = (await response.json()) as { message?: string };
-          throw new Error(payload.message ?? "Failed to load rental requests");
-        }
-
-        const payload = (await response.json()) as RentalApplicationsResponse;
-        setApplications(payload.applications);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "Failed to load rental requests");
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    void loadApplications();
-  }, [apiBase]);
+  useEffect(() => { void loadApplications(); }, [loadApplications]);
 
   useEffect(() => {
     setReplyMessage("");
@@ -282,33 +296,18 @@ export function LandlordRentals() {
     setIsProgressSheetOpen(false);
   }, [selectedApplicationId]);
 
-  const filteredApplications = useMemo(() => {
-    const searchValue = searchQuery.trim().toLowerCase();
-    return applications.filter((application) => {
-      const matchesStatus = filterStatus === "all" || application.status === filterStatus;
-      if (!searchValue) {
-        return matchesStatus;
-      }
+  const handleStatusChange = (val: RequestStatus | "all") => {
+    setFilterStatus(val);
+    setPage(1);
+    setSelectedApplicationId(null);
+  };
 
-      const matchesSearch =
-        application.listing.title.toLowerCase().includes(searchValue) ||
-        application.listing.city.toLowerCase().includes(searchValue) ||
-        application.tenant.name.toLowerCase().includes(searchValue) ||
-        application.tenant.email.toLowerCase().includes(searchValue);
-
-      return matchesStatus && matchesSearch;
-    });
-  }, [applications, filterStatus, searchQuery]);
-
-  const statusCounts = useMemo(
-    () => ({
-      all: applications.length,
-      pending: applications.filter((item) => item.status === "pending").length,
-      approved: applications.filter((item) => item.status === "approved").length,
-      rejected: applications.filter((item) => item.status === "rejected").length,
-    }),
-    [applications]
-  );
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setPage(1);
+    setSearchQuery(searchInput);
+    setSelectedApplicationId(null);
+  };
 
   const updateStatus = async (applicationId: string, status: "approved" | "rejected") => {
     const token = localStorage.getItem("authToken");
@@ -556,27 +555,32 @@ export function LandlordRentals() {
           <div className="relative">
             <select
               value={filterStatus}
-              onChange={(event) => setFilterStatus(event.target.value as RequestStatus | "all")}
+              onChange={(event) => handleStatusChange(event.target.value as RequestStatus | "all")}
               className="h-[58px] w-full appearance-none rounded-[14px] border border-[#A8B2BF] bg-white px-[16px] pr-[40px] text-[15px] font-medium text-[#0B2D3A] outline-none transition-colors focus:border-brand-primary"
             >
-              <option value="pending">Pending ({statusCounts.pending})</option>
-              <option value="approved">Approved ({statusCounts.approved})</option>
-              <option value="rejected">Rejected ({statusCounts.rejected})</option>
-              <option value="all">All ({statusCounts.all})</option>
+              <option value="pending">Pending</option>
+              <option value="approved">Approved</option>
+              <option value="rejected">Rejected</option>
+              <option value="all">All</option>
             </select>
             <ChevronDown className="pointer-events-none absolute right-[16px] top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-[#0B2D3A]" />
           </div>
 
-          <label className="flex h-[58px] items-center gap-[10px] rounded-[14px] border border-[#A8B2BF] bg-white px-[16px]">
-            <Search className="h-[18px] w-[18px] text-[#0B2D3A]" />
-            <input
-              type="text"
-              placeholder="Search by tenant, city, listing or email"
-              value={searchQuery}
-              onChange={(event) => setSearchQuery(event.target.value)}
-              className="w-full border-0 bg-transparent text-[15px] font-medium text-[#0B2D3A] outline-none placeholder:text-[#9AA7B4]"
-            />
-          </label>
+          <form onSubmit={handleSearchSubmit} className="flex items-center gap-[8px]">
+            <label className="flex flex-1 h-[58px] items-center gap-[10px] rounded-[14px] border border-[#A8B2BF] bg-white px-[16px]">
+              <Search className="h-[18px] w-[18px] text-[#0B2D3A] flex-shrink-0" />
+              <input
+                type="text"
+                placeholder="Search by tenant, city, listing or email"
+                value={searchInput}
+                onChange={(event) => setSearchInput(event.target.value)}
+                className="w-full border-0 bg-transparent text-[15px] font-medium text-[#0B2D3A] outline-none placeholder:text-[#9AA7B4]"
+              />
+            </label>
+            <button type="submit" className="h-[58px] px-[18px] rounded-[14px] bg-brand-primary text-white text-[14px] font-semibold hover:bg-brand-primary-dark transition-colors flex-shrink-0">
+              Search
+            </button>
+          </form>
         </div>
 
         <div className="mt-[20px] space-y-[14px]">
@@ -598,7 +602,14 @@ export function LandlordRentals() {
             </div>
           ))}
 
-          {filteredApplications.map((application) => (
+          {!isLoading && applications.length === 0 && (
+            <div className="py-[48px] text-center text-neutral-gray">
+              <FileText className="w-[40px] h-[40px] mx-auto mb-[12px] opacity-40" />
+              <p className="text-[14px]">{searchQuery || filterStatus !== "all" ? "No applications match your filters." : "No rental applications yet."}</p>
+            </div>
+          )}
+
+          {applications.map((application) => (
             <div
               key={application.id}
               onClick={() => setSelectedApplicationId(application.id)}
@@ -671,18 +682,34 @@ export function LandlordRentals() {
             </div>
           ))}
 
-          {!isLoading && filteredApplications.length === 0 && (
-            <div className="rounded-[24px] border border-[rgba(11,45,58,0.08)] bg-white p-[28px] sm:p-[56px] text-center shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
-              <FileText className="w-[48px] h-[48px] text-neutral-gray mx-auto mb-[16px]" />
-              <h3 className="text-neutral-black text-[18px] font-bold mb-[8px]">No rental requests found</h3>
-              <p className="text-neutral-gray text-[14px]">
-                {filterStatus === "all"
-                  ? "No tenants have submitted a request yet."
-                  : `No ${filterStatus} requests right now.`}
-              </p>
-            </div>
-          )}
         </div>
+
+        {!isLoading && pages > 1 && (
+          <div className="mt-[24px] flex items-center justify-between">
+            <p className="text-[13px] text-neutral-gray">
+              Showing {((page - 1) * LIMIT) + 1}–{Math.min(page * LIMIT, total)} of {total} requests
+            </p>
+            <div className="flex items-center gap-[8px]">
+              <button
+                type="button"
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={page === 1}
+                className="px-[14px] py-[8px] rounded-[12px] border border-[#A8B2BF] text-[13px] font-semibold text-[#0B2D3A] hover:bg-neutral-light-gray disabled:opacity-40 transition-colors"
+              >
+                Previous
+              </button>
+              <span className="text-[13px] font-medium text-neutral-black px-[8px]">{page} / {pages}</span>
+              <button
+                type="button"
+                onClick={() => setPage((p) => Math.min(pages, p + 1))}
+                disabled={page === pages}
+                className="px-[14px] py-[8px] rounded-[12px] border border-[#A8B2BF] text-[13px] font-semibold text-[#0B2D3A] hover:bg-neutral-light-gray disabled:opacity-40 transition-colors"
+              >
+                Next
+              </button>
+            </div>
+          </div>
+        )}
 
         {confirmTarget && (
           <div className="fixed inset-0 z-[70] bg-black/40 flex items-center justify-center p-[12px] sm:p-[24px]">
@@ -765,14 +792,14 @@ export function LandlordRentals() {
                       <span className="absolute left-[7.5%] right-[7.5%] top-[34px] h-[2px] bg-[#E3EAF0]" />
                       <div className="grid grid-cols-4 gap-[18px] relative">
                         {progressSteps.map((item) => {
-                          const isCurrent = item.completed || item.active;
+                          const isCurrent = item.completed || ('active' in item && item.active);
                           return (
                             <div key={item.step} className="flex flex-col items-center text-center">
                               <div
                                 className={`relative z-[1] flex items-center justify-center w-[42px] h-[42px] rounded-full font-bold text-[14px] shadow-sm ${
                                   item.completed
                                     ? "bg-accent-blue text-white"
-                                    : item.active
+                                    : ('active' in item && item.active)
                                     ? "bg-accent-blue text-white"
                                     : "bg-neutral-light-gray text-neutral-gray"
                                 }`}
@@ -818,7 +845,8 @@ export function LandlordRentals() {
                       </div>
 
                       <div className="px-[20px] pt-[14px] pb-[calc(16px+env(safe-area-inset-bottom))]">
-                        {progressSteps.map(({ step, title, subtitle, completed, active }) => {
+                        {progressSteps.map(({ step, title, subtitle, completed, ...rest }) => {
+                          const active = 'active' in rest ? (rest as { active?: boolean }).active : undefined;
                           const isCurrent = completed || active;
                           return (
                             <div key={step} className="relative pl-[32px] pb-[14px] last:pb-0">

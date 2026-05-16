@@ -5,6 +5,7 @@ import path from "path";
 import { z } from "zod";
 import { Types } from "mongoose";
 import { requireAuth, requireRole } from "../middleware/auth.js";
+import { env } from "../config/env.js";
 import { ListingModel } from "../models/Listing.js";
 import { RentalApplicationModel } from "../models/RentalApplication.js";
 import { ConversationModel } from "../models/Conversation.js";
@@ -187,7 +188,7 @@ router.post(
       documents.push({
         type: mappedType,
         name: file.originalname,
-        url: `${req.protocol}://${req.get("host")}/uploads/rental-applications/${filename}`,
+        url: `${env.SERVER_PUBLIC_URL ?? `${req.protocol}://${req.get("host")}`}/uploads/rental-applications/${filename}`,
         mimeType: file.mimetype,
         size: file.size,
       });
@@ -365,8 +366,60 @@ router.patch("/tenant/respond", requireAuth, async (req, res) => {
 
 router.get("/landlord", requireAuth, requireRole("landlord"), async (req, res) => {
   const landlordId = req.user!.sub;
+  const page = Math.max(1, Number(req.query.page) || 1);
+  const limit = Math.min(50, Math.max(1, Number(req.query.limit) || 10));
+  const status = typeof req.query.status === "string" ? req.query.status : "";
+  const search = typeof req.query.search === "string" ? req.query.search.trim() : "";
 
-  const applications = await RentalApplicationModel.find({ landlordId }).sort({ createdAt: -1 }).lean();
+  const filter: Record<string, unknown> = { landlordId };
+  if (["pending", "approved", "rejected", "paid"].includes(status)) {
+    filter.status = status;
+  }
+
+  let applicationIds: string[] | null = null;
+  if (search) {
+    const matchingTenants = await UserModel.find({
+      $or: [
+        { firstName: { $regex: search, $options: "i" } },
+        { lastName: { $regex: search, $options: "i" } },
+        { email: { $regex: search, $options: "i" } },
+      ],
+    })
+      .select("_id")
+      .lean();
+
+    const matchingListings = await ListingModel.find({
+      $or: [
+        { title: { $regex: search, $options: "i" } },
+        { city: { $regex: search, $options: "i" } },
+      ],
+    })
+      .select("_id")
+      .lean();
+
+    const tenantIdSet = matchingTenants.map((t) => t._id);
+    const listingIdSet = matchingListings.map((l) => l._id);
+
+    filter.$or = [
+      { tenantId: { $in: tenantIdSet } },
+      { listingId: { $in: listingIdSet } },
+    ];
+
+    const matchingApps = await RentalApplicationModel.find(filter).select("_id").lean();
+    applicationIds = matchingApps.map((a) => String(a._id));
+  }
+
+  const finalFilter: Record<string, unknown> = applicationIds
+    ? { _id: { $in: applicationIds }, landlordId }
+    : filter;
+  if (["pending", "approved", "rejected", "paid"].includes(status)) {
+    finalFilter.status = status;
+  }
+
+  const [applications, total] = await Promise.all([
+    RentalApplicationModel.find(finalFilter).sort({ createdAt: -1 }).skip((page - 1) * limit).limit(limit).lean(),
+    RentalApplicationModel.countDocuments(finalFilter),
+  ]);
 
   const listingIds = Array.from(new Set(applications.map((item) => String(item.listingId))));
   const tenantIds = Array.from(new Set(applications.map((item) => String(item.tenantId))));
@@ -446,6 +499,10 @@ router.get("/landlord", requireAuth, requireRole("landlord"), async (req, res) =
         },
       };
     }),
+    total,
+    page,
+    pages: Math.ceil(total / limit),
+    limit,
   });
 });
 

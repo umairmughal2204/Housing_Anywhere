@@ -14,9 +14,21 @@ import adminRoutes from "./routes/admin.js";
 export function createApp() {
   const app = express();
 
+  const allowedOrigins = [
+    env.CLIENT_ORIGIN,
+    env.CLIENT_ORIGIN.replace("://", "://www."),
+    "http://localhost:5173",
+    "http://localhost:4173",
+  ];
+
   app.use(
     cors({
-      origin: env.CLIENT_ORIGIN,
+      origin: (origin, callback) => {
+        // Allow requests with no origin (same-origin nginx proxy, curl, etc.)
+        if (!origin) return callback(null, true);
+        if (allowedOrigins.includes(origin)) return callback(null, true);
+        callback(new Error(`CORS blocked: ${origin}`));
+      },
       credentials: true,
     })
   );

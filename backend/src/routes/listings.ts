@@ -5,6 +5,7 @@ import fs from "fs/promises";
 import path from "path";
 import { Types } from "mongoose";
 import { requireAuth, requireRole } from "../middleware/auth.js";
+import { env } from "../config/env.js";
 import { ListingModel } from "../models/Listing.js";
 import { ListingInteractionModel } from "../models/ListingInteraction.js";
 import { UserModel } from "../models/User.js";
@@ -326,7 +327,8 @@ router.post("/upload-images", upload.array("images", 10), async (req, res) => {
     const fullPath = path.join(uploadsDir, filename);
     await fs.writeFile(fullPath, file.buffer);
 
-    savedUrls.push(`${req.protocol}://${req.get("host")}/uploads/${filename}`);
+    const base = env.SERVER_PUBLIC_URL ?? `${req.protocol}://${req.get("host")}`;
+    savedUrls.push(`${base}/uploads/${filename}`);
   }
 
   if (savedUrls.length === 0) {
@@ -338,8 +340,41 @@ router.post("/upload-images", upload.array("images", 10), async (req, res) => {
 });
 
 router.get("/mine", async (req, res) => {
-  const listings = await ListingModel.find({ landlordId: req.user!.sub }).sort({ createdAt: -1 }).lean();
-  res.json({ listings: listings.map((listing) => toListingResponse(listing)) });
+  const page = Math.max(1, Number(req.query.page) || 1);
+  const limit = Math.min(50, Math.max(1, Number(req.query.limit) || 12));
+  const search = typeof req.query.search === "string" ? req.query.search.trim() : "";
+  const status = typeof req.query.status === "string" ? req.query.status : "";
+
+  const filter: Record<string, unknown> = { landlordId: req.user!.sub };
+
+  if (search) {
+    filter.$or = [
+      { title: { $regex: search, $options: "i" } },
+      { city: { $regex: search, $options: "i" } },
+      { address: { $regex: search, $options: "i" } },
+    ];
+  }
+
+  if (["active", "inactive", "draft"].includes(status)) {
+    filter.status = status;
+  }
+
+  const [listings, total] = await Promise.all([
+    ListingModel.find(filter)
+      .sort({ createdAt: -1 })
+      .skip((page - 1) * limit)
+      .limit(limit)
+      .lean(),
+    ListingModel.countDocuments(filter),
+  ]);
+
+  res.json({
+    listings: listings.map((listing) => toListingResponse(listing)),
+    total,
+    page,
+    pages: Math.ceil(total / limit),
+    limit,
+  });
 });
 
 router.get("/mine/:id([0-9a-fA-F]{24})", async (req, res) => {
