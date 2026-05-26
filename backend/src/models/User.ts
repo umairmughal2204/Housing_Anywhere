@@ -1,60 +1,120 @@
 import { Schema, model, type InferSchemaType } from "mongoose";
 
+
+
 const landlordProfileSchema = new Schema(
+
   {
+
     businessType: {
+
       type: String,
+
       enum: ["individual", "dealer", "agency"],
+
       required: true,
+
     },
+
     numberOfProperties: { type: Number, required: true, default: 0 },
+
     countryOfRegistration: { type: String, required: true },
+
     phoneCountryCode: { type: String, required: true },
+
     phoneNumber: { type: String, required: true },
+
     businessName: { type: String },
+
     licenseNumber: { type: String },
+
     address: { type: String },
+
     city: { type: String },
+
     postalCode: { type: String },
+
   },
+
   { _id: false }
+
 );
+
+
 
 const userSchema = new Schema(
+
   {
+
     email: { type: String, required: true, unique: true, lowercase: true, trim: true },
+
     firstName: { type: String, required: true, trim: true },
+
     lastName: { type: String, required: true, trim: true },
+
     dateOfBirth: { type: String, required: false },
+
     gender: { type: String, enum: ["male", "female", "other"], required: false },
+
     cityOfResidence: { type: String, required: false, trim: true },
+
     nationality: { type: String, required: false, trim: true },
+
     occupation: { type: String, enum: ["student", "working", "other"], required: false },
+
     organization: { type: String, required: false, trim: true },
+
     aboutMe: { type: String, required: false, trim: true },
+
     languages: { type: [String], required: false, default: [] },
+
     phoneCountryCode: { type: String, required: false, default: "+1" },
+
     phoneNumber: { type: String, required: false, trim: true },
+
     emailVerified: { type: Boolean, required: true, default: false },
+
     phoneVerified: { type: Boolean, required: true, default: false },
+
     profilePictureUrl: { type: String, required: false, trim: true },
+
     passwordHash: { type: String, required: false },
+
     passwordResetTokenHash: { type: String, required: false },
+
     passwordResetExpiresAt: { type: Date, required: false },
+
     authProvider: { type: String, enum: ["local", "google"], required: true, default: "local" },
+
     googleId: { type: String, required: false, unique: true, sparse: true },
+
     role: { type: String, enum: ["tenant", "landlord", "admin"], required: true, default: "tenant" },
+
     isBanned: { type: Boolean, default: false },
+
     isLandlord: { type: Boolean, default: false },
+
     favoriteListingIds: { type: [Schema.Types.ObjectId], ref: "Listing", default: [] },
+
     landlordProfile: { type: landlordProfileSchema, required: false },
+
   },
+
   { timestamps: true }
+
 );
 
+
+
 export type UserDocument = Omit<InferSchemaType<typeof userSchema>, "role"> & {
+
   _id: Schema.Types.ObjectId;
+
   role: "tenant" | "landlord" | "admin";
+
   isBanned?: boolean;
+
 };
+
 export const UserModel = model("User", userSchema);
+
