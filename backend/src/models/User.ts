@@ -98,6 +98,19 @@ const userSchema = new Schema(
 
     landlordProfile: { type: landlordProfileSchema, required: false },
 
+    verificationStatus: {
+      type: String,
+      enum: ["pending", "verified", "rejected", "flagged"],
+      default: "pending",
+      index: true,
+    },
+
+    verificationNotes: { type: String, default: "" },
+
+    verifiedAt: { type: Date },
+
+    verifiedBy: { type: Schema.Types.ObjectId, ref: "User" },
+
   },
 
   { timestamps: true }

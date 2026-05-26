@@ -1,5 +1,5 @@
 import { Link, useNavigate } from "react-router";
-import { Calendar, CheckCircle2, Clock, CreditCard, FileText, Home, MapPin, MessageCircle, Search, XCircle } from "lucide-react";
+import { Calendar, CheckCircle2, Clock, CreditCard, FileText, Home, MapPin, MessageCircle, Search, XCircle, Trash2, AlertTriangle } from "lucide-react";
 import { Header } from "../components/header";
 import { Footer } from "../components/footer";
 import { useEffect, useState } from "react";
@@ -79,7 +79,34 @@ export function TenantApplications() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
   const [startingConversationId, setStartingConversationId] = useState<string | null>(null);
+  const [withdrawConfirmId, setWithdrawConfirmId] = useState<string | null>(null);
+  const [isWithdrawing, setIsWithdrawing] = useState(false);
+  const [withdrawError, setWithdrawError] = useState("");
   const navigate = useNavigate();
+
+  const handleWithdraw = async () => {
+    if (!withdrawConfirmId) return;
+    const token = localStorage.getItem("authToken");
+    if (!token) return;
+    setIsWithdrawing(true);
+    setWithdrawError("");
+    try {
+      const res = await fetch(`${API_BASE}/api/rental-applications/${withdrawConfirmId}/withdraw`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) {
+        const payload = (await res.json()) as { message?: string };
+        throw new Error(payload.message ?? "Failed to withdraw");
+      }
+      setApplications((prev) => prev.filter((a) => a.id !== withdrawConfirmId));
+      setWithdrawConfirmId(null);
+    } catch (err) {
+      setWithdrawError(err instanceof Error ? err.message : "Failed to withdraw application");
+    } finally {
+      setIsWithdrawing(false);
+    }
+  };
 
   useEffect(() => {
     if (isAuthLoading) {
@@ -316,6 +343,16 @@ export function TenantApplications() {
                       >
                         {application.listing.isAvailable ? "View listing" : "View status"}
                       </Link>
+                      {(application.status === "pending" || application.status === "rejected") && (
+                        <button
+                          type="button"
+                          onClick={() => setWithdrawConfirmId(application.id)}
+                          className="inline-flex items-center gap-[6px] px-[14px] py-[8px] rounded-[8px] border border-red-200 text-red-500 text-[13px] font-semibold hover:bg-red-50 transition-colors"
+                        >
+                          <Trash2 className="w-[13px] h-[13px]" />
+                          Withdraw
+                        </button>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -340,6 +377,45 @@ export function TenantApplications() {
           )}
         </div>
       </main>
+
+      {/* Withdraw confirm modal */}
+      {withdrawConfirmId && (
+        <div
+          className="fixed inset-0 z-[80] bg-black/50 flex items-end sm:items-center justify-center p-0 sm:p-[24px]"
+          onClick={(e) => { if (e.target === e.currentTarget && !isWithdrawing) { setWithdrawConfirmId(null); setWithdrawError(""); } }}
+        >
+          <div className="w-full sm:max-w-[440px] bg-white rounded-t-[20px] sm:rounded-[20px] p-[24px] sm:p-[28px] shadow-xl border border-[rgba(0,0,0,0.1)]">
+            <div className="w-[52px] h-[52px] rounded-full bg-red-100 flex items-center justify-center mx-auto mb-[16px]">
+              <AlertTriangle className="w-[24px] h-[24px] text-red-500" />
+            </div>
+            <h3 className="text-[18px] font-bold text-[#1A1A1A] text-center mb-[8px]">Withdraw Application?</h3>
+            <p className="text-[14px] text-[#6B6B6B] text-center leading-[1.6] mb-[8px]">
+              This will permanently delete your application. The landlord will no longer see it and you'll need to apply again if you change your mind.
+            </p>
+            {withdrawError && (
+              <p className="text-[13px] text-red-600 text-center mb-[8px]">{withdrawError}</p>
+            )}
+            <div className="flex flex-col-reverse sm:flex-row gap-[10px] mt-[20px]">
+              <button
+                type="button"
+                onClick={() => { setWithdrawConfirmId(null); setWithdrawError(""); }}
+                disabled={isWithdrawing}
+                className="flex-1 px-[16px] py-[11px] border border-[rgba(0,0,0,0.16)] text-[#1A1A1A] text-[14px] font-semibold rounded-[10px] hover:bg-[#F7F7F9] transition-colors disabled:opacity-50 text-center"
+              >
+                Keep Application
+              </button>
+              <button
+                type="button"
+                onClick={() => void handleWithdraw()}
+                disabled={isWithdrawing}
+                className="flex-1 px-[16px] py-[11px] bg-red-500 hover:bg-red-600 text-white text-[14px] font-semibold rounded-[10px] transition-colors disabled:opacity-60 text-center"
+              >
+                {isWithdrawing ? "Withdrawing..." : "Yes, Withdraw"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <Footer />
     </div>

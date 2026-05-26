@@ -11,7 +11,20 @@ router.use(requireAuth, requireAdmin);
 
 // ─── STATS ────────────────────────────────────────────────────────────────────
 router.get("/stats", async (_req, res) => {
-  const [totalUsers, totalLandlords, totalTenants, totalListings, totalApplications, paidApplications] =
+  const [
+    totalUsers,
+    totalLandlords,
+    totalTenants,
+    totalListings,
+    totalApplications,
+    paidApplications,
+    pendingVerifications,
+    flaggedUsers,
+    paidAwaitingMoveIn,
+    payoutsReady,
+    payoutsReleased,
+    payoutsBlocked,
+  ] =
     await Promise.all([
       UserModel.countDocuments({ role: { $ne: "admin" } }),
       UserModel.countDocuments({ role: "landlord" }),
@@ -19,6 +32,12 @@ router.get("/stats", async (_req, res) => {
       ListingModel.countDocuments(),
       RentalApplicationModel.countDocuments(),
       RentalApplicationModel.find({ "paymentDetails.isPaid": true }).select("paymentDetails.paidAmount").lean(),
+      UserModel.countDocuments({ role: { $ne: "admin" }, verificationStatus: "pending" }),
+      UserModel.countDocuments({ role: { $ne: "admin" }, verificationStatus: "flagged" }),
+      RentalApplicationModel.countDocuments({ "paymentDetails.isPaid": true, keyReceivedConfirmed: { $ne: true } }),
+      RentalApplicationModel.countDocuments({ payoutStatus: "ready" }),
+      RentalApplicationModel.countDocuments({ payoutStatus: "released" }),
+      RentalApplicationModel.countDocuments({ payoutStatus: "blocked" }),
     ]);
 
   const revenue = paidApplications.reduce((sum, a) => sum + (a.paymentDetails?.paidAmount ?? 0), 0);
@@ -31,6 +50,12 @@ router.get("/stats", async (_req, res) => {
     totalApplications,
     paidApplications: paidApplications.length,
     revenue,
+    pendingVerifications,
+    flaggedUsers,
+    paidAwaitingMoveIn,
+    payoutsReady,
+    payoutsReleased,
+    payoutsBlocked,
   });
 });
 
@@ -40,6 +65,7 @@ router.get("/users", async (req, res) => {
   const limit = Math.min(50, Math.max(1, Number(req.query.limit) || 20));
   const search = typeof req.query.search === "string" ? req.query.search.trim() : "";
   const role = typeof req.query.role === "string" ? req.query.role : "";
+  const verificationStatus = typeof req.query.verificationStatus === "string" ? req.query.verificationStatus : "";
 
   const filter: Record<string, unknown> = { role: { $ne: "admin" } };
   if (search) {
@@ -52,10 +78,14 @@ router.get("/users", async (req, res) => {
   if (role === "tenant" || role === "landlord") {
     filter.role = role;
   }
+  if (["pending", "verified", "rejected", "flagged"].includes(verificationStatus)) {
+    filter.verificationStatus = verificationStatus;
+  }
 
   const [users, total] = await Promise.all([
     UserModel.find(filter)
       .select("firstName lastName email role isBanned isLandlord createdAt profilePictureUrl")
+      .select("firstName lastName email role isBanned isLandlord createdAt profilePictureUrl emailVerified phoneVerified verificationStatus verificationNotes verifiedAt")
       .sort({ createdAt: -1 })
       .skip((page - 1) * limit)
       .limit(limit)
@@ -70,6 +100,11 @@ router.get("/users", async (req, res) => {
       email: u.email,
       role: u.role,
       isBanned: u.isBanned ?? false,
+      emailVerified: u.emailVerified ?? false,
+      phoneVerified: u.phoneVerified ?? false,
+      verificationStatus: u.verificationStatus ?? "pending",
+      verificationNotes: u.verificationNotes ?? "",
+      verifiedAt: u.verifiedAt,
       createdAt: u.createdAt,
       profilePictureUrl: u.profilePictureUrl,
     })),
@@ -119,6 +154,47 @@ router.patch("/users/:id/role", async (req, res) => {
   }
 
   res.json({ id: user._id.toString(), role: user.role });
+});
+
+router.patch("/users/:id/verification", async (req, res) => {
+  const parsed = z.object({
+    verificationStatus: z.enum(["pending", "verified", "rejected", "flagged"]),
+    verificationNotes: z.string().max(2000).optional().default(""),
+  }).safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ message: "Invalid verification payload", errors: parsed.error.flatten() });
+    return;
+  }
+
+  const update: Record<string, unknown> = {
+    verificationStatus: parsed.data.verificationStatus,
+    verificationNotes: parsed.data.verificationNotes,
+  };
+  if (parsed.data.verificationStatus === "verified") {
+    update.verifiedAt = new Date();
+    update.verifiedBy = req.user!.sub;
+  } else {
+    update.verifiedAt = undefined;
+    update.verifiedBy = undefined;
+  }
+
+  const user = await UserModel.findOneAndUpdate(
+    { _id: req.params.id, role: { $ne: "admin" } },
+    { $set: update },
+    { new: true }
+  ).lean();
+
+  if (!user) {
+    res.status(404).json({ message: "User not found" });
+    return;
+  }
+
+  res.json({
+    id: user._id.toString(),
+    verificationStatus: user.verificationStatus ?? "pending",
+    verificationNotes: user.verificationNotes ?? "",
+    verifiedAt: user.verifiedAt,
+  });
 });
 
 // ─── LISTINGS ─────────────────────────────────────────────────────────────────
@@ -211,17 +287,25 @@ router.get("/applications", async (req, res) => {
   const page = Math.max(1, Number(req.query.page) || 1);
   const limit = Math.min(50, Math.max(1, Number(req.query.limit) || 20));
   const status = typeof req.query.status === "string" ? req.query.status : "";
+  const approvalStatus = typeof req.query.approvalStatus === "string" ? req.query.approvalStatus : "";
+  const payoutStatus = typeof req.query.payoutStatus === "string" ? req.query.payoutStatus : "";
 
   const filter: Record<string, unknown> = {};
   if (["pending", "approved", "rejected", "paid"].includes(status)) {
     filter.status = status;
   }
+  if (["pending", "approved", "rejected"].includes(approvalStatus)) {
+    filter.adminApprovalStatus = approvalStatus;
+  }
+  if (["not_ready", "ready", "released", "blocked"].includes(payoutStatus)) {
+    filter.payoutStatus = payoutStatus;
+  }
 
   const [applications, total] = await Promise.all([
     RentalApplicationModel.find(filter)
-      .select("status paymentDetails.isPaid paymentDetails.paidAmount paymentDetails.currency createdAt tenantId landlordId listingId")
-      .populate("tenantId", "firstName lastName email")
-      .populate("landlordId", "firstName lastName email")
+      .select("status adminApprovalStatus adminNotes tenantMoveInConfirmed tenantMoveInConfirmedAt keyReceivedConfirmed keyReceivedConfirmedAt payoutStatus payoutReleasedAt payoutNotes paymentDetails.isPaid paymentDetails.paymentStatus paymentDetails.paidAmount paymentDetails.currency paymentDetails.paidAt createdAt moveInDate moveOutDate tenantId landlordId listingId")
+      .populate("tenantId", "firstName lastName email verificationStatus")
+      .populate("landlordId", "firstName lastName email verificationStatus")
       .populate("listingId", "title city")
       .sort({ createdAt: -1 })
       .skip((page - 1) * limit)
@@ -239,17 +323,101 @@ router.get("/applications", async (req, res) => {
         id: a._id.toString(),
         status: a.status,
         isPaid: a.paymentDetails?.isPaid ?? false,
+        paymentStatus: a.paymentDetails?.paymentStatus ?? "",
         paidAmount: a.paymentDetails?.paidAmount ?? 0,
         currency: a.paymentDetails?.currency ?? "EUR",
+        paidAt: a.paymentDetails?.paidAt,
+        adminApprovalStatus: a.adminApprovalStatus ?? "pending",
+        adminNotes: a.adminNotes ?? "",
+        tenantMoveInConfirmed: a.tenantMoveInConfirmed ?? false,
+        tenantMoveInConfirmedAt: a.tenantMoveInConfirmedAt,
+        keyReceivedConfirmed: a.keyReceivedConfirmed ?? false,
+        keyReceivedConfirmedAt: a.keyReceivedConfirmedAt,
+        payoutStatus: a.payoutStatus ?? "not_ready",
+        payoutReleasedAt: a.payoutReleasedAt,
+        payoutNotes: a.payoutNotes ?? "",
+        moveInDate: a.moveInDate,
+        moveOutDate: a.moveOutDate,
         createdAt: a.createdAt,
-        tenant: tenant ? { id: tenant._id?.toString(), name: `${tenant.firstName ?? ""} ${tenant.lastName ?? ""}`.trim(), email: tenant.email } : null,
-        landlord: landlord ? { id: landlord._id?.toString(), name: `${landlord.firstName ?? ""} ${landlord.lastName ?? ""}`.trim(), email: landlord.email } : null,
+        tenant: tenant ? { id: tenant._id?.toString(), name: `${tenant.firstName ?? ""} ${tenant.lastName ?? ""}`.trim(), email: tenant.email, verificationStatus: (tenant as any).verificationStatus ?? "pending" } : null,
+        landlord: landlord ? { id: landlord._id?.toString(), name: `${landlord.firstName ?? ""} ${landlord.lastName ?? ""}`.trim(), email: landlord.email, verificationStatus: (landlord as any).verificationStatus ?? "pending" } : null,
         listing: listing ? { id: listing._id?.toString(), title: listing.title, city: listing.city } : null,
       };
     }),
     total,
     page,
     pages: Math.ceil(total / limit),
+  });
+});
+
+router.patch("/applications/:id/approval", async (req, res) => {
+  const parsed = z.object({
+    adminApprovalStatus: z.enum(["pending", "approved", "rejected"]),
+    adminNotes: z.string().max(2000).optional().default(""),
+  }).safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ message: "Invalid approval payload", errors: parsed.error.flatten() });
+    return;
+  }
+
+  const application = await RentalApplicationModel.findByIdAndUpdate(
+    req.params.id,
+    {
+      $set: {
+        adminApprovalStatus: parsed.data.adminApprovalStatus,
+        adminNotes: parsed.data.adminNotes,
+        status: parsed.data.adminApprovalStatus === "pending" ? "pending" : parsed.data.adminApprovalStatus,
+      },
+    },
+    { new: true }
+  ).lean();
+
+  if (!application) {
+    res.status(404).json({ message: "Application not found" });
+    return;
+  }
+
+  res.json({
+    id: application._id.toString(),
+    status: application.status,
+    adminApprovalStatus: application.adminApprovalStatus ?? "pending",
+    adminNotes: application.adminNotes ?? "",
+  });
+});
+
+router.patch("/applications/:id/payout", async (req, res) => {
+  const parsed = z.object({
+    payoutStatus: z.enum(["not_ready", "ready", "released", "blocked"]),
+    payoutNotes: z.string().max(2000).optional().default(""),
+  }).safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ message: "Invalid payout payload", errors: parsed.error.flatten() });
+    return;
+  }
+
+  const application = await RentalApplicationModel.findById(req.params.id);
+  if (!application) {
+    res.status(404).json({ message: "Application not found" });
+    return;
+  }
+
+  const isPaid = Boolean(application.paymentDetails?.isPaid);
+  const keyConfirmed = Boolean(application.keyReceivedConfirmed && application.tenantMoveInConfirmed);
+  if (["ready", "released"].includes(parsed.data.payoutStatus) && (!isPaid || !keyConfirmed)) {
+    res.status(400).json({ message: "Payout requires paid payment and tenant key/accommodation confirmation" });
+    return;
+  }
+
+  application.payoutStatus = parsed.data.payoutStatus as any;
+  application.payoutNotes = parsed.data.payoutNotes;
+  application.payoutReleasedAt = parsed.data.payoutStatus === "released" ? new Date() : undefined;
+  await application.save();
+
+  res.json({
+    id: application._id.toString(),
+    payoutStatus: application.payoutStatus,
+    payoutNotes: application.payoutNotes,
+    payoutReleasedAt: application.payoutReleasedAt,
   });
 });
 

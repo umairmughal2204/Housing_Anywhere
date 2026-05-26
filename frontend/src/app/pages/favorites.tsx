@@ -1,6 +1,6 @@
 import { Header } from "../components/header";
 import { Footer } from "../components/footer";
-import { Heart, MapPin, MessageCircle, CalendarDays, BedDouble, Ruler } from "lucide-react";
+import { Heart, MapPin, MessageCircle, User as UserIcon } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import { Link } from "react-router";
@@ -140,82 +140,59 @@ export function Favorites() {
 
           {/* Favorites Grid */}
           {favorites.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-[24px]">
+            <div className="grid grid-cols-1 gap-[24px] md:grid-cols-2 xl:grid-cols-4">
               {favorites.map((property) => (
-                <div key={property.id} className="bg-white border border-[rgba(0,0,0,0.08)] rounded-[14px] overflow-hidden group hover:shadow-[0_14px_36px_rgba(0,0,0,0.12)] transition-shadow">
+                <div
+                  key={property.id}
+                  className="group overflow-hidden rounded-[8px] border border-[rgba(15,45,54,0.16)] bg-white transition-shadow duration-200 hover:shadow-[0_10px_24px_rgba(15,45,54,0.10)]"
+                >
                   {/* Image */}
-                  <div className="relative aspect-[16/10] overflow-hidden">
-                    <img
-                      src={property.image || fallbackImage}
-                      alt={property.title}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                    />
-                    <button
-                      onClick={() => void removeFavorite(property.id)}
-                      className="absolute top-[16px] right-[16px] w-[40px] h-[40px] bg-white/90 backdrop-blur flex items-center justify-center hover:bg-white transition-colors"
-                    >
-                      <Heart className="w-[20px] h-[20px] text-[#FF4B27] fill-[#FF4B27]" />
-                    </button>
-                  </div>
+                  <Link to={`/listing/${property.id}`} className="block">
+                    <div className="relative aspect-[16/10] overflow-hidden bg-[#F7F7F9]">
+                      <img
+                        src={property.image || fallbackImage}
+                        alt={property.title}
+                        className="w-full h-full object-cover object-center"
+                      />
+                      <button
+                        onClick={(e) => { e.preventDefault(); void removeFavorite(property.id); }}
+                        className="absolute top-[12px] right-[12px] w-[32px] h-[32px] bg-white/90 hover:bg-white flex items-center justify-center transition-colors rounded-full"
+                        aria-label="Remove from favorites"
+                      >
+                        <Heart className="w-[16px] h-[16px] fill-[#0891B2] text-[#0891B2]" />
+                      </button>
+                    </div>
+                  </Link>
 
                   {/* Content */}
-                  <div className="p-[24px]">
-                    <Link to={`/property/${property.id}`}>
-                      <h3 className="text-[#1A1A1A] text-[20px] font-bold mb-[8px] hover:text-brand-primary transition-colors leading-[1.3]">
+                  <div className="px-[16px] pt-[14px] pb-[12px]">
+                    <Link to={`/listing/${property.id}`}>
+                      <h3 className="mb-[10px] line-clamp-2 text-[16px] font-semibold leading-[1.25] text-[#12303B] hover:text-brand-primary transition-colors">
                         {property.title}
                       </h3>
                     </Link>
-                    <div className="flex items-center gap-[8px] text-[#6B6B6B] text-[14px] mb-[16px]">
-                      <MapPin className="w-[14px] h-[14px]" />
-                      {property.address}, {property.city}
+                    <div className="mb-[12px] flex items-center gap-[12px] text-[13px] text-[#3E5963]">
+                      <div className="flex items-center gap-[4px]"><MapPin className="h-[12px] w-[12px]" /><span>{property.area} m²</span></div>
+                      <div className="flex items-center gap-[4px]"><UserIcon className="h-[12px] w-[12px]" /><span>{property.bedrooms} bedrooms</span></div>
+                    </div>
+                    <div className="mb-[10px] flex items-baseline gap-[4px]">
+                      <span className="text-[18px] font-bold text-[#12303B]">€{property.monthlyRent.toLocaleString()}</span>
+                      <span className="text-[14px] text-[#4F6771]">/month</span>
+                    </div>
+                    <div className="mt-[8px] flex items-center gap-[8px] border-t border-[rgba(15,45,54,0.12)] pt-[12px] text-[14px] font-semibold text-[#12303B]">
+                      <div className="h-[10px] w-[10px] rounded-full bg-[#17A45A] flex-shrink-0" />
+                      Available from {new Date(property.availableFrom).toLocaleDateString("en-GB")}
                     </div>
 
-                    {/* Stats */}
-                    <div className="flex items-center gap-[16px] mb-[16px] pb-[16px] border-b border-[rgba(0,0,0,0.08)]">
-                      <div className="flex items-center gap-[6px] text-[#6B6B6B] text-[14px]">
-                        <BedDouble className="w-[14px] h-[14px]" />
-                        {property.bedrooms} bed
-                      </div>
-                      <div className="w-[4px] h-[4px] bg-[#6B6B6B] rounded-full"></div>
-                      <div className="flex items-center gap-[6px] text-[#6B6B6B] text-[14px]">
-                        <Ruler className="w-[14px] h-[14px]" />
-                        {property.area}m²
-                      </div>
-                    </div>
-
-                    {/* Price & Availability */}
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <div className="text-brand-primary text-[24px] font-bold">
-                          €{property.monthlyRent.toLocaleString()}
-                        </div>
-                        <div className="text-[#6B6B6B] text-[12px]">per month</div>
-                      </div>
-                      <div className="text-right">
-                        <div className="flex items-center gap-[5px] text-[#008A52] text-[12px] font-semibold">
-                          <CalendarDays className="w-[12px] h-[12px]" />
-                          {new Date(property.availableFrom).toLocaleDateString("en-GB")}
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Action Buttons */}
-                    <div className="flex gap-[8px] mt-[16px] pt-[16px] border-t border-[rgba(0,0,0,0.08)]">
-                      <Link
-                        to={`/property/${property.id}`}
-                        className="flex-1 px-[16px] py-[10px] bg-brand-primary text-white text-[14px] font-semibold text-center hover:bg-brand-primary-dark transition-colors rounded-[8px]"
-                      >
-                        View Details
-                      </Link>
-                      <button
-                        onClick={() => void openConversation(property.id)}
-                        disabled={openingConversationFor === property.id}
-                        className="px-[16px] py-[10px] border border-[rgba(0,0,0,0.16)] text-[#1A1A1A] text-[14px] font-semibold hover:bg-[#F7F7F9] transition-colors rounded-[8px] inline-flex items-center gap-[6px]"
-                      >
-                        <MessageCircle className="w-[14px] h-[14px]" />
-                        {openingConversationFor === property.id ? "Opening..." : "Message"}
-                      </button>
-                    </div>
+                    {/* Message button */}
+                    <button
+                      onClick={() => void openConversation(property.id)}
+                      disabled={openingConversationFor === property.id}
+                      className="mt-[10px] w-full flex items-center justify-center gap-[6px] px-[14px] py-[9px] border border-[rgba(15,45,54,0.16)] text-[#12303B] text-[13px] font-semibold hover:bg-[#F7F9FC] transition-colors rounded-[8px]"
+                    >
+                      <MessageCircle className="w-[14px] h-[14px]" />
+                      {openingConversationFor === property.id ? "Opening..." : "Message landlord"}
+                    </button>
                   </div>
                 </div>
               ))}

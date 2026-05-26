@@ -842,10 +842,10 @@ export function PropertyListing() {
 
     return total;
   })();
-  const hasSelectedDateRange = Boolean(selectedStartDate && selectedEndDate);
-  const rentLineLabel = hasSelectedDateRange ? "Rent for selected period" : "First month's rent";
   const firstMonthRentAmount = listing?.monthlyRent ?? 0;
-  const amountToConfirmStay = rentForSelectedPeriod + tenantProtectionFee;
+  const rentLineLabel = "First month's rent";
+  const hasSelectedDateRange = Boolean(selectedStartDate && selectedEndDate);
+  const amountToConfirmStay = firstMonthRentAmount + tenantProtectionFee;
   const rentBreakdownRows = useMemo(() => {
     if (!listing || !selectedStartDate || !selectedEndDate || selectedEndDate < selectedStartDate) {
       return [] as Array<{
@@ -1917,11 +1917,11 @@ export function PropertyListing() {
                             <span className="relative inline-flex items-center group">
                               <Info className="w-[14px] h-[14px] cursor-help" aria-hidden="true" />
                               <span className="pointer-events-none absolute left-1/2 top-[calc(100%+8px)] z-[20] -translate-x-1/2 whitespace-nowrap rounded-[4px] bg-[#0F2D36] px-[8px] py-[6px] text-[12px] leading-[1.3] font-medium text-white opacity-0 shadow-[0_8px_24px_rgba(0,0,0,0.24)] transition-opacity duration-150 group-hover:opacity-100">
-                                This is the rent total for your selected rental period.
+                                Only the first month's rent is charged now. Remaining months are paid directly to the landlord.
                               </span>
                             </span>
                           </p>
-                          <p className="text-[#2F4653] text-[15px] leading-[1.2]">{formatCurrency(rentForSelectedPeriod, listing?.currency)}</p>
+                          <p className="text-[#2F4653] text-[15px] leading-[1.2]">{formatCurrency(firstMonthRentAmount, listing?.currency)}</p>
                         </div>
                         <div className="flex items-center justify-between">
                           <p className="text-[#2F4653] text-[15px] leading-[1.2] flex items-center gap-[6px]">
@@ -2163,7 +2163,7 @@ export function PropertyListing() {
                   <div className="space-y-[10px] border-b border-[rgba(15,45,54,0.12)] pb-[16px]">
                     <div className="flex items-center justify-between gap-[12px]">
                       <p className="text-[#0F2D36] text-[16px] leading-[1.35]">{rentLineLabel}</p>
-                      <p className="text-[#0F2D36] text-[16px] leading-[1.35] font-semibold">{formatCurrency(rentForSelectedPeriod, listing.currency)}</p>
+                      <p className="text-[#0F2D36] text-[16px] leading-[1.35] font-semibold">{formatCurrency(firstMonthRentAmount, listing.currency)}</p>
                     </div>
 
                     <div className="flex items-center justify-between gap-[12px]">

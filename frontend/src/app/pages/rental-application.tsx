@@ -279,8 +279,9 @@ export function RentalApplication() {
     rentBreakdownRows.length > 0
       ? rentBreakdownRows.reduce((sum, row) => sum + row.amount, 0)
       : listing?.monthlyRent ?? 0;
-  const rentLineLabel = selectedStartDate && selectedEndDate ? "Rent for selected period" : "First month's rent";
-  const totalAmount = rentForSelectedPeriod + tenantProtectionFee + (addRentGuarantee ? RENT_GUARANTEE_FEE : 0);
+  const firstMonthRent = listing?.monthlyRent ?? 0;
+  const rentLineLabel = "First month's rent";
+  const totalAmount = firstMonthRent + tenantProtectionFee + (addRentGuarantee ? RENT_GUARANTEE_FEE : 0);
 
   const getStepOneValidationError = () => {
     const day = Number(dateOfBirth.day);
@@ -2134,19 +2135,18 @@ export function RentalApplication() {
                       <button
                         type="button"
                         onClick={() => setAddRentGuarantee((prev) => !prev)}
-                        className={`inline-flex items-center gap-[10px] rounded-full border px-[10px] py-[6px] transition-colors ${
-                          addRentGuarantee
-                            ? "border-[#0E7A48] bg-[#EAF8F1] text-[#0E7A48]"
-                            : "border-[rgba(15,45,54,0.2)] bg-white text-[#4F6670] hover:bg-[#F6FAFC]"
-                        }`}
                         aria-label="Toggle rent guarantee"
-                        role="switch"
-                        aria-checked={addRentGuarantee}
+                        aria-pressed={addRentGuarantee}
+                        className={`inline-flex items-center gap-[6px] rounded-[10px] px-[14px] py-[9px] text-[13px] font-bold transition-all border ${
+                          addRentGuarantee
+                            ? "bg-[#EAF8F1] border-[#0E7A48] text-[#0E7A48] hover:bg-[#D5F2E4]"
+                            : "bg-[#0F2D36] border-[#0F2D36] text-white hover:bg-[#1A3D4D]"
+                        }`}
                       >
-                        <span className={`relative w-[46px] h-[24px] rounded-full transition-colors ${addRentGuarantee ? "bg-[#0F2D36]" : "bg-[#D8DEE3]"}`}>
-                          <span className={`absolute top-[2px] w-[20px] h-[20px] rounded-full bg-white shadow transition-transform ${addRentGuarantee ? "translate-x-[24px]" : "translate-x-[2px]"}`} />
-                        </span>
-                        <span className="text-[13px] font-semibold whitespace-nowrap">{addRentGuarantee ? "Added" : "Add"}</span>
+                        {addRentGuarantee
+                          ? <><Check className="w-[14px] h-[14px]" /> Added</>
+                          : <><Plus className="w-[14px] h-[14px]" /> Add to total</>
+                        }
                       </button>
                     </div>
 

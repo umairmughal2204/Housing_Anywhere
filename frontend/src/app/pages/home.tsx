@@ -1237,9 +1237,9 @@ export function Home() {
                     </div>
                     <Link
                       to="/listings"
-                      className="inline-flex items-center gap-[8px] px-[16px] py-[10px] bg-[#1A1A1A] text-white text-[14px] font-semibold hover:bg-[#0891B2] transition-colors"
+                      className="inline-flex items-center gap-[8px] px-[24px] py-[13px] bg-brand-primary text-white text-[15px] font-bold rounded-[14px] hover:bg-brand-primary-dark transition-colors shadow-[0_4px_14px_rgba(11,165,199,0.28)]"
                     >
-                      Explore listings
+                      Explore properties
                       <ArrowRight className="w-[16px] h-[16px]" />
                     </Link>
                   </div>
@@ -1398,6 +1398,7 @@ export function Home() {
         </div>
       </section>
 
+      {/* TESTIMONIALS SECTION — commented out temporarily
       <section className="relative overflow-hidden bg-[#012F3B] pt-[72px] pb-[120px] text-white min-h-[560px] md:min-h-[640px]">
         <div className="mx-auto flex max-w-[1040px] flex-col items-center px-[32px] text-center">
           <div className={`mb-[12px] flex h-[78px] w-[78px] items-center justify-center rounded-full text-[30px] font-black text-black ${currentTestimonial.avatarBg}`}>
@@ -1459,6 +1460,7 @@ export function Home() {
 
         <div className="pointer-events-none absolute bottom-[-112px] left-1/2 h-[224px] w-[130%] -translate-x-1/2 rounded-[50%] bg-[#F2F3F4]" />
       </section>
+      */}
 
       <section className="bg-[#F2F3F4] py-[64px] md:py-[74px]">
         <div className="mx-auto max-w-[1240px] px-[32px]">

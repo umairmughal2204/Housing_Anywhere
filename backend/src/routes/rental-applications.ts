@@ -88,6 +88,11 @@ const tenantResponseSchema = z.object({
   decision: z.enum(["decline", "change_dates"]),
 });
 
+const moveInConfirmationSchema = z.object({
+  tenantMoveInConfirmed: z.boolean(),
+  keyReceivedConfirmed: z.boolean(),
+});
+
 function mapDocumentType(fieldname: string): "enrollment" | "employment" | "income" | "profile" | null {
   if (fieldname === "enrollmentProof") return "enrollment";
   if (fieldname === "employmentProof") return "employment";
@@ -615,6 +620,69 @@ router.get("/landlord/bookings", requireAuth, async (req, res) => {
     console.error("Error fetching landlord bookings:", err);
     return res.status(500).json({ message: "Failed to fetch bookings" });
   }
+});
+
+router.delete("/:id/withdraw", requireAuth, requireRole("tenant"), async (req, res) => {
+  const application = await RentalApplicationModel.findOne({
+    _id: new Types.ObjectId(req.params.id),
+    tenantId: new Types.ObjectId(req.user!.sub),
+  });
+
+  if (!application) {
+    res.status(404).json({ message: "Application not found" });
+    return;
+  }
+
+  if (application.status === "approved" || application.status === "paid") {
+    res.status(400).json({ message: "Cannot withdraw an approved or paid application. Contact support if you need help." });
+    return;
+  }
+
+  await RentalApplicationModel.deleteOne({ _id: application._id });
+  res.json({ message: "Application withdrawn successfully" });
+});
+
+router.patch("/:id/move-in-confirmation", requireAuth, requireRole("tenant"), async (req, res) => {
+  const parsed = moveInConfirmationSchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ message: "Invalid move-in confirmation payload", errors: parsed.error.flatten() });
+    return;
+  }
+
+  const application = await RentalApplicationModel.findOne({
+    _id: new Types.ObjectId(req.params.id),
+    tenantId: new Types.ObjectId(req.user!.sub),
+  });
+
+  if (!application) {
+    res.status(404).json({ message: "Rental application not found" });
+    return;
+  }
+
+  if (!application.paymentDetails?.isPaid) {
+    res.status(400).json({ message: "Move-in confirmation requires a paid booking" });
+    return;
+  }
+
+  const now = new Date();
+  application.tenantMoveInConfirmed = parsed.data.tenantMoveInConfirmed;
+  application.keyReceivedConfirmed = parsed.data.keyReceivedConfirmed;
+  application.tenantMoveInConfirmedAt = parsed.data.tenantMoveInConfirmed ? now : undefined;
+  application.keyReceivedConfirmedAt = parsed.data.keyReceivedConfirmed ? now : undefined;
+  if (parsed.data.tenantMoveInConfirmed && parsed.data.keyReceivedConfirmed && application.payoutStatus === "not_ready") {
+    application.payoutStatus = "ready" as any;
+  }
+
+  await application.save();
+
+  res.json({
+    id: application._id.toString(),
+    tenantMoveInConfirmed: application.tenantMoveInConfirmed,
+    tenantMoveInConfirmedAt: application.tenantMoveInConfirmedAt,
+    keyReceivedConfirmed: application.keyReceivedConfirmed,
+    keyReceivedConfirmedAt: application.keyReceivedConfirmedAt,
+    payoutStatus: application.payoutStatus,
+  });
 });
 
 export default router;

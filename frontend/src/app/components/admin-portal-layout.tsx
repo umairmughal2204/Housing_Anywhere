@@ -23,7 +23,7 @@ const navigation = [
   { name: "Dashboard", href: "/admin", icon: LayoutDashboard },
   { name: "Users", href: "/admin/users", icon: Users },
   { name: "Listings", href: "/admin/listings", icon: Home },
-  { name: "Applications", href: "/admin/applications", icon: FileText },
+  { name: "Bookings", href: "/admin/applications", icon: FileText },
 ];
 
 export function AdminPortalLayout({ children }: AdminPortalLayoutProps) {
@@ -57,11 +57,11 @@ export function AdminPortalLayout({ children }: AdminPortalLayoutProps) {
     <div className="min-h-screen bg-neutral-light-gray">
       {/* Top Header */}
       <header className="bg-white border-b border-[rgba(0,0,0,0.08)] sticky top-0 z-50">
-        <div className="px-[32px] py-[16px] flex items-center justify-between">
+        <div className="px-[16px] sm:px-[32px] py-[12px] sm:py-[16px] flex items-center justify-between">
           {/* Left: Logo & Portal Title */}
           <div className="flex items-center gap-[24px]">
             <Link to="/admin" className="flex items-center gap-[8px]">
-              <BrandLogo className="h-[68px] sm:h-[80px]" />
+              <BrandLogo className="h-[48px] sm:h-[68px]" />
             </Link>
 
             <div className="hidden md:block h-[24px] w-[1px] bg-[rgba(0,0,0,0.08)]" />
@@ -196,8 +196,8 @@ export function AdminPortalLayout({ children }: AdminPortalLayoutProps) {
 
       <div className="flex">
         {/* Desktop Sidebar */}
-        <aside className="hidden md:block w-[240px] bg-white border-r border-[rgba(0,0,0,0.08)] min-h-[calc(100vh-73px)] sticky top-[73px]">
-          <nav className="py-[24px]">
+        <aside className="hidden md:flex md:flex-col w-[240px] bg-white border-r border-[rgba(0,0,0,0.08)] h-[calc(100vh-73px)] sticky top-[73px] overflow-y-auto flex-shrink-0">
+          <nav className="py-[24px] flex-1">
             {navigation.map((item) => {
               const Icon = item.icon;
               const active = isActive(item.href);
@@ -230,7 +230,7 @@ export function AdminPortalLayout({ children }: AdminPortalLayoutProps) {
           </div>
         </aside>
 
-        <main className="flex-1 min-h-[calc(100vh-73px)] p-[24px] md:p-[32px]">
+        <main className="flex-1 min-h-[calc(100vh-73px)] p-[14px] sm:p-[24px] md:p-[32px] overflow-x-hidden">
           {children}
         </main>
       </div>

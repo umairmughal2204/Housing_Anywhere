@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Users, Home, FileText, DollarSign, UserCheck, UserX } from "lucide-react";
+import { Users, Home, FileText, DollarSign, UserCheck, UserX, AlertTriangle, KeyRound, Banknote } from "lucide-react";
 import { AdminPortalLayout } from "../components/admin-portal-layout";
 import { API_BASE } from "../config";
 
@@ -11,6 +11,12 @@ interface Stats {
   totalApplications: number;
   paidApplications: number;
   revenue: number;
+  pendingVerifications: number;
+  flaggedUsers: number;
+  paidAwaitingMoveIn: number;
+  payoutsReady: number;
+  payoutsReleased: number;
+  payoutsBlocked: number;
 }
 
 interface StatCardProps {
@@ -22,13 +28,13 @@ interface StatCardProps {
 
 function StatCard({ label, value, icon, sub }: StatCardProps) {
   return (
-    <div className="bg-white border border-[rgba(0,0,0,0.06)] rounded-[16px] p-[24px] flex items-start gap-[16px]">
+    <div className="bg-white border border-[rgba(0,0,0,0.06)] rounded-[16px] p-[16px] sm:p-[24px] flex items-start gap-[14px] sm:gap-[16px]">
       <div className="w-[48px] h-[48px] rounded-[12px] bg-brand-light flex items-center justify-center flex-shrink-0">
         {icon}
       </div>
       <div>
         <p className="text-neutral-gray text-[13px] font-medium mb-[4px]">{label}</p>
-        <p className="text-neutral-black text-[28px] font-bold leading-none">{value}</p>
+        <p className="text-neutral-black text-[22px] sm:text-[28px] font-bold leading-none">{value}</p>
         {sub && <p className="text-neutral-gray text-[12px] mt-[4px]">{sub}</p>}
       </div>
     </div>
@@ -64,9 +70,9 @@ export function AdminDashboard() {
   return (
     <AdminPortalLayout>
       <div className="max-w-[1100px] mx-auto">
-        <div className="mb-[32px]">
-          <h1 className="text-[28px] font-bold text-neutral-black tracking-[-0.02em]">Dashboard</h1>
-          <p className="text-neutral-gray text-[14px] mt-[4px]">Platform overview and key metrics</p>
+        <div className="mb-[20px] sm:mb-[32px]">
+          <h1 className="text-[22px] sm:text-[28px] font-bold text-neutral-black tracking-[-0.02em]">Dashboard</h1>
+          <p className="text-neutral-gray text-[13px] sm:text-[14px] mt-[4px]">Platform overview and key metrics</p>
         </div>
 
         {error && (
@@ -76,7 +82,7 @@ export function AdminDashboard() {
         )}
 
         {isLoading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-[16px]">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-[12px] sm:gap-[16px]">
             {[...Array(6)].map((_, i) => (
               <div key={i} className="bg-white border border-[rgba(0,0,0,0.06)] rounded-[16px] p-[24px] flex items-start gap-[16px] animate-pulse">
                 <div className="w-[48px] h-[48px] rounded-[12px] bg-neutral-light-gray flex-shrink-0" />
@@ -90,7 +96,7 @@ export function AdminDashboard() {
           </div>
         ) : stats ? (
           <>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-[16px]">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-[12px] sm:gap-[16px]">
               <StatCard
                 label="Total Users"
                 value={stats.totalUsers.toLocaleString()}
@@ -123,6 +129,24 @@ export function AdminDashboard() {
                 value={formatCurrency(stats.revenue)}
                 icon={<DollarSign className="w-[22px] h-[22px] text-brand-primary" />}
                 sub="from paid applications"
+              />
+              <StatCard
+                label="Pending Reviews"
+                value={stats.pendingVerifications.toLocaleString()}
+                icon={<AlertTriangle className="w-[22px] h-[22px] text-amber-600" />}
+                sub={`${stats.flaggedUsers.toLocaleString()} flagged accounts`}
+              />
+              <StatCard
+                label="Awaiting Key Confirmation"
+                value={stats.paidAwaitingMoveIn.toLocaleString()}
+                icon={<KeyRound className="w-[22px] h-[22px] text-blue-600" />}
+                sub="paid bookings not confirmed by tenant"
+              />
+              <StatCard
+                label="Payouts Ready"
+                value={stats.payoutsReady.toLocaleString()}
+                icon={<Banknote className="w-[22px] h-[22px] text-green-600" />}
+                sub={`${stats.payoutsReleased.toLocaleString()} released, ${stats.payoutsBlocked.toLocaleString()} blocked`}
               />
             </div>
           </>

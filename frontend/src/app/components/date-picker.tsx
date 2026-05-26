@@ -189,9 +189,11 @@ export function DatePicker({
 
   if (!isOpen) return null;
 
+  const isBottomSheet = presentation === "bottom-sheet";
+
   const rootClassName =
-    presentation === "bottom-sheet"
-      ? "w-full max-h-[88vh] overflow-y-auto bg-white rounded-t-[28px] shadow-[0_-24px_60px_rgba(15,45,54,0.16)] p-4 sm:p-5 border border-[rgba(15,45,54,0.08)] border-b-0"
+    isBottomSheet
+      ? "w-full flex flex-col max-h-[88vh] bg-white rounded-t-[28px] shadow-[0_-24px_60px_rgba(15,45,54,0.16)] border border-[rgba(15,45,54,0.08)] border-b-0"
       : isModal
         ? "w-full max-w-[780px] bg-white rounded-[28px] shadow-[0_24px_60px_rgba(15,45,54,0.16)] p-5 border border-[rgba(15,45,54,0.08)]"
         : "absolute z-50 top-[calc(100%+12px)] left-0 w-[calc(100vw-24px)] max-w-[660px] bg-white shadow-[0_24px_60px_rgba(15,45,54,0.16)] p-4 border border-[rgba(15,45,54,0.08)] rounded-[28px]";
@@ -201,6 +203,8 @@ export function DatePicker({
       ref={pickerRef}
       className={rootClassName}
     >
+      {/* Scrollable body — only used in bottom-sheet; in other modes everything is in normal flow */}
+      <div className={isBottomSheet ? "flex-1 overflow-y-auto p-4 sm:p-5 overscroll-contain" : ""}>
       {/* Tabs */}
       <div className={`mb-4 flex gap-3 ${isCompactPopover ? "scale-[0.98] origin-top-left" : ""}`}>
         <button 
@@ -251,7 +255,11 @@ export function DatePicker({
         {renderMonth(1)}
       </div>
 
-      <div className="mt-5 flex flex-wrap items-center justify-between gap-4 border-t pt-4">
+      {/* Close scrollable body for bottom-sheet — in other modes this div is empty so has no effect */}
+      </div>
+
+      {/* Footer: always visible — sits outside the scroll area in bottom-sheet, inline otherwise */}
+      <div className={`flex flex-wrap items-center justify-between gap-4 border-t pt-4 ${isBottomSheet ? "p-4 sm:p-5 pb-[calc(1rem+env(safe-area-inset-bottom,0px))] bg-white flex-shrink-0" : "mt-5"}`}>
         <div className="flex items-center gap-4 flex-wrap">
           <label className="inline-flex items-center gap-2 text-xs text-gray-600 select-none cursor-pointer">
             <input
@@ -269,11 +277,11 @@ export function DatePicker({
           <div className="text-xs text-gray-500 flex items-center gap-1">
             <Calendar size={14} /> Min {minStayMonths} month stay
           </div>
-
         </div>
 
         <div className="flex gap-2">
           <button
+            type="button"
             onClick={() => {
               setTempStartDate(null);
               setTempEndDate(null);
@@ -284,7 +292,8 @@ export function DatePicker({
           >
             Clear
           </button>
-          <button 
+          <button
+            type="button"
             disabled={!tempStartDate || !tempEndDate}
             onClick={() => { onDateChange(tempStartDate, tempEndDate); onClose(); }}
             className="rounded-full bg-[#0F2D36] px-6 py-2.5 text-sm font-bold text-white shadow-[0_10px_20px_rgba(15,45,54,0.18)] disabled:opacity-40"

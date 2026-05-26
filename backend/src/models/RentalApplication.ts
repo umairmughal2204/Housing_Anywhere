@@ -168,6 +168,34 @@ const rentalApplicationSchema = new Schema(
 
     shareDocuments: { type: Boolean, default: false },
 
+    adminApprovalStatus: {
+      type: String,
+      enum: ["pending", "approved", "rejected"],
+      default: "pending",
+      index: true,
+    },
+
+    adminNotes: { type: String, default: "" },
+
+    tenantMoveInConfirmed: { type: Boolean, default: false },
+
+    tenantMoveInConfirmedAt: { type: Date },
+
+    keyReceivedConfirmed: { type: Boolean, default: false },
+
+    keyReceivedConfirmedAt: { type: Date },
+
+    payoutStatus: {
+      type: String,
+      enum: ["not_ready", "ready", "released", "blocked"],
+      default: "not_ready",
+      index: true,
+    },
+
+    payoutReleasedAt: { type: Date },
+
+    payoutNotes: { type: String, default: "" },
+
     billingAddress: { type: billingAddressSchema, default: {} },
 
     paymentDetails: { type: paymentDetailsSchema, default: {} },
