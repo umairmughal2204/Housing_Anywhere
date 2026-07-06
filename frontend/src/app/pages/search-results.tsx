@@ -384,11 +384,6 @@ export function SearchResults() {
   const sliderMaxPercent = ((sliderMaxValue - absoluteMinPrice) / sliderSpan) * 100;
 
   useEffect(() => {
-    // Keep new searches anchored at the page top so users always see the header first.
-    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
-  }, [city]);
-
-  useEffect(() => {
     // Check if viewMode is passed in URL and set it
     const viewModeParam = searchParams.get("viewMode");
     if (viewModeParam === "map" || viewModeParam === "list") {
@@ -1949,8 +1944,10 @@ export function SearchResults() {
                           className="w-full h-full"
                         >
                           <TileLayer
-                            attribution='&copy; OpenStreetMap contributors'
-                            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+                            url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
+                            subdomains="abcd"
+                            maxZoom={20}
                           />
                           <InvalidateMapSize isExpanded={isMapExpanded} />
                           <FitMapToMarkers points={mapPoints} resetSignal={mapResetSignal} />
@@ -1964,9 +1961,8 @@ export function SearchResults() {
                                   setHoveredMapListingId(property.id);
                                   event.target.openPopup();
                                 },
-                                popupclose: (event) => {
+                                popupclose: () => {
                                   setHoveredMapListingId((prev) => (prev === property.id ? null : prev));
-                                  event.target.closePopup();
                                 },
                               }}
                             >

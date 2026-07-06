@@ -5,6 +5,7 @@ import { UserModel } from "../models/User.js";
 import { ListingModel } from "../models/Listing.js";
 import { RentalApplicationModel } from "../models/RentalApplication.js";
 import { PageViewModel } from "../models/PageView.js";
+import { PlatformSettingsModel, getPlatformSettings } from "../models/PlatformSettings.js";
 
 const router = Router();
 
@@ -304,7 +305,7 @@ router.get("/applications", async (req, res) => {
 
   const [applications, total] = await Promise.all([
     RentalApplicationModel.find(filter)
-      .select("status adminApprovalStatus adminNotes tenantMoveInConfirmed tenantMoveInConfirmedAt keyReceivedConfirmed keyReceivedConfirmedAt payoutStatus payoutReleasedAt payoutNotes paymentDetails.isPaid paymentDetails.paymentStatus paymentDetails.paidAmount paymentDetails.currency paymentDetails.paidAt createdAt moveInDate moveOutDate tenantId landlordId listingId")
+      .select("status adminApprovalStatus adminNotes tenantMoveInConfirmed tenantMoveInConfirmedAt keyReceivedConfirmed keyReceivedConfirmedAt payoutStatus payoutReleasedAt payoutNotes paymentDetails createdAt moveInDate moveOutDate tenantId landlordId listingId")
       .populate("tenantId", "firstName lastName email verificationStatus")
       .populate("landlordId", "firstName lastName email verificationStatus")
       .populate("listingId", "title city")
@@ -328,6 +329,10 @@ router.get("/applications", async (req, res) => {
         paidAmount: a.paymentDetails?.paidAmount ?? 0,
         currency: a.paymentDetails?.currency ?? "EUR",
         paidAt: a.paymentDetails?.paidAt,
+        rentAmount: a.paymentDetails?.rentForSelectedPeriod ?? 0,
+        tenantProtectionFee: a.paymentDetails?.tenantProtectionFee ?? 0,
+        rentGuaranteeFee: a.paymentDetails?.addRentGuarantee ? a.paymentDetails?.rentGuaranteeFee ?? 0 : 0,
+        totalAmount: a.paymentDetails?.totalAmount ?? a.paymentDetails?.paidAmount ?? 0,
         adminApprovalStatus: a.adminApprovalStatus ?? "pending",
         adminNotes: a.adminNotes ?? "",
         tenantMoveInConfirmed: a.tenantMoveInConfirmed ?? false,
@@ -422,6 +427,52 @@ router.patch("/applications/:id/payout", async (req, res) => {
   });
 });
 
+// ─── PAYMENTS ─────────────────────────────────────────────────────────────────
+router.get("/payments/summary", async (_req, res) => {
+  const paidApplications = await RentalApplicationModel.find({ "paymentDetails.isPaid": true })
+    .select("paymentDetails payoutStatus")
+    .lean();
+
+  let totalCollected = 0;
+  let platformProfit = 0;
+  let totalRentOwed = 0;
+  let pendingPayout = 0;
+  let releasedToLandlords = 0;
+  let blockedAmount = 0;
+
+  for (const application of paidApplications) {
+    const paymentDetails = application.paymentDetails ?? {};
+    const rent = paymentDetails.rentForSelectedPeriod ?? 0;
+    const fees =
+      (paymentDetails.tenantProtectionFee ?? 0) +
+      (paymentDetails.addRentGuarantee ? paymentDetails.rentGuaranteeFee ?? 0 : 0);
+    const total = paymentDetails.totalAmount ?? paymentDetails.paidAmount ?? 0;
+
+    totalCollected += total;
+    platformProfit += fees;
+    totalRentOwed += rent;
+
+    if (application.payoutStatus === "released") {
+      releasedToLandlords += rent;
+    } else if (application.payoutStatus === "blocked") {
+      blockedAmount += rent;
+    } else {
+      pendingPayout += rent;
+    }
+  }
+
+  res.json({
+    totalPayments: paidApplications.length,
+    totalCollected,
+    platformProfit,
+    totalRentOwed,
+    pendingPayout,
+    releasedToLandlords,
+    blockedAmount,
+    currency: "EUR",
+  });
+});
+
 // ─── ANALYTICS ────────────────────────────────────────────────────────────────
 router.get("/analytics/overview", async (req, res) => {
   const range = z.enum(["7", "30", "90"]).catch("30").parse(req.query.range);
@@ -500,6 +551,47 @@ router.get("/analytics/top-listings", async (req, res) => {
       views: l.views ?? 0,
       inquiries: l.inquiries ?? 0,
     })),
+  });
+});
+
+// ─── SETTINGS ─────────────────────────────────────────────────────────────────
+router.get("/settings", async (_req, res) => {
+  const settings = await getPlatformSettings();
+
+  res.json({
+    tenantProtectionFeeRate: settings.tenantProtectionFeeRate,
+    tenantProtectionFeeCap: settings.tenantProtectionFeeCap,
+  });
+});
+
+router.patch("/settings", async (req, res) => {
+  const parsed = z
+    .object({
+      tenantProtectionFeeRate: z.number().min(0).max(100),
+      tenantProtectionFeeCap: z.number().min(0),
+    })
+    .safeParse(req.body);
+
+  if (!parsed.success) {
+    res.status(400).json({ message: "Invalid settings payload", errors: parsed.error.flatten() });
+    return;
+  }
+
+  const settings = await PlatformSettingsModel.findOneAndUpdate(
+    { key: "default" },
+    {
+      $set: {
+        tenantProtectionFeeRate: parsed.data.tenantProtectionFeeRate,
+        tenantProtectionFeeCap: parsed.data.tenantProtectionFeeCap,
+      },
+      $setOnInsert: { key: "default" },
+    },
+    { upsert: true, new: true }
+  ).lean();
+
+  res.json({
+    tenantProtectionFeeRate: settings.tenantProtectionFeeRate,
+    tenantProtectionFeeCap: settings.tenantProtectionFeeCap,
   });
 });
 

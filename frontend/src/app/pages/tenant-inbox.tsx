@@ -12,6 +12,7 @@ import {
   CheckSquare,
   Star,
   Archive,
+  ArchiveRestore,
   AlignJustify,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
@@ -19,6 +20,8 @@ import { Link } from "react-router";
 import { API_BASE } from "../config";
 import { io, type Socket } from "socket.io-client";
 import { getConversationPreview, getConversationSearchableText } from "../components/chat-offer-message";
+
+type ApplicationTab = "pending" | "shortlisted" | "rented" | "expired";
 
 interface ConversationItem {
   id: string;
@@ -38,6 +41,8 @@ interface ConversationItem {
   lastMessage: string;
   lastMessageAt: string;
   unread: number;
+  archived: boolean;
+  applicationStatus: ApplicationTab | null;
 }
 
 type TenantMessageFilter =
@@ -205,6 +210,35 @@ export function TenantInbox() {
     }
   }, [conversations]);
 
+  const [archivingId, setArchivingId] = useState<string | null>(null);
+
+  const toggleArchive = async (conversationId: string, nextArchived: boolean) => {
+    const token = localStorage.getItem("authToken");
+    if (!token) return;
+
+    setArchivingId(conversationId);
+    const previous = conversations;
+    setConversations((prev) =>
+      prev.map((c) => (c.id === conversationId ? { ...c, archived: nextArchived } : c))
+    );
+
+    try {
+      const res = await fetch(`${API_BASE}/api/conversations/${conversationId}/archive`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ archived: nextArchived }),
+      });
+      if (!res.ok) throw new Error("Failed to update conversation");
+    } catch {
+      setConversations(previous);
+    } finally {
+      setArchivingId(null);
+    }
+  };
+
   const sortedConversations = [...conversations].sort((a, b) => {
     if (a.unread > 0 && b.unread === 0) return -1;
     if (a.unread === 0 && b.unread > 0) return 1;
@@ -213,18 +247,21 @@ export function TenantInbox() {
 
   const filterBySection = (items: ConversationItem[], filter: TenantMessageFilter) => {
     switch (filter) {
-      case "active":
-      case "pending":
-      case "rented":
-      case "shortlisted":
-      case "expired":
-      case "archived":
       case "all":
         return items;
+      case "archived":
+        return items.filter((c) => c.archived);
+      case "active":
+        return items.filter((c) => !c.archived);
       case "unread":
-        return items.filter((c) => c.unread > 0);
+        return items.filter((c) => !c.archived && c.unread > 0);
       case "read":
-        return items.filter((c) => c.unread === 0);
+        return items.filter((c) => !c.archived && c.unread === 0);
+      case "pending":
+      case "shortlisted":
+      case "rented":
+      case "expired":
+        return items.filter((c) => !c.archived && c.applicationStatus === filter);
       default:
         return items;
     }
@@ -243,8 +280,12 @@ export function TenantInbox() {
     );
   });
 
-  const unreadCount = conversations.reduce((sum, c) => sum + c.unread, 0);
-  const unreadThreads = conversations.filter((c) => c.unread > 0).length;
+  const nonArchived = conversations.filter((c) => !c.archived);
+  const unreadCount = nonArchived.reduce((sum, c) => sum + c.unread, 0);
+  const unreadThreads = nonArchived.filter((c) => c.unread > 0).length;
+  const archivedCount = conversations.length - nonArchived.length;
+  const countByApplicationStatus = (status: ApplicationTab) =>
+    nonArchived.filter((c) => c.applicationStatus === status).length;
 
   const sidebarSections: {
     key: TenantMessageFilter;
@@ -252,14 +293,14 @@ export function TenantInbox() {
     icon: typeof Mail;
     count?: number;
   }[] = [
-    { key: "active", label: "Active", icon: Briefcase, count: conversations.length },
+    { key: "active", label: "Active", icon: Briefcase, count: nonArchived.length },
     { key: "unread", label: "Unread", icon: Mail, count: unreadThreads },
-    { key: "read", label: "Read", icon: CheckSquare, count: conversations.length - unreadThreads },
-    { key: "pending", label: "Pending", icon: Clock3 },
-    { key: "rented", label: "Rented", icon: CheckSquare },
-    { key: "shortlisted", label: "Shortlisted", icon: Star },
-    { key: "expired", label: "Expired", icon: XIcon },
-    { key: "archived", label: "Archived", icon: Archive },
+    { key: "read", label: "Read", icon: CheckSquare, count: nonArchived.length - unreadThreads },
+    { key: "pending", label: "Pending", icon: Clock3, count: countByApplicationStatus("pending") },
+    { key: "rented", label: "Rented", icon: CheckSquare, count: countByApplicationStatus("rented") },
+    { key: "shortlisted", label: "Shortlisted", icon: Star, count: countByApplicationStatus("shortlisted") },
+    { key: "expired", label: "Expired", icon: XIcon, count: countByApplicationStatus("expired") },
+    { key: "archived", label: "Archived", icon: Archive, count: archivedCount },
     { key: "all", label: "All messages", icon: AlignJustify, count: conversations.length },
   ];
 
@@ -279,7 +320,7 @@ export function TenantInbox() {
               placeholder="Search by keywords"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-[36px] pr-[34px] py-[9px] border border-[rgba(0,0,0,0.12)] outline-none text-[14px] text-[#1A1A1A] placeholder:text-[#6B6B6B] focus:border-[rgba(0,0,0,0.28)]"
+              className="w-full pl-[36px] pr-[34px] py-[9px] border border-[rgba(0,0,0,0.12)] rounded-[10px] outline-none text-[14px] text-[#1A1A1A] placeholder:text-[#6B6B6B] focus:border-[rgba(0,0,0,0.28)]"
             />
             {searchQuery && (
               <button
@@ -384,7 +425,27 @@ export function TenantInbox() {
                       <div className="flex items-center justify-between gap-[10px] mb-[4px]">
                         <span className="text-[#111827] text-[15px] font-bold truncate">{c.otherUser.name}</span>
 
-                        <span className="text-[12px] text-[#6B7280] flex-shrink-0">{timeAgo(c.lastMessageAt)}</span>
+                        <div className="flex items-center gap-[6px] flex-shrink-0">
+                          <span className="text-[12px] text-[#6B7280]">{timeAgo(c.lastMessageAt)}</span>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              void toggleArchive(c.id, !c.archived);
+                            }}
+                            disabled={archivingId === c.id}
+                            title={c.archived ? "Unarchive" : "Archive"}
+                            aria-label={c.archived ? "Unarchive conversation" : "Archive conversation"}
+                            className="p-[4px] rounded-full text-[#6B7280] hover:bg-white hover:text-[#111827] transition-colors disabled:opacity-50"
+                          >
+                            {c.archived ? (
+                              <ArchiveRestore className="w-[14px] h-[14px]" />
+                            ) : (
+                              <Archive className="w-[14px] h-[14px]" />
+                            )}
+                          </button>
+                        </div>
                       </div>
 
                       <div className="flex items-center gap-[5px] text-[#556070] text-[13px] mb-[8px]">

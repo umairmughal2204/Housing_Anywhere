@@ -1,6 +1,6 @@
-import { createBrowserRouter, redirect } from "react-router";
+import { createBrowserRouter, redirect, Outlet, ScrollRestoration } from "react-router";
 
-import { createElement, type ComponentType } from "react";
+import { createElement, Fragment, type ComponentType } from "react";
 
 import { Home } from "./pages/home";
 
@@ -82,6 +82,10 @@ import { AdminListings } from "./pages/admin-listings";
 
 import { AdminApplications } from "./pages/admin-applications";
 
+import { AdminPayments } from "./pages/admin-payments";
+
+import { AdminSettings } from "./pages/admin-settings";
+
 
 
 function withProtectedRoute(Page: ComponentType) {
@@ -118,6 +122,10 @@ const ProtectedAdminListings = withAdminRoute(AdminListings);
 
 const ProtectedAdminApplications = withAdminRoute(AdminApplications);
 
+const ProtectedAdminPayments = withAdminRoute(AdminPayments);
+
+const ProtectedAdminSettings = withAdminRoute(AdminSettings);
+
 
 
 const ProtectedLandlordDashboard = withProtectedRoute(LandlordDashboard);
@@ -150,7 +158,22 @@ const ProtectedPropertyPayment = withProtectedRoute(Payment);
 
 
 
+function RootLayout() {
+  return createElement(
+    Fragment,
+    null,
+    createElement(ScrollRestoration),
+    createElement(Outlet)
+  );
+}
+
 export const router = createBrowserRouter([
+
+  {
+
+    Component: RootLayout,
+
+    children: [
 
   {
 
@@ -613,6 +636,30 @@ export const router = createBrowserRouter([
     Component: ProtectedAdminApplications,
 
     ErrorBoundary,
+
+  },
+
+  {
+
+    path: "/admin/payments",
+
+    Component: ProtectedAdminPayments,
+
+    ErrorBoundary,
+
+  },
+
+  {
+
+    path: "/admin/settings",
+
+    Component: ProtectedAdminSettings,
+
+    ErrorBoundary,
+
+  },
+
+    ],
 
   },
 

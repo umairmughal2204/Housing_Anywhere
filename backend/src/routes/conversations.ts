@@ -10,6 +10,13 @@ import { RentalApplicationModel } from "../models/RentalApplication.js";
 
 const router = Router();
 
+const APPLICATION_STATUS_TO_TAB: Record<string, "pending" | "shortlisted" | "rented" | "expired"> = {
+  pending: "pending",
+  approved: "shortlisted",
+  paid: "rented",
+  rejected: "expired",
+};
+
 // POST /api/conversations — find or create conversation for a listing
 router.post("/", requireAuth, async (req, res) => {
   const parsed = z
@@ -114,13 +121,28 @@ router.get("/", requireAuth, async (req, res) => {
     role === "tenant" ? c.landlordId : c.tenantId
   );
 
-  const [listings, otherUsers] = await Promise.all([
+  const [listings, otherUsers, applications] = await Promise.all([
     ListingModel.find({ _id: { $in: listingIds } }).lean(),
     UserModel.find({ _id: { $in: otherUserIds } }).lean(),
+    role === "tenant"
+      ? RentalApplicationModel.find({ tenantId: userId, listingId: { $in: listingIds } })
+          .select("listingId status createdAt")
+          .sort({ createdAt: -1 })
+          .lean()
+      : Promise.resolve([]),
   ]);
 
   const listingMap = new Map(listings.map((l) => [String(l._id), l]));
   const userMap = new Map(otherUsers.map((u) => [String(u._id), u]));
+
+  // Keep only the most recent application per listing (sorted desc above, first-seen wins).
+  const latestApplicationByListing = new Map<string, (typeof applications)[number]>();
+  for (const application of applications) {
+    const key = String(application.listingId);
+    if (!latestApplicationByListing.has(key)) {
+      latestApplicationByListing.set(key, application);
+    }
+  }
 
   res.json({
     conversations: conversations.map((c) => {
@@ -128,6 +150,9 @@ router.get("/", requireAuth, async (req, res) => {
       const otherId = role === "tenant" ? String(c.landlordId) : String(c.tenantId);
       const other = userMap.get(otherId);
       const unread = role === "tenant" ? c.unreadByTenant : c.unreadByLandlord;
+      const archived = role === "tenant" ? Boolean(c.archivedByTenant) : Boolean(c.archivedByLandlord);
+      const application = latestApplicationByListing.get(String(c.listingId));
+      const applicationStatus = application ? APPLICATION_STATUS_TO_TAB[application.status] ?? null : null;
 
       return {
         id: String(c._id),
@@ -149,6 +174,8 @@ router.get("/", requireAuth, async (req, res) => {
         lastMessage: c.lastMessage,
         lastMessageAt: c.lastMessageAt,
         unread,
+        archived,
+        applicationStatus,
       };
     }),
   });
@@ -341,6 +368,37 @@ router.patch("/:id([0-9a-fA-F]{24})/read", requireAuth, async (req, res) => {
   );
 
   res.json({ ok: true });
+});
+
+// PATCH /api/conversations/:id/archive — archive/unarchive for the caller's side only
+router.patch("/:id([0-9a-fA-F]{24})/archive", requireAuth, async (req, res) => {
+  const parsed = z.object({ archived: z.boolean() }).safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ message: "archived (boolean) required" });
+    return;
+  }
+
+  const userId = req.user!.sub;
+  const role = req.user!.role;
+  const conversationId = req.params.id;
+
+  const conversation = await ConversationModel.findById(conversationId).lean();
+  if (!conversation) {
+    res.status(404).json({ message: "Conversation not found" });
+    return;
+  }
+
+  const isParticipant =
+    String(conversation.tenantId) === userId || String(conversation.landlordId) === userId;
+  if (!isParticipant) {
+    res.status(403).json({ message: "Forbidden" });
+    return;
+  }
+
+  const archivedField = role === "tenant" ? "archivedByTenant" : "archivedByLandlord";
+  await ConversationModel.updateOne({ _id: conversationId }, { $set: { [archivedField]: parsed.data.archived } });
+
+  res.json({ ok: true, archived: parsed.data.archived });
 });
 
 export default router;

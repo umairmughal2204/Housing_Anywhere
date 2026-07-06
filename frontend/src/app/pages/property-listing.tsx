@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Header } from "../components/header";
 import { Footer } from "../components/footer";
 import { UserAvatar } from "../components/user-avatar";
+import { usePlatformSettings } from "../hooks/use-platform-settings";
 import { DatePicker } from "../components/date-picker";
 import { useAuth } from "../contexts/auth-context";
 import { MapContainer, Marker, Popup, TileLayer } from "react-leaflet";
@@ -45,9 +46,6 @@ const fallbackPropertyImages = [
   "https://images.unsplash.com/photo-1594295800284-990f74bb6928?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxtb2Rlcm4lMjBzdHVkaW8lMjBhcGFydG1lbnQlMjBiZWRyb29tJTIwaW50ZXJpb3J8ZW58MXx8fHwxNzczMDg5NTY0fDA&ixlib=rb-4.1.0&q=80&w=1080",
   "https://images.unsplash.com/photo-1730789442056-76dbcaab7dd7?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxmdXJuaXNoZWQlMjBhcGFydG1lbnQlMjBsaXZpbmclMjBzcGFjZXxlbnwxfHx8fDE3NzMwODk1NjR8MA&ixlib=rb-4.1.0&q=80&w=1080",
 ];
-
-const TENANT_PROTECTION_RATE = 0.1;
-const TENANT_PROTECTION_FEE_CAP = 250;
 
 interface ListingDetails {
   id: string;
@@ -289,6 +287,7 @@ export function PropertyListing() {
   const navigate = useNavigate();
   const apiBase = API_BASE;
   const { isAuthenticated, user } = useAuth();
+  const platformSettings = usePlatformSettings();
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isFavorited, setIsFavorited] = useState(false);
   const [listing, setListing] = useState<ListingDetails | null>(null);
@@ -420,11 +419,6 @@ export function PropertyListing() {
   const formatCurrency = (amount: number, currency: string) => {
     return `€${amount.toFixed(2)}`;
   };
-
-  // Scroll to top when navigating to a different property
-  useEffect(() => {
-    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
-  }, [id]);
 
   useEffect(() => {
     const loadListing = async () => {
@@ -818,7 +812,10 @@ export function PropertyListing() {
   }, [listing]);
 
   const calculatedTenantProtectionFee = listing
-    ? Math.min(listing.monthlyRent * TENANT_PROTECTION_RATE, TENANT_PROTECTION_FEE_CAP)
+    ? Math.min(
+        listing.monthlyRent * (platformSettings.tenantProtectionFeeRate / 100),
+        platformSettings.tenantProtectionFeeCap
+      )
     : 0;
   const tenantProtectionFee = tenantProtectionService?.amount ?? calculatedTenantProtectionFee;
   const rentForSelectedPeriod = (() => {
@@ -1216,12 +1213,12 @@ export function PropertyListing() {
           <div className="animate-pulse flex flex-col lg:flex-row gap-[24px] lg:gap-[48px]">
             <div className="flex-[2]">
               <div className="mb-[24px]">
-                <div className="h-[480px] w-full bg-[#E8EDF2] rounded-[4px] mb-[16px]" />
+                <div className="h-[480px] w-full bg-[#E8EDF2] rounded-[22px] sm:rounded-[28px] lg:rounded-[34px] mb-[16px]" />
                 <div className="flex items-center gap-[8px]">
-                  <div className="h-[80px] w-[120px] bg-[#E8EDF2] rounded-[4px]" />
-                  <div className="h-[80px] w-[120px] bg-[#E8EDF2] rounded-[4px]" />
-                  <div className="h-[80px] w-[120px] bg-[#E8EDF2] rounded-[4px]" />
-                  <div className="h-[80px] w-[120px] bg-[#E8EDF2] rounded-[4px]" />
+                  <div className="h-[80px] w-[120px] bg-[#E8EDF2] rounded-[12px]" />
+                  <div className="h-[80px] w-[120px] bg-[#E8EDF2] rounded-[12px]" />
+                  <div className="h-[80px] w-[120px] bg-[#E8EDF2] rounded-[12px]" />
+                  <div className="h-[80px] w-[120px] bg-[#E8EDF2] rounded-[12px]" />
                 </div>
               </div>
 
@@ -1256,8 +1253,8 @@ export function PropertyListing() {
                   <div className="h-[52px] w-full bg-[#E8EDF2] rounded-[6px] mb-[10px]" />
                   <div className="h-[16px] w-[72%] bg-[#E8EDF2] rounded-[4px] mb-[8px]" />
                   <div className="h-[16px] w-[64%] bg-[#E8EDF2] rounded-[4px] mb-[18px]" />
-                  <div className="h-[44px] w-full bg-[#E8EDF2] rounded-[6px] mb-[8px]" />
-                  <div className="h-[44px] w-full bg-[#E8EDF2] rounded-[6px]" />
+                  <div className="h-[44px] w-full bg-[#E8EDF2] rounded-[14px] mb-[8px]" />
+                  <div className="h-[44px] w-full bg-[#E8EDF2] rounded-[14px]" />
                 </div>
 
                 <div className="border border-[rgba(15,45,54,0.12)] rounded-[6px] bg-white p-[16px]">
@@ -1362,7 +1359,7 @@ export function PropertyListing() {
                   onClick={handleViewOnMap}
                   className="absolute bottom-[12px] left-[12px] sm:bottom-[16px] sm:left-[16px] flex items-center gap-[8px] bg-white px-[14px] py-[9px] sm:px-[16px] sm:py-[10px] hover:bg-[#F7F7F9] transition-colors rounded-[12px]"
                 >
-                  <MapPin className="w-[16px] h-[16px] text-[#F04D2D]" />
+                  <MapPin className="w-[16px] h-[16px] text-brand-primary" />
                   <span className="text-[#1A1A1A] text-[14px] font-semibold">View on map</span>
                 </button>
               </div>
@@ -1605,7 +1602,7 @@ export function PropertyListing() {
               <h2 className="text-[#0F2D36] text-[34px] sm:text-[40px] leading-[1.2] font-bold mb-[10px]">Property location</h2>
               <p className="text-[#4A606A] text-[16px] leading-[1.5] mb-[12px]">Hover the pin to see the exact location for this home.</p>
 
-              <div className="relative overflow-hidden rounded-[16px] border border-[rgba(0,0,0,0.12)] bg-white shadow-[0_8px_24px_rgba(15,45,54,0.08)] h-[280px] sm:h-[320px]">
+              <div className="relative isolate overflow-hidden rounded-[16px] border border-[rgba(0,0,0,0.12)] bg-white shadow-[0_8px_24px_rgba(15,45,54,0.08)] h-[320px] sm:h-[380px]">
                 {propertyCoordinates ? (
                   <MapContainer
                     center={propertyCoordinates}
@@ -1615,8 +1612,10 @@ export function PropertyListing() {
                     className="w-full h-full"
                   >
                     <TileLayer
-                      attribution='&copy; OpenStreetMap contributors'
-                      url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                      attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+                      url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
+                      subdomains="abcd"
+                      maxZoom={20}
                     />
                     <Marker
                       position={propertyCoordinates}
@@ -1633,7 +1632,8 @@ export function PropertyListing() {
                       <Popup
                         closeButton={false}
                         offset={[0, -30]}
-                        autoPan={false}
+                        autoPan
+                        autoPanPadding={[10, 10]}
                         interactive
                       >
                           <div

@@ -455,6 +455,9 @@ router.get("/landlord", requireAuth, requireRole("landlord"), async (req, res) =
         moveInDate: item.moveInDate ?? null,
         moveOutDate: item.moveOutDate ?? null,
         moveInAvailabilityConfirmed: item.moveInAvailabilityConfirmed ?? false,
+        tenantMoveInConfirmed: item.tenantMoveInConfirmed ?? false,
+        keyReceivedConfirmed: item.keyReceivedConfirmed ?? false,
+        payoutStatus: item.payoutStatus ?? "not_ready",
         billingAddress: item.billingAddress ?? null,
         paymentDetails: item.paymentDetails
           ? {

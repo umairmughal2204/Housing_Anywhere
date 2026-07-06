@@ -2,30 +2,27 @@ import { RouterProvider } from "react-router";
 import { router } from "./routes";
 import { AuthProvider } from "./contexts/auth-context";
 import { Toaster } from "sonner";
-import { useEffect } from "react";
+import { useEffect, useSyncExternalStore } from "react";
 import { initAutoTranslate } from "./utils/translate";
 import { trackPageView } from "./utils/analytics";
 
+function useRouterLocation() {
+  return useSyncExternalStore(
+    (onChange) => router.subscribe(onChange),
+    () => router.state.location
+  );
+}
+
 export default function App() {
+  const location = useRouterLocation();
+
   useEffect(() => {
     initAutoTranslate();
   }, []);
 
   useEffect(() => {
-    let previousPath = `${router.state.location.pathname}${router.state.location.search}`;
-    trackPageView(router.state.location.pathname);
-
-    const unsubscribe = router.subscribe((state) => {
-      const nextPath = `${state.location.pathname}${state.location.search}`;
-      if (nextPath !== previousPath) {
-        window.scrollTo({ top: 0, left: 0, behavior: "auto" });
-        previousPath = nextPath;
-        trackPageView(state.location.pathname);
-      }
-    });
-
-    return unsubscribe;
-  }, []);
+    trackPageView(location.pathname);
+  }, [location.pathname]);
 
   return (
     <AuthProvider>

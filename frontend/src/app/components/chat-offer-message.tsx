@@ -1,8 +1,8 @@
-import { ArrowRight, CalendarDays, CheckCircle, CircleAlert, Clock3, Coins, House, ShieldCheck } from "lucide-react";
+import { ArrowRight, CalendarDays, CheckCircle, CircleAlert, Clock3, Coins, House, KeyRound, ShieldCheck } from "lucide-react";
 import { type ChatMessage } from "../hooks/use-conversation";
 
-export type OfferMessageKind = "invitation" | "special_offer" | "decline" | "tenant_response";
-export type OfferActionType = "pay" | "decline" | "change_dates";
+export type OfferMessageKind = "invitation" | "special_offer" | "decline" | "tenant_response" | "move_in_check";
+export type OfferActionType = "pay" | "decline" | "change_dates" | "confirm_move_in";
 
 export interface OfferMessagePayload {
   version: 1;
@@ -17,7 +17,7 @@ export interface OfferMessagePayload {
   moveOutDate?: string | null;
   expiresAt?: string | null;
   note?: string;
-  responseAction?: "declined" | "change_dates_requested" | "payment_started";
+  responseAction?: "declined" | "change_dates_requested" | "payment_started" | "move_in_confirmed";
 }
 
 const OFFER_MESSAGE_PREFIX = "__HA_OFFER_V1__";
@@ -28,7 +28,14 @@ function isOfferMessagePayload(value: unknown): value is OfferMessagePayload {
   }
 
   const payload = value as Partial<OfferMessagePayload>;
-  return payload.version === 1 && (payload.kind === "invitation" || payload.kind === "special_offer" || payload.kind === "decline" || payload.kind === "tenant_response");
+  return (
+    payload.version === 1 &&
+    (payload.kind === "invitation" ||
+      payload.kind === "special_offer" ||
+      payload.kind === "decline" ||
+      payload.kind === "tenant_response" ||
+      payload.kind === "move_in_check")
+  );
 }
 
 export function buildOfferMessage(payload: OfferMessagePayload) {
@@ -77,7 +84,14 @@ export function getConversationPreview(body: string) {
     if (offer.responseAction === "payment_started") {
       return `Tenant moved to payment for ${offer.listingTitle}`;
     }
+    if (offer.responseAction === "move_in_confirmed") {
+      return `Tenant confirmed move-in for ${offer.listingTitle}`;
+    }
     return `Tenant response for ${offer.listingTitle}`;
+  }
+
+  if (offer.kind === "move_in_check") {
+    return `Move-in check for ${offer.listingTitle}`;
   }
 
   return `Application update for ${offer.listingTitle}`;
@@ -165,6 +179,8 @@ export function ChatMessageBubble({ message, isMe, onOfferAction, actionInProgre
         ? "Tenant requested new dates"
         : offer.responseAction === "payment_started"
         ? "Tenant opened payment"
+        : offer.responseAction === "move_in_confirmed"
+        ? "Tenant confirmed move-in and keys received"
         : "Tenant response";
 
     return (
@@ -175,6 +191,45 @@ export function ChatMessageBubble({ message, isMe, onOfferAction, actionInProgre
         </div>
         <p className="mt-[8px] text-[14px] font-semibold text-neutral-black">{responseLabel}</p>
         {offer.note && <p className="mt-[4px] text-[13px] text-neutral-gray whitespace-pre-wrap">{offer.note}</p>}
+      </div>
+    );
+  }
+
+  if (offer.kind === "move_in_check") {
+    return (
+      <div className="w-full max-w-[420px] rounded-[18px] border border-brand-primary/30 bg-brand-primary/10 px-[16px] py-[14px] shadow-[0_10px_24px_rgba(15,23,42,0.08)]">
+        <div className="flex items-start justify-between gap-[12px] mb-[10px]">
+          <div>
+            <div className="inline-flex items-center gap-[6px] px-[10px] py-[4px] rounded-full text-[11px] font-semibold uppercase tracking-[0.08em] bg-brand-primary text-white">
+              <KeyRound className="w-[12px] h-[12px]" />
+              Move-in check
+            </div>
+            <h4 className="mt-[10px] text-[17px] leading-[1.3] font-bold text-neutral-black">
+              Have you received the keys for {offer.listingTitle}?
+            </h4>
+            <p className="mt-[6px] text-[13px] leading-[1.6] text-neutral-gray">
+              Confirming here lets us release the landlord's payout for this booking.
+            </p>
+          </div>
+          <div className="w-[34px] h-[34px] rounded-full bg-white border border-[rgba(0,0,0,0.08)] flex items-center justify-center text-brand-primary">
+            <KeyRound className="w-[16px] h-[16px]" />
+          </div>
+        </div>
+
+        {offer.note && (
+          <div className="mt-[4px] mb-[10px] rounded-[12px] bg-white/80 border border-[rgba(0,0,0,0.06)] px-[12px] py-[10px]">
+            <p className="text-[13px] leading-[1.6] text-neutral-black whitespace-pre-wrap">{offer.note}</p>
+          </div>
+        )}
+
+        <button
+          type="button"
+          onClick={() => onOfferAction?.("confirm_move_in", offer)}
+          disabled={!onOfferAction || actionInProgress !== null}
+          className="mt-[4px] inline-flex items-center justify-center gap-[6px] rounded-[10px] bg-brand-primary px-[14px] py-[10px] text-[12px] font-semibold text-white hover:bg-brand-primary-dark transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+        >
+          {actionInProgress === "confirm_move_in" ? "Confirming..." : "Yes, I've received the keys"}
+        </button>
       </div>
     );
   }

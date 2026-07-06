@@ -9,6 +9,8 @@ const conversationSchema = new Schema(
     lastMessageAt: { type: Date, default: Date.now },
     unreadByTenant: { type: Number, default: 0 },
     unreadByLandlord: { type: Number, default: 0 },
+    archivedByTenant: { type: Boolean, default: false },
+    archivedByLandlord: { type: Boolean, default: false },
   },
   { timestamps: true }
 );

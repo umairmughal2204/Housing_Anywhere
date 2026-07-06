@@ -181,6 +181,42 @@ export function TenantConversation() {
           return;
         }
 
+        if (action === "confirm_move_in") {
+          if (!applicationStatus?.applicationId) {
+            setSendError("We couldn't find your application for this booking.");
+            return;
+          }
+
+          const res = await fetch(
+            `${API_BASE}/api/rental-applications/${applicationStatus.applicationId}/move-in-confirmation`,
+            {
+              method: "PATCH",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`,
+              },
+              body: JSON.stringify({ tenantMoveInConfirmed: true, keyReceivedConfirmed: true }),
+            }
+          );
+
+          if (!res.ok) {
+            const d = (await res.json().catch(() => ({}))) as { message?: string };
+            throw new Error(d.message ?? "Failed to confirm move-in");
+          }
+
+          await sendMessage(
+            buildOfferMessage({
+              version: 1,
+              kind: "tenant_response",
+              listingTitle: offer.listingTitle,
+              tenantName: user?.name,
+              responseAction: "move_in_confirmed",
+              note: "Tenant confirmed they've moved in and received the keys.",
+            })
+          );
+          return;
+        }
+
         if (action === "decline") {
           await fetch(`${API_BASE}/api/rental-applications/tenant/respond`, {
             method: "PATCH",
@@ -500,7 +536,7 @@ export function TenantConversation() {
                       Submit an application to secure this place.
                     </p>
                     <Link
-                      to={`/property/${meta.listingId}/apply`}
+                      to={`/property/${meta.listingId}`}
                       className="block text-center py-[8px] rounded-[8px] bg-brand-primary text-white text-[12px] font-semibold hover:bg-brand-primary-dark transition-colors"
                     >
                       Apply to rent

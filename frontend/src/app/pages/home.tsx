@@ -493,11 +493,6 @@ export function Home() {
   const isAbortError = (error: unknown) =>
     error instanceof DOMException && error.name === "AbortError";
 
-  // Scroll to top on home page load
-  useEffect(() => {
-    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
-  }, []);
-
   useEffect(() => {
     const loadCitySuggestions = async () => {
       try {
@@ -823,7 +818,7 @@ export function Home() {
 
   return (
     <div className="min-h-screen bg-white">
-      <Header variant={isAuthenticated ? "dashboard" : "default"} />
+      <Header variant={isAuthenticated ? "dashboard" : "default"} dashboardButtonFilled={false} />
 
       {/* Hero Section */}
       <section className="relative overflow-x-clip bg-gradient-to-br from-brand-primary via-[#0BA5C7] to-brand-primary text-white pt-[72px] pb-[84px] md:pt-[104px] md:pb-[108px]">

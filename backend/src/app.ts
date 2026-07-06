@@ -11,6 +11,7 @@ import conversationsRoutes from "./routes/conversations.js";
 import paymentsRoutes from "./routes/payments.js";
 import adminRoutes from "./routes/admin.js";
 import analyticsRoutes from "./routes/analytics.js";
+import settingsRoutes from "./routes/settings.js";
 
 export function createApp() {
   const app = express();
@@ -72,6 +73,7 @@ export function createApp() {
   app.use("/api/conversations", conversationsRoutes);
   app.use("/api/payments", paymentsRoutes);
   app.use("/api/analytics", analyticsTrackLimiter, analyticsRoutes);
+  app.use("/api/settings", settingsRoutes);
   app.use("/api/admin", adminRoutes);
 
   app.use((err: unknown, _req: express.Request, res: express.Response, _next: express.NextFunction) => {

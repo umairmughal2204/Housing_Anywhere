@@ -4,6 +4,7 @@ import { ChevronLeft, Info, ChevronDown, Shield, ShieldCheck, Check, Plus, Uploa
 import { DatePicker } from "../components/date-picker";
 import { useAuth } from "../contexts/auth-context";
 import { API_BASE } from "../config";
+import { usePlatformSettings } from "../hooks/use-platform-settings";
 import { BrandLogo } from "../components/brand-logo";
 import faviconLogo from "../../assets/favicon.png";
 
@@ -107,8 +108,6 @@ function formatDateLabel(date: Date) {
   return date.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
 }
 
-const TENANT_PROTECTION_RATE = 0.1;
-const TENANT_PROTECTION_FEE_CAP = 250;
 const RENT_GUARANTEE_FEE = 251.54;
 
 export function RentalApplication() {
@@ -117,6 +116,7 @@ export function RentalApplication() {
   const location = useLocation();
   const { user, logout } = useAuth();
   const apiBase = API_BASE;
+  const platformSettings = usePlatformSettings();
   const [currentStep, setCurrentStep] = useState(1);
   const [showAskQuestionForm, setShowAskQuestionForm] = useState(false);
   const [expandedTopics, setExpandedTopics] = useState<string[]>([]);
@@ -196,7 +196,10 @@ export function RentalApplication() {
   const [incomeProof, setIncomeProof] = useState<File | null>(null);
   const [shareDocuments, setShareDocuments] = useState(false);
   const tenantProtectionFee = listing
-    ? Math.min(listing.monthlyRent * TENANT_PROTECTION_RATE, TENANT_PROTECTION_FEE_CAP)
+    ? Math.min(
+        listing.monthlyRent * (platformSettings.tenantProtectionFeeRate / 100),
+        platformSettings.tenantProtectionFeeCap
+      )
     : 0;
   const landlordInitials = (listing?.landlordName ?? "Landlord")
     .split(" ")
@@ -1048,7 +1051,7 @@ export function RentalApplication() {
       )}
 
       {/* Main Content */}
-      <div className={`max-w-[1200px] mx-auto px-[16px] md:px-[32px] pt-[28px] md:pt-[48px] ${(currentStep === 1 && !showAskQuestionForm) || currentStep === 2 || currentStep === 3 ? "pb-[180px] md:pb-[48px]" : "pb-[48px]"}`}>
+      <div className={`max-w-[1200px] mx-auto px-[16px] md:px-[32px] pt-[28px] md:pt-[48px] ${currentStep === 1 && !showAskQuestionForm ? "pb-[180px] md:pb-[110px]" : currentStep === 2 || currentStep === 3 ? "pb-[180px] md:pb-[48px]" : "pb-[48px]"}`}>
         <div className="flex flex-col lg:flex-row gap-[10px] lg:gap-[64px]">
           {/* Left Column */}
           <div className="flex-[2]">

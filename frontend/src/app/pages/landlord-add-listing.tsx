@@ -1992,7 +1992,7 @@ export function LandlordAddListing() {
                   + Add New Cost
                 </button>
                 {openCostMenu === "utility" && (
-                  <div className="absolute left-0 mt-[6px] w-[calc(100vw-32px)] max-w-[240px] bg-white border border-[rgba(0,0,0,0.16)] shadow-[0_8px_18px_rgba(0,0,0,0.14)] z-50 max-h-[320px] overflow-y-auto sm:w-[240px]">
+                  <div className="absolute left-0 mt-[6px] w-[calc(100vw-32px)] max-w-[240px] bg-white border border-[rgba(0,0,0,0.16)] rounded-[8px] shadow-[0_8px_18px_rgba(0,0,0,0.14)] z-50 max-h-[320px] overflow-y-auto sm:w-[240px]">
                     {availableUtilityAddOptions.map((option) => (
                       <button
                         key={`utility-add-${option}`}
@@ -2092,7 +2092,7 @@ export function LandlordAddListing() {
                   + Add New Cost
                 </button>
                 {openCostMenu === "required" && (
-                  <div className="absolute left-0 mt-[6px] w-[calc(100vw-32px)] max-w-[220px] bg-white border border-[rgba(0,0,0,0.16)] shadow-[0_8px_18px_rgba(0,0,0,0.14)] z-50 sm:w-[220px]">
+                  <div className="absolute left-0 mt-[6px] w-[calc(100vw-32px)] max-w-[220px] overflow-hidden bg-white border border-[rgba(0,0,0,0.16)] rounded-[8px] shadow-[0_8px_18px_rgba(0,0,0,0.14)] z-50 sm:w-[220px]">
                     {availableAdditionalRequiredCostOptions.map((option) => (
                       <button
                         key={`additional-required-${option}`}
@@ -2195,7 +2195,7 @@ export function LandlordAddListing() {
                   + Add New Cost
                 </button>
                 {openCostMenu === "optional" && (
-                  <div className="absolute left-0 mt-[6px] w-[calc(100vw-32px)] max-w-[260px] bg-white border border-[rgba(0,0,0,0.16)] shadow-[0_8px_18px_rgba(0,0,0,0.14)] z-50 max-h-[260px] overflow-y-auto sm:w-[260px]">
+                  <div className="absolute left-0 mt-[6px] w-[calc(100vw-32px)] max-w-[260px] bg-white border border-[rgba(0,0,0,0.16)] rounded-[8px] shadow-[0_8px_18px_rgba(0,0,0,0.14)] z-50 max-h-[260px] overflow-y-auto sm:w-[260px]">
                     {availableOptionalServicesOptions.map((option) => (
                       <button
                         key={`optional-service-${option}`}
@@ -2286,7 +2286,7 @@ export function LandlordAddListing() {
                   + Add New Cost
                 </button>
                 {openCostMenu === "deposit" && (
-                  <div className="absolute left-0 mt-[6px] w-[calc(100vw-32px)] max-w-[220px] bg-white border border-[rgba(0,0,0,0.16)] shadow-[0_8px_18px_rgba(0,0,0,0.14)] z-50 sm:w-[220px]">
+                  <div className="absolute left-0 mt-[6px] w-[calc(100vw-32px)] max-w-[220px] overflow-hidden bg-white border border-[rgba(0,0,0,0.16)] rounded-[8px] shadow-[0_8px_18px_rgba(0,0,0,0.14)] z-50 sm:w-[220px]">
                     {availableDepositOptions.map((option) => (
                       <button
                         key={`deposit-${option}`}

@@ -979,7 +979,8 @@ router.post("/me/profile-picture", requireAuth, upload.single("image"), async (r
   const fullPath = path.join(uploadsDir, filename);
   await fs.writeFile(fullPath, file.buffer);
 
-  const profilePictureUrl = `${req.protocol}://${req.get("host")}/uploads/profile-pictures/${filename}`;
+  const base = env.SERVER_PUBLIC_URL ?? `${req.protocol}://${req.get("host")}`;
+  const profilePictureUrl = `${base}/uploads/profile-pictures/${filename}`;
 
   const user = await UserModel.findByIdAndUpdate(
     req.user?.sub,

@@ -44,6 +44,9 @@ interface ApplicationRecord {
   idVerified: boolean;
   moveInDate?: string | null;
   moveOutDate?: string | null;
+  tenantMoveInConfirmed: boolean;
+  keyReceivedConfirmed: boolean;
+  payoutStatus: "not_ready" | "ready" | "released" | "blocked";
   billingAddress?: {
     country?: string;
     city?: string;
@@ -220,6 +223,8 @@ export function LandlordRentals() {
   const [replySuccess, setReplySuccess] = useState("");
   const [isTemplateSending, setIsTemplateSending] = useState<"invite" | "decline" | null>(null);
   const [templateFeedback, setTemplateFeedback] = useState("");
+  const [isMoveInCheckSending, setIsMoveInCheckSending] = useState(false);
+  const [moveInCheckFeedback, setMoveInCheckFeedback] = useState("");
   const [showContactInfoHint, setShowContactInfoHint] = useState(false);
   const [isSpecialOfferOpen, setIsSpecialOfferOpen] = useState(false);
   const [isSpecialOfferCalendarOpen, setIsSpecialOfferCalendarOpen] = useState(false);
@@ -412,6 +417,37 @@ export function LandlordRentals() {
       tenantName: application.tenant.name,
       note: "After review, we are unable to proceed with this application at the moment. You can still apply to other listings that better match your profile and timing.",
     });
+  };
+
+  const buildMoveInCheckMessage = (application: ApplicationRecord) => {
+    return buildOfferMessage({
+      version: 1,
+      kind: "move_in_check",
+      listingTitle: application.listing.title,
+      tenantName: application.tenant.name,
+      note: "Let us know once you've moved in and picked up the keys so we can release your deposit protections.",
+    });
+  };
+
+  const sendMoveInCheck = async () => {
+    const token = localStorage.getItem("authToken");
+    if (!token || !selectedApplication) {
+      setMoveInCheckFeedback("Unable to send right now.");
+      return;
+    }
+
+    setIsMoveInCheckSending(true);
+    setMoveInCheckFeedback("");
+
+    try {
+      const conversationId = await openConversationForApplication(selectedApplication.id, token);
+      await postConversationMessage(conversationId, buildMoveInCheckMessage(selectedApplication), token);
+      setMoveInCheckFeedback(`Move-in check sent to ${selectedApplication.tenant.name}.`);
+    } catch (err) {
+      setMoveInCheckFeedback(err instanceof Error ? err.message : "Failed to send message");
+    } finally {
+      setIsMoveInCheckSending(false);
+    }
   };
 
   const handleSpecialOfferDateChange = (start: Date | null, end: Date | null) => {
@@ -950,6 +986,43 @@ export function LandlordRentals() {
                     <p className="text-center text-[12px] text-neutral-gray mt-[10px]">{templateFeedback}</p>
                   )}
                 </div>
+
+                {selectedApplication.status === "paid" && (
+                  <div className="bg-[#f6f7f8] border border-[rgba(0,0,0,0.08)] rounded-[6px] px-[14px] sm:px-[20px] lg:px-[24px] py-[18px] sm:py-[24px] lg:py-[28px] mt-[16px]">
+                    {selectedApplication.tenantMoveInConfirmed && selectedApplication.keyReceivedConfirmed ? (
+                      <div className="text-center">
+                        <h3 className="text-neutral-black text-[18px] font-bold mb-[6px]">
+                          {selectedApplication.tenant.name} confirmed move-in and keys received
+                        </h3>
+                        <p className="text-neutral-gray text-[13px]">
+                          Payout status: <span className="font-semibold capitalize">{selectedApplication.payoutStatus.replace("_", " ")}</span>
+                        </p>
+                      </div>
+                    ) : (
+                      <>
+                        <div className="text-center mb-[18px]">
+                          <h3 className="text-neutral-black text-[20px] sm:text-[22px] leading-[1.1] font-bold mb-[10px]">Confirm move-in with {selectedApplication.tenant.name}</h3>
+                          <p className="text-neutral-gray text-[14px] leading-[1.5] max-w-[620px] mx-auto">
+                            Once the tenant confirms they've moved in and received the keys, this booking becomes ready for payout.
+                          </p>
+                        </div>
+                        <div className="flex flex-wrap items-center justify-center gap-[12px]">
+                          <button
+                            type="button"
+                            onClick={() => { void sendMoveInCheck(); }}
+                            disabled={isMoveInCheckSending}
+                            className="w-full sm:w-auto px-[22px] py-[12px] bg-brand-primary text-white text-[14px] font-semibold rounded-[6px] border border-brand-primary transition-all duration-200 hover:bg-brand-primary-dark hover:shadow-md hover:-translate-y-[1px] disabled:opacity-60 disabled:hover:translate-y-0 disabled:hover:shadow-none"
+                          >
+                            {isMoveInCheckSending ? "Sending..." : "Ask tenant to confirm keys received"}
+                          </button>
+                        </div>
+                        {moveInCheckFeedback && (
+                          <p className="text-center text-[12px] text-neutral-gray mt-[10px]">{moveInCheckFeedback}</p>
+                        )}
+                      </>
+                    )}
+                  </div>
+                )}
 
                 {isSpecialOfferOpen && selectedApplication && (
                   <div className="fixed inset-0 z-[80] bg-black/40 flex items-center justify-center p-[10px] sm:p-[24px]">

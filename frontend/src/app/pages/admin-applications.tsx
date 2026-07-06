@@ -14,6 +14,10 @@ interface AdminApplication {
   paymentStatus: string;
   paidAmount: number;
   currency: string;
+  rentAmount: number;
+  tenantProtectionFee: number;
+  rentGuaranteeFee: number;
+  totalAmount: number;
   adminApprovalStatus: ApprovalStatus;
   tenantMoveInConfirmed: boolean;
   keyReceivedConfirmed: boolean;
@@ -203,9 +207,16 @@ export function AdminApplications() {
                   {badge(a.adminApprovalStatus)}
                   <span className="text-[12px] text-neutral-gray">Move-in: {a.tenantMoveInConfirmed ? "✓" : "waiting"} · Key: {a.keyReceivedConfirmed ? "✓" : "waiting"}</span>
                 </div>
-                <p className="text-neutral-gray text-[12px] mb-[10px]">
-                  {a.moveInDate ? new Date(a.moveInDate).toLocaleDateString("en-GB") : "No move-in"} → {a.moveOutDate ? new Date(a.moveOutDate).toLocaleDateString("en-GB") : "No move-out"} · {a.currency} {a.paidAmount.toFixed(2)}
+                <p className="text-neutral-gray text-[12px]">
+                  {a.moveInDate ? new Date(a.moveInDate).toLocaleDateString("en-GB") : "No move-in"} → {a.moveOutDate ? new Date(a.moveOutDate).toLocaleDateString("en-GB") : "No move-out"}
                 </p>
+                {a.isPaid && (
+                  <div className="text-[12px] text-neutral-gray mb-[10px] mt-[4px] bg-neutral-light-gray rounded-[8px] px-[10px] py-[8px]">
+                    <div className="flex justify-between"><span>Rent (owed to landlord)</span><span className="font-semibold text-neutral-black">{a.currency} {a.rentAmount.toFixed(2)}</span></div>
+                    <div className="flex justify-between"><span>Platform fees</span><span>{a.currency} {(a.tenantProtectionFee + a.rentGuaranteeFee).toFixed(2)}</span></div>
+                    <div className="flex justify-between pt-[4px] mt-[4px] border-t border-[rgba(0,0,0,0.08)]"><span>Total collected</span><span className="font-semibold text-neutral-black">{a.currency} {a.totalAmount.toFixed(2)}</span></div>
+                  </div>
+                )}
                 {/* Actions */}
                 <div className="flex flex-wrap gap-[6px] pt-[10px] border-t border-[rgba(0,0,0,0.06)]">
                   <button type="button" onClick={() => openAction({ type: "approval", application: a, status: "approved" })} className="inline-flex items-center gap-[4px] px-[10px] py-[6px] rounded-[8px] text-[12px] font-semibold bg-blue-50 text-blue-700 hover:bg-blue-100"><CheckCircle2 className="w-[12px] h-[12px]" />Approve</button>
@@ -258,16 +269,31 @@ export function AdminApplications() {
                         <p className="text-neutral-gray text-[12px]">{a.listing?.city ?? "—"}</p>
                         <p className="text-neutral-gray text-[12px] mt-[6px]">{a.moveInDate ? new Date(a.moveInDate).toLocaleDateString("en-GB") : "No move-in"} → {a.moveOutDate ? new Date(a.moveOutDate).toLocaleDateString("en-GB") : "No move-out"}</p>
                       </td>
-                      <td className="px-[16px] py-[14px]">
+                      <td className="px-[16px] py-[14px] min-w-[180px]">
                         {a.isPaid ? badge("paid") : badge(a.paymentStatus || "pending")}
-                        <p className="text-neutral-gray text-[12px] mt-[4px]">{a.currency} {a.paidAmount.toFixed(2)}</p>
+                        {a.isPaid ? (
+                          <div className="text-[12px] text-neutral-gray mt-[6px] space-y-[2px]">
+                            <div className="flex justify-between gap-[10px]"><span>Rent</span><span className="font-semibold text-neutral-black">{a.currency} {a.rentAmount.toFixed(2)}</span></div>
+                            <div className="flex justify-between gap-[10px]"><span>Fees</span><span>{a.currency} {(a.tenantProtectionFee + a.rentGuaranteeFee).toFixed(2)}</span></div>
+                            <div className="flex justify-between gap-[10px] pt-[2px] border-t border-[rgba(0,0,0,0.06)]"><span>Total</span><span className="font-semibold text-neutral-black">{a.currency} {a.totalAmount.toFixed(2)}</span></div>
+                          </div>
+                        ) : (
+                          <p className="text-neutral-gray text-[12px] mt-[4px]">{a.currency} {a.paidAmount.toFixed(2)}</p>
+                        )}
                       </td>
                       <td className="px-[16px] py-[14px] min-w-[170px]">
                         {badge(a.adminApprovalStatus)}
                         <p className="text-neutral-gray text-[12px] mt-[6px]">Move-in: {a.tenantMoveInConfirmed ? "Confirmed" : "Waiting"}</p>
                         <p className="text-neutral-gray text-[12px]">Key: {a.keyReceivedConfirmed ? "Received" : "Waiting"}</p>
                       </td>
-                      <td className="px-[16px] py-[14px]">{badge(a.payoutStatus)}</td>
+                      <td className="px-[16px] py-[14px] min-w-[140px]">
+                        {badge(a.payoutStatus)}
+                        {a.isPaid && (
+                          <p className="text-neutral-gray text-[12px] mt-[6px]">
+                            Owe landlord: <span className="font-semibold text-neutral-black">{a.currency} {a.rentAmount.toFixed(2)}</span>
+                          </p>
+                        )}
+                      </td>
                       <td className="px-[16px] py-[14px]">
                         <div className="flex flex-wrap justify-end gap-[8px] min-w-[220px]">
                           <button type="button" onClick={() => openAction({ type: "approval", application: a, status: "approved" })} className="inline-flex items-center gap-[4px] px-[10px] py-[6px] rounded-[8px] text-[12px] font-semibold bg-blue-50 text-blue-700 hover:bg-blue-100"><CheckCircle2 className="w-[13px] h-[13px]" />Approve</button>

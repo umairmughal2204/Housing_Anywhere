@@ -327,7 +327,11 @@ export function Account() {
         <div className="max-w-[1200px] mx-auto px-[16px] sm:px-[20px] md:px-[32px]">
           <div className="mb-[20px] sm:mb-[28px] flex flex-col gap-[12px] sm:flex-row sm:items-center sm:justify-between">
             <h1 className="text-[#1A1A1A] text-[28px] sm:text-[32px] font-bold tracking-[-0.02em]">Account</h1>
-            <button className="w-full sm:w-auto px-[16px] py-[10px] border border-[rgba(0,0,0,0.16)] bg-white text-[#1A1A1A] text-[13px] font-semibold hover:bg-[#F7F7F9] transition-colors">
+            <button
+              type="button"
+              onClick={() => setActiveTab("profile")}
+              className="w-full sm:w-auto px-[16px] py-[10px] border border-[rgba(0,0,0,0.16)] rounded-[10px] bg-white text-[#1A1A1A] text-[13px] font-semibold hover:bg-[#F7F7F9] transition-colors"
+            >
               VIEW PROFILE
             </button>
           </div>
@@ -622,7 +626,7 @@ export function Account() {
                               cityOfResidence: e.target.value,
                             }))
                           }
-                          className="w-full px-[12px] py-[10px] border border-[rgba(0,0,0,0.16)] text-[#1A1A1A] text-[14px] focus:outline-none focus:border-[#0066CC]"
+                          className="w-full px-[12px] py-[10px] border border-[rgba(0,0,0,0.16)] rounded-[8px] text-[#1A1A1A] text-[14px] focus:outline-none focus:border-[#0066CC]"
                         />
                       </div>
                       <div>
@@ -636,7 +640,7 @@ export function Account() {
                               nationality: e.target.value,
                             }))
                           }
-                          className="w-full px-[12px] py-[10px] border border-[rgba(0,0,0,0.16)] text-[#1A1A1A] text-[14px] focus:outline-none focus:border-[#0066CC]"
+                          className="w-full px-[12px] py-[10px] border border-[rgba(0,0,0,0.16)] rounded-[8px] text-[#1A1A1A] text-[14px] focus:outline-none focus:border-[#0066CC]"
                         />
                       </div>
                     </div>
@@ -703,7 +707,7 @@ export function Account() {
                             <select
                               value={lang}
                               onChange={(e) => updateLanguage(index, e.target.value)}
-                              className="flex-1 px-[12px] py-[10px] border border-[rgba(0,0,0,0.16)] text-[#1A1A1A] text-[14px] focus:outline-none focus:border-[#0066CC]"
+                              className="flex-1 px-[12px] py-[10px] border border-[rgba(0,0,0,0.16)] rounded-[8px] text-[#1A1A1A] text-[14px] focus:outline-none focus:border-[#0066CC]"
                             >
                               <option value="">Select language</option>
                               {LANGUAGE_OPTIONS.map((language) => (
@@ -747,7 +751,7 @@ export function Account() {
                       <button
                         type="submit"
                         disabled={isSavingProfile}
-                        className="w-full sm:w-auto px-[32px] py-[12px] bg-[#0066CC] text-white text-[14px] font-bold hover:bg-[#0052A3] transition-colors disabled:opacity-70"
+                        className="w-full sm:w-auto px-[32px] py-[12px] rounded-[10px] bg-[#0066CC] text-white text-[14px] font-bold hover:bg-[#0052A3] transition-colors disabled:opacity-70"
                       >
                         {isSavingProfile ? "SAVING..." : "SAVE CHANGES"}
                       </button>
@@ -767,7 +771,7 @@ export function Account() {
                         Upload a copy of your rental agreements to easily share with future tenants.
                       </p>
                       <div className="flex flex-col sm:flex-row items-start gap-[12px] sm:gap-[16px]">
-                        <button className="px-[20px] py-[8px] border border-[rgba(0,0,0,0.16)] bg-white text-[#1A1A1A] text-[13px] font-semibold hover:bg-[#F7F7F9] transition-colors">
+                        <button className="px-[20px] py-[8px] border border-[rgba(0,0,0,0.16)] rounded-[10px] bg-white text-[#1A1A1A] text-[13px] font-semibold hover:bg-[#F7F7F9] transition-colors">
                           UPLOAD
                         </button>
                         <div className="text-[#6B6B6B] text-[12px]">
@@ -783,7 +787,7 @@ export function Account() {
                         Upload documents that inform your future tenants about the requirements for renting your properties.
                       </p>
                       <div className="flex flex-col sm:flex-row items-start gap-[12px] sm:gap-[16px]">
-                        <button className="px-[20px] py-[8px] border border-[rgba(0,0,0,0.16)] bg-white text-[#1A1A1A] text-[13px] font-semibold hover:bg-[#F7F7F9] transition-colors">
+                        <button className="px-[20px] py-[8px] border border-[rgba(0,0,0,0.16)] rounded-[10px] bg-white text-[#1A1A1A] text-[13px] font-semibold hover:bg-[#F7F7F9] transition-colors">
                           UPLOAD
                         </button>
                         <div className="text-[#6B6B6B] text-[12px]">
@@ -799,7 +803,7 @@ export function Account() {
                         Upload other documents that relate to your account on ReserveHousing.
                       </p>
                       <div className="flex items-start gap-[16px]">
-                        <button className="px-[20px] py-[8px] border border-[rgba(0,0,0,0.16)] bg-white text-[#1A1A1A] text-[13px] font-semibold hover:bg-[#F7F7F9] transition-colors">
+                        <button className="px-[20px] py-[8px] border border-[rgba(0,0,0,0.16)] rounded-[10px] bg-white text-[#1A1A1A] text-[13px] font-semibold hover:bg-[#F7F7F9] transition-colors">
                           UPLOAD
                         </button>
                         <div className="text-[#6B6B6B] text-[12px]">
@@ -828,7 +832,7 @@ export function Account() {
                             email: e.target.value,
                           }))
                         }
-                        className="w-full px-[12px] py-[10px] border border-[rgba(0,0,0,0.16)] text-[#1A1A1A] text-[14px] focus:outline-none focus:border-[#0066CC]"
+                        className="w-full px-[12px] py-[10px] border border-[rgba(0,0,0,0.16)] rounded-[8px] text-[#1A1A1A] text-[14px] focus:outline-none focus:border-[#0066CC]"
                       />
                       <p className="text-[#6B6B6B] text-[12px] mt-[6px]">
                         Status: {user?.emailVerified ? "Verified" : "Not Verified"}
@@ -846,7 +850,7 @@ export function Account() {
                               phoneCountryCode: e.target.value,
                             }))
                           }
-                          className="w-[120px] px-[12px] py-[10px] border border-[rgba(0,0,0,0.16)] text-[#1A1A1A] text-[14px] focus:outline-none focus:border-[#0066CC]"
+                          className="w-[120px] px-[12px] py-[10px] border border-[rgba(0,0,0,0.16)] rounded-[8px] text-[#1A1A1A] text-[14px] focus:outline-none focus:border-[#0066CC]"
                         >
                           {COUNTRY_CODES.map((code) => (
                             <option key={code} value={code}>
@@ -863,7 +867,7 @@ export function Account() {
                               phoneNumber: e.target.value,
                             }))
                           }
-                          className="flex-1 px-[12px] py-[10px] border border-[rgba(0,0,0,0.16)] text-[#1A1A1A] text-[14px] focus:outline-none focus:border-[#0066CC]"
+                          className="flex-1 px-[12px] py-[10px] border border-[rgba(0,0,0,0.16)] rounded-[8px] text-[#1A1A1A] text-[14px] focus:outline-none focus:border-[#0066CC]"
                         />
                       </div>
                       <p className="text-[#6B6B6B] text-[12px]">
@@ -877,7 +881,7 @@ export function Account() {
                     <button
                       type="submit"
                       disabled={isSavingContact}
-                      className="w-full sm:w-auto px-[32px] py-[12px] bg-[#0066CC] text-white text-[14px] font-bold hover:bg-[#0052A3] transition-colors disabled:opacity-70"
+                      className="w-full sm:w-auto px-[32px] py-[12px] rounded-[10px] bg-[#0066CC] text-white text-[14px] font-bold hover:bg-[#0052A3] transition-colors disabled:opacity-70"
                     >
                       {isSavingContact ? "SAVING..." : "SAVE CONTACT DETAILS"}
                     </button>
@@ -901,7 +905,7 @@ export function Account() {
                           type="password"
                           value={currentPassword}
                           onChange={(e) => setCurrentPassword(e.target.value)}
-                          className="w-full px-[12px] py-[10px] border border-[rgba(0,0,0,0.16)] text-[#1A1A1A] text-[14px] focus:outline-none focus:border-[#0066CC]"
+                          className="w-full px-[12px] py-[10px] border border-[rgba(0,0,0,0.16)] rounded-[8px] text-[#1A1A1A] text-[14px] focus:outline-none focus:border-[#0066CC]"
                         />
                       </div>
                     ) : null}
@@ -911,7 +915,7 @@ export function Account() {
                         type="password"
                         value={newPassword}
                         onChange={(e) => setNewPassword(e.target.value)}
-                        className="w-full px-[12px] py-[10px] border border-[rgba(0,0,0,0.16)] text-[#1A1A1A] text-[14px] focus:outline-none focus:border-[#0066CC]"
+                        className="w-full px-[12px] py-[10px] border border-[rgba(0,0,0,0.16)] rounded-[8px] text-[#1A1A1A] text-[14px] focus:outline-none focus:border-[#0066CC]"
                       />
                     </div>
                     <div>
@@ -920,7 +924,7 @@ export function Account() {
                         type="password"
                         value={confirmPassword}
                         onChange={(e) => setConfirmPassword(e.target.value)}
-                        className="w-full px-[12px] py-[10px] border border-[rgba(0,0,0,0.16)] text-[#1A1A1A] text-[14px] focus:outline-none focus:border-[#0066CC]"
+                        className="w-full px-[12px] py-[10px] border border-[rgba(0,0,0,0.16)] rounded-[8px] text-[#1A1A1A] text-[14px] focus:outline-none focus:border-[#0066CC]"
                       />
                     </div>
 
@@ -930,7 +934,7 @@ export function Account() {
                     <button
                       type="submit"
                       disabled={isSavingPassword}
-                      className="w-full sm:w-auto px-[32px] py-[12px] bg-[#0066CC] text-white text-[14px] font-bold hover:bg-[#0052A3] transition-colors disabled:opacity-70"
+                      className="w-full sm:w-auto px-[32px] py-[12px] rounded-[10px] bg-[#0066CC] text-white text-[14px] font-bold hover:bg-[#0052A3] transition-colors disabled:opacity-70"
                     >
                       {isSavingPassword ? "UPDATING..." : "UPDATE PASSWORD"}
                     </button>

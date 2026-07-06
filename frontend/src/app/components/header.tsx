@@ -19,9 +19,16 @@ interface HeaderProps {
   logoVariant?: "brand" | "favicon" | "mobile-favicon";
   forceSearchBar?: boolean;
   searchPlaceholder?: string;
+  dashboardButtonFilled?: boolean;
 }
 
-export function Header({ variant = "default", logoVariant = "brand", forceSearchBar = false, searchPlaceholder = "Search" }: HeaderProps) {
+export function Header({
+  variant = "default",
+  logoVariant = "brand",
+  forceSearchBar = false,
+  searchPlaceholder = "Search",
+  dashboardButtonFilled = true,
+}: HeaderProps) {
   const { user, isAuthenticated, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -322,7 +329,7 @@ export function Header({ variant = "default", logoVariant = "brand", forceSearch
 
               {/* Language Dropdown Menu */}
               {showLanguageDropdown && (
-                <div className="absolute top-[calc(100%+8px)] right-0 w-[180px] max-h-[260px] overflow-y-auto bg-white border border-neutral shadow-lg">
+                <div className="absolute top-[calc(100%+8px)] right-0 w-[180px] max-h-[260px] overflow-y-auto bg-white border border-neutral rounded-[16px] shadow-lg">
                   {SUPPORTED_LANGUAGES.map((language) => (
                     <button
                       key={language.code}
@@ -365,7 +372,9 @@ export function Header({ variant = "default", logoVariant = "brand", forceSearch
             {user?.isLandlord ? (
               <Link 
                 to={isOnLandlordDashboard ? "/landlord/add-listing" : "/landlord/dashboard"}
-                className="inline-flex items-center gap-[8px] rounded-[14px] px-[16px] py-[11px] bg-brand-primary text-white text-[14px] font-semibold shadow-[0_1px_2px_rgba(15,23,42,0.04)] hover:bg-brand-primary-dark transition-colors"
+                className={dashboardButtonFilled
+                  ? "inline-flex items-center gap-[8px] rounded-[14px] px-[16px] py-[11px] bg-brand-primary text-white text-[14px] font-semibold shadow-[0_1px_2px_rgba(15,23,42,0.04)] hover:bg-brand-primary-dark transition-colors"
+                  : "inline-flex items-center gap-[8px] rounded-[14px] border border-[#8C99A8] px-[16px] py-[11px] bg-white text-[#1F2937] text-[14px] font-semibold shadow-[0_1px_2px_rgba(15,23,42,0.04)] hover:bg-[#F5F7FA] hover:border-[#7A8898] hover:text-[#1F2937] transition-colors"}
               >
                 {isOnLandlordDashboard ? <FileText className="w-[16px] h-[16px]" /> : <LayoutDashboard className="w-[16px] h-[16px]" />}
                 {isOnLandlordDashboard ? "Add Listing" : "Go to Dashboard"}
@@ -410,7 +419,7 @@ export function Header({ variant = "default", logoVariant = "brand", forceSearch
 
               {/* Dropdown Menu */}
               {showDropdown && (
-                <div className="absolute top-[calc(100%+10px)] right-0 w-[280px] max-w-[calc(100vw-16px)] max-h-[80vh] overflow-y-auto bg-white border border-neutral shadow-lg">
+                <div className="absolute top-[calc(100%+10px)] right-0 w-[280px] max-w-[calc(100vw-16px)] max-h-[80vh] overflow-y-auto bg-white border border-neutral rounded-[16px] shadow-lg">
                   {/* User Info */}
                   <div className="p-[16px] border-b border-neutral">
                     <div className="flex items-center gap-[12px]">
@@ -558,7 +567,7 @@ export function Header({ variant = "default", logoVariant = "brand", forceSearch
 
               {/* Language Dropdown Menu */}
               {showLanguageDropdown && (
-                <div className="absolute top-[calc(100%+8px)] right-0 w-[180px] max-h-[260px] overflow-y-auto bg-white border border-neutral shadow-lg">
+                <div className="absolute top-[calc(100%+8px)] right-0 w-[180px] max-h-[260px] overflow-y-auto bg-white border border-neutral rounded-[16px] shadow-lg">
                   {SUPPORTED_LANGUAGES.map((language) => (
                     <button
                       key={language.code}

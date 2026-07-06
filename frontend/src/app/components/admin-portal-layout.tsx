@@ -10,6 +10,8 @@ import {
   X,
   ShieldCheck,
   BarChart3,
+  Settings,
+  Wallet,
 } from "lucide-react";
 import { useAuth } from "../contexts/auth-context";
 import { useState, useEffect } from "react";
@@ -26,6 +28,8 @@ const navigation = [
   { name: "Users", href: "/admin/users", icon: Users },
   { name: "Listings", href: "/admin/listings", icon: Home },
   { name: "Bookings", href: "/admin/applications", icon: FileText },
+  { name: "Payments", href: "/admin/payments", icon: Wallet },
+  { name: "Settings", href: "/admin/settings", icon: Settings },
 ];
 
 export function AdminPortalLayout({ children }: AdminPortalLayoutProps) {
