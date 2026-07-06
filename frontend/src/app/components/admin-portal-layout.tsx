@@ -9,6 +9,7 @@ import {
   Menu,
   X,
   ShieldCheck,
+  BarChart3,
 } from "lucide-react";
 import { useAuth } from "../contexts/auth-context";
 import { useState, useEffect } from "react";
@@ -21,6 +22,7 @@ interface AdminPortalLayoutProps {
 
 const navigation = [
   { name: "Dashboard", href: "/admin", icon: LayoutDashboard },
+  { name: "Analytics", href: "/admin/analytics", icon: BarChart3 },
   { name: "Users", href: "/admin/users", icon: Users },
   { name: "Listings", href: "/admin/listings", icon: Home },
   { name: "Bookings", href: "/admin/applications", icon: FileText },

@@ -4,6 +4,7 @@ import { requireAuth, requireAdmin } from "../middleware/auth.js";
 import { UserModel } from "../models/User.js";
 import { ListingModel } from "../models/Listing.js";
 import { RentalApplicationModel } from "../models/RentalApplication.js";
+import { PageViewModel } from "../models/PageView.js";
 
 const router = Router();
 
@@ -418,6 +419,87 @@ router.patch("/applications/:id/payout", async (req, res) => {
     payoutStatus: application.payoutStatus,
     payoutNotes: application.payoutNotes,
     payoutReleasedAt: application.payoutReleasedAt,
+  });
+});
+
+// ─── ANALYTICS ────────────────────────────────────────────────────────────────
+router.get("/analytics/overview", async (req, res) => {
+  const range = z.enum(["7", "30", "90"]).catch("30").parse(req.query.range);
+  const days = Number(range);
+  const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+  const match = { createdAt: { $gte: since } };
+
+  const [totalPageviews, visitorIds, sessionIds, series, topPages, referrers, devices] = await Promise.all([
+    PageViewModel.countDocuments(match),
+    PageViewModel.distinct("visitorId", match),
+    PageViewModel.distinct("sessionId", match),
+    PageViewModel.aggregate([
+      { $match: match },
+      {
+        $group: {
+          _id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } },
+          pageviews: { $sum: 1 },
+          visitors: { $addToSet: "$visitorId" },
+        },
+      },
+      { $project: { _id: 0, date: "$_id", pageviews: 1, visitors: { $size: "$visitors" } } },
+      { $sort: { date: 1 } },
+    ]),
+    PageViewModel.aggregate([
+      { $match: match },
+      { $group: { _id: "$path", count: { $sum: 1 } } },
+      { $sort: { count: -1 } },
+      { $limit: 10 },
+      { $project: { _id: 0, path: "$_id", count: 1 } },
+    ]),
+    PageViewModel.aggregate([
+      { $match: match },
+      { $group: { _id: "$referrerHost", count: { $sum: 1 } } },
+      { $sort: { count: -1 } },
+      { $limit: 8 },
+      { $project: { _id: 0, host: "$_id", count: 1 } },
+    ]),
+    PageViewModel.aggregate([
+      { $match: match },
+      { $group: { _id: "$device", count: { $sum: 1 } } },
+      { $project: { _id: 0, device: "$_id", count: 1 } },
+    ]),
+  ]);
+
+  const uniqueVisitors = visitorIds.length;
+  const uniqueSessions = sessionIds.length;
+  const avgPagesPerSession = uniqueSessions > 0 ? totalPageviews / uniqueSessions : 0;
+
+  res.json({
+    range: days,
+    totalPageviews,
+    uniqueVisitors,
+    uniqueSessions,
+    avgPagesPerSession,
+    series,
+    topPages,
+    referrers,
+    devices,
+  });
+});
+
+router.get("/analytics/top-listings", async (req, res) => {
+  const limit = Math.min(50, Math.max(1, Number(req.query.limit) || 10));
+
+  const listings = await ListingModel.find({ status: "active" })
+    .sort({ views: -1 })
+    .limit(limit)
+    .select("title city views inquiries")
+    .lean();
+
+  res.json({
+    listings: listings.map((l) => ({
+      id: l._id.toString(),
+      title: l.title,
+      city: l.city,
+      views: l.views ?? 0,
+      inquiries: l.inquiries ?? 0,
+    })),
   });
 });
 

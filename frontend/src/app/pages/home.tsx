@@ -446,7 +446,6 @@ function ParallaxFeatureSection({ dark = false, imageSrc, imageAlt, title, body,
 }
 
 export function Home() {
-  const apiBase = (import.meta as any).env.VITE_API_BASE_URL ?? "http://localhost:4000";
   const [searchCity, setSearchCity] = useState("");
   const [startDate, setStartDate] = useState<Date | null>(new Date(2026, 2, 1)); // March 1, 2026
   const [endDate, setEndDate] = useState<Date | null>(new Date(2026, 5, 1)); // June 1, 2026
@@ -502,7 +501,7 @@ export function Home() {
   useEffect(() => {
     const loadCitySuggestions = async () => {
       try {
-        const response = await fetch(`${apiBase}/api/listings`);
+        const response = await fetch(`${API_BASE}/api/listings`);
         if (!response.ok) {
           throw new Error("Failed to load listing cities");
         }
@@ -515,7 +514,7 @@ export function Home() {
     };
 
     void loadCitySuggestions();
-  }, [apiBase]);
+  }, []);
 
   useEffect(() => {
     if (isAuthLoading) {
@@ -554,7 +553,7 @@ export function Home() {
 
     const loadRecommendations = async () => {
       try {
-        const response = await fetch(`${apiBase}/api/auth/me/recommendations?limit=3`, {
+        const response = await fetch(`${API_BASE}/api/auth/me/recommendations?limit=3`, {
           headers,
           signal: abortController.signal,
         });
@@ -577,7 +576,7 @@ export function Home() {
 
     const loadHomeListings = async () => {
       try {
-        const response = await fetch(`${apiBase}/api/auth/me/recently-viewed?limit=3`, {
+        const response = await fetch(`${API_BASE}/api/auth/me/recently-viewed?limit=3`, {
           headers,
           signal: abortController.signal,
         });
@@ -600,7 +599,7 @@ export function Home() {
 
     const loadFavorites = async () => {
       try {
-        const response = await fetch(`${apiBase}/api/auth/me/favorites`, {
+        const response = await fetch(`${API_BASE}/api/auth/me/favorites`, {
           headers,
           signal: abortController.signal,
         });
@@ -628,7 +627,7 @@ export function Home() {
     return () => {
       abortController.abort();
     };
-  }, [apiBase, isAuthenticated, isAuthLoading]);
+  }, [isAuthenticated, isAuthLoading]);
 
   useEffect(() => {
     if (!isAuthenticated) {

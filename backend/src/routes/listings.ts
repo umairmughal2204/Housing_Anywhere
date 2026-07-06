@@ -148,7 +148,10 @@ const listingQuerySchema = z.object({
   city: z.string().optional(),
 });
 
-function toListingResponse(listing: any, options?: { landlord?: { id: string; name: string; initials: string } }) {
+function toListingResponse(
+  listing: any,
+  options?: { landlord?: { id: string; name: string; initials: string; profilePictureUrl?: string } }
+) {
   return {
     id: String(listing._id),
     // Section 1
@@ -269,6 +272,7 @@ router.get("/:id([0-9a-fA-F]{24})", async (req, res) => {
             id: String(landlord._id),
             name: `${landlord.firstName} ${landlord.lastName}`,
             initials: `${landlord.firstName[0] ?? ""}${landlord.lastName[0] ?? ""}`.toUpperCase(),
+            profilePictureUrl: landlord.profilePictureUrl ?? undefined,
           }
         : undefined,
     }),

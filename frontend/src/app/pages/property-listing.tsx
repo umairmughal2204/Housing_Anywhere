@@ -2,6 +2,7 @@ import { Link, useParams, useNavigate } from "react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Header } from "../components/header";
 import { Footer } from "../components/footer";
+import { UserAvatar } from "../components/user-avatar";
 import { DatePicker } from "../components/date-picker";
 import { useAuth } from "../contexts/auth-context";
 import { MapContainer, Marker, Popup, TileLayer } from "react-leaflet";
@@ -98,6 +99,7 @@ interface ListingDetails {
     id: string;
     name: string;
     initials: string;
+    profilePictureUrl?: string;
   };
 }
 
@@ -1871,13 +1873,12 @@ export function PropertyListing() {
             <div className="space-y-[10px] lg:sticky lg:top-[100px]">
               <div className="hidden lg:block border border-[rgba(15,45,54,0.18)] rounded-[6px] bg-[#F8FAFC] overflow-hidden">
                 <div className="px-[24px] py-[18px] flex items-center gap-[14px] border-b border-[rgba(15,45,54,0.12)] bg-white">
-                  <div className="w-[64px] h-[64px] rounded-full overflow-hidden border border-[rgba(15,45,54,0.16)] bg-[#EAF2FF] shrink-0">
-                    <img
-                      src={listing?.images?.[0] || "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200&q=80"}
-                      alt="Landlord"
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
+                  <UserAvatar
+                    name={listing?.landlord?.name}
+                    profilePictureUrl={listing?.landlord?.profilePictureUrl}
+                    sizeClassName="w-[64px] h-[64px] shrink-0 border border-[rgba(15,45,54,0.16)]"
+                    textClassName="text-[#0F2D36] text-[20px] font-bold bg-[#EAF2FF]"
+                  />
                   <div>
                     <p className="text-[#0F2D36] text-[16px] leading-[1.2] font-bold mb-[6px]">{listing?.landlord?.name ?? "Landlord"}</p>
                     <p className="text-[#0F2D36] text-[14px] leading-[1] flex items-center gap-[6px]">
@@ -2228,12 +2229,13 @@ export function PropertyListing() {
                 <div className="mb-[14px] flex items-center gap-[10px] text-[#0F2D36] text-[27px] sm:text-[29px] leading-[1.1] font-bold">
                   <span>You</span>
                   <ChevronRight className="w-[18px] h-[18px] text-[#6A7F88]" />
-                  <img
-                    src="https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=120&q=80"
-                    alt="Brand Co"
-                    className="h-[42px] w-[42px] rounded-full border border-[rgba(15,45,54,0.18)] object-cover"
+                  <UserAvatar
+                    name={listing?.landlord?.name}
+                    profilePictureUrl={listing?.landlord?.profilePictureUrl}
+                    sizeClassName="h-[42px] w-[42px] border border-[rgba(15,45,54,0.18)]"
+                    textClassName="text-[#0F2D36] text-[15px] font-bold bg-[#EAF2FF]"
                   />
-                  <span>Brand Co</span>
+                  <span>{listing?.landlord?.name ?? "Landlord"}</span>
                 </div>
                 <p className="text-[#173743] text-[16px] leading-[1.55] mb-[14px]">Future rental costs to the landlord. You'll pay these directly, per your contract.</p>
 

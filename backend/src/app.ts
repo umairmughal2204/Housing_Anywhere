@@ -10,6 +10,7 @@ import rentalApplicationsRoutes from "./routes/rental-applications.js";
 import conversationsRoutes from "./routes/conversations.js";
 import paymentsRoutes from "./routes/payments.js";
 import adminRoutes from "./routes/admin.js";
+import analyticsRoutes from "./routes/analytics.js";
 
 export function createApp() {
   const app = express();
@@ -49,6 +50,16 @@ export function createApp() {
     res.json({ ok: true });
   });
 
+  const analyticsTrackLimiter = rateLimit({
+    windowMs: 60 * 1000,
+    max: 120,
+    standardHeaders: true,
+    legacyHeaders: false,
+    handler: (_req, res) => {
+      res.status(429).json({ message: "Too many requests" });
+    },
+  });
+
   app.use("/api/auth/login", authAttemptLimiter);
   app.use("/api/auth/signup", authAttemptLimiter);
   app.use("/api/auth/google", authAttemptLimiter);
@@ -60,6 +71,7 @@ export function createApp() {
   app.use("/api/rental-applications", rentalApplicationsRoutes);
   app.use("/api/conversations", conversationsRoutes);
   app.use("/api/payments", paymentsRoutes);
+  app.use("/api/analytics", analyticsTrackLimiter, analyticsRoutes);
   app.use("/api/admin", adminRoutes);
 
   app.use((err: unknown, _req: express.Request, res: express.Response, _next: express.NextFunction) => {

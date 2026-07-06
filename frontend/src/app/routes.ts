@@ -74,6 +74,8 @@ import { AdminLogin } from "./pages/admin-login";
 
 import { AdminDashboard } from "./pages/admin-dashboard";
 
+import { AdminAnalytics } from "./pages/admin-analytics";
+
 import { AdminUsers } from "./pages/admin-users";
 
 import { AdminListings } from "./pages/admin-listings";
@@ -107,6 +109,8 @@ function withAdminRoute(Page: ComponentType) {
 
 
 const ProtectedAdminDashboard = withAdminRoute(AdminDashboard);
+
+const ProtectedAdminAnalytics = withAdminRoute(AdminAnalytics);
 
 const ProtectedAdminUsers = withAdminRoute(AdminUsers);
 
@@ -567,6 +571,16 @@ export const router = createBrowserRouter([
     path: "/admin",
 
     Component: ProtectedAdminDashboard,
+
+    ErrorBoundary,
+
+  },
+
+  {
+
+    path: "/admin/analytics",
+
+    Component: ProtectedAdminAnalytics,
 
     ErrorBoundary,
 

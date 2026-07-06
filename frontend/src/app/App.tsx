@@ -4,6 +4,7 @@ import { AuthProvider } from "./contexts/auth-context";
 import { Toaster } from "sonner";
 import { useEffect } from "react";
 import { initAutoTranslate } from "./utils/translate";
+import { trackPageView } from "./utils/analytics";
 
 export default function App() {
   useEffect(() => {
@@ -12,12 +13,14 @@ export default function App() {
 
   useEffect(() => {
     let previousPath = `${router.state.location.pathname}${router.state.location.search}`;
+    trackPageView(router.state.location.pathname);
 
     const unsubscribe = router.subscribe((state) => {
       const nextPath = `${state.location.pathname}${state.location.search}`;
       if (nextPath !== previousPath) {
         window.scrollTo({ top: 0, left: 0, behavior: "auto" });
         previousPath = nextPath;
+        trackPageView(state.location.pathname);
       }
     });
 
