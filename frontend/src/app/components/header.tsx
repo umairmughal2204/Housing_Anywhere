@@ -139,8 +139,6 @@ export function Header({ variant = "default", logoVariant = "brand", forceSearch
   const isHowItWorksPage = location.pathname.startsWith("/how-it-works");
   const isSearchHeaderVariant = isDashboardVariant && (forceSearchBar || location.pathname.startsWith("/listings"));
   const searchPlaceholderText = searchPlaceholder.trim().length > 0 ? searchPlaceholder : "Search";
-  const useDashboardSizedButton = isDashboardVariant || isHowItWorksPage;
-  const useFilledDashboardButton = isHowItWorksPage && !isDashboardVariant;
   const showMobileFaviconLogo = logoVariant === "favicon" || logoVariant === "mobile-favicon";
   const showDesktopBrandLogo = logoVariant !== "favicon";
   const isPathActive = (paths: string[]) =>
@@ -367,11 +365,7 @@ export function Header({ variant = "default", logoVariant = "brand", forceSearch
             {user?.isLandlord ? (
               <Link 
                 to={isOnLandlordDashboard ? "/landlord/add-listing" : "/landlord/dashboard"}
-                className={useDashboardSizedButton
-                  ? useFilledDashboardButton
-                    ? "inline-flex items-center gap-[8px] rounded-[14px] px-[16px] py-[11px] bg-brand-primary text-white text-[14px] font-semibold shadow-[0_1px_2px_rgba(15,23,42,0.04)] hover:bg-brand-primary-dark transition-colors"
-                    : "inline-flex items-center gap-[8px] rounded-[14px] border border-[#8C99A8] px-[16px] py-[11px] bg-white text-[#1F2937] text-[14px] font-semibold shadow-[0_1px_2px_rgba(15,23,42,0.04)] hover:bg-[#F5F7FA] hover:border-[#7A8898] hover:text-[#1F2937] transition-colors"
-                  : "inline-flex items-center gap-[8px] rounded-full px-[18px] py-[10px] bg-brand-primary text-white text-[14px] font-semibold leading-[1] hover:bg-brand-primary-dark transition-colors"}
+                className="inline-flex items-center gap-[8px] rounded-[14px] px-[16px] py-[11px] bg-brand-primary text-white text-[14px] font-semibold shadow-[0_1px_2px_rgba(15,23,42,0.04)] hover:bg-brand-primary-dark transition-colors"
               >
                 {isOnLandlordDashboard ? <FileText className="w-[16px] h-[16px]" /> : <LayoutDashboard className="w-[16px] h-[16px]" />}
                 {isOnLandlordDashboard ? "Add Listing" : "Go to Dashboard"}

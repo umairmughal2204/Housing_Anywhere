@@ -6,6 +6,7 @@ import { useNavigate } from "react-router";
 import { Link } from "react-router";
 import { API_BASE } from "../config";
 import { toast } from "sonner";
+import { useAuth } from "../contexts/auth-context";
 
 interface FavoriteListing {
   id: string;
@@ -23,6 +24,7 @@ const fallbackImage = "https://images.unsplash.com/photo-1502672260266-1c1ef2d93
 
 export function Favorites() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [favorites, setFavorites] = useState<FavoriteListing[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [openingConversationFor, setOpeningConversationFor] = useState<string | null>(null);
@@ -187,8 +189,9 @@ export function Favorites() {
                     {/* Message button */}
                     <button
                       onClick={() => void openConversation(property.id)}
-                      disabled={openingConversationFor === property.id}
-                      className="mt-[10px] w-full flex items-center justify-center gap-[6px] px-[14px] py-[9px] border border-[rgba(15,45,54,0.16)] text-[#12303B] text-[13px] font-semibold hover:bg-[#F7F9FC] transition-colors rounded-[8px]"
+                      disabled={openingConversationFor === property.id || user?.role === "landlord"}
+                      title={user?.role === "landlord" ? "Landlords cannot message about listings" : undefined}
+                      className="mt-[10px] w-full flex items-center justify-center gap-[6px] px-[14px] py-[9px] border border-[rgba(15,45,54,0.16)] text-[#12303B] text-[13px] font-semibold hover:bg-[#F7F9FC] transition-colors rounded-[8px] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent"
                     >
                       <MessageCircle className="w-[14px] h-[14px]" />
                       {openingConversationFor === property.id ? "Opening..." : "Message landlord"}
