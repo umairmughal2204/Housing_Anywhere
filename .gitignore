@@ -6,7 +6,7 @@ backend/.env
 backend/.env.*
 frontend/.env
 frontend/.env.*
-
+**/uploads
 # Dependencies
 node_modules/
 **/node_modules/
@@ -17,7 +17,7 @@ build/
 **/dist/
 **/build/
 .history
-
+.claude
 # Logs
 npm-debug.log*
 yarn-debug.log*

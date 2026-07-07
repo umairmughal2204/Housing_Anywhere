@@ -567,6 +567,7 @@ router.get("/tenant", requireAuth, async (req, res) => {
             cardholderName: item.paymentDetails.cardholderName,
             isPaid: item.paymentDetails.isPaid,
             paidAmount: item.paymentDetails.paidAmount,
+            paidAt: item.paymentDetails.paidAt ?? null,
             currency: item.paymentDetails.currency,
             addRentGuarantee: item.paymentDetails.addRentGuarantee,
             rentGuaranteeFee: item.paymentDetails.rentGuaranteeFee,
