@@ -308,12 +308,12 @@ export function TenantInbox() {
     <div className="min-h-screen bg-white flex flex-col">
       <Header />
 
-      <div className="flex-1 max-w-[1240px] mx-auto w-full px-[32px] py-[40px]">
+      <div className="flex-1 max-w-[1240px] mx-auto w-full px-[16px] sm:px-[24px] lg:px-[32px] py-[24px] sm:py-[40px]">
         {/* Header row */}
-        <div className="flex items-center justify-between mb-[28px]">
-          <h1 className="text-[#1A1A1A] text-[32px] font-bold tracking-[-0.02em]">Messages</h1>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-[16px] mb-[24px] sm:mb-[28px]">
+          <h1 className="text-[#1A1A1A] text-[26px] sm:text-[32px] font-bold tracking-[-0.02em]">Messages</h1>
 
-          <div className="relative w-[320px]">
+          <div className="relative w-full sm:w-[320px]">
             <Search className="absolute left-[12px] top-1/2 -translate-y-1/2 w-[16px] h-[16px] text-[#6B6B6B]" />
             <input
               type="text"

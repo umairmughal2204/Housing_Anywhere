@@ -287,7 +287,7 @@ export function TenantConversation() {
     <div className="min-h-screen bg-white flex flex-col">
       {/* Header */}
       <header className="border-b border-[rgba(0,0,0,0.08)] bg-white sticky top-0 z-50">
-        <div className="max-w-[1440px] mx-auto px-[32px] py-[14px] flex items-center gap-[16px]">
+        <div className="max-w-[1440px] mx-auto px-[16px] sm:px-[24px] lg:px-[32px] py-[14px] flex items-center gap-[10px] sm:gap-[16px]">
           <button
             onClick={() => navigate("/tenant/inbox")}
             className="flex items-center gap-[8px] text-[#1A1A1A] hover:text-brand-primary transition-colors"
@@ -320,7 +320,7 @@ export function TenantConversation() {
       </header>
 
       {metaError && (
-        <div className="max-w-[900px] mx-auto px-[32px] py-[40px] text-center">
+        <div className="max-w-[900px] mx-auto px-[16px] sm:px-[24px] lg:px-[32px] py-[40px] text-center">
           <p className="text-brand-primary text-[15px]">{metaError}</p>
           <button onClick={() => navigate("/tenant/inbox")} className="mt-[16px] text-[14px] font-semibold text-brand-primary hover:underline">
             Back to inbox
@@ -329,7 +329,7 @@ export function TenantConversation() {
       )}
 
       {!metaError && (
-        <div className="flex-1 max-w-[1200px] mx-auto w-full px-[32px] py-[28px] flex gap-[28px]">
+        <div className="flex-1 max-w-[1200px] mx-auto w-full px-[16px] sm:px-[24px] lg:px-[32px] py-[16px] lg:py-[28px] flex flex-col lg:flex-row gap-[16px] lg:gap-[28px]">
           {/*  Chat column  */}
           <div className="flex-[2] flex flex-col min-h-0">
             {/* Other user header */}
@@ -481,7 +481,7 @@ export function TenantConversation() {
           </div>
 
           {/*  Right sidebar  */}
-          <div className="w-[280px] flex-shrink-0 space-y-[16px]">
+          <div className="w-full lg:w-[280px] lg:flex-shrink-0 space-y-[16px]">
             {meta && (
               <>
                 {/* Listing card */}

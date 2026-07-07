@@ -234,8 +234,8 @@ export function Help() {
     <div className="min-h-screen bg-white">
       <Header />
 
-      <section className="relative overflow-hidden bg-[#D8DFE9] pt-[50px] pb-[136px] md:pt-[64px] md:pb-[164px]">
-        <div className="max-w-[1200px] mx-auto px-[32px] text-center">
+      <section className="relative overflow-hidden bg-[#D8DFE9] pt-[40px] pb-[96px] sm:pt-[50px] sm:pb-[136px] md:pt-[64px] md:pb-[164px]">
+        <div className="max-w-[1200px] mx-auto px-[16px] sm:px-[24px] lg:px-[32px] text-center">
           <h1 className="text-[#032E3D] text-[42px] md:text-[58px] font-bold tracking-[-0.04em] leading-[1] mb-[16px]">
             Help Center
           </h1>
@@ -275,11 +275,11 @@ export function Help() {
             Try searching for support email, rent payment, safety, or landlord verification.
           </p>
         </div>
-        <div className="pointer-events-none absolute left-1/2 bottom-[-210px] h-[340px] w-[1800px] -translate-x-1/2 rounded-[50%] bg-white" />
+        <div className="pointer-events-none absolute left-1/2 bottom-[-120px] h-[190px] w-[1200px] -translate-x-1/2 rounded-[50%] bg-white sm:bottom-[-210px] sm:h-[340px] sm:w-[1800px]" />
       </section>
 
-      <section className="py-[72px]">
-        <div className="max-w-[1200px] mx-auto px-[32px]">
+      <section className="py-[48px] sm:py-[72px]">
+        <div className="max-w-[1200px] mx-auto px-[16px] sm:px-[24px] lg:px-[32px]">
           <div className="mb-[32px] flex flex-wrap items-center justify-between gap-[16px]">
             <div>
               <h2 className="text-[#1A1A1A] text-[32px] font-bold tracking-[-0.02em]">
@@ -296,7 +296,7 @@ export function Help() {
             )}
           </div>
 
-          <div className="grid grid-cols-3 gap-[32px]">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-[20px] sm:gap-[24px] lg:gap-[32px]">
             {filteredContacts.map((contact) => {
               const Icon = contact.icon;
 
@@ -337,8 +337,8 @@ export function Help() {
         </div>
       </section>
 
-      <section className="bg-[#F7F7F9] py-[80px]">
-        <div className="max-w-[1200px] mx-auto px-[32px]">
+      <section className="bg-[#F7F7F9] py-[56px] sm:py-[80px]">
+        <div className="max-w-[1200px] mx-auto px-[16px] sm:px-[24px] lg:px-[32px]">
           <div className="mb-[32px] flex flex-wrap items-end justify-between gap-[16px]">
             <div>
               <h2 className="text-[#1A1A1A] text-[32px] font-bold tracking-[-0.02em]">
@@ -368,8 +368,8 @@ export function Help() {
               </button>
             </div>
           ) : (
-            <div className="grid grid-cols-2 gap-[32px]">
-              <div className="rounded-[28px] bg-white p-[32px]">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-[20px] sm:gap-[24px] lg:gap-[32px]">
+              <div className="rounded-[20px] sm:rounded-[28px] bg-white p-[20px] sm:p-[32px]">
                 <div className="flex items-center gap-[12px] mb-[24px]">
                   <HelpCircle className="w-[24px] h-[24px] text-brand-primary" />
                   <h3 className="text-neutral-black text-[20px] font-bold">
@@ -386,7 +386,7 @@ export function Help() {
                 </div>
               </div>
 
-              <div className="rounded-[28px] bg-white p-[32px]">
+              <div className="rounded-[20px] sm:rounded-[28px] bg-white p-[20px] sm:p-[32px]">
                 <div className="flex items-center gap-[12px] mb-[24px]">
                   <FileText className="w-[24px] h-[24px] text-accent-blue" />
                   <h3 className="text-neutral-black text-[20px] font-bold">
@@ -407,8 +407,8 @@ export function Help() {
         </div>
       </section>
 
-      <section className="py-[80px]">
-        <div className="max-w-[1200px] mx-auto px-[32px]">
+      <section className="py-[56px] sm:py-[80px]">
+        <div className="max-w-[1200px] mx-auto px-[16px] sm:px-[24px] lg:px-[32px]">
           <div className="mb-[32px] flex flex-wrap items-end justify-between gap-[16px]">
             <div>
               <h2 className="text-[#1A1A1A] text-[32px] font-bold tracking-[-0.02em]">
@@ -420,7 +420,7 @@ export function Help() {
             </div>
           </div>
 
-          <div className="grid grid-cols-3 gap-[24px]">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-[16px] sm:gap-[24px]">
             {filteredSafetyTopics.map((topic) => (
               <HelpTopicCard key={topic.question} topic={topic} tone="brand" />
             ))}

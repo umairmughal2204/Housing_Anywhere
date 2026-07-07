@@ -55,6 +55,7 @@ export function LandlordPortalLayout({
   const [hasLoadedSummary, setHasLoadedSummary] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const notificationsRef = useRef<HTMLDivElement>(null);
+  const mobileNotificationsRef = useRef<HTMLDivElement>(null);
   const userMenuRef = useRef<HTMLDivElement>(null);
   const languageDropdownRef = useRef<HTMLDivElement>(null);
 
@@ -142,7 +143,13 @@ export function LandlordPortalLayout({
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as Node;
 
-      if (showNotifications && notificationsRef.current && !notificationsRef.current.contains(target)) {
+      if (
+        showNotifications &&
+        notificationsRef.current &&
+        !notificationsRef.current.contains(target) &&
+        mobileNotificationsRef.current &&
+        !mobileNotificationsRef.current.contains(target)
+      ) {
         setShowNotifications(false);
       }
 
@@ -395,18 +402,68 @@ export function LandlordPortalLayout({
             </div>
 
             <div className="md:hidden flex items-center gap-[10px]">
-              <Link
-                to="/landlord/inbox"
-                className="relative inline-flex h-[42px] w-[42px] items-center justify-center rounded-full text-[#11354B] hover:bg-[#EEF2F7]"
-                aria-label="Open messages"
-              >
-                <Bell className="h-[22px] w-[22px]" />
-                {notificationCount > 0 && (
-                  <span className="absolute top-[4px] right-[4px] min-w-[16px] h-[16px] px-[4px] bg-brand-primary text-white text-[10px] font-bold flex items-center justify-center rounded-full">
-                    {notificationCount > 99 ? "99+" : notificationCount}
-                  </span>
+              <div className="relative" ref={mobileNotificationsRef}>
+                <button
+                  type="button"
+                  onClick={() => setShowNotifications((prev) => !prev)}
+                  className="relative inline-flex h-[42px] w-[42px] items-center justify-center rounded-full text-[#11354B] hover:bg-[#EEF2F7]"
+                  aria-label="Open notifications"
+                >
+                  <Bell className="h-[22px] w-[22px]" />
+                  {notificationCount > 0 && (
+                    <span className="absolute top-[4px] right-[4px] min-w-[16px] h-[16px] px-[4px] bg-brand-primary text-white text-[10px] font-bold flex items-center justify-center rounded-full">
+                      {notificationCount > 99 ? "99+" : notificationCount}
+                    </span>
+                  )}
+                </button>
+
+                {showNotifications && (
+                  <div className="absolute top-[calc(100%+8px)] right-0 w-[300px] max-w-[calc(100vw-24px)] rounded-[16px] border border-[rgba(0,0,0,0.08)] bg-white shadow-[0_18px_44px_rgba(0,0,0,0.14)] z-50">
+                    <div className="border-b border-[rgba(0,0,0,0.08)] px-[16px] py-[12px]">
+                      <div className="text-[14px] font-bold text-neutral-black">Notifications</div>
+                      <div className="text-[12px] text-neutral-gray">Messages and applications</div>
+                    </div>
+
+                    <div className="py-[8px]">
+                      <Link
+                        to="/landlord/inbox"
+                        onClick={() => setShowNotifications(false)}
+                        className="flex items-center gap-[12px] px-[16px] py-[12px] hover:bg-neutral-light-gray transition-colors"
+                      >
+                        <div className="flex h-[32px] w-[32px] items-center justify-center bg-brand-light">
+                          <MessageSquare className="h-[16px] w-[16px] text-brand-primary" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="text-[14px] font-semibold text-neutral-black">Unread messages</div>
+                          <div className="truncate text-[12px] text-neutral-gray">Go to your inbox</div>
+                        </div>
+                        <div className="text-[12px] font-bold text-neutral-black">{unreadMessages}</div>
+                      </Link>
+
+                      <Link
+                        to="/landlord/rentals"
+                        onClick={() => setShowNotifications(false)}
+                        className="flex items-center gap-[12px] px-[16px] py-[12px] hover:bg-neutral-light-gray transition-colors"
+                      >
+                        <div className="flex h-[32px] w-[32px] items-center justify-center bg-brand-light">
+                          <FileText className="h-[16px] w-[16px] text-brand-primary" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="text-[14px] font-semibold text-neutral-black">Pending applications</div>
+                          <div className="truncate text-[12px] text-neutral-gray">Review rental requests</div>
+                        </div>
+                        <div className="text-[12px] font-bold text-neutral-black">{pendingApplications}</div>
+                      </Link>
+
+                      {notificationCount === 0 && (
+                        <div className="px-[16px] py-[12px] text-[12px] text-neutral-gray">
+                          You're all caught up.
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 )}
-              </Link>
+              </div>
               <button
                 type="button"
                 onClick={() => setIsMobileMenuOpen(true)}

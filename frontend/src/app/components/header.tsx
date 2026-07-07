@@ -43,8 +43,10 @@ export function Header({
     label: string;
   } | null>(null);
   const [unreadMessages, setUnreadMessages] = useState(0);
+  const [showMobileNotifications, setShowMobileNotifications] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const languageDropdownRef = useRef<HTMLDivElement>(null);
+  const mobileNotificationsRef = useRef<HTMLDivElement>(null);
 
   const confirmLanguageChange = () => {
     if (!pendingLanguage) {
@@ -64,6 +66,9 @@ export function Header({
       }
       if (languageDropdownRef.current && !languageDropdownRef.current.contains(event.target as Node)) {
         setShowLanguageDropdown(false);
+      }
+      if (mobileNotificationsRef.current && !mobileNotificationsRef.current.contains(event.target as Node)) {
+        setShowMobileNotifications(false);
       }
     }
     
@@ -154,12 +159,16 @@ export function Header({
   const mobileItemClass = (active: boolean) =>
     `${mobileItemBaseClass} ${active ? "bg-[#DCE4EC] text-[#11354B]" : "text-[#11354B] hover:bg-[#F3F6F9]"}`;
   const mobileBottomNavItems = [
-    {
-      label: "Dashboard",
-      href: user?.isLandlord ? "/landlord/dashboard" : "/",
-      icon: LayoutDashboard,
-      active: isPathActive(["/landlord/dashboard"]),
-    },
+    ...(user?.isLandlord
+      ? [
+          {
+            label: "Dashboard",
+            href: "/landlord/dashboard",
+            icon: LayoutDashboard,
+            active: isPathActive(["/landlord/dashboard"]),
+          },
+        ]
+      : []),
     {
       label: "Messages",
       href: inboxHref,
@@ -243,18 +252,51 @@ export function Header({
                 </label>
               </form>
             )}
-            <Link
-              to={inboxHref}
-              className="relative inline-flex h-[42px] w-[42px] items-center justify-center rounded-full text-[#11354B] hover:bg-[#EEF2F7]"
-              aria-label="Open messages"
-            >
-              <Bell className="h-[22px] w-[22px]" />
-              {unreadMessages > 0 && (
-                <span className="absolute top-[4px] right-[4px] min-w-[16px] h-[16px] px-[4px] bg-brand-primary text-white text-[10px] font-bold flex items-center justify-center rounded-full">
-                  {unreadMessages > 99 ? "99+" : unreadMessages}
-                </span>
+            <div className="relative" ref={mobileNotificationsRef}>
+              <button
+                type="button"
+                onClick={() => setShowMobileNotifications((prev) => !prev)}
+                className="relative inline-flex h-[42px] w-[42px] items-center justify-center rounded-full text-[#11354B] hover:bg-[#EEF2F7]"
+                aria-label="Open notifications"
+              >
+                <Bell className="h-[22px] w-[22px]" />
+                {unreadMessages > 0 && (
+                  <span className="absolute top-[4px] right-[4px] min-w-[16px] h-[16px] px-[4px] bg-brand-primary text-white text-[10px] font-bold flex items-center justify-center rounded-full">
+                    {unreadMessages > 99 ? "99+" : unreadMessages}
+                  </span>
+                )}
+              </button>
+
+              {showMobileNotifications && (
+                <div className="absolute top-[calc(100%+8px)] right-0 w-[300px] max-w-[calc(100vw-24px)] rounded-[16px] border border-[rgba(0,0,0,0.08)] bg-white shadow-[0_18px_44px_rgba(0,0,0,0.14)] z-50">
+                  <div className="border-b border-[rgba(0,0,0,0.08)] px-[16px] py-[12px]">
+                    <div className="text-[14px] font-bold text-neutral-black">Notifications</div>
+                    <div className="text-[12px] text-neutral-gray">Messages and applications</div>
+                  </div>
+                  <div className="py-[8px]">
+                    <Link
+                      to={inboxHref}
+                      onClick={() => setShowMobileNotifications(false)}
+                      className="flex items-center gap-[12px] px-[16px] py-[12px] hover:bg-neutral-light-gray transition-colors"
+                    >
+                      <div className="flex h-[32px] w-[32px] items-center justify-center rounded-full bg-brand-primary-light">
+                        <MessageCircle className="h-[16px] w-[16px] text-brand-primary" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="text-[14px] font-semibold text-neutral-black">Unread messages</div>
+                        <div className="truncate text-[12px] text-neutral-gray">Go to your inbox</div>
+                      </div>
+                      <div className="text-[12px] font-bold text-neutral-black">{unreadMessages}</div>
+                    </Link>
+                    {unreadMessages === 0 && (
+                      <div className="px-[16px] py-[12px] text-[12px] text-neutral-gray">
+                        You're all caught up.
+                      </div>
+                    )}
+                  </div>
+                </div>
               )}
-            </Link>
+            </div>
             <button
               type="button"
               onClick={() => setShowMobileMenu(true)}
@@ -895,7 +937,7 @@ export function Header({
 
       {isAuthenticated && typeof document !== "undefined" && createPortal(
         <nav className="fixed bottom-0 left-0 right-0 z-[79] border-t border-[rgba(0,0,0,0.1)] bg-white md:hidden" aria-label="Mobile quick navigation">
-          <div className="grid grid-cols-4 px-[6px] pt-[8px] pb-[max(10px,env(safe-area-inset-bottom))]">
+          <div className={`grid px-[6px] pt-[8px] pb-[max(10px,env(safe-area-inset-bottom))] ${user?.isLandlord ? "grid-cols-4" : "grid-cols-3"}`}>
             {mobileBottomNavItems.map((item) => {
               const Icon = item.icon;
               return (

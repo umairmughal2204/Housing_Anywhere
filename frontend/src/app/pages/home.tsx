@@ -366,17 +366,20 @@ function getImageDotCount(images: string[] | undefined) {
 
 function HomeListingCardSkeleton() {
   return (
-    <div className="group bg-white">
-      <div className="relative aspect-[4/3] overflow-hidden bg-[#E8EDF2]" />
-      <div className="p-[16px]">
-        <div className="h-[18px] w-[78%] bg-[#E8EDF2] rounded-[4px] mb-[8px]" />
-        <div className="h-[18px] w-[60%] bg-[#E8EDF2] rounded-[4px] mb-[12px]" />
-        <div className="flex items-center gap-[12px] mb-[12px]">
-          <div className="h-[14px] w-[90px] bg-[#E8EDF2] rounded-[4px]" />
-          <div className="h-[14px] w-[110px] bg-[#E8EDF2] rounded-[4px]" />
+    <div className="overflow-hidden rounded-[8px] border border-[rgba(15,45,54,0.16)] bg-white">
+      <div className="relative aspect-[16/10] overflow-hidden bg-[#E8EDF2]" />
+      <div className="px-[16px] pt-[14px] pb-[12px]">
+        <div className="mb-[6px] h-[16px] w-[85%] rounded-[4px] bg-[#E8EDF2]" />
+        <div className="mb-[10px] h-[16px] w-[55%] rounded-[4px] bg-[#E8EDF2]" />
+        <div className="mb-[12px] flex items-center gap-[12px]">
+          <div className="h-[13px] w-[60px] rounded-[4px] bg-[#E8EDF2]" />
+          <div className="h-[13px] w-[80px] rounded-[4px] bg-[#E8EDF2]" />
         </div>
-        <div className="h-[20px] w-[72%] bg-[#E8EDF2] rounded-[4px] mb-[10px]" />
-        <div className="h-[14px] w-[66%] bg-[#E8EDF2] rounded-[4px]" />
+        <div className="mb-[10px] h-[18px] w-[70%] rounded-[4px] bg-[#E8EDF2]" />
+        <div className="mt-[8px] flex items-center gap-[8px] border-t border-[rgba(15,45,54,0.12)] pt-[12px]">
+          <div className="h-[10px] w-[10px] rounded-full bg-[#E8EDF2]" />
+          <div className="h-[13px] w-[65%] rounded-[4px] bg-[#E8EDF2]" />
+        </div>
       </div>
     </div>
   );
@@ -384,8 +387,8 @@ function HomeListingCardSkeleton() {
 
 function HomeListingsSkeletonGrid() {
   return (
-    <div className="grid grid-cols-3 gap-[24px] animate-pulse" aria-label="Loading listings">
-      {Array.from({ length: 3 }, (_, index) => (
+    <div className="grid grid-cols-1 gap-[24px] md:grid-cols-2 xl:grid-cols-4 animate-pulse" aria-label="Loading listings">
+      {Array.from({ length: 8 }, (_, index) => (
         <HomeListingCardSkeleton key={index} />
       ))}
     </div>

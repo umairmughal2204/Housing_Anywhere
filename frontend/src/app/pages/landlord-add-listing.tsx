@@ -1,4 +1,4 @@
-import { ChevronDown, Info, Trash2 } from "lucide-react";
+import { ChevronDown, ImagePlus, Info, Trash2, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import { LandlordPortalLayout } from "../components/landlord-portal-layout";
@@ -2519,36 +2519,49 @@ export function LandlordAddListing() {
                 }}
               />
 
-              <div className="mt-[10px] border border-dashed border-[rgba(0,0,0,0.20)] p-[12px] bg-[#F8F9FA] min-h-[300px]">
-                <div className="grid grid-cols-3 md:grid-cols-4 gap-[8px] bg-[#EEF1F3] p-[8px] min-h-[190px]">
-                  {uploadedMedia.map((item, index) => (
-                    <div key={`${item.url}-${index}`} className="relative h-[95px] bg-white overflow-hidden">
-                      <img src={item.url} alt={`Uploaded listing photo ${index + 1}`} className="w-full h-full object-cover" />
-                      <button
-                        type="button"
-                        onClick={() => setUploadedMedia((prev) => prev.filter((_, i) => i !== index))}
-                        className="absolute top-[4px] right-[4px] w-[22px] h-[22px] bg-white/90 text-[#12303B] text-[13px] leading-none border border-[rgba(0,0,0,0.16)]"
-                        aria-label="Remove photo"
+              <div className="mt-[14px] rounded-[20px] border-2 border-dashed border-[rgba(15,61,73,0.20)] bg-[#F8FAFB] p-[14px] sm:p-[20px]">
+                {uploadedMedia.length > 0 && (
+                  <div className="mb-[16px] grid grid-cols-2 gap-[12px] sm:grid-cols-3 md:grid-cols-4">
+                    {uploadedMedia.map((item, index) => (
+                      <div
+                        key={`${item.url}-${index}`}
+                        className="group relative aspect-square overflow-hidden rounded-[14px] bg-white shadow-[0_2px_8px_rgba(15,45,54,0.08)]"
                       >
-                        x
-                      </button>
-                    </div>
-                  ))}
-                  {Array.from({ length: Math.max(0, 12 - uploadedMedia.length) }).map((_, index) => (
-                    <div key={`placeholder-${index}`} className="h-[95px] bg-white/55"></div>
-                  ))}
-                </div>
-                <div className="-mt-[86px] h-[86px] flex flex-col items-center justify-center">
-                  <button
-                    type="button"
-                    disabled={isUploadingPhotos}
-                    onClick={() => fileInputRef.current?.click()}
-                    className="h-[34px] px-[14px] border border-[#0F3D49] bg-white text-[10px] font-semibold text-[#12303B] hover:bg-[#F3F7F9] disabled:opacity-60 disabled:cursor-not-allowed"
-                  >
-                    {isUploadingPhotos ? "UPLOADING..." : "UPLOAD PHOTOS"}
-                  </button>
-                  <p className="mt-[7px] text-[12px] text-[#35515D]">Add up to 10 photos</p>
-                </div>
+                        <img src={item.url} alt={`Uploaded listing photo ${index + 1}`} className="h-full w-full object-cover" />
+                        {index === 0 && (
+                          <span className="absolute left-[8px] top-[8px] rounded-full bg-brand-primary px-[10px] py-[3px] text-[10px] font-bold text-white shadow-sm">
+                            Cover
+                          </span>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => setUploadedMedia((prev) => prev.filter((_, i) => i !== index))}
+                          className="absolute right-[8px] top-[8px] flex h-[26px] w-[26px] items-center justify-center rounded-full bg-black/55 text-white opacity-0 transition-opacity hover:bg-black/70 group-hover:opacity-100 sm:opacity-100"
+                          aria-label="Remove photo"
+                        >
+                          <X className="h-[14px] w-[14px]" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                <button
+                  type="button"
+                  disabled={isUploadingPhotos || uploadedMedia.length >= 12}
+                  onClick={() => fileInputRef.current?.click()}
+                  className="flex w-full flex-col items-center justify-center gap-[10px] rounded-[16px] border border-[rgba(15,61,73,0.14)] bg-white py-[28px] text-center transition-colors hover:border-brand-primary hover:bg-brand-primary-light disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  <div className="flex h-[44px] w-[44px] items-center justify-center rounded-full bg-brand-primary-light">
+                    <ImagePlus className="h-[22px] w-[22px] text-brand-primary" />
+                  </div>
+                  <span className="text-[14px] font-semibold text-[#12303B]">
+                    {isUploadingPhotos ? "Uploading..." : "Click to upload photos"}
+                  </span>
+                  <span className="text-[12px] text-[#5A7380]">
+                    {uploadedMedia.length}/12 photos added
+                  </span>
+                </button>
               </div>
 
               <div className="mt-[8px] flex items-center gap-[6px] text-[11px] text-[#5A7380]">
