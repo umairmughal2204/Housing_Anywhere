@@ -3,68 +3,7 @@ import { useState } from "react";
 import { Mail, Lock, Eye, EyeOff, AlertCircle } from "lucide-react";
 import { useAuth } from "../contexts/auth-context";
 import { BrandLogo } from "../components/brand-logo";
-
-const GOOGLE_SCRIPT_ID = "google-identity-service";
-
-function hasGoogleIdentity() {
-  const google = (window as {
-    google?: {
-      accounts?: {
-        id?: unknown;
-      };
-    };
-  }).google;
-
-  return Boolean(google?.accounts?.id);
-}
-
-function loadGoogleIdentityScript() {
-  return new Promise<void>((resolve, reject) => {
-    if (typeof window === "undefined") {
-      reject(new Error("Google sign-in is only available in the browser"));
-      return;
-    }
-
-    if (hasGoogleIdentity()) {
-      resolve();
-      return;
-    }
-
-    const existingScript = document.getElementById(GOOGLE_SCRIPT_ID);
-    if (existingScript) {
-      existingScript.addEventListener(
-        "load",
-        () => {
-          if (hasGoogleIdentity()) {
-            resolve();
-            return;
-          }
-
-          reject(new Error("Google sign-in script loaded but Google Identity is unavailable"));
-        },
-        { once: true }
-      );
-      existingScript.addEventListener("error", () => reject(new Error("Failed to load Google SDK")), { once: true });
-      return;
-    }
-
-    const script = document.createElement("script");
-    script.id = GOOGLE_SCRIPT_ID;
-    script.src = "https://accounts.google.com/gsi/client";
-    script.async = true;
-    script.defer = true;
-    script.onload = () => {
-      if (hasGoogleIdentity()) {
-        resolve();
-        return;
-      }
-
-      reject(new Error("Google sign-in script loaded but Google Identity is unavailable"));
-    };
-    script.onerror = () => reject(new Error("Failed to load Google SDK"));
-    document.head.appendChild(script);
-  });
-}
+import { GoogleSignInButton } from "../components/google-sign-in-button";
 
 export function Login() {
   const [email, setEmail] = useState("");
@@ -73,82 +12,16 @@ export function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
-  
+
   const { login, loginWithGoogle, isLoading: isAuthLoading } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const redirect = searchParams.get("redirect") || searchParams.get("returnTo");
 
-  const handleGoogleLogin = async () => {
+  const handleGoogleCredential = async (credential: string) => {
     setError("");
-    setIsGoogleLoading(true);
-
-    try {
-      const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
-      if (!googleClientId) {
-        throw new Error("Google sign-in is not configured");
-      }
-
-      await loadGoogleIdentityScript();
-
-      const google = (window as {
-        google?: {
-          accounts?: {
-            id?: {
-              initialize: (config: {
-                client_id: string;
-                callback: (response: { credential?: string }) => void;
-              }) => void;
-              prompt: () => void;
-            };
-          };
-        };
-      }).google;
-
-      const googleIdentity = google?.accounts?.id;
-      if (!googleIdentity) {
-        throw new Error("Google sign-in is unavailable right now");
-      }
-
-      const credential = await new Promise<string>((resolve, reject) => {
-        let settled = false;
-
-        const timeout = window.setTimeout(() => {
-          if (!settled) {
-            settled = true;
-            reject(new Error("Google sign-in timed out. Please try again."));
-          }
-        }, 30000);
-
-        googleIdentity.initialize({
-          client_id: googleClientId,
-          callback: (response) => {
-            if (settled) {
-              return;
-            }
-            settled = true;
-            window.clearTimeout(timeout);
-
-            if (!response.credential) {
-              reject(new Error("No Google credential received"));
-              return;
-            }
-
-            resolve(response.credential);
-          },
-        });
-
-        googleIdentity.prompt();
-      });
-
-      await loginWithGoogle(credential, rememberMe);
-      navigate(redirect || "/");
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Google sign-in failed. Please try again.");
-    } finally {
-      setIsGoogleLoading(false);
-    }
+    await loginWithGoogle(credential, rememberMe);
+    navigate(redirect || "/");
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -171,7 +44,7 @@ export function Login() {
       if (message.toLowerCase().includes("failed to fetch")) {
         setError("Cannot reach server right now. Please try again in a few seconds.");
       } else if (message.toLowerCase().includes("uses google sign-in")) {
-        await handleGoogleLogin();
+        setError("This account uses Google sign-in. Please use the \"Continue with Google\" button below.");
       } else {
         setError(message);
       }
@@ -294,32 +167,11 @@ export function Login() {
 
           {/* Social Login */}
           <div className="space-y-[12px]">
-            <button
-              type="button"
-              onClick={handleGoogleLogin}
-              disabled={isGoogleLoading}
-              className="w-full rounded-[14px] flex items-center justify-center gap-[12px] border border-[rgba(0,0,0,0.16)] py-[12px] text-neutral-black text-[14px] font-semibold hover:bg-neutral-light-gray hover:cursor-pointer disabled:cursor-not-allowed transition-colors"
-            >
-              <svg className="w-[20px] h-[20px]" viewBox="0 0 20 20">
-                <path
-                  d="M19.6 10.227c0-.709-.064-1.39-.182-2.045H10v3.868h5.382a4.6 4.6 0 01-1.996 3.018v2.51h3.232c1.891-1.742 2.982-4.305 2.982-7.35z"
-                  fill="#4285F4"
-                />
-                <path
-                  d="M10 20c2.7 0 4.964-.895 6.618-2.423l-3.232-2.509c-.895.6-2.04.955-3.386.955-2.605 0-4.81-1.76-5.595-4.123H1.064v2.59A9.996 9.996 0 0010 20z"
-                  fill="#34A853"
-                />
-                <path
-                  d="M4.405 11.9c-.2-.6-.314-1.24-.314-1.9 0-.66.114-1.3.314-1.9V5.51H1.064A9.996 9.996 0 000 10c0 1.614.386 3.14 1.064 4.49l3.34-2.59z"
-                  fill="#FBBC05"
-                />
-                <path
-                  d="M10 3.977c1.468 0 2.786.505 3.823 1.496l2.868-2.868C14.959.99 12.695 0 10 0 6.09 0 2.71 2.24 1.064 5.51l3.34 2.59C5.19 5.736 7.395 3.977 10 3.977z"
-                  fill="#EA4335"
-                />
-              </svg>
-              {isGoogleLoading ? "Connecting to Google..." : "Continue with Google"}
-            </button>
+            <GoogleSignInButton
+              label="Continue with Google"
+              onCredential={handleGoogleCredential}
+              onError={setError}
+            />
           </div>
 
           {/* Sign Up Link */}
