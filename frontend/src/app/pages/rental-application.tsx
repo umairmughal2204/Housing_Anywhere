@@ -2567,7 +2567,10 @@ export function RentalApplication() {
             className="absolute inset-0 bg-black/30"
           />
 
-          <div className="relative z-[1] mx-auto mt-[12px] md:mt-[22px] w-[94vw] max-w-[980px]">
+          <div
+            className="relative z-[1] mx-auto mt-[12px] md:mt-[22px] flex w-[94vw] max-w-[980px] justify-center"
+            onClick={(e) => { if (e.target === e.currentTarget) setIsDatePickerModalOpen(false); }}
+          >
             <DatePicker
               isOpen={isDatePickerModalOpen}
               onClose={() => setIsDatePickerModalOpen(false)}

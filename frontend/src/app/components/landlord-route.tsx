@@ -1,4 +1,4 @@
-import { Navigate } from "react-router";
+import { Navigate, useLocation } from "react-router";
 import { useAuth } from "../contexts/auth-context";
 import { BrandLogo } from "./brand-logo";
 
@@ -8,6 +8,7 @@ interface LandlordRouteProps {
 
 export function LandlordRoute({ children }: LandlordRouteProps) {
   const { user, isAuthenticated, isLoading } = useAuth();
+  const location = useLocation();
 
   if (isLoading) {
     return (
@@ -23,7 +24,8 @@ export function LandlordRoute({ children }: LandlordRouteProps) {
   }
 
   if (!isAuthenticated) {
-    return <Navigate to="/login" replace />;
+    const returnTo = `${location.pathname}${location.search}`;
+    return <Navigate to={`/login?returnTo=${encodeURIComponent(returnTo)}`} replace />;
   }
 
   if (!user?.isLandlord) {

@@ -295,14 +295,18 @@ function InvalidateMapSize({ isExpanded }: { isExpanded: boolean }) {
 
 function SearchListingCardSkeleton() {
   return (
-    <div className="cursor-default">
-      <div className="relative mb-[12px] overflow-hidden bg-[#E8EDF2] h-[220px]" />
-      <div className="space-y-[8px]">
-        <div className="h-[18px] w-[80%] bg-[#E8EDF2] rounded-[4px]" />
-        <div className="h-[16px] w-[42%] bg-[#E8EDF2] rounded-[4px]" />
-        <div className="h-[14px] w-[66%] bg-[#E8EDF2] rounded-[4px]" />
-        <div className="h-[20px] w-[56%] bg-[#E8EDF2] rounded-[4px]" />
-        <div className="h-[14px] w-[60%] bg-[#E8EDF2] rounded-[4px]" />
+    <div className="cursor-default overflow-hidden rounded-[12px] border border-[rgba(15,45,54,0.16)] bg-white">
+      <div className="w-full h-[192px] sm:h-[220px] bg-[#E8EDF2]" />
+      <div className="px-[14px] sm:px-[16px] pt-[12px] sm:pt-[14px] pb-[12px]">
+        <div className="h-[15px] sm:h-[16px] w-[85%] bg-[#E8EDF2] rounded-[4px] mb-[6px]" />
+        <div className="h-[15px] sm:h-[16px] w-[55%] bg-[#E8EDF2] rounded-[4px] mb-[10px]" />
+        <div className="h-[14px] w-[40%] bg-[#E8EDF2] rounded-[4px] mb-[10px]" />
+        <div className="h-[13px] sm:h-[14px] w-[65%] bg-[#E8EDF2] rounded-[4px] mb-[14px]" />
+        <div className="h-[18px] w-[45%] bg-[#E8EDF2] rounded-[4px] mb-[12px]" />
+        <div className="flex items-center gap-[8px] border-t border-[rgba(15,45,54,0.12)] pt-[12px]">
+          <div className="h-[10px] w-[10px] rounded-full bg-[#E8EDF2]" />
+          <div className="h-[13px] sm:h-[14px] w-[50%] bg-[#E8EDF2] rounded-[4px]" />
+        </div>
       </div>
     </div>
   );

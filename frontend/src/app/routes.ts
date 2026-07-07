@@ -170,6 +170,10 @@ const ProtectedFavorites = withProtectedRoute(Favorites);
 
 const ProtectedPropertyPayment = withProtectedRoute(Payment);
 
+const ProtectedSearchResults = withProtectedRoute(SearchResults);
+
+const ProtectedPropertyListing = withProtectedRoute(PropertyListing);
+
 
 
 function RootLayout() {
@@ -405,7 +409,7 @@ export const router = createBrowserRouter([
 
     path: "/listings",
 
-    Component: SearchResults,
+    Component: ProtectedSearchResults,
 
     ErrorBoundary,
 
@@ -415,7 +419,7 @@ export const router = createBrowserRouter([
 
     path: "/listings/:city",
 
-    Component: SearchResults,
+    Component: ProtectedSearchResults,
 
     ErrorBoundary,
 
@@ -469,7 +473,7 @@ export const router = createBrowserRouter([
 
     path: "/property/:id",
 
-    Component: PropertyListing,
+    Component: ProtectedPropertyListing,
 
     ErrorBoundary,
 

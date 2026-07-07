@@ -145,20 +145,21 @@ export function DatePicker({
 
     return (
       <div className="flex-1 min-w-0">
-        <h3 className={`text-[#0F2D36] text-center font-bold mb-3 ${isCompactPopover ? "text-[14px]" : "text-[15px]"}`}>
+        <h3 className={`text-[#0F2D36] text-center font-bold mb-3 tracking-[-0.01em] ${isCompactPopover ? "text-[14px]" : "text-[15px]"}`}>
           {viewDate.toLocaleDateString("en-GB", { month: "long", year: "numeric" })}
         </h3>
-        <div className={`grid grid-cols-7 text-center ${isCompactPopover ? "gap-0.5" : "gap-1"}`}>
+        <div className={`grid grid-cols-7 text-center gap-y-[3px] ${isCompactPopover ? "gap-x-0" : "gap-x-0"}`}>
           {["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"].map(d => (
-            <div key={d} className={`text-[#8AA0AD] font-semibold py-1.5 ${isCompactPopover ? "text-[9px]" : "text-[10px]"}`}>{d}</div>
+            <div key={d} className={`text-[#9CB1BD] font-bold uppercase tracking-[0.04em] pb-2 ${isCompactPopover ? "text-[9px]" : "text-[10px]"}`}>{d}</div>
           ))}
           {days.map((day, i) => {
             if (!day) return <div key={`empty-${i}`} />;
-            
-            const isStart = tempStartDate && isSameDay(day, tempStartDate);
-            const isEnd = tempEndDate && isSameDay(day, tempEndDate);
-            const inRange = tempStartDate && tempEndDate && day > tempStartDate && day < tempEndDate;
-            
+
+            const isStart = Boolean(tempStartDate && isSameDay(day, tempStartDate));
+            const isEnd = Boolean(tempEndDate && isSameDay(day, tempEndDate));
+            const inRange = Boolean(tempStartDate && tempEndDate && day > tempStartDate && day < tempEndDate);
+            const isEdge = isStart || isEnd;
+
             // Disable logic
             let isDisabled = false;
             if (selectingStart) {
@@ -167,16 +168,25 @@ export function DatePicker({
               isDisabled = day < (minAllowedMoveOut ?? baseAvailableDate) || (maxAllowedMoveOut ? day > maxAllowedMoveOut : false);
             }
 
+            // Connect the range into a single pill: rounded caps at the
+            // start/end of the selection, square in between, so the range
+            // reads as one continuous bar rather than isolated circles.
+            let shapeClass = "rounded-full";
+            if (isStart && isEnd) shapeClass = "rounded-full";
+            else if (isStart) shapeClass = "rounded-l-full rounded-r-none";
+            else if (isEnd) shapeClass = "rounded-r-full rounded-l-none";
+            else if (inRange) shapeClass = "rounded-none";
+
             return (
               <button
                 key={day.toISOString()}
                 onClick={() => handleDateClick(day)}
                 disabled={isDisabled}
-                className={`w-full rounded-md transition-all ${isCompactPopover ? "h-7 text-[12px]" : "h-8 text-[13px]"} ${
-                  isStart || isEnd ? "bg-[#0F2D36] text-white font-bold" :
-                  inRange ? "bg-[#E7F0F5] text-[#0F2D36]" :
-                  "text-[#234652] hover:bg-[#EEF3F7]"
-                } ${isDisabled ? "opacity-20 cursor-not-allowed" : ""}`}
+                className={`w-full font-semibold transition-all ${shapeClass} ${isCompactPopover ? "h-8 text-[12px]" : "h-9 text-[13px]"} ${
+                  isEdge ? "bg-brand-primary text-white font-bold shadow-[0_4px_10px_rgba(8,145,178,0.35)]" :
+                  inRange ? "bg-brand-primary-light text-[#0E7490]" :
+                  "text-[#234652] hover:bg-[#EEF3F7] hover:rounded-full"
+                } ${isDisabled ? "opacity-20 cursor-not-allowed hover:bg-transparent" : ""}`}
               >
                 {day.getDate()}
               </button>
@@ -207,8 +217,8 @@ export function DatePicker({
       <div className={isBottomSheet ? "flex-1 overflow-y-auto p-4 sm:p-5 overscroll-contain" : ""}>
       {/* Tabs */}
       <div className={`mb-4 flex gap-3 ${isCompactPopover ? "scale-[0.98] origin-top-left" : ""}`}>
-        <button 
-          className={`min-w-0 flex-1 px-4 sm:px-5 py-3 rounded-full text-[13px] sm:text-[14px] font-semibold transition-colors ${selectingStart ? 'bg-[#0F2D36] text-white shadow-[0_8px_18px_rgba(15,45,54,0.18)]' : 'bg-[#F2F5F7] text-[#5F7480] hover:bg-[#E9EEF2]'}`}
+        <button
+          className={`min-w-0 flex-1 px-4 sm:px-5 py-3 rounded-full text-[13px] sm:text-[14px] font-semibold transition-colors ${selectingStart ? 'bg-brand-primary text-white shadow-[0_8px_18px_rgba(8,145,178,0.28)]' : 'bg-[#F2F5F7] text-[#5F7480] hover:bg-[#E9EEF2]'}`}
           onClick={() => {
             setSelectingStart(true);
             // Keep existing selection and focus on move-in month for easier editing.
@@ -219,9 +229,9 @@ export function DatePicker({
         >
           Move-in
         </button>
-        <button 
+        <button
           disabled={!tempStartDate}
-          className={`min-w-0 flex-1 px-4 sm:px-5 py-3 rounded-full text-[13px] sm:text-[14px] font-semibold transition-colors ${!selectingStart ? 'bg-[#0F2D36] text-white shadow-[0_8px_18px_rgba(15,45,54,0.18)]' : 'bg-[#F2F5F7] text-[#5F7480] hover:bg-[#E9EEF2]'} disabled:opacity-30`}
+          className={`min-w-0 flex-1 px-4 sm:px-5 py-3 rounded-full text-[13px] sm:text-[14px] font-semibold transition-colors ${!selectingStart ? 'bg-brand-primary text-white shadow-[0_8px_18px_rgba(8,145,178,0.28)]' : 'bg-[#F2F5F7] text-[#5F7480] hover:bg-[#E9EEF2]'} disabled:opacity-30`}
           onClick={() => {
             setSelectingStart(false);
             if (tempEndDate) {
@@ -239,13 +249,13 @@ export function DatePicker({
 
       {/* Nav */}
       <div className="mb-4 flex items-center justify-between">
-        <button onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1))} className={`flex items-center justify-center rounded-full border border-[rgba(15,45,54,0.08)] transition-colors hover:bg-[#F4F7F9] ${isCompactPopover ? "h-9 w-9" : "h-10 w-10"}`}>
+        <button onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1))} className={`flex items-center justify-center rounded-full border border-[rgba(15,45,54,0.1)] transition-colors hover:bg-[#CFFAFE] hover:border-[rgba(8,145,178,0.35)] ${isCompactPopover ? "h-9 w-9" : "h-10 w-10"}`}>
           <ChevronLeft size={isCompactPopover ? 16 : 18} className="text-[#0F2D36]" />
         </button>
-        <span className={`font-semibold uppercase tracking-[0.14em] text-gray-500 ${isCompactPopover ? "text-[11px]" : "text-sm"}`}>
+        <span className={`font-bold uppercase tracking-[0.14em] text-[#0E7490] ${isCompactPopover ? "text-[11px]" : "text-sm"}`}>
             {selectingStart ? "Select Move-in" : "Select Move-out"}
         </span>
-        <button onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1))} className={`flex items-center justify-center rounded-full border border-[rgba(15,45,54,0.08)] transition-colors hover:bg-[#F4F7F9] ${isCompactPopover ? "h-9 w-9" : "h-10 w-10"}`}>
+        <button onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1))} className={`flex items-center justify-center rounded-full border border-[rgba(15,45,54,0.1)] transition-colors hover:bg-[#CFFAFE] hover:border-[rgba(8,145,178,0.35)] ${isCompactPopover ? "h-9 w-9" : "h-10 w-10"}`}>
           <ChevronRight size={isCompactPopover ? 16 : 18} className="text-[#0F2D36]" />
         </button>
       </div>
@@ -259,9 +269,9 @@ export function DatePicker({
       </div>
 
       {/* Footer: always visible — sits outside the scroll area in bottom-sheet, inline otherwise */}
-      <div className={`flex flex-wrap items-center justify-between gap-4 border-t pt-4 ${isBottomSheet ? "p-4 sm:p-5 pb-[calc(1rem+env(safe-area-inset-bottom,0px))] bg-white flex-shrink-0" : "mt-5"}`}>
+      <div className={`flex flex-wrap items-center justify-between gap-4 border-t border-[rgba(15,45,54,0.08)] pt-4 ${isBottomSheet ? "p-4 sm:p-5 pb-[calc(1rem+env(safe-area-inset-bottom,0px))] bg-white flex-shrink-0" : "mt-5"}`}>
         <div className="flex items-center gap-4 flex-wrap">
-          <label className="inline-flex items-center gap-2 text-xs text-gray-600 select-none cursor-pointer">
+          <label className="inline-flex items-center gap-2 text-xs text-[#5F7480] select-none cursor-pointer">
             <input
               type="checkbox"
               checked={isMoveInBeforeMinStayChecked}
@@ -270,11 +280,12 @@ export function DatePicker({
                 setIsMoveInBeforeMinStayChecked(checked);
                 onMoveInAvailableChange?.(checked);
               }}
-              className="h-4 w-4 rounded border-gray-300 text-[#0F2D36] focus:ring-[#0F2D36]"
+              style={{ accentColor: "#0891B2" }}
+              className="h-4 w-4 rounded border-gray-300"
             />
             Available for move-in
           </label>
-          <div className="text-xs text-gray-500 flex items-center gap-1">
+          <div className="text-xs text-[#5F7480] flex items-center gap-1">
             <Calendar size={14} /> Min {minStayMonths} month stay
           </div>
         </div>
@@ -288,7 +299,7 @@ export function DatePicker({
               setSelectingStart(true);
               onClearSelection?.();
             }}
-            className="px-4 py-2 text-sm font-semibold text-gray-600 hover:text-[#0F2D36]"
+            className="px-4 py-2 text-sm font-semibold text-[#5F7480] hover:text-brand-primary transition-colors"
           >
             Clear
           </button>
@@ -296,7 +307,7 @@ export function DatePicker({
             type="button"
             disabled={!tempStartDate || !tempEndDate}
             onClick={() => { onDateChange(tempStartDate, tempEndDate); onClose(); }}
-            className="rounded-full bg-[#0F2D36] px-6 py-2.5 text-sm font-bold text-white shadow-[0_10px_20px_rgba(15,45,54,0.18)] disabled:opacity-40"
+            className="rounded-full bg-brand-primary px-6 py-2.5 text-sm font-bold text-white shadow-[0_10px_20px_rgba(8,145,178,0.3)] hover:bg-brand-primary-dark transition-colors disabled:opacity-40"
           >
             Apply
           </button>

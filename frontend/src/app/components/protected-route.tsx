@@ -1,5 +1,5 @@
 import { ReactNode, useEffect } from "react";
-import { useNavigate } from "react-router";
+import { useNavigate, useLocation } from "react-router";
 import { useAuth } from "../contexts/auth-context";
 import { BrandLogo } from "./brand-logo";
 
@@ -10,12 +10,14 @@ interface ProtectedRouteProps {
 export function ProtectedRoute({ children }: ProtectedRouteProps) {
   const { isAuthenticated, isLoading } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
-      navigate("/login", { replace: true });
+      const returnTo = `${location.pathname}${location.search}`;
+      navigate(`/login?returnTo=${encodeURIComponent(returnTo)}`, { replace: true });
     }
-  }, [isAuthenticated, isLoading, navigate]);
+  }, [isAuthenticated, isLoading, navigate, location.pathname, location.search]);
 
   if (isLoading) {
     return (
