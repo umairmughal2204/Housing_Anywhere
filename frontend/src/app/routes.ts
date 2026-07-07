@@ -70,6 +70,8 @@ import { ProtectedRoute } from "./components/protected-route";
 
 import { AdminRoute } from "./components/admin-route";
 
+import { LandlordRoute } from "./components/landlord-route";
+
 import { AdminLogin } from "./pages/admin-login";
 
 import { AdminDashboard } from "./pages/admin-dashboard";
@@ -112,6 +114,18 @@ function withAdminRoute(Page: ComponentType) {
 
 
 
+function withLandlordRoute(Page: ComponentType) {
+
+  return function LandlordPage() {
+
+    return createElement(LandlordRoute, null, createElement(Page));
+
+  };
+
+}
+
+
+
 const ProtectedAdminDashboard = withAdminRoute(AdminDashboard);
 
 const ProtectedAdminAnalytics = withAdminRoute(AdminAnalytics);
@@ -128,19 +142,19 @@ const ProtectedAdminSettings = withAdminRoute(AdminSettings);
 
 
 
-const ProtectedLandlordDashboard = withProtectedRoute(LandlordDashboard);
+const ProtectedLandlordDashboard = withLandlordRoute(LandlordDashboard);
 
-const ProtectedLandlordListings = withProtectedRoute(LandlordListings);
+const ProtectedLandlordListings = withLandlordRoute(LandlordListings);
 
-const ProtectedLandlordAddListing = withProtectedRoute(LandlordAddListing);
+const ProtectedLandlordAddListing = withLandlordRoute(LandlordAddListing);
 
-const ProtectedLandlordListingOptions = withProtectedRoute(LandlordListingOptions);
+const ProtectedLandlordListingOptions = withLandlordRoute(LandlordListingOptions);
 
-const ProtectedLandlordRentals = withProtectedRoute(LandlordRentals);
+const ProtectedLandlordRentals = withLandlordRoute(LandlordRentals);
 
-const ProtectedLandlordCalendar = withProtectedRoute(LandlordCalendar);
+const ProtectedLandlordCalendar = withLandlordRoute(LandlordCalendar);
 
-const ProtectedLandlordInbox = withProtectedRoute(LandlordInbox);
+const ProtectedLandlordInbox = withLandlordRoute(LandlordInbox);
 
 const ProtectedTenantInbox = withProtectedRoute(TenantInbox);
 
@@ -172,6 +186,8 @@ export const router = createBrowserRouter([
   {
 
     Component: RootLayout,
+
+    ErrorBoundary,
 
     children: [
 
@@ -654,6 +670,20 @@ export const router = createBrowserRouter([
     path: "/admin/settings",
 
     Component: ProtectedAdminSettings,
+
+    ErrorBoundary,
+
+  },
+
+  {
+
+    path: "*",
+
+    loader: () => {
+
+      throw new Response("Not Found", { status: 404 });
+
+    },
 
     ErrorBoundary,
 
