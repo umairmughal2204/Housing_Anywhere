@@ -235,7 +235,10 @@ router.get("/", async (req, res) => {
   const filter: Record<string, unknown> = { status: "active" };
 
   if (city && city.trim().length > 0) {
-    filter.city = new RegExp(`^${city.trim()}$`, "i");
+    // URL slugs use dashes for spaces (e.g. "new-york" -> "New York"); accept
+    // either form so it doesn't matter which convention the caller used.
+    const normalizedCity = city.trim().replace(/-/g, " ").replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    filter.city = new RegExp(`^${normalizedCity}$`, "i");
   }
 
   const listings = await ListingModel.find(filter).sort({ createdAt: -1 }).lean();

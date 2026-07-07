@@ -781,7 +781,7 @@ export function Home() {
 
     setSearchCity(resolvedCity);
     navigate({
-      pathname: `/listings/${resolvedCity.toLowerCase()}`,
+      pathname: `/listings/${resolvedCity.toLowerCase().replace(/\s+/g, "-")}`,
       search: nextSearchParams.toString(),
     });
   };

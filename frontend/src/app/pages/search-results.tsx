@@ -37,6 +37,7 @@ interface ListingItem {
   minStay: number;
   propertyType: "apartment" | "studio" | "house" | "room";
   images: string[];
+  preferredTenantType: "any" | "students" | "working";
 }
 
 type ApiListingItem = Partial<ListingItem> & {
@@ -45,6 +46,7 @@ type ApiListingItem = Partial<ListingItem> & {
   bedroomsCount?: number;
   minimumRentalPeriod?: number;
   propertyType?: string;
+  preferredTenantType?: string;
 };
 
 function normalizeListingItem(raw: ApiListingItem): ListingItem {
@@ -74,6 +76,10 @@ function normalizeListingItem(raw: ApiListingItem): ListingItem {
     minStay: raw.minStay ?? raw.minimumRentalPeriod ?? 1,
     propertyType: normalizedPropertyType,
     images: Array.isArray(raw.images) ? raw.images : mediaImages,
+    preferredTenantType:
+      raw.preferredTenantType === "students" || raw.preferredTenantType === "working"
+        ? raw.preferredTenantType
+        : "any",
   };
 }
 
@@ -175,10 +181,6 @@ function resolveListingImageUrl(image: string | undefined, apiBase: string) {
 
   const normalizedPath = image.startsWith("/") ? image : `/${image}`;
   return `${apiBase}${normalizedPath}`;
-}
-
-function getImageDotCount(images: string[] | undefined) {
-  return Math.max(1, images?.length ?? 0);
 }
 
 function formatCountLabel(count: number, singular: string, plural: string) {
@@ -312,6 +314,309 @@ function SearchListingCardSkeleton() {
   );
 }
 
+function sanitizePriceRange(
+  minDraft: string,
+  maxDraft: string,
+  absoluteMinPrice: number,
+  absoluteMaxPrice: number
+): { minPrice: number | null; maxPrice: number | null } {
+  const nextMin = minDraft.trim() ? Number(minDraft) : null;
+  const nextMax = maxDraft.trim() ? Number(maxDraft) : null;
+  const sanitizedMin = nextMin !== null && Number.isFinite(nextMin)
+    ? Math.max(absoluteMinPrice, Math.min(nextMin, absoluteMaxPrice))
+    : null;
+  const sanitizedMax = nextMax !== null && Number.isFinite(nextMax)
+    ? Math.max(absoluteMinPrice, Math.min(nextMax, absoluteMaxPrice))
+    : null;
+  const minPrice = sanitizedMin !== null && sanitizedMax !== null
+    ? Math.min(sanitizedMin, sanitizedMax)
+    : sanitizedMin;
+  const maxPrice = sanitizedMin !== null && sanitizedMax !== null
+    ? Math.max(sanitizedMin, sanitizedMax)
+    : sanitizedMax;
+  return { minPrice, maxPrice };
+}
+
+interface PriceRangeFieldsProps {
+  variant: "dropdown" | "panel";
+  absoluteMinPrice: number;
+  absoluteMaxPrice: number;
+  sliderMinValue: number;
+  sliderMaxValue: number;
+  sliderMinPercent: number;
+  sliderMaxPercent: number;
+  minPriceDraft: string;
+  maxPriceDraft: string;
+  setMinPriceDraft: (value: string) => void;
+  setMaxPriceDraft: (value: string) => void;
+}
+
+function PriceRangeFields({
+  variant,
+  absoluteMinPrice,
+  absoluteMaxPrice,
+  sliderMinValue,
+  sliderMaxValue,
+  sliderMinPercent,
+  sliderMaxPercent,
+  minPriceDraft,
+  maxPriceDraft,
+  setMinPriceDraft,
+  setMaxPriceDraft,
+}: PriceRangeFieldsProps) {
+  const isPanel = variant === "panel";
+
+  return (
+    <>
+      <div className={isPanel ? "mb-[10px] flex items-center justify-between gap-[10px]" : "flex items-center justify-between gap-[10px] px-[14px] pt-[14px]"}>
+        <div className={isPanel ? "text-[18px] font-bold text-[#12303B]" : "text-[14px] font-semibold text-[#12303B]"}>
+          Monthly rent
+        </div>
+        <button
+          type="button"
+          className={isPanel
+            ? "inline-flex items-center gap-[6px] rounded-[12px] border border-[#AFC1D3] bg-white px-[12px] py-[7px] text-[13px] font-semibold text-[#12303B]"
+            : "inline-flex items-center gap-[6px] rounded-[12px] border border-[#AFC1D3] bg-white px-[10px] py-[6px] text-[12px] font-semibold text-[#12303B]"}
+        >
+          Euros (€)
+          <ChevronDown className={isPanel ? "h-[14px] w-[14px] text-[#12303B]" : "h-[13px] w-[13px] text-[#12303B]"} />
+        </button>
+      </div>
+
+      {isPanel ? (
+        <div className="rounded-[14px] border border-[#E6EDF3] bg-[#FCFEFF] px-[10px] pt-[12px] pb-[10px]">
+          <img
+            src={priceSliderGraph}
+            alt="Price trend graph"
+            className="h-[98px] w-full object-cover rounded-[10px]"
+          />
+
+          <div className="relative mt-[10px] px-[2px]">
+            <div className="h-[3px] rounded-full bg-[#D5E2ED]" />
+            <div
+              className="absolute top-0 h-[3px] rounded-full bg-[#103947]"
+              style={{ left: `${sliderMinPercent}%`, width: `${Math.max(0, sliderMaxPercent - sliderMinPercent)}%` }}
+            />
+
+            <input
+              type="range"
+              min={absoluteMinPrice}
+              max={absoluteMaxPrice}
+              value={sliderMinValue}
+              onChange={(event) => {
+                const nextMin = Number(event.target.value);
+                setMinPriceDraft(String(Math.min(nextMin, sliderMaxValue)));
+              }}
+              className="absolute inset-x-0 top-[-8px] h-[20px] w-full appearance-none bg-transparent [&::-webkit-slider-thumb]:h-[18px] [&::-webkit-slider-thumb]:w-[18px] [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-[#3B82F6] [&::-webkit-slider-thumb]:bg-white"
+            />
+            <input
+              type="range"
+              min={absoluteMinPrice}
+              max={absoluteMaxPrice}
+              value={sliderMaxValue}
+              onChange={(event) => {
+                const nextMax = Number(event.target.value);
+                setMaxPriceDraft(String(Math.max(nextMax, sliderMinValue)));
+              }}
+              className="absolute inset-x-0 top-[-8px] h-[20px] w-full appearance-none bg-transparent [&::-webkit-slider-thumb]:h-[18px] [&::-webkit-slider-thumb]:w-[18px] [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-[#3B82F6] [&::-webkit-slider-thumb]:bg-white"
+            />
+          </div>
+        </div>
+      ) : (
+        <div className="px-[14px] pt-[12px]">
+          <div className="rounded-[14px] bg-[#FCFEFF] px-[10px] pt-[10px] pb-[8px] border border-[#E6EDF3]">
+            <img
+              src={priceSliderGraph}
+              alt="Price trend graph"
+              className="h-[104px] w-full object-cover rounded-[10px]"
+            />
+            <div className="mt-[6px] flex items-center justify-between text-[10px] text-[#6B7280]">
+              <span>€{absoluteMinPrice.toLocaleString("en-GB")}</span>
+              <span>€{absoluteMaxPrice.toLocaleString("en-GB")}</span>
+            </div>
+
+            <div className="relative mt-[10px] px-[2px]">
+              <div className="h-[3px] rounded-full bg-[#D5E2ED]" />
+              <div
+                className="absolute top-0 h-[3px] rounded-full bg-[#103947]"
+                style={{ left: `${sliderMinPercent}%`, width: `${Math.max(0, sliderMaxPercent - sliderMinPercent)}%` }}
+              />
+
+              <input
+                type="range"
+                min={absoluteMinPrice}
+                max={absoluteMaxPrice}
+                value={sliderMinValue}
+                onChange={(event) => {
+                  const nextMin = Number(event.target.value);
+                  setMinPriceDraft(String(Math.min(nextMin, sliderMaxValue)));
+                }}
+                className="absolute inset-x-0 top-[-8px] h-[20px] w-full appearance-none bg-transparent [&::-webkit-slider-thumb]:h-[16px] [&::-webkit-slider-thumb]:w-[16px] [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-[#3B82F6] [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:shadow-[0_2px_10px_rgba(59,130,246,0.25)]"
+              />
+              <input
+                type="range"
+                min={absoluteMinPrice}
+                max={absoluteMaxPrice}
+                value={sliderMaxValue}
+                onChange={(event) => {
+                  const nextMax = Number(event.target.value);
+                  setMaxPriceDraft(String(Math.max(nextMax, sliderMinValue)));
+                }}
+                className="absolute inset-x-0 top-[-8px] h-[20px] w-full appearance-none bg-transparent [&::-webkit-slider-thumb]:h-[16px] [&::-webkit-slider-thumb]:w-[16px] [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-[#3B82F6] [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:shadow-[0_2px_10px_rgba(59,130,246,0.25)]"
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div className={isPanel ? "mt-[12px] grid grid-cols-2 gap-[10px]" : "grid grid-cols-2 gap-[10px] px-[14px] pt-[14px]"}>
+        <label className="block">
+          <span className={isPanel ? "mb-[6px] block text-[12px] font-medium text-[#12303B]" : "mb-[6px] block text-[12px] font-medium text-[#12303B]"}>Minimum</span>
+          <div className={isPanel ? "flex items-center rounded-[12px] border border-[#AFC1D3] bg-white px-[12px] py-[10px]" : "flex items-center rounded-[12px] border border-[#AFC1D3] bg-white px-[10px] py-[9px] focus-within:border-[#12303B]"}>
+            <span className={isPanel ? "text-[16px] font-medium text-[#8C99A8]" : "text-[15px] font-medium text-[#8C99A8]"}>€</span>
+            <input
+              type="number"
+              min={0}
+              max={isPanel ? 15000 : undefined}
+              placeholder="0"
+              value={minPriceDraft}
+              onChange={(event) => setMinPriceDraft(event.target.value)}
+              className={isPanel ? "w-full bg-transparent pl-[8px] text-[16px] font-medium text-[#12303B] outline-none placeholder:text-[#8C99A8]" : "w-full bg-transparent pl-[8px] text-[15px] font-medium text-[#12303B] outline-none placeholder:text-[#8C99A8]"}
+            />
+          </div>
+        </label>
+        <label className="block">
+          <span className={isPanel ? "mb-[6px] block text-[12px] font-medium text-[#12303B]" : "mb-[6px] block text-[12px] font-medium text-[#12303B]"}>Maximum</span>
+          <div className={isPanel ? "flex items-center rounded-[12px] border border-[#AFC1D3] bg-white px-[12px] py-[10px]" : "flex items-center rounded-[12px] border border-[#AFC1D3] bg-white px-[10px] py-[9px] focus-within:border-[#12303B]"}>
+            <span className={isPanel ? "text-[16px] font-medium text-[#8C99A8]" : "text-[15px] font-medium text-[#8C99A8]"}>€</span>
+            <input
+              type="number"
+              min={0}
+              max={isPanel ? 15000 : undefined}
+              placeholder={isPanel ? "15000" : absoluteMaxPrice.toString()}
+              value={maxPriceDraft}
+              onChange={(event) => setMaxPriceDraft(event.target.value)}
+              className={isPanel ? "w-full bg-transparent pl-[8px] text-[16px] font-medium text-[#12303B] outline-none placeholder:text-[#8C99A8]" : "w-full bg-transparent pl-[8px] text-[15px] font-medium text-[#12303B] outline-none placeholder:text-[#8C99A8]"}
+            />
+          </div>
+        </label>
+      </div>
+    </>
+  );
+}
+
+interface PropertyTypeCheckboxListProps {
+  variant: "dropdown" | "panel";
+  selectedPropertyTypes: Set<string>;
+  onToggle: (type: ListingItem["propertyType"]) => void;
+}
+
+function PropertyTypeCheckboxList({ variant, selectedPropertyTypes, onToggle }: PropertyTypeCheckboxListProps) {
+  const isPanel = variant === "panel";
+
+  return (
+    <div className={isPanel ? "grid grid-cols-1 gap-[2px] sm:grid-cols-2" : "space-y-[2px] px-[10px] pb-[16px]"}>
+      {PROPERTY_TYPES.map((type) => {
+        const checked = selectedPropertyTypes.has(type);
+        return (
+          <label
+            key={isPanel ? `sidebar-${type}` : type}
+            className={isPanel
+              ? "flex items-center gap-[8px] rounded-[10px] px-[10px] py-[9px] text-[14px] text-[#12303B] cursor-pointer hover:bg-[#F7FAFC]"
+              : "flex items-center gap-[10px] rounded-[12px] px-[12px] py-[11px] text-[14px] text-[#12303B] cursor-pointer hover:bg-[#F7FAFC]"}
+          >
+            <input
+              type="checkbox"
+              checked={checked}
+              className={isPanel ? "h-[16px] w-[16px] rounded-[4px] border-[#AFC1D3] text-brand-primary focus:ring-brand-primary" : "h-[18px] w-[18px] rounded-[4px] border-[#AFC1D3] text-brand-primary focus:ring-brand-primary"}
+              onChange={() => onToggle(type)}
+            />
+            <span className="capitalize font-medium">{type}</span>
+          </label>
+        );
+      })}
+    </div>
+  );
+}
+
+interface NeighborhoodCheckboxListProps {
+  variant: "dropdown" | "panel";
+  neighborhoodOptions: string[];
+  selectedNeighborhoods: Set<string>;
+  showAllNeighborhoods: boolean;
+  onToggleShowAll: () => void;
+  onToggle: (neighborhood: string) => void;
+}
+
+function NeighborhoodCheckboxList({
+  variant,
+  neighborhoodOptions,
+  selectedNeighborhoods,
+  showAllNeighborhoods,
+  onToggleShowAll,
+  onToggle,
+}: NeighborhoodCheckboxListProps) {
+  const isPanel = variant === "panel";
+  const visibleCount = isPanel ? 8 : 5;
+  const visibleNeighborhoods = showAllNeighborhoods ? neighborhoodOptions : neighborhoodOptions.slice(0, visibleCount);
+
+  const list = (
+    <>
+      {!isPanel && neighborhoodOptions.length === 0 && (
+        <div className="text-[13px] text-[#6B6B6B] px-[8px] py-[6px]">No neighborhoods available yet.</div>
+      )}
+      {visibleNeighborhoods.map((neighborhood) => {
+        const checked = selectedNeighborhoods.has(neighborhood);
+        return (
+          <label
+            key={isPanel ? `sidebar-neighborhood-${neighborhood}` : neighborhood}
+            className={isPanel
+              ? "flex items-center gap-[8px] rounded-[10px] px-[10px] py-[9px] text-[14px] text-[#12303B] cursor-pointer hover:bg-[#F7FAFC]"
+              : "flex items-center gap-[10px] rounded-[12px] px-[12px] py-[11px] text-[14px] text-[#12303B] cursor-pointer hover:bg-[#F7FAFC]"}
+          >
+            <input
+              type="checkbox"
+              checked={checked}
+              className={isPanel ? "h-[16px] w-[16px] rounded-[4px] border-[#AFC1D3] text-brand-primary focus:ring-brand-primary" : "h-[18px] w-[18px] rounded-[4px] border-[#AFC1D3] text-brand-primary focus:ring-brand-primary"}
+              onChange={() => onToggle(neighborhood)}
+            />
+            <span className="font-medium">{neighborhood}</span>
+          </label>
+        );
+      })}
+    </>
+  );
+
+  const showAllButton = neighborhoodOptions.length > visibleCount && (
+    <button
+      type="button"
+      onClick={onToggleShowAll}
+      className={isPanel
+        ? "mt-[6px] inline-flex items-center gap-[6px] text-[13px] font-semibold text-[#12303B] underline decoration-[#12303B] underline-offset-[4px]"
+        : "inline-flex items-center gap-[8px] text-[14px] font-semibold text-[#12303B] underline decoration-[#12303B] underline-offset-[4px]"}
+    >
+      {showAllNeighborhoods ? "Show less" : "Show all"}
+      <ChevronDown className={`${isPanel ? "h-[14px] w-[14px]" : "h-[16px] w-[16px]"} transition-transform ${showAllNeighborhoods ? "rotate-180" : ""}`} />
+    </button>
+  );
+
+  if (isPanel) {
+    return (
+      <>
+        <div className="max-h-[180px] overflow-y-auto">{list}</div>
+        {showAllButton}
+      </>
+    );
+  }
+
+  return (
+    <>
+      <div className="max-h-[268px] overflow-y-auto px-[10px] pb-[10px]">{list}</div>
+      {showAllButton && <div className="px-[18px] pb-[18px]">{showAllButton}</div>}
+    </>
+  );
+}
+
 export function SearchResults() {
   const { city } = useParams();
   const navigate = useNavigate();
@@ -324,7 +629,7 @@ export function SearchResults() {
   const [propertyTypeOpen, setPropertyTypeOpen] = useState(false);
   const [neighborhoodsOpen, setNeighborhoodsOpen] = useState(false);
   const [allFiltersOpen, setAllFiltersOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<"anyone" | "students" | "professionals" | "families">("anyone");
+  const [activeTab, setActiveTab] = useState<"anyone" | "students" | "professionals">("anyone");
   const [sortOpen, setSortOpen] = useState(false);
   const [sortOption, setSortOption] = useState<SortOption>("recommended");
   const [isMapExpanded, setIsMapExpanded] = useState(false);
@@ -344,11 +649,10 @@ export function SearchResults() {
   const [allFiltersShowAllNeighborhoods, setAllFiltersShowAllNeighborhoods] = useState(false);
   const filtersRef = useRef<HTMLDivElement>(null);
   const sortMenuRef = useRef<HTMLDivElement>(null);
+  const geocodedListingIdsRef = useRef<Set<string>>(new Set());
   const isMobile = useIsMobile();
   const requestedStartDate = useMemo(() => parseFilterDate(searchParams.get("startDate")), [searchParams]);
   const requestedEndDate = useMemo(() => parseFilterDate(searchParams.get("endDate")), [searchParams]);
-  const startDateValue = searchParams.get("startDate") ?? "";
-  const endDateValue = searchParams.get("endDate") ?? "";
   const minPrice = useMemo(() => parseNumberParam(searchParams.get("minPrice")), [searchParams]);
   const maxPrice = useMemo(() => parseNumberParam(searchParams.get("maxPrice")), [searchParams]);
   const selectedPropertyTypes = useMemo(
@@ -545,9 +849,17 @@ export function SearchResults() {
         return false;
       }
 
+      if (activeTab === "students" && property.preferredTenantType !== "students") {
+        return false;
+      }
+      if (activeTab === "professionals" && property.preferredTenantType !== "working") {
+        return false;
+      }
+
       return true;
     });
   }, [
+    activeTab,
     maxPrice,
     minPrice,
     properties,
@@ -624,7 +936,13 @@ export function SearchResults() {
 
     return "Price";
   }, [maxPrice, minPrice]);
-  const cityLabel = city ? city.charAt(0).toUpperCase() + city.slice(1) : "All cities";
+  const cityLabel = city
+    ? city
+        .split("-")
+        .filter(Boolean)
+        .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(" ")
+    : "All cities";
   const listingTypeBreakdown = useMemo(() => {
     const counts = filteredProperties.reduce(
       (accumulator, property) => {
@@ -778,9 +1096,15 @@ export function SearchResults() {
       return;
     }
 
-    const unresolvedListings = filteredProperties.filter((property) => !mapCoordinatesByListingId[property.id]);
+    const unresolvedListings = filteredProperties.filter(
+      (property) => !geocodedListingIdsRef.current.has(property.id)
+    );
     if (unresolvedListings.length === 0) {
       return;
+    }
+
+    for (const property of unresolvedListings) {
+      geocodedListingIdsRef.current.add(property.id);
     }
 
     // Always place listings on the map immediately, even if live geocoding fails.
@@ -863,7 +1187,11 @@ export function SearchResults() {
     return () => {
       isCancelled = true;
     };
-  }, [filteredProperties, mapCoordinatesByListingId, viewMode]);
+    // mapCoordinatesByListingId is intentionally excluded: this effect updates
+    // that state itself, and depending on it would cancel + restart the
+    // in-flight geocoding loop after only the first listing resolved.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filteredProperties, viewMode]);
 
   const handleToggleFavorite = async (listingId: string) => {
     const token = localStorage.getItem("authToken");
@@ -1111,95 +1439,22 @@ export function SearchResults() {
                 <ChevronDown className="w-[16px] h-[16px] text-[#6B6B6B]" />
               </button>
               {priceOpen && (
-                <div className="absolute top-full left-0 mt-[8px] w-[380px] max-w-[calc(100vw-24px)] overflow-hidden rounded-[22px] border border-[rgba(11,45,58,0.10)] bg-white shadow-[0_18px_44px_rgba(0,0,0,0.14)] z-50">
-                  <div className="flex items-center justify-between gap-[12px] px-[18px] pt-[18px]">
-                    <div className="text-[16px] font-semibold text-[#12303B]">Monthly rent</div>
-                    <button
-                      type="button"
-                      className="inline-flex items-center gap-[8px] rounded-[14px] border border-[#AFC1D3] bg-white px-[14px] py-[9px] text-[13px] font-semibold text-[#12303B]"
-                    >
-                      Euros (€)
-                      <ChevronDown className="h-[16px] w-[16px] text-[#12303B]" />
-                    </button>
-                  </div>
+                <div className="absolute top-full left-0 mt-[8px] w-[280px] max-w-[calc(100vw-24px)] overflow-hidden rounded-[18px] border border-[rgba(11,45,58,0.10)] bg-white shadow-[0_18px_44px_rgba(0,0,0,0.14)] z-50">
+                  <PriceRangeFields
+                    variant="dropdown"
+                    absoluteMinPrice={absoluteMinPrice}
+                    absoluteMaxPrice={absoluteMaxPrice}
+                    sliderMinValue={sliderMinValue}
+                    sliderMaxValue={sliderMaxValue}
+                    sliderMinPercent={sliderMinPercent}
+                    sliderMaxPercent={sliderMaxPercent}
+                    minPriceDraft={minPriceDraft}
+                    maxPriceDraft={maxPriceDraft}
+                    setMinPriceDraft={setMinPriceDraft}
+                    setMaxPriceDraft={setMaxPriceDraft}
+                  />
 
-                  <div className="px-[18px] pt-[16px]">
-                    <div className="rounded-[18px] bg-[#FCFEFF] px-[12px] pt-[14px] pb-[10px] border border-[#E6EDF3]">
-                      <img
-                        src={priceSliderGraph}
-                        alt="Price trend graph"
-                        className="h-[146px] w-full object-cover rounded-[12px]"
-                      />
-                      <div className="mt-[8px] flex items-center justify-between text-[11px] text-[#6B7280]">
-                        <span>€{absoluteMinPrice.toLocaleString("en-GB")}</span>
-                        <span>€{absoluteMaxPrice.toLocaleString("en-GB")}</span>
-                      </div>
-
-                      <div className="relative mt-[14px] px-[2px]">
-                        <div className="h-[3px] rounded-full bg-[#D5E2ED]" />
-                        <div
-                          className="absolute top-0 h-[3px] rounded-full bg-[#103947]"
-                          style={{ left: `${sliderMinPercent}%`, width: `${Math.max(0, sliderMaxPercent - sliderMinPercent)}%` }}
-                        />
-
-                        <input
-                          type="range"
-                          min={absoluteMinPrice}
-                          max={absoluteMaxPrice}
-                          value={sliderMinValue}
-                          onChange={(event) => {
-                            const nextMin = Number(event.target.value);
-                            setMinPriceDraft(String(Math.min(nextMin, sliderMaxValue)));
-                          }}
-                          className="absolute inset-x-0 top-[-8px] h-[20px] w-full appearance-none bg-transparent [&::-webkit-slider-thumb]:h-[20px] [&::-webkit-slider-thumb]:w-[20px] [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-[#3B82F6] [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:shadow-[0_2px_10px_rgba(59,130,246,0.25)]"
-                        />
-                        <input
-                          type="range"
-                          min={absoluteMinPrice}
-                          max={absoluteMaxPrice}
-                          value={sliderMaxValue}
-                          onChange={(event) => {
-                            const nextMax = Number(event.target.value);
-                            setMaxPriceDraft(String(Math.max(nextMax, sliderMinValue)));
-                          }}
-                          className="absolute inset-x-0 top-[-8px] h-[20px] w-full appearance-none bg-transparent [&::-webkit-slider-thumb]:h-[20px] [&::-webkit-slider-thumb]:w-[20px] [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-[#3B82F6] [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:shadow-[0_2px_10px_rgba(59,130,246,0.25)]"
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-[12px] px-[18px] pt-[18px]">
-                    <label className="block">
-                      <span className="mb-[8px] block text-[14px] font-medium text-[#12303B]">Minimum</span>
-                      <div className="flex items-center rounded-[16px] border border-[#AFC1D3] bg-white px-[14px] py-[14px] focus-within:border-[#12303B]">
-                        <span className="text-[18px] font-medium text-[#8C99A8]">€</span>
-                        <input
-                          type="number"
-                          min={0}
-                          placeholder="0"
-                          value={minPriceDraft}
-                          onChange={(event) => setMinPriceDraft(event.target.value)}
-                          className="w-full bg-transparent pl-[10px] text-[18px] font-medium text-[#12303B] outline-none placeholder:text-[#8C99A8]"
-                        />
-                      </div>
-                    </label>
-                    <label className="block">
-                      <span className="mb-[8px] block text-[14px] font-medium text-[#12303B]">Maximum</span>
-                      <div className="flex items-center rounded-[16px] border border-[#AFC1D3] bg-white px-[14px] py-[14px] focus-within:border-[#12303B]">
-                        <span className="text-[18px] font-medium text-[#8C99A8]">€</span>
-                        <input
-                          type="number"
-                          min={0}
-                          placeholder={absoluteMaxPrice.toString()}
-                          value={maxPriceDraft}
-                          onChange={(event) => setMaxPriceDraft(event.target.value)}
-                          className="w-full bg-transparent pl-[10px] text-[18px] font-medium text-[#12303B] outline-none placeholder:text-[#8C99A8]"
-                        />
-                      </div>
-                    </label>
-                  </div>
-
-                  <div className="px-[18px] pt-[16px] pb-[18px]">
+                  <div className="flex items-center justify-between gap-[10px] px-[14px] pt-[12px] pb-[14px]">
                     <button
                       type="button"
                       onClick={() => {
@@ -1208,34 +1463,26 @@ export function SearchResults() {
                         updateSearchFilters({ minPrice: null, maxPrice: null });
                         setPriceOpen(false);
                       }}
-                      className="rounded-[16px] border border-[#AFC1D3] px-[18px] py-[11px] text-[14px] font-semibold text-[#12303B] hover:bg-[#F7FAFC]"
+                      className="rounded-[12px] border border-[#AFC1D3] px-[14px] py-[9px] text-[13px] font-semibold text-[#12303B] hover:bg-[#F7FAFC]"
                     >
                       Clear
                     </button>
                     <button
                       type="button"
                       onClick={() => {
-                        const nextMin = minPriceDraft.trim() ? Number(minPriceDraft) : null;
-                        const nextMax = maxPriceDraft.trim() ? Number(maxPriceDraft) : null;
-                        const sanitizedMin = nextMin !== null && Number.isFinite(nextMin)
-                          ? Math.max(absoluteMinPrice, Math.min(nextMin, absoluteMaxPrice))
-                          : null;
-                        const sanitizedMax = nextMax !== null && Number.isFinite(nextMax)
-                          ? Math.max(absoluteMinPrice, Math.min(nextMax, absoluteMaxPrice))
-                          : null;
-                        const safeMin = sanitizedMin !== null && sanitizedMax !== null
-                          ? Math.min(sanitizedMin, sanitizedMax)
-                          : sanitizedMin;
-                        const safeMax = sanitizedMin !== null && sanitizedMax !== null
-                          ? Math.max(sanitizedMin, sanitizedMax)
-                          : sanitizedMax;
+                        const { minPrice: safeMin, maxPrice: safeMax } = sanitizePriceRange(
+                          minPriceDraft,
+                          maxPriceDraft,
+                          absoluteMinPrice,
+                          absoluteMaxPrice
+                        );
                         updateSearchFilters({
                           minPrice: safeMin,
                           maxPrice: safeMax,
                         });
                         setPriceOpen(false);
                       }}
-                      className="rounded-[16px] bg-brand-primary px-[18px] py-[11px] text-[14px] font-semibold text-white shadow-[0_10px_22px_rgba(11,165,199,0.24)] hover:bg-brand-primary-dark"
+                      className="rounded-[12px] bg-brand-primary px-[14px] py-[9px] text-[13px] font-semibold text-white shadow-[0_10px_22px_rgba(11,165,199,0.24)] hover:bg-brand-primary-dark"
                     >
                       Apply
                     </button>
@@ -1265,32 +1512,21 @@ export function SearchResults() {
                   <div className="px-[18px] pt-[18px] pb-[10px]">
                     <div className="text-[16px] font-semibold text-[#12303B]">Property type</div>
                   </div>
-                  <div className="space-y-[2px] px-[10px] pb-[16px]">
-                  {PROPERTY_TYPES.map((type) => {
-                    const checked = selectedPropertyTypes.has(type);
-                    return (
-                      <label key={type} className="flex items-center gap-[10px] rounded-[12px] px-[12px] py-[11px] text-[14px] text-[#12303B] cursor-pointer hover:bg-[#F7FAFC]">
-                        <input
-                          type="checkbox"
-                          checked={checked}
-                          className="h-[18px] w-[18px] rounded-[4px] border-[#AFC1D3] text-brand-primary focus:ring-brand-primary"
-                          onChange={() => {
-                            const nextTypes = new Set(selectedPropertyTypes);
-                            if (nextTypes.has(type)) {
-                              nextTypes.delete(type);
-                            } else {
-                              nextTypes.add(type);
-                            }
-                            updateSearchFilters({
-                              types: nextTypes.size > 0 ? serializeDelimitedParam([...nextTypes]) : null,
-                            });
-                          }}
-                        />
-                        <span className="capitalize font-medium">{type}</span>
-                      </label>
-                    );
-                  })}
-                  </div>
+                  <PropertyTypeCheckboxList
+                    variant="dropdown"
+                    selectedPropertyTypes={selectedPropertyTypes}
+                    onToggle={(type) => {
+                      const nextTypes = new Set(selectedPropertyTypes);
+                      if (nextTypes.has(type)) {
+                        nextTypes.delete(type);
+                      } else {
+                        nextTypes.add(type);
+                      }
+                      updateSearchFilters({
+                        types: nextTypes.size > 0 ? serializeDelimitedParam([...nextTypes]) : null,
+                      });
+                    }}
+                  />
                 </div>
               )}
             </div>
@@ -1316,47 +1552,24 @@ export function SearchResults() {
                   <div className="px-[18px] pt-[18px] pb-[12px]">
                     <div className="text-[16px] font-semibold text-[#12303B]">Neighborhoods</div>
                   </div>
-                  <div className="max-h-[268px] overflow-y-auto px-[10px] pb-[10px]">
-                    {neighborhoodOptions.length === 0 && (
-                      <div className="text-[13px] text-[#6B6B6B] px-[8px] py-[6px]">No neighborhoods available yet.</div>
-                    )}
-                    {(showAllNeighborhoods ? neighborhoodOptions : neighborhoodOptions.slice(0, 5)).map((neighborhood) => {
-                    const checked = selectedNeighborhoods.has(neighborhood);
-                    return (
-                      <label key={neighborhood} className="flex items-center gap-[10px] rounded-[12px] px-[12px] py-[11px] text-[14px] text-[#12303B] cursor-pointer hover:bg-[#F7FAFC]">
-                        <input
-                          type="checkbox"
-                          checked={checked}
-                          className="h-[18px] w-[18px] rounded-[4px] border-[#AFC1D3] text-brand-primary focus:ring-brand-primary"
-                          onChange={() => {
-                            const nextNeighborhoods = new Set(selectedNeighborhoods);
-                            if (nextNeighborhoods.has(neighborhood)) {
-                              nextNeighborhoods.delete(neighborhood);
-                            } else {
-                              nextNeighborhoods.add(neighborhood);
-                            }
-                            updateSearchFilters({
-                              neighborhoods: nextNeighborhoods.size > 0 ? serializeDelimitedParam([...nextNeighborhoods]) : null,
-                            });
-                          }}
-                        />
-                        <span className="font-medium">{neighborhood}</span>
-                      </label>
-                    );
-                    })}
-                  </div>
-                  {neighborhoodOptions.length > 5 && (
-                    <div className="px-[18px] pb-[18px]">
-                      <button
-                        type="button"
-                        onClick={() => setShowAllNeighborhoods((prev) => !prev)}
-                        className="inline-flex items-center gap-[8px] text-[14px] font-semibold text-[#12303B] underline decoration-[#12303B] underline-offset-[4px]"
-                      >
-                        {showAllNeighborhoods ? "Show less" : "Show all"}
-                        <ChevronDown className={`h-[16px] w-[16px] transition-transform ${showAllNeighborhoods ? "rotate-180" : ""}`} />
-                      </button>
-                    </div>
-                  )}
+                  <NeighborhoodCheckboxList
+                    variant="dropdown"
+                    neighborhoodOptions={neighborhoodOptions}
+                    selectedNeighborhoods={selectedNeighborhoods}
+                    showAllNeighborhoods={showAllNeighborhoods}
+                    onToggleShowAll={() => setShowAllNeighborhoods((prev) => !prev)}
+                    onToggle={(neighborhood) => {
+                      const nextNeighborhoods = new Set(selectedNeighborhoods);
+                      if (nextNeighborhoods.has(neighborhood)) {
+                        nextNeighborhoods.delete(neighborhood);
+                      } else {
+                        nextNeighborhoods.add(neighborhood);
+                      }
+                      updateSearchFilters({
+                        neighborhoods: nextNeighborhoods.size > 0 ? serializeDelimitedParam([...nextNeighborhoods]) : null,
+                      });
+                    }}
+                  />
                 </div>
               )}
             </div>
@@ -1437,16 +1650,6 @@ export function SearchResults() {
             >
               Professionals
             </button>
-            <button
-              onClick={() => setActiveTab("families")}
-              className={`pb-[12px] text-[14px] font-semibold transition-colors ${
-                activeTab === "families"
-                  ? "text-[#1A1A1A] border-b-[3px] border-[#1A1A1A]"
-                  : "text-[#6B6B6B] hover:text-[#1A1A1A]"
-              }`}
-            >
-              Families
-            </button>
           </div>
         </div>
       </div>
@@ -1479,158 +1682,60 @@ export function SearchResults() {
 
             <div className="space-y-[20px] px-[16px] py-[14px]">
               <section>
-                <div className="mb-[10px] flex items-center justify-between gap-[10px]">
-                  <h4 className="text-[18px] font-bold text-[#12303B]">Monthly rent</h4>
-                  <button
-                    type="button"
-                    className="inline-flex items-center gap-[6px] rounded-[12px] border border-[#AFC1D3] bg-white px-[12px] py-[7px] text-[13px] font-semibold text-[#12303B]"
-                  >
-                    Euros (€)
-                    <ChevronDown className="h-[14px] w-[14px] text-[#12303B]" />
-                  </button>
-                </div>
-
-                <div className="rounded-[14px] border border-[#E6EDF3] bg-[#FCFEFF] px-[10px] pt-[12px] pb-[10px]">
-                  <img
-                    src={priceSliderGraph}
-                    alt="Price trend graph"
-                    className="h-[98px] w-full object-cover rounded-[10px]"
-                  />
-
-                  <div className="relative mt-[10px] px-[2px]">
-                    <div className="h-[3px] rounded-full bg-[#D5E2ED]" />
-                    <div
-                      className="absolute top-0 h-[3px] rounded-full bg-[#103947]"
-                      style={{ left: `${sliderMinPercent}%`, width: `${Math.max(0, sliderMaxPercent - sliderMinPercent)}%` }}
-                    />
-
-                    <input
-                      type="range"
-                      min={absoluteMinPrice}
-                      max={absoluteMaxPrice}
-                      value={sliderMinValue}
-                      onChange={(event) => {
-                        const nextMin = Number(event.target.value);
-                        setMinPriceDraft(String(Math.min(nextMin, sliderMaxValue)));
-                      }}
-                      className="absolute inset-x-0 top-[-8px] h-[20px] w-full appearance-none bg-transparent [&::-webkit-slider-thumb]:h-[18px] [&::-webkit-slider-thumb]:w-[18px] [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-[#3B82F6] [&::-webkit-slider-thumb]:bg-white"
-                    />
-                    <input
-                      type="range"
-                      min={absoluteMinPrice}
-                      max={absoluteMaxPrice}
-                      value={sliderMaxValue}
-                      onChange={(event) => {
-                        const nextMax = Number(event.target.value);
-                        setMaxPriceDraft(String(Math.max(nextMax, sliderMinValue)));
-                      }}
-                      className="absolute inset-x-0 top-[-8px] h-[20px] w-full appearance-none bg-transparent [&::-webkit-slider-thumb]:h-[18px] [&::-webkit-slider-thumb]:w-[18px] [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-[#3B82F6] [&::-webkit-slider-thumb]:bg-white"
-                    />
-                  </div>
-                </div>
-
-                <div className="mt-[12px] grid grid-cols-2 gap-[10px]">
-                  <label className="block">
-                    <span className="mb-[6px] block text-[12px] font-medium text-[#12303B]">Minimum</span>
-                    <div className="flex items-center rounded-[12px] border border-[#AFC1D3] bg-white px-[12px] py-[10px]">
-                      <span className="text-[16px] font-medium text-[#8C99A8]">€</span>
-                      <input
-                        type="number"
-                        min={0}
-                        max={15000}
-                        value={minPriceDraft}
-                        onChange={(event) => setMinPriceDraft(event.target.value)}
-                        placeholder="0"
-                        className="w-full bg-transparent pl-[8px] text-[16px] font-medium text-[#12303B] outline-none placeholder:text-[#8C99A8]"
-                      />
-                    </div>
-                  </label>
-                  <label className="block">
-                    <span className="mb-[6px] block text-[12px] font-medium text-[#12303B]">Maximum</span>
-                    <div className="flex items-center rounded-[12px] border border-[#AFC1D3] bg-white px-[12px] py-[10px]">
-                      <span className="text-[16px] font-medium text-[#8C99A8]">€</span>
-                      <input
-                        type="number"
-                        min={0}
-                        max={15000}
-                        value={maxPriceDraft}
-                        onChange={(event) => setMaxPriceDraft(event.target.value)}
-                        placeholder="15000"
-                        className="w-full bg-transparent pl-[8px] text-[16px] font-medium text-[#12303B] outline-none placeholder:text-[#8C99A8]"
-                      />
-                    </div>
-                  </label>
-                </div>
+                <PriceRangeFields
+                  variant="panel"
+                  absoluteMinPrice={absoluteMinPrice}
+                  absoluteMaxPrice={absoluteMaxPrice}
+                  sliderMinValue={sliderMinValue}
+                  sliderMaxValue={sliderMaxValue}
+                  sliderMinPercent={sliderMinPercent}
+                  sliderMaxPercent={sliderMaxPercent}
+                  minPriceDraft={minPriceDraft}
+                  maxPriceDraft={maxPriceDraft}
+                  setMinPriceDraft={setMinPriceDraft}
+                  setMaxPriceDraft={setMaxPriceDraft}
+                />
               </section>
 
               <section>
                 <h4 className="mb-[8px] text-[18px] font-bold text-[#12303B]">Property type</h4>
-                <div className="grid grid-cols-1 gap-[2px] sm:grid-cols-2">
-                  {PROPERTY_TYPES.map((type) => {
-                    const checked = selectedPropertyTypes.has(type);
-                    return (
-                      <label key={`sidebar-${type}`} className="flex items-center gap-[8px] rounded-[10px] px-[10px] py-[9px] text-[14px] text-[#12303B] cursor-pointer hover:bg-[#F7FAFC]">
-                        <input
-                          type="checkbox"
-                          checked={checked}
-                          className="h-[16px] w-[16px] rounded-[4px] border-[#AFC1D3] text-brand-primary focus:ring-brand-primary"
-                          onChange={() => {
-                            const nextTypes = new Set(selectedPropertyTypes);
-                            if (nextTypes.has(type)) {
-                              nextTypes.delete(type);
-                            } else {
-                              nextTypes.add(type);
-                            }
-                            updateSearchFilters({
-                              types: nextTypes.size > 0 ? serializeDelimitedParam([...nextTypes]) : null,
-                            });
-                          }}
-                        />
-                        <span className="capitalize font-medium">{type}</span>
-                      </label>
-                    );
-                  })}
-                </div>
+                <PropertyTypeCheckboxList
+                  variant="panel"
+                  selectedPropertyTypes={selectedPropertyTypes}
+                  onToggle={(type) => {
+                    const nextTypes = new Set(selectedPropertyTypes);
+                    if (nextTypes.has(type)) {
+                      nextTypes.delete(type);
+                    } else {
+                      nextTypes.add(type);
+                    }
+                    updateSearchFilters({
+                      types: nextTypes.size > 0 ? serializeDelimitedParam([...nextTypes]) : null,
+                    });
+                  }}
+                />
               </section>
 
               <section>
                 <h4 className="mb-[8px] text-[18px] font-bold text-[#12303B]">Neighborhoods</h4>
-                <div className="max-h-[180px] overflow-y-auto">
-                  {(allFiltersShowAllNeighborhoods ? neighborhoodOptions : neighborhoodOptions.slice(0, 8)).map((neighborhood) => {
-                    const checked = selectedNeighborhoods.has(neighborhood);
-                    return (
-                      <label key={`sidebar-neighborhood-${neighborhood}`} className="flex items-center gap-[8px] rounded-[10px] px-[10px] py-[9px] text-[14px] text-[#12303B] cursor-pointer hover:bg-[#F7FAFC]">
-                        <input
-                          type="checkbox"
-                          checked={checked}
-                          className="h-[16px] w-[16px] rounded-[4px] border-[#AFC1D3] text-brand-primary focus:ring-brand-primary"
-                          onChange={() => {
-                            const nextNeighborhoods = new Set(selectedNeighborhoods);
-                            if (nextNeighborhoods.has(neighborhood)) {
-                              nextNeighborhoods.delete(neighborhood);
-                            } else {
-                              nextNeighborhoods.add(neighborhood);
-                            }
-                            updateSearchFilters({
-                              neighborhoods: nextNeighborhoods.size > 0 ? serializeDelimitedParam([...nextNeighborhoods]) : null,
-                            });
-                          }}
-                        />
-                        <span className="font-medium">{neighborhood}</span>
-                      </label>
-                    );
-                  })}
-                </div>
-                {neighborhoodOptions.length > 8 && (
-                  <button
-                    type="button"
-                    onClick={() => setAllFiltersShowAllNeighborhoods((prev) => !prev)}
-                    className="mt-[6px] inline-flex items-center gap-[6px] text-[13px] font-semibold text-[#12303B] underline decoration-[#12303B] underline-offset-[4px]"
-                  >
-                    {allFiltersShowAllNeighborhoods ? "Show less" : "Show all"}
-                    <ChevronDown className={`h-[14px] w-[14px] transition-transform ${allFiltersShowAllNeighborhoods ? "rotate-180" : ""}`} />
-                  </button>
-                )}
+                <NeighborhoodCheckboxList
+                  variant="panel"
+                  neighborhoodOptions={neighborhoodOptions}
+                  selectedNeighborhoods={selectedNeighborhoods}
+                  showAllNeighborhoods={allFiltersShowAllNeighborhoods}
+                  onToggleShowAll={() => setAllFiltersShowAllNeighborhoods((prev) => !prev)}
+                  onToggle={(neighborhood) => {
+                    const nextNeighborhoods = new Set(selectedNeighborhoods);
+                    if (nextNeighborhoods.has(neighborhood)) {
+                      nextNeighborhoods.delete(neighborhood);
+                    } else {
+                      nextNeighborhoods.add(neighborhood);
+                    }
+                    updateSearchFilters({
+                      neighborhoods: nextNeighborhoods.size > 0 ? serializeDelimitedParam([...nextNeighborhoods]) : null,
+                    });
+                  }}
+                />
               </section>
             </div>
 
@@ -1649,21 +1754,12 @@ export function SearchResults() {
                 <button
                   type="button"
                   onClick={() => {
-                    const nextMin = minPriceDraft.trim() ? Number(minPriceDraft) : null;
-                    const nextMax = maxPriceDraft.trim() ? Number(maxPriceDraft) : null;
-                    const sanitizedMin = nextMin !== null && Number.isFinite(nextMin)
-                      ? Math.max(absoluteMinPrice, Math.min(nextMin, absoluteMaxPrice))
-                      : null;
-                    const sanitizedMax = nextMax !== null && Number.isFinite(nextMax)
-                      ? Math.max(absoluteMinPrice, Math.min(nextMax, absoluteMaxPrice))
-                      : null;
-                    const safeMin = sanitizedMin !== null && sanitizedMax !== null
-                      ? Math.min(sanitizedMin, sanitizedMax)
-                      : sanitizedMin;
-                    const safeMax = sanitizedMin !== null && sanitizedMax !== null
-                      ? Math.max(sanitizedMin, sanitizedMax)
-                      : sanitizedMax;
-
+                    const { minPrice: safeMin, maxPrice: safeMax } = sanitizePriceRange(
+                      minPriceDraft,
+                      maxPriceDraft,
+                      absoluteMinPrice,
+                      absoluteMaxPrice
+                    );
                     updateSearchFilters({
                       minPrice: safeMin,
                       maxPrice: safeMax,
