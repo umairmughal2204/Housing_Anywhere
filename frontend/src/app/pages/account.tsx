@@ -1,6 +1,6 @@
 import { Header } from "../components/header";
 import { Footer } from "../components/footer";
-import { User, FileText, Mail, Key, Bell, Plus, Trash2, ChevronDown } from "lucide-react";
+import { User, FileText, Mail, Key, Bell, Plus, Trash2, ChevronDown, X } from "lucide-react";
 import { ChangeEvent, FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router";
 import { useAuth } from "../contexts/auth-context";
@@ -66,6 +66,25 @@ function splitDate(dateOfBirth?: string) {
   };
 }
 
+const MONTH_NAMES = [
+  "January", "February", "March", "April", "May", "June",
+  "July", "August", "September", "October", "November", "December",
+];
+
+function formatDateOfBirth(day: string, month: string, year: string) {
+  if (!day || !month || !year) {
+    return "Not provided";
+  }
+  const monthName = MONTH_NAMES[Number(month) - 1] ?? month;
+  return `${day} ${monthName} ${year}`;
+}
+
+const OCCUPATION_LABELS: Record<Occupation, string> = {
+  student: "Student",
+  working: "Working professional",
+  other: "Other",
+};
+
 export function Account() {
   const { user, updateProfile, updateContactDetails, changePassword, uploadProfilePicture, deleteAccount } = useAuth();
   const navigate = useNavigate();
@@ -73,6 +92,7 @@ export function Account() {
 
   const [activeTab, setActiveTab] = useState<TabType>("profile");
   const [isMobileTabsOpen, setIsMobileTabsOpen] = useState(false);
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [profileForm, setProfileForm] = useState<ProfileFormState>(DEFAULT_PROFILE);
   const [contactForm, setContactForm] = useState<ContactFormState>({
     email: "",
@@ -329,7 +349,7 @@ export function Account() {
             <h1 className="text-[#1A1A1A] text-[28px] sm:text-[32px] font-bold tracking-[-0.02em]">Account</h1>
             <button
               type="button"
-              onClick={() => setActiveTab("profile")}
+              onClick={() => setIsProfileModalOpen(true)}
               className="w-full sm:w-auto px-[16px] py-[10px] border border-[rgba(0,0,0,0.16)] rounded-[10px] bg-white text-[#1A1A1A] text-[13px] font-semibold hover:bg-[#F7F7F9] transition-colors"
             >
               VIEW PROFILE
@@ -974,6 +994,118 @@ export function Account() {
           </div>
         </div>
       </main>
+
+      {isProfileModalOpen && (
+        <div
+          className="fixed inset-0 z-[100] flex items-end justify-center bg-black/40 p-0 sm:items-center sm:p-[16px]"
+          onClick={(event) => {
+            if (event.target === event.currentTarget) {
+              setIsProfileModalOpen(false);
+            }
+          }}
+        >
+          <div className="max-h-[88vh] w-full overflow-y-auto rounded-t-[24px] bg-white p-[20px] shadow-[0_-12px_36px_rgba(0,0,0,0.18)] sm:max-w-[520px] sm:rounded-[20px] sm:p-[28px] sm:shadow-[0_24px_60px_rgba(0,0,0,0.18)]">
+            <div className="mb-[20px] flex items-start justify-between gap-[12px]">
+              <h2 className="text-[#1A1A1A] text-[20px] font-bold">Profile</h2>
+              <button
+                type="button"
+                onClick={() => setIsProfileModalOpen(false)}
+                aria-label="Close profile"
+                className="rounded-full p-[6px] text-[#6B6B6B] hover:bg-[#F7F7F9] hover:text-[#1A1A1A] transition-colors"
+              >
+                <X className="w-[20px] h-[20px]" />
+              </button>
+            </div>
+
+            <div className="flex flex-col items-center gap-[12px] mb-[24px] sm:flex-row sm:items-center">
+              <UserAvatar
+                name={user?.name}
+                profilePictureUrl={user?.profilePictureUrl}
+                sizeClassName="w-[88px] h-[88px]"
+                textClassName="text-[#1A1A1A] text-[30px] font-bold bg-[#E0E0E0]"
+              />
+              <div className="text-center sm:text-left">
+                <div className="text-[#1A1A1A] text-[20px] font-bold">
+                  {`${profileForm.firstName} ${profileForm.lastName}`.trim() || user?.name || "Unnamed user"}
+                </div>
+                <div className="mt-[4px] inline-flex items-center rounded-full bg-[#F7F7F9] px-[10px] py-[4px] text-[12px] font-semibold text-[#6B6B6B] capitalize">
+                  {user?.role ?? "tenant"}
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 gap-[16px] sm:grid-cols-2">
+              <div>
+                <div className="text-[#6B6B6B] text-[12px] font-semibold uppercase tracking-[0.04em] mb-[4px]">Email</div>
+                <div className="text-[#1A1A1A] text-[14px]">{contactForm.email || "Not provided"}</div>
+              </div>
+              <div>
+                <div className="text-[#6B6B6B] text-[12px] font-semibold uppercase tracking-[0.04em] mb-[4px]">Phone</div>
+                <div className="text-[#1A1A1A] text-[14px]">
+                  {contactForm.phoneNumber ? `${contactForm.phoneCountryCode} ${contactForm.phoneNumber}` : "Not provided"}
+                </div>
+              </div>
+              <div>
+                <div className="text-[#6B6B6B] text-[12px] font-semibold uppercase tracking-[0.04em] mb-[4px]">City of residence</div>
+                <div className="text-[#1A1A1A] text-[14px]">{profileForm.cityOfResidence || "Not provided"}</div>
+              </div>
+              <div>
+                <div className="text-[#6B6B6B] text-[12px] font-semibold uppercase tracking-[0.04em] mb-[4px]">Nationality</div>
+                <div className="text-[#1A1A1A] text-[14px]">{profileForm.nationality || "Not provided"}</div>
+              </div>
+              <div>
+                <div className="text-[#6B6B6B] text-[12px] font-semibold uppercase tracking-[0.04em] mb-[4px]">Date of birth</div>
+                <div className="text-[#1A1A1A] text-[14px]">
+                  {formatDateOfBirth(profileForm.day, profileForm.month, profileForm.year)}
+                </div>
+              </div>
+              <div>
+                <div className="text-[#6B6B6B] text-[12px] font-semibold uppercase tracking-[0.04em] mb-[4px]">Occupation</div>
+                <div className="text-[#1A1A1A] text-[14px]">
+                  {OCCUPATION_LABELS[profileForm.occupation]}
+                  {profileForm.organization ? ` · ${profileForm.organization}` : ""}
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-[16px]">
+              <div className="text-[#6B6B6B] text-[12px] font-semibold uppercase tracking-[0.04em] mb-[4px]">About me</div>
+              <p className="text-[#1A1A1A] text-[14px] leading-[1.6]">
+                {profileForm.aboutMe || "Not provided"}
+              </p>
+            </div>
+
+            <div className="mt-[16px]">
+              <div className="text-[#6B6B6B] text-[12px] font-semibold uppercase tracking-[0.04em] mb-[8px]">Languages</div>
+              {profileForm.languages.filter(Boolean).length > 0 ? (
+                <div className="flex flex-wrap gap-[8px]">
+                  {profileForm.languages.filter(Boolean).map((lang) => (
+                    <span
+                      key={lang}
+                      className="rounded-full bg-[#F7F7F9] px-[12px] py-[6px] text-[13px] font-semibold text-[#1A1A1A] capitalize"
+                    >
+                      {lang}
+                    </span>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-[#1A1A1A] text-[14px]">Not provided</div>
+              )}
+            </div>
+
+            <button
+              type="button"
+              onClick={() => {
+                setIsProfileModalOpen(false);
+                setActiveTab("profile");
+              }}
+              className="mt-[24px] w-full rounded-[12px] bg-brand-primary px-[16px] py-[12px] text-[14px] font-semibold text-white hover:bg-brand-primary-dark transition-colors"
+            >
+              Edit profile
+            </button>
+          </div>
+        </div>
+      )}
 
       <Footer />
     </div>
