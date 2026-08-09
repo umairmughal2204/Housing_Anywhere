@@ -28,8 +28,8 @@ const listingSchema = new Schema(
     availableFrom: { type: Date, required: true },
     monthlyRent: { type: Number, required: true, min: 0 },
     currency: { type: String, enum: ["EUR", "USD", "GBP"], default: "EUR" },
-    minimumRentalPeriod: { type: Number, required: true, min: 1 }, // in months
-    maximumRentalPeriod: { type: Number }, // in months, optional
+    minimumRentalPeriod: { type: Number, required: true, min: 3 }, // in days
+    maximumRentalPeriod: { type: Number }, // in days, optional
 
     // ===== SECTION 2: SPACE =====
     propertySize: { type: Number, required: true, min: 1 }, // m²

@@ -1,4 +1,4 @@
-﻿import { Link } from "react-router";
+import { Link } from "react-router";
 import { useEffect, useMemo, useState, useCallback } from "react";
 import { LandlordPortalLayout } from "../components/landlord-portal-layout";
 import { DatePicker } from "../components/date-picker";
@@ -1138,7 +1138,7 @@ export function LandlordRentals() {
                         }}
                         initializeFromSelection
                         isModal
-                        minStayMonths={1}
+                        minStayDays={3}
                       />
                     </div>
                   </div>

@@ -219,6 +219,24 @@ function addMonthsClamped(date: Date, months: number) {
   return new Date(year, month, Math.min(day, lastDayOfTargetMonth));
 }
 
+function addDays(date: Date, days: number) {
+  const result = new Date(date);
+  result.setDate(result.getDate() + days);
+  return result;
+}
+
+function formatStayDuration(days: number) {
+  if (days % 30 === 0) {
+    const m = days / 30;
+    return `${m} month${m > 1 ? "s" : ""}`;
+  }
+  if (days % 7 === 0) {
+    const w = days / 7;
+    return `${w} week${w > 1 ? "s" : ""}`;
+  }
+  return `${days} day${days > 1 ? "s" : ""}`;
+}
+
 function monthStart(date: Date) {
   return new Date(date.getFullYear(), date.getMonth(), 1);
 }
@@ -760,19 +778,19 @@ export function PropertyListing() {
       year: "numeric",
     });
 
-  const minimumStayMonths = Math.max(1, listing?.minStay || 1);
+  const minimumStayDays = Math.max(3, listing?.minStay || 3);
   const moveInDate = selectedStartDate ?? (listing ? new Date(listing.availableFrom) : null);
   const firstRentEndDate =
     selectedEndDate && !Number.isNaN(selectedEndDate.getTime())
       ? selectedEndDate
       : moveInDate && !Number.isNaN(moveInDate.getTime())
-      ? addMonthsClamped(moveInDate, minimumStayMonths)
+      ? addDays(moveInDate, minimumStayDays)
       : null;
   // Only show second rent period if user has explicitly selected dates that span more than 1 month
   const shouldShowSecondPeriod =
     selectedStartDate &&
     selectedEndDate &&
-    selectedEndDate > addMonthsClamped(selectedStartDate, minimumStayMonths);
+    selectedEndDate > addDays(selectedStartDate, minimumStayDays);
   
   const secondRentStartDate = shouldShowSecondPeriod && firstRentEndDate ? new Date(firstRentEndDate) : null;
   if (secondRentStartDate) {
@@ -1128,14 +1146,14 @@ export function PropertyListing() {
       return;
     }
 
-    const minMoveOut = monthStart(addMonthsClamped(nextStart, Math.max(1, listing.minStay || 1)));
+    const minMoveOut = addDays(nextStart, Math.max(3, listing.minStay || 3));
     if (nextEnd < minMoveOut) {
-      toast.error(`Move-out date must be at least ${Math.max(1, listing.minStay || 1)} month(s) after move-in.`);
+      toast.error(`Move-out date must be at least ${formatStayDuration(Math.max(3, listing.minStay || 3))} after move-in.`);
       return;
     }
 
-    if (listing.maxStay && nextEnd > monthEnd(addMonthsClamped(nextStart, listing.maxStay))) {
-      toast.error(`Move-out date cannot be more than ${listing.maxStay} month(s) after move-in.`);
+    if (listing.maxStay && nextEnd > addDays(nextStart, listing.maxStay)) {
+      toast.error(`Move-out date cannot be more than ${formatStayDuration(listing.maxStay)} after move-in.`);
       return;
     }
 
@@ -2333,8 +2351,8 @@ export function PropertyListing() {
               moveInAvailableChecked={isMoveInAvailabilityChecked}
               onMoveInAvailableChange={setIsMoveInAvailabilityChecked}
               isModal
-              minStayMonths={Math.max(1, listing.minStay || 1)}
-              maxStayMonths={listing.maxStay}
+              minStayDays={Math.max(3, listing.minStay || 3)}
+              maxStayDays={listing.maxStay}
               availableFrom={new Date(listing.availableFrom)}
             />
           </div>

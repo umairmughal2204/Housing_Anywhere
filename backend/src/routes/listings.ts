@@ -85,8 +85,8 @@ const listingWriteSchema = z.object({
   availableFrom: z.string().datetime({ offset: true }).or(z.string().date()),
   monthlyRent: z.number().nonnegative(),
   currency: z.enum(["EUR", "USD", "GBP"]).optional().default("EUR"),
-  minimumRentalPeriod: z.number().int().min(1),
-  maximumRentalPeriod: z.number().int().optional(),
+  minimumRentalPeriod: z.number().int().min(3),
+  maximumRentalPeriod: z.number().int().max(186).optional(),
 
   // Section 2: Space
   propertySize: z.number().positive(),

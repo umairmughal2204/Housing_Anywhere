@@ -88,7 +88,7 @@ export function HowItWorks() {
   const location = useLocation();
   const navigate = useNavigate();
 
-  const resolveAudience = (search: string, role?: "tenant" | "landlord"): Audience => {
+  const resolveAudience = (search: string, role?: "tenant" | "landlord" | "admin" | string): Audience => {
     const queryAudience = new URLSearchParams(search).get("audience");
     if (queryAudience === "tenant" || queryAudience === "landlord") {
       return queryAudience;

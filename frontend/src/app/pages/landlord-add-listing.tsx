@@ -13,37 +13,35 @@ const kinds = ["Entire place", "Private room", "Shared room"];
 const propertyTypes = ["House", "Building", "Apartment"];
 const minRentalOptions = [
   "No minimum",
+  "3 days",
+  "4 days",
+  "5 days",
+  "6 days",
+  "1 week",
+  "2 weeks",
+  "3 weeks",
   "1 month",
   "2 months",
   "3 months",
   "4 months",
   "5 months",
   "6 months",
-  "7 months",
-  "8 months",
-  "9 months",
-  "10 months",
-  "11 months",
-  "12 months",
-  "1.5 years",
-  "2 years",
 ];
 const maxRentalOptions = [
   "No maximum",
+  "3 days",
+  "4 days",
+  "5 days",
+  "6 days",
+  "1 week",
+  "2 weeks",
+  "3 weeks",
   "1 month",
   "2 months",
   "3 months",
   "4 months",
   "5 months",
   "6 months",
-  "7 months",
-  "8 months",
-  "9 months",
-  "10 months",
-  "11 months",
-  "12 months",
-  "1.5 years",
-  "2 years",
 ];
 const bedroomsOptions = ["Select", "Studio", "1", "2", "3", "4", "5", "6", "7", "8+"];
 const bathroomOptions = ["Select", "No", "Private", "Male", "Female", "Mixed"];
@@ -620,11 +618,19 @@ export function LandlordAddListing() {
       return `${year}-${month}-${day}`;
     };
 
-    const mapMonthsToOption = (fallback: string, months?: number) => {
-      if (!months || months < 1) {
+    const mapDaysToOption = (fallback: string, days?: number) => {
+      if (!days || days < 1) {
         return fallback;
       }
-      return months === 1 ? "1 month" : `${months} months`;
+      if (days % 30 === 0) {
+        const m = days / 30;
+        return m === 1 ? "1 month" : `${m} months`;
+      }
+      if (days % 7 === 0) {
+        const w = days / 7;
+        return w === 1 ? "1 week" : `${w} weeks`;
+      }
+      return days === 1 ? "1 day" : `${days} days`;
     };
 
     const loadListingForEdit = async () => {
@@ -660,10 +666,10 @@ export function LandlordAddListing() {
         setAvailableFrom(toDateValue(listing.availableFrom));
         setMonthlyRent(listing.monthlyRent !== undefined ? String(listing.monthlyRent) : "");
         setCurrency("EUR");
-        setMinimumRentalPeriod(mapMonthsToOption("No minimum", listing.minimumRentalPeriod));
+        setMinimumRentalPeriod(mapDaysToOption("No minimum", listing.minimumRentalPeriod));
         setMaximumRentalPeriod(
           listing.maximumRentalPeriod && listing.maximumRentalPeriod > 0
-            ? mapMonthsToOption("No maximum", listing.maximumRentalPeriod)
+            ? mapDaysToOption("No maximum", listing.maximumRentalPeriod)
             : "No maximum"
         );
 
@@ -841,17 +847,17 @@ export function LandlordAddListing() {
     return Number.isNaN(parsed.getTime()) ? null : parsed;
   };
 
-  const parseRentalPeriodMonths = (value: string, type: "min" | "max") => {
+  const parseRentalPeriodDays = (value: string, type: "min" | "max") => {
     if (!value) {
       return null;
     }
 
     if (value === "No minimum") {
-      return 0;
+      return 3;
     }
 
     if (value === "No maximum") {
-      return type === "max" ? Number.POSITIVE_INFINITY : 0;
+      return type === "max" ? Number.POSITIVE_INFINITY : 3;
     }
 
     const numericMatch = value.match(/\d+(\.\d+)?/);
@@ -864,8 +870,16 @@ export function LandlordAddListing() {
       return null;
     }
 
-    if (value.includes("year")) {
-      return Math.round(amount * 12);
+    if (value.includes("day")) {
+      return Math.round(amount);
+    }
+
+    if (value.includes("week")) {
+      return Math.round(amount * 7);
+    }
+
+    if (value.includes("month")) {
+      return Math.round(amount * 30);
     }
 
     return Math.round(amount);
@@ -889,8 +903,8 @@ export function LandlordAddListing() {
   };
 
   const isMultiUnitProperty = propertyType === "Apartment" || propertyType === "Building";
-  const selectedMinimumRentalMonths = parseRentalPeriodMonths(minimumRentalPeriod, "min");
-  const selectedMaximumRentalMonths = parseRentalPeriodMonths(maximumRentalPeriod, "max");
+  const selectedMinimumRentalDays = parseRentalPeriodDays(minimumRentalPeriod, "min");
+  const selectedMaximumRentalDays = parseRentalPeriodDays(maximumRentalPeriod, "max");
 
   const getSectionValidationErrors = (section: 1 | 2 | 3 | 4 | 5 | 6 | 7): string[] => {
     const errors: string[] = [];
@@ -913,9 +927,9 @@ export function LandlordAddListing() {
       if (!monthlyRent || Number.parseFloat(monthlyRent) <= 0) errors.push("Monthly rent must be greater than 0");
       if (!currency) errors.push("Currency");
       if (
-        selectedMinimumRentalMonths !== null &&
-        selectedMaximumRentalMonths !== null &&
-        selectedMaximumRentalMonths < selectedMinimumRentalMonths
+        selectedMinimumRentalDays !== null &&
+        selectedMaximumRentalDays !== null &&
+        selectedMaximumRentalDays < selectedMinimumRentalDays
       ) {
         errors.push("Maximum rental period can't be less than minimum rental period");
       }
@@ -995,8 +1009,8 @@ export function LandlordAddListing() {
         availableFrom: availableFrom,
         monthlyRent: parseFloat(monthlyRent) || 0,
         currency: "EUR",
-        minimumRentalPeriod: Math.max(1, parseInt(minimumRentalPeriod.match(/\d+/)?.[0] || "1")),
-        maximumRentalPeriod: maximumRentalPeriod === "No maximum" ? undefined : parseInt(maximumRentalPeriod.match(/\d+/)?.[0] || ""),
+        minimumRentalPeriod: selectedMinimumRentalDays !== null ? selectedMinimumRentalDays : 3,
+        maximumRentalPeriod: selectedMaximumRentalDays !== null && selectedMaximumRentalDays !== Number.POSITIVE_INFINITY ? selectedMaximumRentalDays : undefined,
         propertySize: parseFloat(propertySize) || 0,
         suitablePeopleCount: parseInt(suitablePeopleCount) || 1,
         spaceDescription,
@@ -1147,12 +1161,12 @@ export function LandlordAddListing() {
     (option) => !utilityLines.some((line) => line.type === option)
   );
   const availableMaxRentalOptions = maxRentalOptions.filter((option) => {
-    const optionMonths = parseRentalPeriodMonths(option, "max");
-    if (optionMonths === null || selectedMinimumRentalMonths === null) {
+    const optionDays = parseRentalPeriodDays(option, "max");
+    if (optionDays === null || selectedMinimumRentalDays === null) {
       return true;
     }
 
-    return optionMonths >= selectedMinimumRentalMonths;
+    return optionDays >= selectedMinimumRentalDays;
   });
   const availableAdditionalRequiredCostOptions = additionalRequiredCostOptions.filter(
     (option) => !additionalRequiredLines.some((line) => line.type === option)
@@ -1460,12 +1474,12 @@ export function LandlordAddListing() {
                         const nextMinimum = e.target.value;
                         setMinimumRentalPeriod(nextMinimum);
 
-                        const nextMinimumMonths = parseRentalPeriodMonths(nextMinimum, "min");
-                        const currentMaximumMonths = parseRentalPeriodMonths(maximumRentalPeriod, "max");
+                        const nextMinimumDays = parseRentalPeriodDays(nextMinimum, "min");
+                        const currentMaximumDays = parseRentalPeriodDays(maximumRentalPeriod, "max");
                         if (
-                          nextMinimumMonths !== null &&
-                          currentMaximumMonths !== null &&
-                          currentMaximumMonths < nextMinimumMonths
+                          nextMinimumDays !== null &&
+                          currentMaximumDays !== null &&
+                          currentMaximumDays < nextMinimumDays
                         ) {
                           setMaximumRentalPeriod("No maximum");
                         }

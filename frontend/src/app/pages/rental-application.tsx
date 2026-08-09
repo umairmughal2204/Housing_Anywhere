@@ -80,7 +80,7 @@ function normalizeListingSummary(raw: ApiListingSummary): ListingSummary {
     landlordName: raw.landlord?.name ?? "Landlord",
     landlordProfilePicture:
       raw.landlord?.profilePicture ?? raw.landlord?.profileImage ?? raw.landlord?.avatar ?? raw.landlord?.image ?? "",
-    minStay: Math.max(1, raw.minStay ?? raw.minimumRentalPeriod ?? 1),
+    minStay: Math.max(3, raw.minStay ?? raw.minimumRentalPeriod ?? 3),
     maxStay: raw.maxStay ?? raw.maximumRentalPeriod,
     requireProofOfIdentity: Boolean(raw.requireProofOfIdentity),
     requireProofOfOccupation: Boolean(raw.requireProofOfOccupation),
@@ -94,6 +94,24 @@ function addMonthsClamped(date: Date, months: number) {
   const day = date.getDate();
   const maxDayInTarget = new Date(year, month + 1, 0).getDate();
   return new Date(year, month, Math.min(day, maxDayInTarget));
+}
+
+function addDays(date: Date, days: number) {
+  const result = new Date(date);
+  result.setDate(result.getDate() + days);
+  return result;
+}
+
+function formatStayDuration(days: number) {
+  if (days % 30 === 0) {
+    const m = days / 30;
+    return `${m} month${m > 1 ? "s" : ""}`;
+  }
+  if (days % 7 === 0) {
+    const w = days / 7;
+    return `${w} week${w > 1 ? "s" : ""}`;
+  }
+  return `${days} day${days > 1 ? "s" : ""}`;
 }
 
 function monthStart(date: Date) {
@@ -635,7 +653,7 @@ export function RentalApplication() {
           setSelectedEndDate(incomingEndDate);
         } else if (!Number.isNaN(availableDate.getTime())) {
           setSelectedStartDate(availableDate);
-          setSelectedEndDate(addMonthsClamped(availableDate, normalized.minStay));
+          setSelectedEndDate(addDays(availableDate, normalized.minStay));
         }
 
         if (typeof incomingAvailabilityRaw === "boolean") {
@@ -662,12 +680,12 @@ export function RentalApplication() {
       return;
     }
 
-    const minMoveOut = monthStart(addMonthsClamped(nextStart, listing.minStay));
+    const minMoveOut = addDays(nextStart, listing.minStay);
     if (nextEnd < minMoveOut) {
       return;
     }
 
-    if (listing.maxStay && nextEnd > monthEnd(addMonthsClamped(nextStart, listing.maxStay))) {
+    if (listing.maxStay && nextEnd > addDays(nextStart, listing.maxStay)) {
       return;
     }
 
@@ -1539,7 +1557,7 @@ export function RentalApplication() {
                           </div>
                           <div className="flex items-start gap-[8px]">
                             <span className="text-[#0F2D36] text-[15px]">•</span>
-                            <span className="text-[#0F2D36] text-[15px]">Minimum stay: {listing?.minStay} {listing?.minStay === 1 ? "month" : "months"}</span>
+                            <span className="text-[#0F2D36] text-[15px]">Minimum stay: {listing?.minStay ? formatStayDuration(listing.minStay) : "TBD"}</span>
                           </div>
                         </div>
                       </div>
@@ -2585,8 +2603,8 @@ export function RentalApplication() {
               }}
               initializeFromSelection
               isModal
-              minStayMonths={Math.max(1, listing.minStay || 1)}
-              maxStayMonths={listing.maxStay}
+              minStayDays={Math.max(3, listing.minStay || 3)}
+              maxStayDays={listing.maxStay}
               availableFrom={new Date(listing.availableFrom)}
             />
           </div>

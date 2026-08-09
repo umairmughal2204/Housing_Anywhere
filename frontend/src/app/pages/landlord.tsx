@@ -415,7 +415,7 @@ export function Landlord() {
                 </svg>
               </summary>
               <p className="text-[#6B6B6B] text-[15px] mt-[16px] leading-[1.6]">
-                You can list apartments, studios, rooms in shared apartments, and entire houses. Properties must be available for mid-to-long-term rentals (minimum 1 month).
+                You can list apartments, studios, rooms in shared apartments, and entire houses. Properties must be available for short-term rentals (minimum 3 days).
               </p>
             </details>
           </div>

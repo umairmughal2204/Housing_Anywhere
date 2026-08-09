@@ -12,8 +12,8 @@ interface DatePickerProps {
   moveInAvailableChecked?: boolean;
   onMoveInAvailableChange?: (checked: boolean) => void;
   isModal?: boolean;
-  minStayMonths?: number;
-  maxStayMonths?: number;
+  minStayDays?: number;
+  maxStayDays?: number;
   availableFrom?: Date | null;
   presentation?: "popover" | "modal" | "bottom-sheet";
 }
@@ -23,11 +23,23 @@ const startOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDat
 const isSameDay = (a: Date, b: Date) => a.getTime() === b.getTime();
 const monthStart = (d: Date) => new Date(d.getFullYear(), d.getMonth(), 1);
 
-function addMonthsClamped(date: Date, months: number) {
+function addDays(date: Date, days: number) {
   const result = new Date(date);
-  result.setMonth(result.getMonth() + months);
+  result.setDate(result.getDate() + days);
   return result;
 }
+
+const formatStayDuration = (days: number) => {
+  if (days % 30 === 0) {
+    const months = days / 30;
+    return `${months} month${months > 1 ? "s" : ""}`;
+  }
+  if (days % 7 === 0) {
+    const weeks = days / 7;
+    return `${weeks} week${weeks > 1 ? "s" : ""}`;
+  }
+  return `${days} day${days > 1 ? "s" : ""}`;
+};
 
 export function DatePicker({
   isOpen,
@@ -40,8 +52,8 @@ export function DatePicker({
   moveInAvailableChecked = false,
   onMoveInAvailableChange,
   isModal,
-  minStayMonths = 1,
-  maxStayMonths,
+  minStayDays = 3,
+  maxStayDays,
   availableFrom,
   presentation = "popover",
 }: DatePickerProps) {
@@ -96,21 +108,21 @@ export function DatePicker({
 
   const minAllowedMoveOut = useMemo(() => {
     if (!tempStartDate) return null;
-    return startOfDay(addMonthsClamped(tempStartDate, minStayMonths));
-  }, [tempStartDate, minStayMonths]);
+    return startOfDay(addDays(tempStartDate, minStayDays));
+  }, [tempStartDate, minStayDays]);
 
   const maxAllowedMoveOut = useMemo(() => {
-    if (!tempStartDate || !maxStayMonths) return null;
-    return startOfDay(addMonthsClamped(tempStartDate, maxStayMonths));
-  }, [tempStartDate, maxStayMonths]);
+    if (!tempStartDate || !maxStayDays) return null;
+    return startOfDay(addDays(tempStartDate, maxStayDays));
+  }, [tempStartDate, maxStayDays]);
 
   const handleDateClick = (clickedDate: Date) => {
     const date = startOfDay(clickedDate);
 
     if (selectingStart) {
       if (date < baseAvailableDate) return;
-      const autoMinMoveOutDate = startOfDay(addMonthsClamped(date, minStayMonths));
-      const autoMaxMoveOutDate = maxStayMonths ? startOfDay(addMonthsClamped(date, maxStayMonths)) : null;
+      const autoMinMoveOutDate = startOfDay(addDays(date, minStayDays));
+      const autoMaxMoveOutDate = maxStayDays ? startOfDay(addDays(date, maxStayDays)) : null;
       const canKeepExistingMoveOut =
         tempEndDate !== null &&
         tempEndDate >= autoMinMoveOutDate &&
@@ -125,8 +137,8 @@ export function DatePicker({
       if (date < (minAllowedMoveOut || baseAvailableDate)) {
         // If they click an earlier date, treat it as a new Move-in date instead
         setTempStartDate(date);
-        setTempEndDate(startOfDay(addMonthsClamped(date, minStayMonths)));
-        setCurrentMonth(monthStart(addMonthsClamped(date, minStayMonths)));
+        setTempEndDate(startOfDay(addDays(date, minStayDays)));
+        setCurrentMonth(monthStart(addDays(date, minStayDays)));
         return;
       }
       if (maxAllowedMoveOut && date > maxAllowedMoveOut) return;
@@ -286,7 +298,7 @@ export function DatePicker({
             Available for move-in
           </label>
           <div className={isCompactPopover ? "text-[10px] text-[#5F7480] flex items-center gap-1" : "text-xs text-[#5F7480] flex items-center gap-1"}>
-            <Calendar size={isCompactPopover ? 11 : 14} /> Min {minStayMonths} month stay
+            <Calendar size={isCompactPopover ? 11 : 14} /> Min {formatStayDuration(minStayDays)} stay
           </div>
         </div>
 
