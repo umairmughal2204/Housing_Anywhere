@@ -33,6 +33,7 @@ import {
   Tv,
   Wifi,
   Utensils,
+  Camera,
 } from "lucide-react";
 import { toast } from "sonner";
 import { API_BASE } from "../config";
@@ -130,36 +131,36 @@ function normalizeListingDetails(raw: ApiListingDetails): ListingDetails {
   const amenities = Array.isArray(raw.amenities)
     ? raw.amenities
     : raw.amenities && typeof raw.amenities === "object"
-    ? Object.entries(raw.amenities)
+      ? Object.entries(raw.amenities)
         .filter(([, value]) => value === true)
         .map(([key]) => key)
-    : [];
+      : [];
 
   const normalizedUtilities = Array.isArray(raw.utilities)
     ? raw.utilities.map((item) => ({
-        type: item?.type ?? "Utility",
-        included: Boolean(item?.included),
-        amount: item?.amount ?? 0,
-      }))
+      type: item?.type ?? "Utility",
+      included: Boolean(item?.included),
+      amount: item?.amount ?? 0,
+    }))
     : [];
 
   const normalizedOptionalServices = Array.isArray(raw.optionalServices)
     ? raw.optionalServices.map((item) => ({
-        type: item?.type ?? "Service",
-        amount: item?.amount ?? 0,
-        frequency: item?.frequency,
-      }))
+      type: item?.type ?? "Service",
+      amount: item?.amount ?? 0,
+      frequency: item?.frequency,
+    }))
     : [];
 
   const normalizedPropertyType: ListingDetails["propertyType"] =
     raw.propertyType === "apartment" ||
-    raw.propertyType === "studio" ||
-    raw.propertyType === "house" ||
-    raw.propertyType === "room"
+      raw.propertyType === "studio" ||
+      raw.propertyType === "house" ||
+      raw.propertyType === "room"
       ? raw.propertyType
       : raw.propertyType === "building"
-      ? "apartment"
-      : "room";
+        ? "apartment"
+        : "room";
 
   return {
     id: raw.id ?? "",
@@ -289,14 +290,23 @@ function createLocationMarkerIcon() {
   return L.divIcon({
     className: "",
     html: `
-      <div style="display:flex;flex-direction:column;align-items:center;transform:translate(-50%, -100%);">
-        <div style="width:36px;height:36px;border-radius:999px;background:#0891B2;color:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 10px 20px rgba(8,145,178,0.26);border:2px solid rgba(255,255,255,0.95);font-size:15px;font-weight:700;">⌂</div>
-        <div style="width:12px;height:12px;background:#0891B2;transform:rotate(45deg);margin-top:-3px;border-radius:2px;"></div>
+      <div style="position:relative;display:flex;flex-direction:column;align-items:center;width:38px;height:48px;">
+        <!-- Glowing Pulse Effect -->
+        <div style="position:absolute;width:48px;height:48px;border-radius:50%;background:rgba(14,116,144,0.18);animation:ping 2s cubic-bezier(0, 0, 0.2, 1) infinite;top:-5px;left:-5px;z-index:-1;"></div>
+        <!-- Main Circular Pin -->
+        <div style="width:38px;height:38px;border-radius:50%;background:#0E7490;color:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 24px rgba(14,116,144,0.32);border:2.5px solid #fff;position:relative;z-index:2;">
+          <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round">
+            <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+            <polyline points="9 22 9 12 15 12 15 22"/>
+          </svg>
+        </div>
+        <!-- Pointer Tail -->
+        <div style="width:12px;height:12px;background:#0E7490;transform:rotate(45deg);margin-top:-6px;border-radius:2px;box-shadow:2px 2px 6px rgba(14,116,144,0.2);position:relative;z-index:1;border-right:1px solid rgba(255,255,255,0.4);border-bottom:1px solid rgba(255,255,255,0.4);"></div>
       </div>
     `,
-    iconSize: [34, 40],
-    iconAnchor: [17, 38],
-    popupAnchor: [0, -34],
+    iconSize: [38, 48],
+    iconAnchor: [19, 46],
+    popupAnchor: [0, -42],
   });
 }
 
@@ -519,11 +529,11 @@ export function PropertyListing() {
         const listingIds = Array.isArray(payload.listingIds)
           ? payload.listingIds.map((favoriteId) => String(favoriteId))
           : Array.isArray(payload.favorites)
-          ? payload.favorites
+            ? payload.favorites
               .map((favorite) => favorite.id)
               .filter((favoriteId): favoriteId is string | number => favoriteId !== undefined && favoriteId !== null)
               .map((favoriteId) => String(favoriteId))
-          : [];
+            : [];
         setIsFavorited(listingIds.includes(id));
       } catch {
         // Ignore; favorite button remains usable.
@@ -631,6 +641,14 @@ export function PropertyListing() {
     }
     return fallbackPropertyImages;
   }, [listing]);
+
+  const gridImages = useMemo(() => {
+    const list = [...propertyImages];
+    while (list.length < 5) {
+      list.push(fallbackPropertyImages[list.length % fallbackPropertyImages.length]);
+    }
+    return list;
+  }, [propertyImages]);
 
   const facilitiesAndAmenities = useMemo(() => {
     if (!listing) {
@@ -784,14 +802,14 @@ export function PropertyListing() {
     selectedEndDate && !Number.isNaN(selectedEndDate.getTime())
       ? selectedEndDate
       : moveInDate && !Number.isNaN(moveInDate.getTime())
-      ? addDays(moveInDate, minimumStayDays)
-      : null;
+        ? addDays(moveInDate, minimumStayDays)
+        : null;
   // Only show second rent period if user has explicitly selected dates that span more than 1 month
   const shouldShowSecondPeriod =
     selectedStartDate &&
     selectedEndDate &&
     selectedEndDate > addDays(selectedStartDate, minimumStayDays);
-  
+
   const secondRentStartDate = shouldShowSecondPeriod && firstRentEndDate ? new Date(firstRentEndDate) : null;
   if (secondRentStartDate) {
     secondRentStartDate.setDate(firstRentEndDate!.getDate() + 1);
@@ -831,9 +849,9 @@ export function PropertyListing() {
 
   const calculatedTenantProtectionFee = listing
     ? Math.min(
-        listing.monthlyRent * (platformSettings.tenantProtectionFeeRate / 100),
-        platformSettings.tenantProtectionFeeCap
-      )
+      listing.monthlyRent * (platformSettings.tenantProtectionFeeRate / 100),
+      platformSettings.tenantProtectionFeeCap
+    )
     : 0;
   const tenantProtectionFee = tenantProtectionService?.amount ?? calculatedTenantProtectionFee;
   const rentForSelectedPeriod = (() => {
@@ -1198,29 +1216,29 @@ export function PropertyListing() {
       />
 
       {/* Breadcrumb */}
-      <div className="bg-neutral-light-gray border-b border-[rgba(0,0,0,0.08)]">
+      <div className="bg-[#FAFBFD] border-b border-[#F1F5F9]">
         <div className="max-w-[1440px] mx-auto px-[16px] sm:px-[24px] lg:px-[32px] py-[10px] sm:py-[12px]">
-          <div className="hidden md:flex items-center gap-[8px] text-[13px]">
-            <Link to="/" className="inline-flex items-center">
+          <div className="hidden md:flex items-center gap-[8px] text-[13px] tracking-[0.01em]">
+            <Link to="/" className="inline-flex items-center hover:opacity-80 transition-opacity">
               <img src={favicon} alt="ReserveHousing" className="h-[18px] w-[18px] object-contain" />
             </Link>
-            <span className="text-neutral-gray">&gt;</span>
-            <Link to={`/listings/${(listing?.city ?? "city").toLowerCase()}`} className="text-brand-primary hover:underline font-semibold">
+            <span className="text-[#94A3B8]">&gt;</span>
+            <Link to={`/listings/${(listing?.city ?? "city").toLowerCase()}`} className="text-[#57737A] hover:text-[#0F2D36] font-medium transition-colors">
               {listing?.city ?? "City"}
             </Link>
-            <span className="text-neutral-gray">&gt;</span>
-            <Link to={`/listings/${(listing?.city ?? "city").toLowerCase()}`} className="text-brand-primary hover:underline font-semibold">
+            <span className="text-[#94A3B8]">&gt;</span>
+            <Link to={`/listings/${(listing?.city ?? "city").toLowerCase()}`} className="text-[#57737A] hover:text-[#0F2D36] font-medium transition-colors">
               {listing?.propertyType ? `${listing.propertyType.charAt(0).toUpperCase()}${listing.propertyType.slice(1)}s` : "Properties"}
             </Link>
-            <span className="text-neutral-gray">&gt;</span>
-            <span className="text-neutral-black font-semibold">{listing?.title ?? "Listing"}</span>
+            <span className="text-[#94A3B8]">&gt;</span>
+            <span className="text-[#0F2D36] font-semibold truncate max-w-[400px]">{listing?.title ?? "Listing"}</span>
           </div>
-          <div className="md:hidden flex items-center gap-[8px] text-[12px]">
+          <div className="md:hidden flex items-center gap-[8px] text-[12px] tracking-[0.01em]">
             <Link to="/" className="inline-flex items-center">
               <img src={favicon} alt="ReserveHousing" className="h-[16px] w-[16px] object-contain" />
             </Link>
-            <span className="text-neutral-gray">&gt;</span>
-            <span className="text-neutral-black font-semibold truncate">{listing?.title ?? "Listing"}</span>
+            <span className="text-[#94A3B8]">&gt;</span>
+            <span className="text-[#0F2D36] font-semibold truncate">{listing?.title ?? "Listing"}</span>
           </div>
         </div>
       </div>
@@ -1228,57 +1246,90 @@ export function PropertyListing() {
       {/* Main Content */}
       <div className="max-w-[1440px] mx-auto px-[12px] sm:px-[20px] lg:px-[32px] pt-[14px] sm:pt-[24px] lg:pt-[32px] pb-[120px] lg:pb-[32px]">
         {isLoading && (
-          <div className="animate-pulse flex flex-col lg:flex-row gap-[24px] lg:gap-[48px]">
-            <div className="flex-[2]">
-              <div className="mb-[24px]">
-                <div className="h-[480px] w-full bg-[#E8EDF2] rounded-[22px] sm:rounded-[28px] lg:rounded-[34px] mb-[16px]" />
-                <div className="flex items-center gap-[8px]">
-                  <div className="h-[80px] w-[120px] bg-[#E8EDF2] rounded-[12px]" />
-                  <div className="h-[80px] w-[120px] bg-[#E8EDF2] rounded-[12px]" />
-                  <div className="h-[80px] w-[120px] bg-[#E8EDF2] rounded-[12px]" />
-                  <div className="h-[80px] w-[120px] bg-[#E8EDF2] rounded-[12px]" />
-                </div>
-              </div>
-
-              <div className="mb-[28px]">
-                <div className="h-[40px] w-[72%] bg-[#E8EDF2] rounded-[4px] mb-[14px]" />
-                <div className="h-[24px] w-[44%] bg-[#E8EDF2] rounded-[4px] mb-[16px]" />
-                <div className="flex flex-wrap gap-[8px]">
-                  <div className="h-[30px] w-[120px] bg-[#E8EDF2] rounded-full" />
-                  <div className="h-[30px] w-[140px] bg-[#E8EDF2] rounded-full" />
-                  <div className="h-[30px] w-[130px] bg-[#E8EDF2] rounded-full" />
-                  <div className="h-[30px] w-[160px] bg-[#E8EDF2] rounded-full" />
-                </div>
-              </div>
-
-              <div className="mb-[26px]">
-                <div className="h-[34px] w-[220px] bg-[#E8EDF2] rounded-[4px] mb-[12px]" />
-                <div className="h-[14px] w-full bg-[#E8EDF2] rounded-[4px] mb-[8px]" />
-                <div className="h-[14px] w-[95%] bg-[#E8EDF2] rounded-[4px] mb-[8px]" />
-                <div className="h-[14px] w-[82%] bg-[#E8EDF2] rounded-[4px]" />
-              </div>
-
-              <div className="mb-[28px]">
-                <div className="h-[34px] w-[320px] bg-[#E8EDF2] rounded-[4px] mb-[12px]" />
-                <div className="h-[220px] w-full bg-[#E8EDF2] rounded-[4px]" />
+          <div className="animate-pulse w-full">
+            {/* Top Bar Skeleton */}
+            <div className="flex items-center justify-between mb-[16px]">
+              <div className="h-[20px] w-[140px] bg-[#E8EDF2] rounded-[4px]" />
+              <div className="flex items-center gap-[10px]">
+                <div className="h-[36px] w-[90px] bg-[#E8EDF2] rounded-full" />
+                <div className="h-[36px] w-[90px] bg-[#E8EDF2] rounded-full" />
               </div>
             </div>
 
-            <div className="flex-[1]">
-              <div className="sticky top-[100px] space-y-[12px]">
-                <div className="border border-[rgba(15,45,54,0.12)] rounded-[6px] bg-[#F8FAFC] p-[18px]">
-                  <div className="h-[22px] w-[60%] bg-[#E8EDF2] rounded-[4px] mb-[12px]" />
-                  <div className="h-[52px] w-full bg-[#E8EDF2] rounded-[6px] mb-[10px]" />
-                  <div className="h-[16px] w-[72%] bg-[#E8EDF2] rounded-[4px] mb-[8px]" />
-                  <div className="h-[16px] w-[64%] bg-[#E8EDF2] rounded-[4px] mb-[18px]" />
-                  <div className="h-[44px] w-full bg-[#E8EDF2] rounded-[14px] mb-[8px]" />
-                  <div className="h-[44px] w-full bg-[#E8EDF2] rounded-[14px]" />
+            {/* Gallery Grid Skeleton */}
+            <div className="mb-[18px] sm:mb-[24px]">
+              {/* Desktop Grid */}
+              <div className="relative hidden md:grid grid-cols-4 gap-[8px] aspect-[12/5] w-full rounded-[22px] sm:rounded-[28px] lg:rounded-[34px] bg-[#E8EDF2]/40">
+                <div className="col-span-2 row-span-2 bg-[#E8EDF2] rounded-l-[22px] sm:rounded-l-[28px] lg:rounded-l-[34px]" />
+                <div className="col-span-1 row-span-1 bg-[#E8EDF2]" />
+                <div className="col-span-1 row-span-1 bg-[#E8EDF2] rounded-tr-[22px] sm:rounded-tr-[28px] lg:rounded-tr-[34px]" />
+                <div className="col-span-1 row-span-1 bg-[#E8EDF2]" />
+                <div className="col-span-1 row-span-1 bg-[#E8EDF2] rounded-br-[22px] sm:rounded-br-[28px] lg:rounded-br-[34px]" />
+              </div>
+              {/* Mobile Slider */}
+              <div className="relative md:hidden aspect-[4/3] w-full bg-[#E8EDF2] rounded-[20px]" />
+            </div>
+
+            {/* Two Column Grid */}
+            <div className="flex flex-col lg:flex-row gap-[20px] lg:gap-[48px] mt-[16px] lg:mt-[24px]">
+              {/* Left Column - Details */}
+              <div className="min-w-0 lg:flex-[2] space-y-[24px]">
+                {/* Title */}
+                <div>
+                  <div className="h-[36px] w-[75%] bg-[#E8EDF2] rounded-[6px] mb-[12px]" />
+                  <div className="h-[20px] w-[45%] bg-[#E8EDF2] rounded-[4px] mb-[14px]" />
+                  <div className="flex flex-wrap gap-[8px]">
+                    <div className="h-[28px] w-[100px] bg-[#E8EDF2] rounded-full" />
+                    <div className="h-[28px] w-[120px] bg-[#E8EDF2] rounded-full" />
+                    <div className="h-[28px] w-[110px] bg-[#E8EDF2] rounded-full" />
+                    <div className="h-[28px] w-[140px] bg-[#E8EDF2] rounded-full" />
+                  </div>
                 </div>
 
-                <div className="border border-[rgba(15,45,54,0.12)] rounded-[6px] bg-white p-[16px]">
-                  <div className="h-[18px] w-[56%] bg-[#E8EDF2] rounded-[4px] mb-[10px]" />
-                  <div className="h-[14px] w-[92%] bg-[#E8EDF2] rounded-[4px] mb-[6px]" />
-                  <div className="h-[14px] w-[82%] bg-[#E8EDF2] rounded-[4px]" />
+                {/* Description */}
+                <div>
+                  <div className="h-[24px] w-[140px] bg-[#E8EDF2] rounded-[4px] mb-[12px]" />
+                  <div className="h-[14px] w-full bg-[#E8EDF2] rounded-[4px] mb-[8px]" />
+                  <div className="h-[14px] w-[96%] bg-[#E8EDF2] rounded-[4px] mb-[8px]" />
+                  <div className="h-[14px] w-[84%] bg-[#E8EDF2] rounded-[4px]" />
+                </div>
+
+                {/* Facilities */}
+                <div>
+                  <div className="h-[24px] w-[180px] bg-[#E8EDF2] rounded-[4px] mb-[12px]" />
+                  <div className="grid grid-cols-2 gap-[12px]">
+                    <div className="h-[18px] w-[80%] bg-[#E8EDF2] rounded-[4px]" />
+                    <div className="h-[18px] w-[75%] bg-[#E8EDF2] rounded-[4px]" />
+                    <div className="h-[18px] w-[70%] bg-[#E8EDF2] rounded-[4px]" />
+                    <div className="h-[18px] w-[85%] bg-[#E8EDF2] rounded-[4px]" />
+                  </div>
+                </div>
+
+                {/* Guarantee Banner */}
+                <div className="h-[80px] w-full bg-[#E8EDF2] rounded-[24px]" />
+
+                {/* Location Map */}
+                <div>
+                  <div className="h-[24px] w-[160px] bg-[#E8EDF2] rounded-[4px] mb-[12px]" />
+                  <div className="h-[320px] w-full bg-[#E8EDF2] rounded-[24px]" />
+                </div>
+
+                {/* Required Documents */}
+                <div>
+                  <div className="h-[24px] w-[190px] bg-[#E8EDF2] rounded-[4px] mb-[12px]" />
+                  <div className="h-[100px] w-full bg-[#E8EDF2] rounded-[24px]" />
+                </div>
+              </div>
+
+              {/* Right Column - Sidebar */}
+              <div className="lg:flex-[1]">
+                <div className="space-y-[10px] sticky top-[100px]">
+                  {/* Landlord Card */}
+                  <div className="h-[90px] w-full bg-[#E8EDF2] rounded-[20px]" />
+                  {/* Booking Card */}
+                  <div className="h-[340px] w-full bg-[#E8EDF2] rounded-[20px]" />
+                  {/* Message Landlord Card */}
+                  <div className="h-[150px] w-full bg-[#E8EDF2] rounded-[20px]" />
                 </div>
               </div>
             </div>
@@ -1316,767 +1367,825 @@ export function PropertyListing() {
         )}
 
         {listing && (
-        <div className="flex flex-col lg:flex-row gap-[20px] lg:gap-[48px]">
-          {/* Left Column - Gallery & Details */}
-          <div className="min-w-0 lg:flex-[2]">
+          <div className="w-full">
             {/* Image Gallery */}
-            <div className="mb-[18px] sm:mb-[24px]">
-              {/* Main Image */}
-              <div className="relative mb-[16px] overflow-hidden rounded-[22px] sm:rounded-[28px] lg:rounded-[34px] bg-[#F7F7F9] shadow-[0_14px_30px_rgba(15,45,54,0.14)]">
-                <img
-                  src={propertyImages[currentImageIndex]}
-                  alt="Property"
-                  className="w-full h-[260px] sm:h-[360px] lg:h-[480px] object-cover object-center bg-[#F3F4F6]"
-                />
-
-                {/* Navigation Arrows */}
-                <button
-                  onClick={previousImage}
-                  className="absolute left-[10px] sm:left-[16px] top-1/2 -translate-y-1/2 w-[34px] h-[34px] sm:w-[40px] sm:h-[40px] bg-white/90 hover:bg-white flex items-center justify-center rounded-full shadow-[0_8px_18px_rgba(15,45,54,0.16)] transition-all hover:scale-105 active:scale-95"
-                >
-                  <ChevronLeft className="w-[18px] h-[18px] sm:w-[20px] sm:h-[20px] text-[#1A1A1A]" />
-                </button>
-                <button
-                  onClick={nextImage}
-                  className="absolute right-[10px] sm:right-[16px] top-1/2 -translate-y-1/2 w-[34px] h-[34px] sm:w-[40px] sm:h-[40px] bg-white/90 hover:bg-white flex items-center justify-center rounded-full shadow-[0_8px_18px_rgba(15,45,54,0.16)] transition-all hover:scale-105 active:scale-95"
-                >
-                  <ChevronRight className="w-[18px] h-[18px] sm:w-[20px] sm:h-[20px] text-[#1A1A1A]" />
-                </button>
-
-                {/* Top Right Actions */}
-                <div className="absolute top-[10px] right-[10px] sm:top-[16px] sm:right-[16px] flex items-center gap-[8px]">
+              {/* Top Bar Actions (Desktop/Tablet Only) */}
+              <div className="hidden md:flex items-center justify-between mb-[16px]">
+                <Link to="/" className="text-[#3E5A64] text-[15px] font-semibold flex items-center gap-[6px] hover:text-[#0F2D36] transition-colors">
+                  <ChevronLeft className="w-[18px] h-[18px]" />
+                  See all properties
+                </Link>
+                <div className="flex items-center gap-[10px]">
                   <button
-                    type="button"
                     onClick={() => void handleShareListing()}
-                    aria-label="Share listing"
-                    className={`relative w-[40px] h-[40px] flex items-center justify-center rounded-full shadow-[0_8px_18px_rgba(15,45,54,0.16)] transition-all active:scale-95 ${
-                      isSharePulseActive ? "bg-[#D9F3F8] scale-110" : "bg-white/92 hover:bg-white hover:scale-105"
-                    }`}
+                    className="flex items-center gap-[8px] border border-[#CBD5E1] rounded-full px-[18px] py-[8px] text-[14px] font-semibold text-[#1F2937] hover:bg-[#F3F4F6] transition-all active:scale-95 bg-white shadow-sm"
                   >
-                    <Share2 className={`w-[18px] h-[18px] ${isSharePulseActive ? "text-[#0E7490]" : "text-[#1A1A1A]"}`} />
-                    {isSharePulseActive && <span className="absolute inset-0 rounded-full border-2 border-[#38BDF8] animate-ping" />}
+                    <Share2 className="w-[16px] h-[16px] text-[#1F2937]" />
+                    Share
                   </button>
                   <button
-                    type="button"
                     onClick={handleToggleFavorite}
-                    aria-label={isFavorited ? "Remove from favorites" : "Add to favorites"}
-                    className="relative w-[40px] h-[40px] bg-white/92 hover:bg-white flex items-center justify-center rounded-full shadow-[0_8px_18px_rgba(15,45,54,0.16)] transition-all hover:scale-105 active:scale-95"
+                    className="flex items-center gap-[8px] border border-[#CBD5E1] rounded-full px-[18px] py-[8px] text-[14px] font-semibold text-[#1F2937] hover:bg-[#F3F4F6] transition-all active:scale-95 bg-white shadow-sm"
                   >
-                    <Heart
-                      className={`w-[18px] h-[18px] ${
-                        isFavorited ? "fill-brand-primary text-brand-primary" : "text-neutral-black"
-                      }`}
-                    />
-                    {isFavoriteSplashActive && <span className="absolute inset-0 rounded-full border-2 border-[#0891B2] animate-ping" />}
+                    <Heart className={`w-[16px] h-[16px] text-[#EF4444] ${isFavorited ? "fill-[#EF4444]" : ""}`} />
+                    {isFavorited ? "Saved" : "Save"}
                   </button>
                 </div>
-
-                {/* View on Map Button */}
-                <button
-                  type="button"
-                  onClick={handleViewOnMap}
-                  className="absolute bottom-[12px] left-[12px] sm:bottom-[16px] sm:left-[16px] flex items-center gap-[8px] bg-white px-[14px] py-[9px] sm:px-[16px] sm:py-[10px] hover:bg-[#F7F7F9] transition-colors rounded-[12px]"
-                >
-                  <MapPin className="w-[16px] h-[16px] text-brand-primary" />
-                  <span className="text-[#1A1A1A] text-[14px] font-semibold">View on map</span>
-                </button>
               </div>
 
-              {/* Thumbnail Strip */}
-              <div className="hidden sm:flex items-center gap-[8px]">
-                {propertyImages.slice(0, 4).map((image, index) => (
-                  <button
-                    key={index}
-                    onClick={() => setCurrentImageIndex(index)}
-                    className={`relative w-[120px] h-[80px] overflow-hidden rounded-[12px] transition-transform hover:scale-[1.02] ${
-                      currentImageIndex === index ? "ring-2 ring-brand-primary" : ""
-                    }`}
-                  >
-                    <img src={image} alt={`Thumbnail ${index + 1}`} className="w-full h-full object-cover object-center bg-[#F3F4F6]" />
-                  </button>
-                ))}
+              {/* Gallery Block */}
+              <div className="mb-[18px] sm:mb-[24px]">
+                {/* Desktop Grid Layout */}
+                <div className="relative hidden md:grid grid-cols-4 gap-[8px] aspect-[12/5] w-full overflow-hidden rounded-[22px] sm:rounded-[28px] lg:rounded-[34px] bg-[#F7F7F9]">
+                  {/* Large Left Image */}
+                  <div className="col-span-2 row-span-2 overflow-hidden relative cursor-pointer" onClick={() => setIsPhotosModalOpen(true)}>
+                    <img
+                      src={gridImages[0]}
+                      alt="Property View 1"
+                      className="w-full h-full object-cover hover:scale-[1.01] transition-transform duration-300 bg-[#F3F4F6]"
+                    />
+                  </div>
+                  {/* Top Middle Image */}
+                  <div className="col-span-1 row-span-1 overflow-hidden relative cursor-pointer" onClick={() => setIsPhotosModalOpen(true)}>
+                    <img
+                      src={gridImages[1]}
+                      alt="Property View 2"
+                      className="w-full h-full object-cover hover:scale-[1.01] transition-transform duration-300 bg-[#F3F4F6]"
+                    />
+                  </div>
+                  {/* Top Right Image */}
+                  <div className="col-span-1 row-span-1 overflow-hidden relative cursor-pointer" onClick={() => setIsPhotosModalOpen(true)}>
+                    <img
+                      src={gridImages[2]}
+                      alt="Property View 3"
+                      className="w-full h-full object-cover hover:scale-[1.01] transition-transform duration-300 bg-[#F3F4F6]"
+                    />
+                  </div>
+                  {/* Bottom Middle Image */}
+                  <div className="col-span-1 row-span-1 overflow-hidden relative cursor-pointer" onClick={() => setIsPhotosModalOpen(true)}>
+                    <img
+                      src={gridImages[3]}
+                      alt="Property View 4"
+                      className="w-full h-full object-cover hover:scale-[1.01] transition-transform duration-300 bg-[#F3F4F6]"
+                    />
+                  </div>
+                  {/* Bottom Right Image with Photo Count */}
+                  <div className="col-span-1 row-span-1 overflow-hidden relative cursor-pointer" onClick={() => setIsPhotosModalOpen(true)}>
+                    <img
+                      src={gridImages[4]}
+                      alt="Property View 5"
+                      className="w-full h-full object-cover hover:scale-[1.01] transition-transform duration-300 bg-[#F3F4F6]"
+                    />
+                    <div className="absolute bottom-[16px] right-[16px] bg-black/60 backdrop-blur-sm text-white px-[12px] py-[6px] rounded-[10px] flex items-center gap-[6px] text-[13px] font-bold shadow-md">
+                      <Camera className="w-[15px] h-[15px]" />
+                      <span>{propertyImages.length}+</span>
+                    </div>
+                  </div>
+                </div>
 
-                {/* More Photos Button */}
-                {hiddenPhotoCount > 0 && (
+                {/* Mobile Slider Fallback with Overlays */}
+                <div className="relative md:hidden overflow-hidden rounded-[20px] aspect-[4/3] w-full bg-[#F7F7F9]">
+                  <img
+                    src={propertyImages[currentImageIndex]}
+                    alt="Property Mobile View"
+                    className="w-full h-full object-cover"
+                  />
+                  
+                  {/* Mobile Top Actions Overlay */}
+                  <div className="absolute top-[16px] inset-x-[16px] flex items-center justify-between z-[10]">
+                    {/* Back Button */}
+                    <button
+                      onClick={() => navigate(-1)}
+                      className="w-[40px] h-[40px] bg-white flex items-center justify-center rounded-full shadow-md text-[#2563EB] hover:scale-105 active:scale-95 transition-all"
+                    >
+                      <ChevronLeft className="w-[20px] h-[20px]" />
+                    </button>
+                    {/* Share / Save buttons */}
+                    <div className="flex items-center gap-[8px]">
+                      <button
+                        onClick={() => void handleShareListing()}
+                        className="flex items-center gap-[6px] bg-white rounded-full px-[14px] py-[7px] text-[13px] font-bold text-[#2563EB] shadow-md hover:scale-105 active:scale-95 transition-all"
+                      >
+                        <Share2 className="w-[14px] h-[14px]" />
+                        Share
+                      </button>
+                      <button
+                        onClick={handleToggleFavorite}
+                        className="w-[40px] h-[40px] bg-white flex items-center justify-center rounded-full shadow-md hover:scale-105 active:scale-95 transition-all"
+                      >
+                        <Heart className={`w-[18px] h-[18px] text-[#EF4444] ${isFavorited ? "fill-[#EF4444]" : ""}`} />
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Navigation Arrows for Mobile only */}
                   <button
+                    onClick={previousImage}
+                    className="absolute left-[12px] top-1/2 -translate-y-1/2 w-[40px] h-[40px] bg-black/40 hover:bg-black/50 flex items-center justify-center rounded-full shadow-md text-white transition-all z-[10]"
+                  >
+                    <ChevronLeft className="w-[20px] h-[20px]" />
+                  </button>
+                  <button
+                    onClick={nextImage}
+                    className="absolute right-[12px] top-1/2 -translate-y-1/2 w-[40px] h-[40px] bg-black/40 hover:bg-black/50 flex items-center justify-center rounded-full shadow-md text-white transition-all z-[10]"
+                  >
+                    <ChevronRight className="w-[20px] h-[20px]" />
+                  </button>
+
+                  {/* Photos Badge Overlay */}
+                  <div 
                     onClick={() => setIsPhotosModalOpen(true)}
-                    className="w-[120px] h-[80px] bg-neutral-black text-white flex flex-col items-center justify-center hover:bg-brand-primary transition-colors"
+                    className="absolute bottom-[16px] right-[16px] bg-black/60 backdrop-blur-sm text-white px-[12px] py-[6px] rounded-[10px] flex items-center gap-[6px] text-[12px] font-bold shadow-md cursor-pointer z-[10]"
                   >
-                    <HomeIcon className="w-[20px] h-[20px] mb-[4px]" />
-                    <span className="text-[12px] font-semibold">+{hiddenPhotoCount} photos</span>
-                  </button>
-                )}
+                    <Camera className="w-[14px] h-[14px]" />
+                    <span>{propertyImages.length}+</span>
+                  </div>
+                </div>
               </div>
-            </div>
 
-            {isPhotosModalOpen && (
-              <div className="fixed inset-0 z-[60] bg-black/80 p-[24px] overflow-y-auto">
-                <div className="max-w-[1200px] mx-auto">
-                  <div className="flex items-center justify-between mb-[16px]">
-                    <h3 className="text-white text-[20px] font-bold">All photos</h3>
+              {isPhotosModalOpen && (
+                <div className="fixed inset-0 z-[100] bg-black/95 flex flex-col justify-between p-[24px]">
+                  {/* Modal Header */}
+                  <div className="flex items-center justify-between max-w-[1200px] w-full mx-auto text-white">
+                    <span className="text-[16px] font-semibold">
+                      Photo {currentImageIndex + 1} of {propertyImages.length}
+                    </span>
                     <button
                       onClick={() => setIsPhotosModalOpen(false)}
-                      className="w-[40px] h-[40px] bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-colors"
+                      className="w-[40px] h-[40px] rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-colors cursor-pointer"
                     >
                       <X className="w-[20px] h-[20px]" />
                     </button>
                   </div>
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-[12px]">
-                    {propertyImages.map((image, index) => (
-                      <button
-                        key={index}
-                        onClick={() => {
-                          setCurrentImageIndex(index);
-                          setIsPhotosModalOpen(false);
-                        }}
-                        className="relative aspect-[4/3] overflow-hidden bg-[#F3F4F6]"
-                      >
-                        <img src={image} alt={`Photo ${index + 1}`} className="w-full h-full object-cover object-center" />
-                      </button>
-                    ))}
+
+                  {/* Main Slider Area */}
+                  <div className="relative flex-1 flex items-center justify-center max-w-[1200px] w-full mx-auto my-[16px]">
+                    <button
+                      onClick={previousImage}
+                      className="absolute left-[16px] z-[10] w-[48px] h-[48px] bg-white/10 hover:bg-white/20 hover:scale-105 active:scale-95 flex items-center justify-center rounded-full text-white transition-all cursor-pointer"
+                    >
+                      <ChevronLeft className="w-[24px] h-[24px]" />
+                    </button>
+
+                    <div className="w-full h-full flex items-center justify-center select-none">
+                      <img
+                        src={propertyImages[currentImageIndex]}
+                        alt={`View ${currentImageIndex + 1}`}
+                        className="max-w-full max-h-[calc(100vh-180px)] object-contain rounded-[12px] shadow-2xl"
+                      />
+                    </div>
+
+                    <button
+                      onClick={nextImage}
+                      className="absolute right-[16px] z-[10] w-[48px] h-[48px] bg-white/10 hover:bg-white/20 hover:scale-105 active:scale-95 flex items-center justify-center rounded-full text-white transition-all cursor-pointer"
+                    >
+                      <ChevronRight className="w-[24px] h-[24px]" />
+                    </button>
                   </div>
+
+                  {/* Spacer */}
+                  <div className="h-[20px]" />
+                </div>
+              )}
+
+              {/* Two Column Layout below Gallery */}
+              <div className="flex flex-col lg:flex-row gap-[20px] lg:gap-[48px] mt-[16px] lg:mt-[24px]">
+                {/* Left Column - Details */}
+                <div className="min-w-0 lg:flex-[2]">
+                  {/* Property Title & Meta */}
+              <div className="mb-[18px] sm:mb-[28px]">
+                <h1 className="text-[#0F2D36] text-[24px] sm:text-[34px] leading-[1.12] font-bold tracking-[-0.02em] mb-[8px] sm:mb-[10px]">
+                  {isLoading ? "Loading..." : listing?.title ?? "Listing unavailable"}
+                </h1>
+
+                <div className="flex items-center flex-wrap gap-[6px] sm:gap-[8px] mb-[10px]">
+                  <span className="text-[#0F2D36] text-[32px] sm:text-[44px] leading-[1] font-bold">{formatCurrency(listing?.monthlyRent ?? 0, listing?.currency).replace(".00", "")}</span>
+                  <span className="text-[#0F2D36] text-[15px] font-semibold">per month,</span>
+                  <span className="text-[#0F2D36] text-[13px] underline decoration-dotted underline-offset-[5px]">
+                    {listing?.utilitiesIncluded ? "includes bills" : "excludes bills"}, {listing?.deposit === 0 ? "no deposit" : "deposit required"}
+                  </span>
+                </div>
+
+                <div className="flex flex-wrap gap-[8px]">
+                  <span className="px-[11px] py-[5px] text-[14px] leading-[1] border border-[rgba(15,45,54,0.22)] text-[#3E5A64] rounded-full">{formatValue(listing?.kind)}</span>
+                  <span className="px-[11px] py-[5px] text-[14px] leading-[1] border border-[rgba(15,45,54,0.22)] text-[#3E5A64] rounded-full">Bedroom: {listing?.bedrooms ?? 0}</span>
+                  <span className="px-[11px] py-[5px] text-[14px] leading-[1] border border-[rgba(15,45,54,0.22)] text-[#3E5A64] rounded-full">Property: {listing?.area ?? 0} m²</span>
+                  <span className="px-[11px] py-[5px] text-[14px] leading-[1] border border-[rgba(15,45,54,0.22)] text-[#3E5A64] rounded-full">{listing?.amenityFlags.tv ? "Furnished" : "Unfurnished"}</span>
+                  <span className="px-[11px] py-[5px] text-[14px] leading-[1] border border-[rgba(15,45,54,0.22)] text-[#3E5A64] rounded-full">Space for {listing?.suitablePeopleCount ?? Math.max(1, listing?.bedrooms ?? 1)} people</span>
+                  <span className="px-[11px] py-[5px] text-[14px] leading-[1] border border-[rgba(15,45,54,0.22)] text-[#3E5A64] rounded-full">{listing?.bathrooms ?? 0} bathroom</span>
+                  <span className="px-[11px] py-[5px] text-[14px] leading-[1] border border-[rgba(15,45,54,0.22)] text-[#3E5A64] rounded-full">{Math.max(0, (listing?.suitablePeopleCount ?? 1) - 1)} housemates (mixed)</span>
+                  <span className="px-[11px] py-[5px] text-[14px] leading-[1] border border-[rgba(15,45,54,0.22)] text-[#3E5A64] rounded-full">{formatValue(listing?.cancellationPolicy)} Cancellation</span>
                 </div>
               </div>
-            )}
 
-            {/* Property Title & Meta */}
-            <div className="mb-[18px] sm:mb-[28px]">
-              <h1 className="text-[#0F2D36] text-[24px] sm:text-[34px] leading-[1.12] font-bold tracking-[-0.02em] mb-[8px] sm:mb-[10px]">
-                {isLoading ? "Loading..." : listing?.title ?? "Listing unavailable"}
-              </h1>
+              {/* Description */}
+              <section className="mb-[26px] pb-[6px]">
+                <h2 className="text-[#0F2D36] text-[28px] sm:text-[32px] leading-[1.1] font-bold mb-[14px]">Description</h2>
+                <p className="text-[#425F69] text-[15px] leading-[1.7] italic">
+                  {`${(listing?.description ?? "No listing description available.").slice(0, 280)}${(listing?.description ?? "").length > 280 ? "..." : ""
+                    }`}
+                </p>
+                {(listing?.description?.length ?? 0) > 280 && (
+                  <button
+                    type="button"
+                    onClick={() => setIsDescriptionModalOpen(true)}
+                    className="mt-[14px] text-[#0F2D36] text-[14px] italic underline decoration-dotted underline-offset-[5px] cursor-pointer hover:text-[#0A2530]"
+                  >
+                    Show more
+                  </button>
+                )}
+              </section>
 
-              <div className="flex items-center flex-wrap gap-[6px] sm:gap-[8px] mb-[10px]">
-                <span className="text-[#0F2D36] text-[32px] sm:text-[44px] leading-[1] font-bold">{formatCurrency(listing?.monthlyRent ?? 0, listing?.currency).replace(".00", "")}</span>
-                <span className="text-[#0F2D36] text-[15px] font-semibold">per month,</span>
-                <span className="text-[#0F2D36] text-[13px] underline decoration-dotted underline-offset-[5px]">
-                  {listing?.utilitiesIncluded ? "includes bills" : "excludes bills"}, {listing?.deposit === 0 ? "no deposit" : "deposit required"}
-                </span>
-              </div>
+              {isDescriptionModalOpen && (
+                <div className="fixed inset-0 z-[80] bg-black/45 p-[18px] md:p-[28px]">
+                  <div className="mx-auto max-w-[560px] bg-white border border-[rgba(15,45,54,0.1)] rounded-[20px] shadow-[0_16px_48px_rgba(15,45,54,0.16)] max-h-[calc(100vh-56px)] overflow-y-auto">
+                    <div className="flex items-center justify-between px-[22px] py-[16px] border-b border-[rgba(0,0,0,0.10)]">
+                      <h3 className="text-[#0F2D36] text-[28px] leading-[1.2] font-bold">Description</h3>
+                      <button
+                        type="button"
+                        onClick={() => setIsDescriptionModalOpen(false)}
+                        className="w-[32px] h-[32px] flex items-center justify-center text-[#6B7F88] hover:text-[#0F2D36] cursor-pointer"
+                      >
+                        <X className="w-[20px] h-[20px]" />
+                      </button>
+                    </div>
 
-              <div className="flex flex-wrap gap-[8px]">
-                <span className="px-[11px] py-[5px] text-[14px] leading-[1] border border-[rgba(15,45,54,0.22)] text-[#3E5A64] rounded-full">{formatValue(listing?.kind)}</span>
-                <span className="px-[11px] py-[5px] text-[14px] leading-[1] border border-[rgba(15,45,54,0.22)] text-[#3E5A64] rounded-full">Bedroom: {listing?.bedrooms ?? 0}</span>
-                <span className="px-[11px] py-[5px] text-[14px] leading-[1] border border-[rgba(15,45,54,0.22)] text-[#3E5A64] rounded-full">Property: {listing?.area ?? 0} m²</span>
-                <span className="px-[11px] py-[5px] text-[14px] leading-[1] border border-[rgba(15,45,54,0.22)] text-[#3E5A64] rounded-full">{listing?.amenityFlags.tv ? "Furnished" : "Unfurnished"}</span>
-                <span className="px-[11px] py-[5px] text-[14px] leading-[1] border border-[rgba(15,45,54,0.22)] text-[#3E5A64] rounded-full">Space for {listing?.suitablePeopleCount ?? Math.max(1, listing?.bedrooms ?? 1)} people</span>
-                <span className="px-[11px] py-[5px] text-[14px] leading-[1] border border-[rgba(15,45,54,0.22)] text-[#3E5A64] rounded-full">{listing?.bathrooms ?? 0} bathroom</span>
-                <span className="px-[11px] py-[5px] text-[14px] leading-[1] border border-[rgba(15,45,54,0.22)] text-[#3E5A64] rounded-full">{Math.max(0, (listing?.suitablePeopleCount ?? 1) - 1)} housemates (mixed)</span>
-                <span className="px-[11px] py-[5px] text-[14px] leading-[1] border border-[rgba(15,45,54,0.22)] text-[#3E5A64] rounded-full">{formatValue(listing?.cancellationPolicy)} Cancellation</span>
-              </div>
-            </div>
-
-            {/* Description */}
-            <section className="mb-[26px] pb-[6px]">
-              <h2 className="text-[#0F2D36] text-[40px] leading-[1.1] font-bold mb-[14px]">Description</h2>
-              <p className="text-[#425F69] text-[15px] leading-[1.7] italic">
-                {`${(listing?.description ?? "No listing description available.").slice(0, 280)}${
-                  (listing?.description ?? "").length > 280 ? "..." : ""
-                }`}
-              </p>
-              {(listing?.description?.length ?? 0) > 280 && (
-                <button
-                  type="button"
-                  onClick={() => setIsDescriptionModalOpen(true)}
-                  className="mt-[14px] text-[#0F2D36] text-[14px] italic underline decoration-dotted underline-offset-[5px] cursor-pointer hover:text-[#0A2530]"
-                >
-                  Show more
-                </button>
-              )}
-            </section>
-
-            {isDescriptionModalOpen && (
-              <div className="fixed inset-0 z-[80] bg-black/45 p-[18px] md:p-[28px]">
-                <div className="mx-auto max-w-[560px] bg-white border border-[rgba(0,0,0,0.16)] rounded-[6px] shadow-[0_10px_32px_rgba(0,0,0,0.22)] max-h-[calc(100vh-56px)] overflow-y-auto">
-                  <div className="flex items-center justify-between px-[22px] py-[16px] border-b border-[rgba(0,0,0,0.10)]">
-                    <h3 className="text-[#0F2D36] text-[28px] leading-[1.2] font-bold">Description</h3>
-                    <button
-                      type="button"
-                      onClick={() => setIsDescriptionModalOpen(false)}
-                      className="w-[32px] h-[32px] flex items-center justify-center text-[#6B7F88] hover:text-[#0F2D36] cursor-pointer"
-                    >
-                      <X className="w-[20px] h-[20px]" />
-                    </button>
+                    <div className="px-[22px] py-[18px]">
+                      <p className="text-[#425F69] text-[15px] leading-[1.75] italic whitespace-pre-line">
+                        {listing?.description ?? "No listing description available."}
+                      </p>
+                    </div>
                   </div>
+                </div>
+              )}
 
-                  <div className="px-[22px] py-[18px]">
-                    <p className="text-[#425F69] text-[15px] leading-[1.75] italic whitespace-pre-line">
-                      {listing?.description ?? "No listing description available."}
+              {/* Facilities and Amenities */}
+              <section className="mb-[28px] pb-[24px] border-b border-[rgba(0,0,0,0.08)]">
+                <h2 className="text-[#0F2D36] text-[28px] sm:text-[32px] leading-[1.1] font-bold mb-[14px]">Facilities and amenities</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-[26px]">
+                  {[0, 1].map((columnIndex) => {
+                    const shownItems = isFacilitiesExpanded ? facilitiesAndAmenities : facilitiesAndAmenities.slice(0, 8);
+                    const midpoint = Math.ceil(shownItems.length / 2);
+                    const columnItems = columnIndex === 0 ? shownItems.slice(0, midpoint) : shownItems.slice(midpoint);
+
+                    return (
+                      <div key={columnIndex} className={`${columnIndex === 1 ? "md:border-l md:border-[rgba(0,0,0,0.08)] md:pl-[26px]" : ""} space-y-[14px]`}>
+                        {columnItems.map((item) => {
+                          const lower = item.toLowerCase();
+                          const Icon =
+                            lower.includes("bath") || lower.includes("toilet")
+                              ? Bath
+                              : lower.includes("living")
+                                ? Sofa
+                                : lower.includes("wifi")
+                                  ? Wifi
+                                  : lower.includes("bed")
+                                    ? Bed
+                                    : lower.includes("tv")
+                                      ? Tv
+                                      : lower.includes("kitchen")
+                                        ? Utensils
+                                        : Check;
+
+                          return (
+                            <div key={item} className="flex items-center gap-[10px] text-[#596E76] text-[15px] italic">
+                              <Icon className="w-[16px] h-[16px] text-[#1F3D47]" />
+                              <span>{item}</span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {facilitiesAndAmenities.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setIsFacilitiesModalOpen(true)}
+                    className="mt-[14px] text-[#0F2D36] text-[14px] italic underline decoration-dotted underline-offset-[5px] cursor-pointer hover:text-[#0A2530]"
+                  >
+                    Show more
+                  </button>
+                )}
+              </section>
+
+              {isFacilitiesModalOpen && (
+                <div className="fixed inset-0 z-[80] bg-black/45 p-[18px] md:p-[28px]">
+                  <div className="mx-auto max-w-[560px] bg-white border border-[rgba(15,45,54,0.1)] rounded-[20px] shadow-[0_16px_48px_rgba(15,45,54,0.16)] max-h-[calc(100vh-56px)] overflow-y-auto">
+                    <div className="flex items-center justify-between px-[22px] py-[16px] border-b border-[rgba(0,0,0,0.10)]">
+                      <h3 className="text-[#0F2D36] text-[34px] leading-[1.2] font-bold">Facilities and amenities</h3>
+                      <button
+                        type="button"
+                        onClick={() => setIsFacilitiesModalOpen(false)}
+                        className="w-[32px] h-[32px] flex items-center justify-center text-[#6B7F88] hover:text-[#0F2D36] cursor-pointer"
+                      >
+                        <X className="w-[20px] h-[20px]" />
+                      </button>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-[22px] px-[22px] py-[18px]">
+                      <div>
+                        <h4 className="text-[#0F2D36] text-[16px] font-bold mb-[10px]">Facilities</h4>
+                        <div className="space-y-[10px]">
+                          {facilitiesModalData.facilities.map((item) => (
+                            <div key={item.label} className="flex items-center gap-[10px]">
+                              <Check className={`w-[16px] h-[16px] ${item.available ? "text-[#1F3D47]" : "text-[#9BA8AD]"}`} />
+                              <span className={`text-[14px] italic ${item.available ? "text-[#5A6E75]" : "text-[#A2ADB2] line-through"}`}>{item.label}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div>
+                        <h4 className="text-[#0F2D36] text-[16px] font-bold mb-[10px]">Amenities</h4>
+                        <div className="space-y-[10px]">
+                          {facilitiesModalData.amenities.map((item) => (
+                            <div key={item.label} className="flex items-center gap-[10px]">
+                              <Check className={`w-[16px] h-[16px] ${item.available ? "text-[#1F3D47]" : "text-[#9BA8AD]"}`} />
+                              <span className={`text-[14px] italic ${item.available ? "text-[#5A6E75]" : "text-[#A2ADB2] line-through"}`}>{item.label}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <section className="mb-[28px] bg-[#E9EDF1] rounded-[24px] p-[24px] border border-[rgba(15,45,54,0.08)] shadow-sm">
+                <div className="flex items-start gap-[10px]">
+                  <div className="w-[28px] h-[28px] rounded-[8px] bg-[#073543] text-white flex items-center justify-center shrink-0 mt-[2px]">
+                    <Shield className="w-[16px] h-[16px]" />
+                  </div>
+                  <div>
+                    <h3 className="text-[#0F2D36] text-[18px] leading-[1.3] font-bold mb-[6px]">No guarantor? Choose ReserveHousing Rent Guarantee</h3>
+                    <p className="text-[#425F69] text-[14px] leading-[1.6]">
+                      This landlord may ask for a guarantor. ReserveHousing Rent Guarantee saves you the hassle of finding one and comes with extra damage protection. It costs only 3% of your total contract value.
+                      <button className="ml-[4px] text-[#0F2D36] text-[14px] font-semibold underline decoration-dotted underline-offset-[4px] hover:text-[#0A2530] transition-colors cursor-pointer">Learn more</button>
                     </p>
                   </div>
                 </div>
-              </div>
-            )}
+              </section>
 
-            {/* Facilities and Amenities */}
-            <section className="mb-[28px] pb-[24px] border-b border-[rgba(0,0,0,0.08)]">
-              <h2 className="text-[#0F2D36] text-[40px] leading-[1.1] font-bold mb-[14px]">Facilities and amenities</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-[26px]">
-                {[0, 1].map((columnIndex) => {
-                  const shownItems = isFacilitiesExpanded ? facilitiesAndAmenities : facilitiesAndAmenities.slice(0, 8);
-                  const midpoint = Math.ceil(shownItems.length / 2);
-                  const columnItems = columnIndex === 0 ? shownItems.slice(0, midpoint) : shownItems.slice(midpoint);
+              <section className="mb-[28px]">
+                <h2 className="text-[#0F2D36] text-[28px] sm:text-[32px] leading-[1.2] font-bold mb-[14px]">Property location</h2>
+                <p className="text-[#4A606A] text-[16px] leading-[1.5] mb-[12px]">Hover the pin to see the exact location for this home.</p>
 
-                  return (
-                    <div key={columnIndex} className={`${columnIndex === 1 ? "md:border-l md:border-[rgba(0,0,0,0.08)] md:pl-[26px]" : ""} space-y-[14px]`}>
-                      {columnItems.map((item) => {
-                        const lower = item.toLowerCase();
-                        const Icon =
-                          lower.includes("bath") || lower.includes("toilet")
-                            ? Bath
-                            : lower.includes("living")
-                            ? Sofa
-                            : lower.includes("wifi")
-                            ? Wifi
-                            : lower.includes("bed")
-                            ? Bed
-                            : lower.includes("tv")
-                            ? Tv
-                            : lower.includes("kitchen")
-                            ? Utensils
-                            : Check;
-
-                        return (
-                          <div key={item} className="flex items-center gap-[10px] text-[#596E76] text-[15px] italic">
-                            <Icon className="w-[16px] h-[16px] text-[#1F3D47]" />
-                            <span>{item}</span>
+                <div className="relative isolate overflow-hidden rounded-[24px] border border-[rgba(15,45,54,0.08)] bg-white shadow-[0_6px_20px_rgba(15,45,54,0.04)] h-[320px] sm:h-[380px]">
+                  {propertyCoordinates ? (
+                    <MapContainer
+                      center={propertyCoordinates}
+                      zoom={15}
+                      scrollWheelZoom={false}
+                      zoomControl={false}
+                      className="w-full h-full"
+                    >
+                      <TileLayer
+                        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+                        url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
+                        subdomains="abcd"
+                        maxZoom={20}
+                      />
+                      <Marker
+                        position={propertyCoordinates}
+                        icon={createLocationMarkerIcon()}
+                        eventHandlers={{
+                          mouseover: (event) => {
+                            openLocationPopup(event.target);
+                          },
+                          mouseout: (event) => {
+                            scheduleLocationPopupClose();
+                          },
+                        }}
+                      >
+                        <Popup
+                          closeButton={false}
+                          offset={[0, -30]}
+                          autoPan
+                          autoPanPadding={[10, 10]}
+                          interactive
+                        >
+                          <div
+                            className="w-[278px] overflow-hidden rounded-[14px] border border-[rgba(0,0,0,0.08)] bg-white shadow-[0_10px_28px_rgba(15,45,54,0.14)]"
+                            onMouseEnter={clearLocationPopupCloseTimer}
+                            onMouseLeave={scheduleLocationPopupClose}
+                          >
+                            <div className="h-[118px] bg-gradient-to-br from-[#E6F7FB] to-[#D9F3F8] overflow-hidden">
+                              <img
+                                src={propertyImages[0]}
+                                alt={listing.title}
+                                className="w-full h-full object-cover object-center"
+                              />
+                            </div>
+                            <div className="p-[14px]">
+                              <div className="flex items-start justify-between gap-[10px] mb-[6px]">
+                                <div className="min-w-0">
+                                  <div className="text-[#1A1A1A] text-[15px] font-bold leading-tight line-clamp-2">
+                                    {listing.title}
+                                  </div>
+                                  <div className="text-[#6B6B6B] text-[12px] mt-[4px] line-clamp-2">
+                                    {listing.address || listing.city}
+                                  </div>
+                                </div>
+                                <div className="shrink-0 text-right">
+                                  <div className="text-[#0891B2] text-[16px] font-bold leading-none">
+                                    {formatCurrency(listing.monthlyRent, listing.currency).replace(".00", "")}
+                                  </div>
+                                  <div className="text-[#6B6B6B] text-[11px] mt-[3px]">/month</div>
+                                </div>
+                              </div>
+                              <div className="flex items-center justify-between gap-[10px] pt-[10px] border-t border-[rgba(0,0,0,0.08)]">
+                                <div className="inline-flex items-center gap-[6px] text-[#0F2D36] text-[12px] font-semibold">
+                                  <MapPin className="w-[14px] h-[14px] text-brand-primary" />
+                                  {listing.city}
+                                </div>
+                                <button
+                                  type="button"
+                                  onClick={handleViewOnMap}
+                                  className="rounded-full bg-brand-primary px-[12px] py-[7px] text-white text-[12px] font-semibold hover:bg-brand-primary-dark transition-colors"
+                                >
+                                  View area
+                                </button>
+                              </div>
+                            </div>
                           </div>
+                        </Popup>
+                      </Marker>
+                    </MapContainer>
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-[#E8F0F5] to-[#F0F5F9] text-[#4A606A] text-[14px]">
+                      Loading location...
+                    </div>
+                  )}
+                </div>
+              </section>
+
+              <section className="mb-[28px]">
+                <h2 className="text-[#0F2D36] text-[28px] sm:text-[32px] leading-[1.2] font-bold mb-[14px]">House rules and preferences</h2>
+                <div className="border border-[rgba(15,45,54,0.08)] rounded-[24px] p-[24px] bg-white shadow-[0_6px_20px_rgba(15,45,54,0.04)] grid grid-cols-1 md:grid-cols-2 gap-[0]">
+                  {[housePreferences.slice(0, 4), housePreferences.slice(4)].map((column, columnIndex) => (
+                    <div key={columnIndex} className={`${columnIndex === 1 ? "md:border-l md:border-[rgba(0,0,0,0.08)] md:pl-[24px]" : "md:pr-[24px]"} space-y-[8px]`}>
+                      {column.map((item) => {
+                        const [label, ...valueParts] = item.split(":");
+                        const value = valueParts.join(":").trim();
+                        return (
+                          <p key={item} className="text-[#6A7F88] text-[14px] leading-[1.6]">
+                            <span className="mr-[6px]">•</span>
+                            <span>{label.trim()}:</span>{" "}
+                            <span className="font-semibold text-[#5B6E78]">{value}</span>
+                          </p>
                         );
                       })}
                     </div>
-                  );
-                })}
-              </div>
+                  ))}
+                </div>
+              </section>
 
-              {facilitiesAndAmenities.length > 0 && (
-                <button
-                  type="button"
-                  onClick={() => setIsFacilitiesModalOpen(true)}
-                  className="mt-[14px] text-[#0F2D36] text-[14px] italic underline decoration-dotted underline-offset-[5px] cursor-pointer hover:text-[#0A2530]"
-                >
-                  Show more
-                </button>
-              )}
-            </section>
+              <section className="mb-[28px] bg-[#3462CF] rounded-[24px] p-[28px] text-white shadow-[0_10px_30px_rgba(52,98,207,0.18)]">
+                <h3 className="text-[42px] leading-[1.18] font-bold mb-[8px]">Tenant Protection: Smooth move, or your money back</h3>
+                <p className="text-[16px] leading-[1.6] mb-[18px] text-[#EAF2FF]">
+                  Move in and check the place out. You have 48 hours to report any problems, then we'll send your money to the landlord.
+                </p>
 
-            {isFacilitiesModalOpen && (
-              <div className="fixed inset-0 z-[80] bg-black/45 p-[18px] md:p-[28px]">
-                <div className="mx-auto max-w-[560px] bg-white border border-[rgba(0,0,0,0.16)] rounded-[6px] shadow-[0_10px_32px_rgba(0,0,0,0.22)] max-h-[calc(100vh-56px)] overflow-y-auto">
-                  <div className="flex items-center justify-between px-[22px] py-[16px] border-b border-[rgba(0,0,0,0.10)]">
-                    <h3 className="text-[#0F2D36] text-[34px] leading-[1.2] font-bold">Facilities and amenities</h3>
-                    <button
-                      type="button"
-                      onClick={() => setIsFacilitiesModalOpen(false)}
-                      className="w-[32px] h-[32px] flex items-center justify-center text-[#6B7F88] hover:text-[#0F2D36] cursor-pointer"
-                    >
-                      <X className="w-[20px] h-[20px]" />
-                    </button>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-[22px] px-[22px] py-[18px]">
-                    <div>
-                      <h4 className="text-[#0F2D36] text-[16px] font-bold mb-[10px]">Facilities</h4>
-                      <div className="space-y-[10px]">
-                        {facilitiesModalData.facilities.map((item) => (
-                          <div key={item.label} className="flex items-center gap-[10px]">
-                            <Check className={`w-[16px] h-[16px] ${item.available ? "text-[#1F3D47]" : "text-[#9BA8AD]"}`} />
-                            <span className={`text-[14px] italic ${item.available ? "text-[#5A6E75]" : "text-[#A2ADB2] line-through"}`}>{item.label}</span>
-                          </div>
-                        ))}
-                      </div>
+                <div className="mb-[14px]">
+                  <div className="w-full h-[30px] bg-[#5E84D8] rounded-[4px] flex items-center overflow-hidden">
+                    <div className="flex-1 h-full" />
+                    <div className="w-[65%] h-full bg-white text-[#365EC3] flex items-center justify-center gap-[6px] text-[13px] font-semibold">
+                      <Lock className="w-[14px] h-[14px]" />
+                      Your money's held safe
                     </div>
+                    <div className="flex-1 h-full" />
+                  </div>
 
+                  <div className="mt-[10px] border-t border-dashed border-[#89A3E3] relative">
+                    <div className="absolute -top-[3px] left-[17%] w-[6px] h-[6px] rounded-full bg-[#DCE8FF]" />
+                    <div className="absolute -top-[3px] left-[49%] w-[6px] h-[6px] rounded-full bg-[#DCE8FF]" />
+                    <div className="absolute -top-[3px] left-[82%] w-[6px] h-[6px] rounded-full bg-[#DCE8FF]" />
+                  </div>
+
+                  <div className="mt-[10px] grid grid-cols-3 text-[13px] font-semibold text-[#EAF2FF]">
+                    <p className="text-center">Confirm rental</p>
+                    <p className="text-center">Move in</p>
+                    <p className="text-center">48 hours later</p>
+                  </div>
+                </div>
+
+                <button className="text-[15px] font-semibold underline hover:text-[#EAF2FF] transition-colors cursor-pointer">How Tenant Protection works</button>
+              </section>
+
+              <section className="mb-[28px]">
+                <h2 className="text-[#0F2D36] text-[28px] sm:text-[32px] leading-[1.2] font-bold mb-[14px]">Required documents</h2>
+                <div className="border border-[rgba(15,45,54,0.08)] rounded-[24px] p-[24px] bg-white shadow-[0_6px_20px_rgba(15,45,54,0.04)]">
+                  <p className="text-[#7B8E97] text-[14px] italic mb-[10px]">The following documents are required to rent this place:</p>
+                  {requiredDocuments.map((doc) => (
+                    <div key={doc} className="mb-[6px]">
+                      <p className="text-[#0F2D36] text-[16px] font-bold italic flex items-center gap-[8px]">
+                        <FileText className="w-[15px] h-[15px] text-[#0F2D36]" />
+                        {doc}
+                      </p>
+                      {doc.toLowerCase().includes("identity") && (
+                        <p className="text-[#6E838D] text-[13px] italic pl-[24px]">Government-issued ID or passport.</p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </section>
+
+              <section className="mb-[28px]">
+                <h2 className="text-[#0F2D36] text-[28px] sm:text-[32px] leading-[1.2] font-bold mb-[14px]">How rent is calculated</h2>
+                <div className="border border-[rgba(15,45,54,0.08)] rounded-[24px] p-[24px] bg-white shadow-[0_6px_20px_rgba(15,45,54,0.04)]">
+                  <p className="text-[#0F2D36] text-[16px] font-bold mb-[10px] flex items-center gap-[8px]">
+                    <FileText className="w-[15px] h-[15px] text-[#0F2D36]" />
+                    {formatValue(listing?.rentCalculation)} basis
+                  </p>
+                  <p className="text-[#3D555F] text-[14px] leading-[1.7] mb-[14px]">
+                    {listing?.rentCalculation === "daily"
+                      ? "This listing's rent is calculated on a daily basis. For the first and last months of your stay, you'll only pay for the exact number of nights in your rental period. To confirm your rental, you'll need to pay one month's rent in full. Any excess rent you pay for the first month will be subtracted from the next month's rent."
+                      : listing?.rentCalculation === "half-monthly"
+                        ? "This listing uses a half-monthly calculation. If your move-in or move-out creates a partial month, pricing is adjusted according to the stay period and contract terms."
+                        : "This listing uses monthly rent calculation according to contract terms and billing schedule."}
+                  </p>
+
+                  <div className="border-t border-[rgba(15,45,54,0.08)] pt-[12px] flex items-start justify-between gap-[12px]">
                     <div>
-                      <h4 className="text-[#0F2D36] text-[16px] font-bold mb-[10px]">Amenities</h4>
-                      <div className="space-y-[10px]">
-                        {facilitiesModalData.amenities.map((item) => (
-                          <div key={item.label} className="flex items-center gap-[10px]">
-                            <Check className={`w-[16px] h-[16px] ${item.available ? "text-[#1F3D47]" : "text-[#9BA8AD]"}`} />
-                            <span className={`text-[14px] italic ${item.available ? "text-[#5A6E75]" : "text-[#A2ADB2] line-through"}`}>{item.label}</span>
-                          </div>
-                        ))}
-                      </div>
+                      <p className="text-[#0F2D36] text-[16px] font-bold flex items-center gap-[8px] mb-[6px]">
+                        <FileText className="w-[15px] h-[15px] text-[#0F2D36]" />
+                        Preview contract
+                      </p>
+                      <p className="text-[#3D555F] text-[14px] leading-[1.6] max-w-[520px]">
+                        Want to know what's in the rental contract? Preview the draft contract for this place.
+                      </p>
+                    </div>
+                    <div className="flex flex-col gap-[8px] shrink-0">
                     </div>
                   </div>
                 </div>
-              </div>
-            )}
+              </section>
 
-            <section className="mb-[28px] bg-[#E9EDF1] rounded-[4px] p-[24px]">
-              <div className="flex items-start gap-[10px]">
-                <div className="w-[28px] h-[28px] rounded-[8px] bg-[#073543] text-white flex items-center justify-center shrink-0 mt-[2px]">
-                  <Shield className="w-[16px] h-[16px]" />
-                </div>
-                <div>
-                  <h3 className="text-[#0F2D36] text-[18px] leading-[1.3] font-bold mb-[6px]">No guarantor? Choose ReserveHousing Rent Guarantee</h3>
-                  <p className="text-[#425F69] text-[14px] leading-[1.6]">
-                    This landlord may ask for a guarantor. ReserveHousing Rent Guarantee saves you the hassle of finding one and comes with extra damage protection. It costs only 3% of your total contract value.
-                    <button className="ml-[4px] text-[#0F2D36] text-[14px] font-semibold underline decoration-dotted underline-offset-[4px] hover:text-[#0A2530] transition-colors cursor-pointer">Learn more</button>
+              <section className="mb-[28px]">
+                <h2 className="text-[#0F2D36] text-[28px] sm:text-[32px] leading-[1.2] font-bold mb-[14px]">Cancellation policy</h2>
+                <div className="border border-[rgba(15,45,54,0.08)] rounded-[24px] p-[24px] bg-white shadow-[0_6px_20px_rgba(15,45,54,0.04)]">
+                  <p className="text-[#3D5560] text-[15px] font-bold italic mb-[10px] flex items-center gap-[8px]">
+                    <FileText className="w-[15px] h-[15px] text-[#0F2D36]" />
+                    {formatValue(listing?.cancellationPolicy)} cancellation
                   </p>
-                </div>
-              </div>
-            </section>
-
-            <section className="mb-[28px]">
-              <h2 className="text-[#0F2D36] text-[34px] sm:text-[40px] leading-[1.2] font-bold mb-[10px]">Property location</h2>
-              <p className="text-[#4A606A] text-[16px] leading-[1.5] mb-[12px]">Hover the pin to see the exact location for this home.</p>
-
-              <div className="relative isolate overflow-hidden rounded-[16px] border border-[rgba(0,0,0,0.12)] bg-white shadow-[0_8px_24px_rgba(15,45,54,0.08)] h-[320px] sm:h-[380px]">
-                {propertyCoordinates ? (
-                  <MapContainer
-                    center={propertyCoordinates}
-                    zoom={15}
-                    scrollWheelZoom={false}
-                    zoomControl={false}
-                    className="w-full h-full"
-                  >
-                    <TileLayer
-                      attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
-                      url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
-                      subdomains="abcd"
-                      maxZoom={20}
-                    />
-                    <Marker
-                      position={propertyCoordinates}
-                      icon={createLocationMarkerIcon()}
-                      eventHandlers={{
-                        mouseover: (event) => {
-                          openLocationPopup(event.target);
-                        },
-                        mouseout: (event) => {
-                          scheduleLocationPopupClose();
-                        },
-                      }}
-                    >
-                      <Popup
-                        closeButton={false}
-                        offset={[0, -30]}
-                        autoPan
-                        autoPanPadding={[10, 10]}
-                        interactive
-                      >
-                          <div
-                            className="w-[278px] overflow-hidden rounded-[14px] border border-[rgba(0,0,0,0.08)] bg-white shadow-[0_10px_28px_rgba(15,45,54,0.14)]"
-                          onMouseEnter={clearLocationPopupCloseTimer}
-                          onMouseLeave={scheduleLocationPopupClose}
-                          >
-                          <div className="h-[118px] bg-gradient-to-br from-[#E6F7FB] to-[#D9F3F8] overflow-hidden">
-                            <img
-                              src={propertyImages[0]}
-                              alt={listing.title}
-                              className="w-full h-full object-cover object-center"
-                            />
-                          </div>
-                          <div className="p-[14px]">
-                            <div className="flex items-start justify-between gap-[10px] mb-[6px]">
-                              <div className="min-w-0">
-                                <div className="text-[#1A1A1A] text-[15px] font-bold leading-tight line-clamp-2">
-                                  {listing.title}
-                                </div>
-                                <div className="text-[#6B6B6B] text-[12px] mt-[4px] line-clamp-2">
-                                  {listing.address || listing.city}
-                                </div>
-                              </div>
-                              <div className="shrink-0 text-right">
-                                <div className="text-[#0891B2] text-[16px] font-bold leading-none">
-                                  {formatCurrency(listing.monthlyRent, listing.currency).replace(".00", "")}
-                                </div>
-                                <div className="text-[#6B6B6B] text-[11px] mt-[3px]">/month</div>
-                              </div>
-                            </div>
-                            <div className="flex items-center justify-between gap-[10px] pt-[10px] border-t border-[rgba(0,0,0,0.08)]">
-                              <div className="inline-flex items-center gap-[6px] text-[#0F2D36] text-[12px] font-semibold">
-                                <MapPin className="w-[14px] h-[14px] text-brand-primary" />
-                                {listing.city}
-                              </div>
-                              <button
-                                type="button"
-                                onClick={handleViewOnMap}
-                                className="rounded-full bg-brand-primary px-[12px] py-[7px] text-white text-[12px] font-semibold hover:bg-brand-primary-dark transition-colors"
-                              >
-                                View area
-                              </button>
-                            </div>
-                          </div>
-                        </div>
-                      </Popup>
-                    </Marker>
-                  </MapContainer>
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-[#E8F0F5] to-[#F0F5F9] text-[#4A606A] text-[14px]">
-                    Loading location...
-                  </div>
-                )}
-              </div>
-            </section>
-
-            <section className="mb-[28px]">
-              <h2 className="text-[#0F2D36] text-[40px] leading-[1.2] font-bold mb-[12px]">House rules and preferences</h2>
-              <div className="border border-[rgba(0,0,0,0.16)] rounded-[16px] p-[14px] grid grid-cols-1 md:grid-cols-2 gap-[0]">
-                {[housePreferences.slice(0, 4), housePreferences.slice(4)].map((column, columnIndex) => (
-                  <div key={columnIndex} className={`${columnIndex === 1 ? "md:border-l md:border-[rgba(0,0,0,0.08)] md:pl-[24px]" : "md:pr-[24px]"} space-y-[8px]`}>
-                    {column.map((item) => {
-                      const [label, ...valueParts] = item.split(":");
-                      const value = valueParts.join(":").trim();
-                      return (
-                        <p key={item} className="text-[#6A7F88] text-[14px] leading-[1.6]">
-                          <span className="mr-[6px]">•</span>
-                          <span>{label.trim()}:</span>{" "}
-                          <span className="font-semibold text-[#5B6E78]">{value}</span>
-                        </p>
-                      );
-                    })}
-                  </div>
-                ))}
-              </div>
-            </section>
-
-            <section className="mb-[28px] bg-[#3462CF] rounded-[16px] p-[28px] text-white">
-              <h3 className="text-[42px] leading-[1.18] font-bold mb-[8px]">Tenant Protection: Smooth move, or your money back</h3>
-              <p className="text-[16px] leading-[1.6] mb-[18px] text-[#EAF2FF]">
-                Move in and check the place out. You have 48 hours to report any problems, then we'll send your money to the landlord.
-              </p>
-
-              <div className="mb-[14px]">
-                <div className="w-full h-[30px] bg-[#5E84D8] rounded-[4px] flex items-center overflow-hidden">
-                  <div className="flex-1 h-full" />
-                  <div className="w-[65%] h-full bg-white text-[#365EC3] flex items-center justify-center gap-[6px] text-[13px] font-semibold">
-                    <Lock className="w-[14px] h-[14px]" />
-                    Your money's held safe
-                  </div>
-                  <div className="flex-1 h-full" />
-                </div>
-
-                <div className="mt-[10px] border-t border-dashed border-[#89A3E3] relative">
-                  <div className="absolute -top-[3px] left-[17%] w-[6px] h-[6px] rounded-full bg-[#DCE8FF]" />
-                  <div className="absolute -top-[3px] left-[49%] w-[6px] h-[6px] rounded-full bg-[#DCE8FF]" />
-                  <div className="absolute -top-[3px] left-[82%] w-[6px] h-[6px] rounded-full bg-[#DCE8FF]" />
-                </div>
-
-                <div className="mt-[10px] grid grid-cols-3 text-[13px] font-semibold text-[#EAF2FF]">
-                  <p className="text-center">Confirm rental</p>
-                  <p className="text-center">Move in</p>
-                  <p className="text-center">48 hours later</p>
-                </div>
-              </div>
-
-              <button className="text-[15px] font-semibold underline hover:text-[#EAF2FF] transition-colors cursor-pointer">How Tenant Protection works</button>
-            </section>
-
-            <section className="mb-[28px]">
-              <h2 className="text-[#0F2D36] text-[36px] leading-[1.2] font-bold mb-[12px]">Required documents</h2>
-              <div className="border border-[rgba(0,0,0,0.16)] rounded-[16px] p-[16px]">
-                <p className="text-[#7B8E97] text-[14px] italic mb-[10px]">The following documents are required to rent this place:</p>
-                {requiredDocuments.map((doc) => (
-                  <div key={doc} className="mb-[6px]">
-                    <p className="text-[#0F2D36] text-[16px] font-bold italic flex items-center gap-[8px]">
-                      <FileText className="w-[15px] h-[15px] text-[#0F2D36]" />
-                      {doc}
-                    </p>
-                    {doc.toLowerCase().includes("identity") && (
-                      <p className="text-[#6E838D] text-[13px] italic pl-[24px]">Government-issued ID or passport.</p>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </section>
-
-            <section className="mb-[28px]">
-              <h2 className="text-[#0F2D36] text-[36px] leading-[1.2] font-bold mb-[12px]">How rent is calculated</h2>
-              <div className="border border-[rgba(0,0,0,0.16)] rounded-[16px] p-[16px]">
-                <p className="text-[#0F2D36] text-[16px] font-bold mb-[10px] flex items-center gap-[8px]">
-                  <FileText className="w-[15px] h-[15px] text-[#0F2D36]" />
-                  {formatValue(listing?.rentCalculation)} basis
-                </p>
-                <p className="text-[#3D555F] text-[14px] leading-[1.7] mb-[14px]">
-                  {listing?.rentCalculation === "daily"
-                    ? "This listing's rent is calculated on a daily basis. For the first and last months of your stay, you'll only pay for the exact number of nights in your rental period. To confirm your rental, you'll need to pay one month's rent in full. Any excess rent you pay for the first month will be subtracted from the next month's rent."
-                    : listing?.rentCalculation === "half-monthly"
-                    ? "This listing uses a half-monthly calculation. If your move-in or move-out creates a partial month, pricing is adjusted according to the stay period and contract terms."
-                    : "This listing uses monthly rent calculation according to contract terms and billing schedule."}
-                </p>
-
-                <div className="border-t border-[rgba(0,0,0,0.10)] pt-[12px] flex items-start justify-between gap-[12px]">
-                  <div>
-                    <p className="text-[#0F2D36] text-[16px] font-bold flex items-center gap-[8px] mb-[6px]">
-                      <FileText className="w-[15px] h-[15px] text-[#0F2D36]" />
-                      Preview contract
-                    </p>
-                    <p className="text-[#3D555F] text-[14px] leading-[1.6] max-w-[520px]">
-                      Want to know what's in the rental contract? Preview the draft contract for this place.
-                    </p>
-                  </div>
-                  <div className="flex flex-col gap-[8px] shrink-0">
-                    {/* <button className="px-[14px] py-[8px] border border-[rgba(0,0,0,0.16)] text-[#0F2D36] text-[14px] font-semibold bg-[#F3F7FB] hover:bg-[#EAF1F8]">View French contract</button>
-                    <button className="px-[14px] py-[8px] border border-[rgba(0,0,0,0.16)] text-[#0F2D36] text-[14px] font-semibold bg-[#F3F7FB] hover:bg-[#EAF1F8]">View English translation</button> */}
-                  </div>
-                </div>
-              </div>
-            </section>
-
-            <section className="mb-[28px]">
-              <h2 className="text-[#0F2D36] text-[36px] leading-[1.2] font-bold mb-[12px]">Cancellation policy</h2>
-              <div className="border border-[rgba(0,0,0,0.16)] rounded-[3px] p-[16px]">
-                <p className="text-[#3D5560] text-[15px] font-bold italic mb-[10px] flex items-center gap-[8px]">
-                  <FileText className="w-[15px] h-[15px] text-[#0F2D36]" />
-                  {formatValue(listing?.cancellationPolicy)} cancellation
-                </p>
-                {listing?.cancellationPolicy === "flexible" ? (
-                  <>
-                    <p className="text-[#5E737C] text-[14px] leading-[1.7] italic mb-[6px]">If you cancel within 24 hours of confirmation - Full refund of first month's rent.</p>
-                    <p className="text-[#5E737C] text-[14px] leading-[1.7] italic mb-[10px]">If you cancel when your move-in date is:</p>
-                    <ul className="space-y-[6px] mb-[10px]">
-                      <li className="text-[#5E737C] text-[14px] italic">○ More than 30 days away - Full refund of first month's rent</li>
-                      <li className="text-[#5E737C] text-[14px] italic">○ 30 to 7 days away - 50% refund of first month's rent</li>
-                      <li className="text-[#5E737C] text-[14px] italic">○ Less than 7 days away - No refund</li>
-                    </ul>
-                  </>
-                ) : (
-                  <p className="text-[#5E737C] text-[14px] leading-[1.7] italic mb-[10px]">
-                    This listing follows strict cancellation terms. Please review your contract timeline and refund conditions carefully before confirming your booking.
-                  </p>
-                )}
-                <p className="text-[#6D818A] text-[13px] italic">The Tenant Protection fee is non-refundable.</p>
-              </div>
-            </section>
-
-            <section className="mb-[16px]">
-              <h2 className="text-[#0F2D36] text-[20px] font-bold italic mb-[12px]">How to rent this place</h2>
-              <div className="space-y-0 border border-[rgba(0,0,0,0.12)] rounded-[2px] overflow-hidden">
-                {faqItems.map((item, index) => (
-                  <div key={item.question} className="border-t border-[rgba(0,0,0,0.12)] first:border-t-0 bg-[#F6F8FA]">
-                    <button
-                      type="button"
-                      onClick={() => toggleFaqItem(index)}
-                      className="w-full px-[12px] py-[11px] flex items-center justify-between text-left hover:bg-[#EDF2F6] transition-colors cursor-pointer"
-                    >
-                      <span className="text-[#2D4A55] text-[13px] italic font-semibold">{item.question}</span>
-                      <ChevronDown className={`w-[14px] h-[14px] text-[#6B7F88] transition-transform ${openFaqIndex === index ? "rotate-180" : ""}`} />
-                    </button>
-                    {openFaqIndex === index && (
-                      <div className="px-[12px] pb-[12px]">
-                        <p className="text-[#5D717A] text-[12px] italic leading-[1.7] mb-[8px]">{item.answerTitle}</p>
-                        {item.lines.map((line) => (
-                          <p key={line} className="text-[#5D717A] text-[12px] italic leading-[1.7]">
-                            {line}
-                          </p>
-                        ))}
-
-                        {item.videoUrl && item.videoThumbnail && (
-                          <a
-                            href={item.videoUrl}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="mt-[10px] block max-w-[420px] border border-[rgba(0,0,0,0.18)] bg-white"
-                          >
-                            <div className="relative">
-                              <img src={item.videoThumbnail} alt="Tenant Protection video" className="w-full h-[210px] object-cover" />
-                              <div className="absolute inset-0 flex items-center justify-center">
-                                <div className="w-[58px] h-[40px] rounded-[8px] bg-[#FF0000] flex items-center justify-center">
-                                  <div className="w-0 h-0 border-t-[8px] border-b-[8px] border-l-[13px] border-t-transparent border-b-transparent border-l-white ml-[2px]" />
-                                </div>
-                              </div>
-                            </div>
-                          </a>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </section>
-          </div>
-
-          {/* Right Column - Sidebar */}
-          <div className="lg:flex-[1]">
-            <div className="space-y-[10px] lg:sticky lg:top-[100px]">
-              <div className="hidden lg:block border border-[rgba(15,45,54,0.18)] rounded-[6px] bg-[#F8FAFC] overflow-hidden">
-                <div className="px-[24px] py-[18px] flex items-center gap-[14px] border-b border-[rgba(15,45,54,0.12)] bg-white">
-                  <UserAvatar
-                    name={listing?.landlord?.name}
-                    profilePictureUrl={listing?.landlord?.profilePictureUrl}
-                    sizeClassName="w-[64px] h-[64px] shrink-0 border border-[rgba(15,45,54,0.16)]"
-                    textClassName="text-[#0F2D36] text-[20px] font-bold bg-[#EAF2FF]"
-                  />
-                  <div>
-                    <p className="text-[#0F2D36] text-[16px] leading-[1.2] font-bold mb-[6px]">{listing?.landlord?.name ?? "Landlord"}</p>
-                    <p className="text-[#0F2D36] text-[14px] leading-[1] flex items-center gap-[6px]">
-                      <ShieldCheck className="w-[16px] h-[16px] text-[#0E7A48]" />
-                      Verified
-                    </p>
-                  </div>
-                </div>
-
-                <div className="px-[16px] sm:px-[24px] py-[16px] sm:py-[18px]">
-                  <div className="flex items-center justify-between mb-[14px]">
-                    <p className="text-[#2F4653] text-[14px] leading-[1.2]">1st available move-in date:</p>
-                    <p className="text-[#2F4653] text-[14px] leading-[1.2] font-bold">
-                      {new Date(listing.availableFrom).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })}
-                    </p>
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={handleOpenDateSelector}
-                    className="w-full h-[56px] mb-[16px] flex items-center justify-center gap-[8px] border border-[rgba(15,45,54,0.35)] rounded-[14px] text-[#0F2D36] hover:bg-[#EEF3F7] transition-colors"
-                  >
-                    <Calendar className="w-[20px] h-[20px]" />
-                    <span className="text-[16px] leading-[1] font-semibold">
-                      {selectedStartDate && selectedEndDate
-                        ? `${new Date(selectedStartDate).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })} - ${new Date(selectedEndDate).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })}`
-                        : "Move in - Move out"}
-                    </span>
-                  </button>
-
-                  {hasSelectedDateRange && (
+                  {listing?.cancellationPolicy === "flexible" ? (
                     <>
-                      <div className="space-y-[10px] pb-[14px] border-b border-[rgba(15,45,54,0.14)]">
-                        <div className="flex items-center justify-between">
-                          <p className="text-[#2F4653] text-[15px] leading-[1.2] flex items-center gap-[6px]">
-                            {rentLineLabel}
-                            <span className="relative inline-flex items-center group">
-                              <Info className="w-[14px] h-[14px] cursor-help" aria-hidden="true" />
-                              <span className="pointer-events-none absolute left-1/2 top-[calc(100%+8px)] z-[20] -translate-x-1/2 whitespace-nowrap rounded-[4px] bg-[#0F2D36] px-[8px] py-[6px] text-[12px] leading-[1.3] font-medium text-white opacity-0 shadow-[0_8px_24px_rgba(0,0,0,0.24)] transition-opacity duration-150 group-hover:opacity-100">
-                                Only the first month's rent is charged now. Remaining months are paid directly to the landlord.
-                              </span>
-                            </span>
-                          </p>
-                          <p className="text-[#2F4653] text-[15px] leading-[1.2]">{formatCurrency(firstMonthRentAmount, listing?.currency)}</p>
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <p className="text-[#2F4653] text-[15px] leading-[1.2] flex items-center gap-[6px]">
-                            Tenant Protection fee
-                            <span className="relative inline-flex items-center group">
-                              <Info className="w-[14px] h-[14px] cursor-help" aria-hidden="true" />
-                              <span className="pointer-events-none absolute left-1/2 top-[calc(100%+8px)] z-[20] -translate-x-1/2 whitespace-nowrap rounded-[4px] bg-[#0F2D36] px-[8px] py-[6px] text-[12px] leading-[1.3] font-medium text-white opacity-0 shadow-[0_8px_24px_rgba(0,0,0,0.24)] transition-opacity duration-150 group-hover:opacity-100">
-                                Fee for payment protection and move-in support.
-                              </span>
-                            </span>
-                          </p>
-                          <p className="text-[#2F4653] text-[15px] leading-[1.2]">{formatCurrency(tenantProtectionFee, listing?.currency)}</p>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center justify-between py-[14px]">
-                        <p className="text-[#2F4653] text-[18px] leading-[1.2] font-bold">To confirm stay</p>
-                        <p className="text-[#2F4653] text-[18px] leading-[1.2] font-bold">{formatCurrency(amountToConfirmStay, listing?.currency)}</p>
-                      </div>
+                      <p className="text-[#5E737C] text-[14px] leading-[1.7] italic mb-[6px]">If you cancel within 24 hours of confirmation - Full refund of first month's rent.</p>
+                      <p className="text-[#5E737C] text-[14px] leading-[1.7] italic mb-[10px]">If you cancel when your move-in date is:</p>
+                      <ul className="space-y-[6px] mb-[10px]">
+                        <li className="text-[#5E737C] text-[14px] italic">○ More than 30 days away - Full refund of first month's rent</li>
+                        <li className="text-[#5E737C] text-[14px] italic">○ 30 to 7 days away - 50% refund of first month's rent</li>
+                        <li className="text-[#5E737C] text-[14px] italic">○ Less than 7 days away - No refund</li>
+                      </ul>
                     </>
-                  )}
-
-                  <button
-                    type="button"
-                    onClick={handleOpenPaymentsDrawer}
-                    className="flex items-center gap-[8px] text-[#0F2D36] text-[15px] leading-[1.2] font-semibold underline decoration-dotted underline-offset-[4px] mb-[16px] hover:text-[#0A2530] transition-colors cursor-pointer"
-                  >
-                    <FileText className="w-[16px] h-[16px]" />
-                    View all payments
-                  </button>
-
-                  <button
-                    onClick={handleApplyToRent}
-                    disabled={user?.role === "landlord" || hasApplied}
-                    className="hidden lg:flex w-full h-[56px] items-center justify-center rounded-[14px] bg-brand-primary text-white text-[16px] leading-[1] font-bold hover:bg-brand-primary-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {hasApplied ? "Application already submitted" : "Apply to rent"}
-                  </button>
-
-                  {hasApplied && (
-                    <p className="mt-[8px] text-[12px] text-[#6B6B6B]">
-                      You already applied for this property{applicationStatus ? ` (${applicationStatus})` : ""}.
+                  ) : (
+                    <p className="text-[#5E737C] text-[14px] leading-[1.7] italic mb-[10px]">
+                      This listing follows strict cancellation terms. Please review your contract timeline and refund conditions carefully before confirming your booking.
                     </p>
                   )}
+                  <p className="text-[#6D818A] text-[13px] italic">The Tenant Protection fee is non-refundable.</p>
                 </div>
-              </div>
+              </section>
 
-              <div className="hidden lg:block border border-[rgba(15,45,54,0.18)] rounded-[6px] p-[28px] bg-[#F8FAFC]">
-                <h4 className="text-[#0F2D36] text-[16px] leading-[1.2] font-bold mb-[14px]">Not ready to apply?</h4>
-                <p className="text-[#173743] text-[14px] leading-[1.55] mb-[18px] max-w-[420px]">
-                  Ask the landlord questions, share info, and see if there's a match. Get the answers you need to rent with peace of mind.
-                </p>
-                <button
-                  onClick={handleMessageLandlord}
-                  disabled={user?.role === "landlord"}
-                  className="w-full h-[58px] flex items-center justify-center gap-[10px] border-[3px] border-[#B8C8D4] rounded-[6px] text-[#0F2D36] text-[14px] font-semibold hover:bg-[#EEF3F7] transition-colors cursor-pointer disabled:opacity-50"
-                >
-                  <MessageSquare className="w-[18px] h-[18px]" />
-                  Message landlord
-                </button>
-              </div>
+              <section className="mb-[16px]">
+                <h2 className="text-[#0F2D36] text-[28px] sm:text-[32px] leading-[1.2] font-bold mb-[14px]">How to rent this place</h2>
+                <div className="space-y-0 border border-[rgba(15,45,54,0.08)] rounded-[24px] overflow-hidden bg-white shadow-[0_6px_20px_rgba(15,45,54,0.04)]">
+                  {faqItems.map((item, index) => (
+                    <div key={item.question} className="border-t border-[rgba(15,45,54,0.08)] first:border-t-0 bg-white">
+                      <button
+                        type="button"
+                        onClick={() => toggleFaqItem(index)}
+                        className="w-full px-[24px] py-[18px] flex items-center justify-between text-left hover:bg-[#F8FAFC] transition-colors cursor-pointer"
+                      >
+                        <span className="text-[#2D4A55] text-[15px] italic font-semibold">{item.question}</span>
+                        <ChevronDown className={`w-[16px] h-[16px] text-[#6B7F88] transition-transform ${openFaqIndex === index ? "rotate-180" : ""}`} />
+                      </button>
+                      {openFaqIndex === index && (
+                        <div className="px-[24px] pb-[20px] border-t border-[rgba(15,45,54,0.04)] pt-[16px]">
+                          <p className="text-[#5D717A] text-[13px] italic leading-[1.7] mb-[8px]">{item.answerTitle}</p>
+                          {item.lines.map((line) => (
+                            <p key={line} className="text-[#5D717A] text-[12px] italic leading-[1.7]">
+                              {line}
+                            </p>
+                          ))}
 
-              <div className="hidden lg:block border border-[rgba(15,45,54,0.12)] rounded-[6px] p-[28px] bg-[#E9EEF4]">
-                <h4 className="text-[#264991] text-[16px] leading-[1.25] font-bold mb-[12px] flex items-center gap-[10px]">
-                  <Heart className="w-[22px] h-[22px]" />
-                  Covered by Tenant Protection
-                </h4>
-                <p className="text-[#274A93] text-[14px] leading-[1.6] mb-[16px] max-w-[420px]">
-                  You're guaranteed a stress-free move-in or your money back.
-                </p>
-
-                {isProtectionExpanded && (
-                  <div className="space-y-[18px] mb-[18px]">
-                    <div className="flex items-start gap-[10px]">
-                      <CheckCircle2 className="w-[22px] h-[22px] text-[#264991] mt-[2px] shrink-0" />
+                          {item.videoUrl && item.videoThumbnail && (
+                            <a
+                              href={item.videoUrl}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="mt-[10px] block max-w-[420px] border border-[rgba(0,0,0,0.18)] bg-white rounded-[12px] overflow-hidden"
+                            >
+                              <div className="relative">
+                                <img src={item.videoThumbnail} alt="Tenant Protection video" className="w-full h-[210px] object-cover" />
+                                <div className="absolute inset-0 flex items-center justify-center">
+                                  <div className="w-[58px] h-[40px] rounded-[8px] bg-[#FF0000] flex items-center justify-center">
+                                    <div className="w-0 h-0 border-t-[8px] border-b-[8px] border-l-[13px] border-t-transparent border-b-transparent border-l-white ml-[2px]" />
+                                  </div>
+                                </div>
+                              </div>
+                            </a>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </section>
+            </div>
+            {/* Right Column - Sidebar */}
+              <div className="lg:flex-[1]">
+                <div className="space-y-[10px] lg:sticky lg:top-[100px]">
+                  <div className="hidden lg:block border border-[rgba(15,45,54,0.1)] rounded-[20px] bg-white shadow-[0_8px_30px_rgba(15,45,54,0.04)] overflow-hidden">
+                    <div className="px-[24px] py-[18px] flex items-center gap-[14px] border-b border-[rgba(15,45,54,0.08)] bg-white">
+                      <UserAvatar
+                        name={listing?.landlord?.name}
+                        profilePictureUrl={listing?.landlord?.profilePictureUrl}
+                        sizeClassName="w-[64px] h-[64px] shrink-0 border border-[rgba(15,45,54,0.16)]"
+                        textClassName="text-[#0F2D36] text-[20px] font-bold bg-[#EAF2FF]"
+                      />
                       <div>
-                        <p className="text-[#264991] text-[16px] font-bold mb-[4px]">Protection against the unexpected</p>
-                        <p className="text-[#274A93] text-[14px] leading-[1.6]">
-                          If the landlord cancels last minute or delays your move-in, you'll get help finding another place or a temporary hotel stay.
+                        <p className="text-[#0F2D36] text-[16px] leading-[1.2] font-bold mb-[6px]">{listing?.landlord?.name ?? "Landlord"}</p>
+                        <p className="text-[#0F2D36] text-[14px] leading-[1] flex items-center gap-[6px]">
+                          <ShieldCheck className="w-[16px] h-[16px] text-[#0E7A48]" />
+                          Verified
                         </p>
                       </div>
                     </div>
 
-                    <div className="flex items-start gap-[10px]">
-                      <CheckCircle2 className="w-[22px] h-[22px] text-[#264991] mt-[2px] shrink-0" />
-                      <div>
-                        <p className="text-[#264991] text-[16px] font-bold mb-[4px]">Quick support</p>
-                        <p className="text-[#274A93] text-[14px] leading-[1.6]">
-                          If something goes wrong with your rental, we can help make it right.
+                    <div className="px-[16px] sm:px-[24px] py-[16px] sm:py-[18px]">
+                      <div className="flex items-center justify-between mb-[14px]">
+                        <p className="text-[#2F4653] text-[14px] leading-[1.2]">1st available move-in date:</p>
+                        <p className="text-[#2F4653] text-[14px] leading-[1.2] font-bold">
+                          {new Date(listing.availableFrom).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })}
                         </p>
                       </div>
-                    </div>
 
-                    <div className="flex items-start gap-[10px]">
-                      <CheckCircle2 className="w-[22px] h-[22px] text-[#264991] mt-[2px] shrink-0" />
-                      <div>
-                        <p className="text-[#264991] text-[16px] font-bold mb-[4px]">Move-in with confidence</p>
-                        <p className="text-[#274A93] text-[14px] leading-[1.6]">
-                          We keep your payment safe until you move in. If the place doesn't match the description, you'll get a refund.
+                      <button
+                        type="button"
+                        onClick={handleOpenDateSelector}
+                        className="w-full h-[52px] mb-[16px] flex items-center justify-center gap-[8px] border border-[rgba(15,45,54,0.18)] rounded-full text-[#0F2D36] hover:bg-[#F1F5F9] transition-colors"
+                      >
+                        <Calendar className="w-[20px] h-[20px]" />
+                        <span className="text-[16px] leading-[1] font-semibold">
+                          {selectedStartDate && selectedEndDate
+                            ? `${new Date(selectedStartDate).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })} - ${new Date(selectedEndDate).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })}`
+                            : "Move in - Move out"}
+                        </span>
+                      </button>
+
+                      {hasSelectedDateRange && (
+                        <>
+                          <div className="space-y-[10px] pb-[14px] border-b border-[rgba(15,45,54,0.14)]">
+                            <div className="flex items-center justify-between">
+                              <p className="text-[#2F4653] text-[15px] leading-[1.2] flex items-center gap-[6px]">
+                                {rentLineLabel}
+                                <span className="relative inline-flex items-center group">
+                                  <Info className="w-[14px] h-[14px] cursor-help" aria-hidden="true" />
+                                  <span className="pointer-events-none absolute left-1/2 top-[calc(100%+8px)] z-[20] -translate-x-1/2 whitespace-nowrap rounded-[4px] bg-[#0F2D36] px-[8px] py-[6px] text-[12px] leading-[1.3] font-medium text-white opacity-0 shadow-[0_8px_24px_rgba(0,0,0,0.24)] transition-opacity duration-150 group-hover:opacity-100">
+                                    Only the first month's rent is charged now. Remaining months are paid directly to the landlord.
+                                  </span>
+                                </span>
+                              </p>
+                              <p className="text-[#2F4653] text-[15px] leading-[1.2]">{formatCurrency(firstMonthRentAmount, listing?.currency)}</p>
+                            </div>
+                            <div className="flex items-center justify-between">
+                              <p className="text-[#2F4653] text-[15px] leading-[1.2] flex items-center gap-[6px]">
+                                Tenant Protection fee
+                                <span className="relative inline-flex items-center group">
+                                  <Info className="w-[14px] h-[14px] cursor-help" aria-hidden="true" />
+                                  <span className="pointer-events-none absolute left-1/2 top-[calc(100%+8px)] z-[20] -translate-x-1/2 whitespace-nowrap rounded-[4px] bg-[#0F2D36] px-[8px] py-[6px] text-[12px] leading-[1.3] font-medium text-white opacity-0 shadow-[0_8px_24px_rgba(0,0,0,0.24)] transition-opacity duration-150 group-hover:opacity-100">
+                                    Fee for payment protection and move-in support.
+                                  </span>
+                                </span>
+                              </p>
+                              <p className="text-[#2F4653] text-[15px] leading-[1.2]">{formatCurrency(tenantProtectionFee, listing?.currency)}</p>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center justify-between py-[14px]">
+                            <p className="text-[#2F4653] text-[18px] leading-[1.2] font-bold">To confirm stay</p>
+                            <p className="text-[#2F4653] text-[18px] leading-[1.2] font-bold">{formatCurrency(amountToConfirmStay, listing?.currency)}</p>
+                          </div>
+                        </>
+                      )}
+
+                      <button
+                        type="button"
+                        onClick={handleOpenPaymentsDrawer}
+                        className="flex items-center gap-[8px] text-[#0F2D36] text-[15px] leading-[1.2] font-semibold underline decoration-dotted underline-offset-[4px] mb-[16px] hover:text-[#0A2530] transition-colors cursor-pointer"
+                      >
+                        <FileText className="w-[16px] h-[16px]" />
+                        View all payments
+                      </button>
+
+                      <button
+                        onClick={handleApplyToRent}
+                        disabled={user?.role === "landlord" || hasApplied}
+                        className="hidden lg:flex w-full h-[52px] items-center justify-center rounded-full bg-brand-primary text-white text-[15px] leading-[1] font-bold hover:bg-brand-primary-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {hasApplied ? "Application already submitted" : "Apply to rent"}
+                      </button>
+
+                      {hasApplied && (
+                        <p className="mt-[8px] text-[12px] text-[#6B6B6B]">
+                          You already applied for this property{applicationStatus ? ` (${applicationStatus})` : ""}.
                         </p>
-                      </div>
+                      )}
                     </div>
                   </div>
-                )}
 
-                <button
-                  type="button"
-                  onClick={() => setIsProtectionExpanded((prev) => !prev)}
-                  className="text-[#264991] text-[14px] font-medium underline decoration-dotted underline-offset-[4px] flex items-center gap-[6px] hover:text-[#1D3F85] transition-colors cursor-pointer"
-                >
-                  How you're protected
-                  <ChevronDown className={`w-[14px] h-[14px] transition-transform ${isProtectionExpanded ? "rotate-180" : ""}`} />
-                </button>
-              </div>
+                  <div className="hidden lg:block border border-[rgba(15,45,54,0.1)] rounded-[20px] p-[24px] bg-[#F8FAFC]">
+                    <h4 className="text-[#0F2D36] text-[16px] leading-[1.2] font-bold mb-[14px]">Not ready to apply?</h4>
+                    <p className="text-[#173743] text-[14px] leading-[1.55] mb-[18px] max-w-[420px]">
+                      Ask the landlord questions, share info, and see if there's a match. Get the answers you need to rent with peace of mind.
+                    </p>
+                    <button
+                      onClick={handleMessageLandlord}
+                      disabled={user?.role === "landlord"}
+                      className="w-full h-[50px] flex items-center justify-center gap-[10px] border-2 border-[#CBD5E1] rounded-full text-[#0F2D36] text-[14px] font-semibold hover:bg-[#F1F5F9] transition-colors cursor-pointer disabled:opacity-50"
+                    >
+                      <MessageSquare className="w-[18px] h-[18px]" />
+                      Message landlord
+                    </button>
+                  </div>
 
-              <div className="hidden lg:block border border-[rgba(15,45,54,0.18)] rounded-[6px] p-[28px] bg-[#F8FAFC]">
-                <h4 className="text-[#0F2D36] text-[16px] leading-[1.2] font-bold mb-[12px] flex items-center gap-[10px]">
-                  <FileText className="w-[22px] h-[22px]" />
-                  Digital Contract
-                </h4>
-                <p className="text-[#173743] text-[14px] leading-[1.55] mb-[16px] max-w-[420px]">
-                  Easily review and sign your rental agreement online. Secure, fast, and hassle-free.
-                </p>
-                {/* <button className="text-[#0F2D36] text-[14px] font-medium underline decoration-dotted underline-offset-[4px] hover:text-[#0A2530] transition-colors cursor-pointer">
+                  <div className="hidden lg:block border border-[rgba(15,45,54,0.08)] rounded-[20px] p-[24px] bg-[#EDF2F8]">
+                    <h4 className="text-[#264991] text-[16px] leading-[1.25] font-bold mb-[12px] flex items-center gap-[10px]">
+                      <Heart className="w-[22px] h-[22px]" />
+                      Covered by Tenant Protection
+                    </h4>
+                    <p className="text-[#274A93] text-[14px] leading-[1.6] mb-[16px] max-w-[420px]">
+                      You're guaranteed a stress-free move-in or your money back.
+                    </p>
+
+                    {isProtectionExpanded && (
+                      <div className="space-y-[18px] mb-[18px]">
+                        <div className="flex items-start gap-[10px]">
+                          <CheckCircle2 className="w-[22px] h-[22px] text-[#264991] mt-[2px] shrink-0" />
+                          <div>
+                            <p className="text-[#264991] text-[16px] font-bold mb-[4px]">Protection against the unexpected</p>
+                            <p className="text-[#274A93] text-[14px] leading-[1.6]">
+                              If the landlord cancels last minute or delays your move-in, you'll get help finding another place or a temporary hotel stay.
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-start gap-[10px]">
+                          <CheckCircle2 className="w-[22px] h-[22px] text-[#264991] mt-[2px] shrink-0" />
+                          <div>
+                            <p className="text-[#264991] text-[16px] font-bold mb-[4px]">Quick support</p>
+                            <p className="text-[#274A93] text-[14px] leading-[1.6]">
+                              If something goes wrong with your rental, we can help make it right.
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-start gap-[10px]">
+                          <CheckCircle2 className="w-[22px] h-[22px] text-[#264991] mt-[2px] shrink-0" />
+                          <div>
+                            <p className="text-[#264991] text-[16px] font-bold mb-[4px]">Move-in with confidence</p>
+                            <p className="text-[#274A93] text-[14px] leading-[1.6]">
+                              We keep your payment safe until you move in. If the place doesn't match the description, you'll get a refund.
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    <button
+                      type="button"
+                      onClick={() => setIsProtectionExpanded((prev) => !prev)}
+                      className="text-[#264991] text-[14px] font-medium underline decoration-dotted underline-offset-[4px] flex items-center gap-[6px] hover:text-[#1D3F85] transition-colors cursor-pointer"
+                    >
+                      How you're protected
+                      <ChevronDown className={`w-[14px] h-[14px] transition-transform ${isProtectionExpanded ? "rotate-180" : ""}`} />
+                    </button>
+                  </div>
+
+                  <div className="hidden lg:block border border-[rgba(15,45,54,0.1)] rounded-[20px] p-[24px] bg-[#F8FAFC]">
+                    <h4 className="text-[#0F2D36] text-[16px] leading-[1.2] font-bold mb-[12px] flex items-center gap-[10px]">
+                      <FileText className="w-[22px] h-[22px]" />
+                      Digital Contract
+                    </h4>
+                    <p className="text-[#173743] text-[14px] leading-[1.55] mb-[16px] max-w-[420px]">
+                      Easily review and sign your rental agreement online. Secure, fast, and hassle-free.
+                    </p>
+                    {/* <button className="text-[#0F2D36] text-[14px] font-medium underline decoration-dotted underline-offset-[4px] hover:text-[#0A2530] transition-colors cursor-pointer">
                   Learn more
-                </button> */}
+                  </button> */}
+                  </div>       </div>
               </div>
             </div>
           </div>
-        </div>
         )}
       </div>
 
       {listing && (
-        <div className="fixed inset-x-0 bottom-0 z-[85] border-t border-[rgba(15,45,54,0.16)] bg-white px-[14px] pt-[10px] pb-[calc(10px+env(safe-area-inset-bottom))] lg:hidden">
-          <div className="mx-auto max-w-[640px] rounded-[18px] border border-[rgba(15,45,54,0.14)] bg-[#F8FAFC] p-[14px] shadow-[0_-8px_22px_rgba(15,45,54,0.14)]">
+        <div className="fixed inset-x-0 bottom-0 z-[85] border-t border-[rgba(15,45,54,0.1)] bg-white px-[14px] pt-[10px] pb-[calc(10px+env(safe-area-inset-bottom))] lg:hidden">
+          <div className="mx-auto max-w-[640px] rounded-[24px] border border-[rgba(15,45,54,0.12)] bg-[#F8FAFC] p-[16px] shadow-[0_-8px_30px_rgba(15,45,54,0.12)]">
             <div className="mb-[12px] flex items-end gap-[4px]">
               <span className="text-[#0F2D36] text-[34px] leading-[1] font-bold">{formatCurrency(listing.monthlyRent, listing.currency).replace(".00", "")}</span>
               <span className="text-[#0F2D36] text-[16px] leading-[1.1] font-medium">/month</span>
@@ -2098,7 +2207,7 @@ export function PropertyListing() {
             <button
               type="button"
               onClick={handleOpenDateSelector}
-              className="mb-[14px] w-full h-[56px] flex items-center justify-center gap-[8px] border border-[rgba(15,45,54,0.35)] rounded-[14px] text-[#0F2D36] hover:bg-[#EEF3F7] transition-colors"
+              className="mb-[14px] w-full h-[52px] flex items-center justify-center gap-[8px] border border-[rgba(15,45,54,0.18)] rounded-full text-[#0F2D36] hover:bg-[#F1F5F9] transition-colors"
             >
               <Calendar className="w-[20px] h-[20px]" />
               <span className="text-[16px] leading-[1] font-semibold">
@@ -2123,7 +2232,7 @@ export function PropertyListing() {
                 onClick={handleMessageLandlord}
                 disabled={user?.role === "landlord"}
                 aria-label="Message landlord"
-                className="inline-flex h-[58px] w-[58px] items-center justify-center rounded-[14px] border-[3px] border-[#B8C8D4] bg-white text-[#0F2D36] hover:bg-[#EEF3F7] transition-colors disabled:opacity-50"
+                className="inline-flex h-[52px] w-[52px] items-center justify-center rounded-full border-2 border-[#CBD5E1] bg-white text-[#0F2D36] hover:bg-[#F1F5F9] transition-colors disabled:opacity-50"
               >
                 <MessageSquare className="h-[20px] w-[20px]" />
               </button>
@@ -2131,7 +2240,7 @@ export function PropertyListing() {
                 type="button"
                 onClick={handleApplyToRent}
                 disabled={user?.role === "landlord" || hasApplied}
-                className="flex h-[58px] flex-1 items-center justify-center rounded-[14px] bg-brand-primary text-white text-[16px] leading-[1] font-bold hover:bg-brand-primary-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex h-[52px] flex-1 items-center justify-center rounded-full bg-brand-primary text-white text-[15px] leading-[1] font-bold hover:bg-brand-primary-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {hasApplied ? "Application submitted" : "Apply to rent"}
               </button>
@@ -2146,15 +2255,13 @@ export function PropertyListing() {
             type="button"
             aria-label="Close payments drawer"
             onClick={handleClosePaymentsDrawer}
-            className={`absolute inset-0 bg-black/30 transition-opacity duration-300 ${
-              isPaymentsDrawerVisible ? "opacity-100" : "opacity-0"
-            }`}
+            className={`absolute inset-0 bg-black/30 transition-opacity duration-300 ${isPaymentsDrawerVisible ? "opacity-100" : "opacity-0"
+              }`}
           />
 
           <aside
-            className={`absolute right-0 top-0 h-full w-full max-w-[640px] bg-white shadow-[0_12px_38px_rgba(0,0,0,0.28)] overflow-y-auto transition-transform duration-300 ease-out ${
-              isPaymentsDrawerVisible ? "translate-x-0" : "translate-x-full"
-            }`}
+            className={`absolute right-0 top-0 h-full w-full max-w-[640px] bg-white shadow-[0_12px_38px_rgba(0,0,0,0.28)] overflow-y-auto transition-transform duration-300 ease-out ${isPaymentsDrawerVisible ? "translate-x-0" : "translate-x-full"
+              }`}
           >
             <div className="sticky top-0 z-[2] bg-white border-b border-[rgba(15,45,54,0.14)] px-[24px] py-[20px] flex items-center justify-between">
               <h3 className="text-[#0F2D36] text-[30px] leading-[1.05] font-bold">Total payments</h3>

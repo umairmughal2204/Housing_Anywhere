@@ -42,10 +42,10 @@ export function PropertyCard({
   return (
     <Link 
       to={`/property/${id}`}
-      className="block bg-white border border-[rgba(0,0,0,0.08)] hover:border-[rgba(0,0,0,0.16)] transition-all"
+      className="block bg-white border border-[rgba(0,0,0,0.06)] shadow-[0_6px_20px_rgba(0,0,0,0.04)] rounded-[24px] overflow-hidden transition-all duration-200 hover:shadow-[0_10px_30px_rgba(0,0,0,0.08)] hover:-translate-y-[2px]"
     >
       {/* Image Container - 16:9 aspect ratio */}
-      <div className="relative aspect-[16/9] overflow-hidden bg-[#F7F7F9] group">
+      <div className="relative aspect-[16/9] overflow-hidden bg-[#F7F7F9] group rounded-t-[24px]">
         <img
           src={images[currentImageIndex]}
           alt={title}
@@ -54,9 +54,9 @@ export function PropertyCard({
         
         {/* Verified Badge */}
         {verified && (
-          <div className="absolute top-[8px] left-[8px] bg-[#2563EB] text-white px-[8px] py-[4px] flex items-center gap-[4px]">
-            <Check className="w-[12px] h-[12px]" />
-            <span className="uppercase tracking-[0.05em] text-[11px] font-semibold">
+          <div className="absolute top-[12px] left-[12px] bg-[#F7EFE9] text-[#5C4533] px-[12px] py-[4.5px] rounded-[6px] text-[11px] font-semibold tracking-[0.02em] shadow-sm flex items-center gap-[4px]">
+            <Check className="w-[12px] h-[12px] text-[#A78B71]" />
+            <span className="uppercase text-[11px] font-semibold">
               Verified
             </span>
           </div>

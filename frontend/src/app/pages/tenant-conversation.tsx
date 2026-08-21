@@ -1,5 +1,6 @@
-﻿import { Link, useParams, useNavigate } from "react-router";
+import { Link, useParams, useNavigate } from "react-router";
 import { useState, useEffect, useRef, useCallback } from "react";
+import { Header } from "../components/header";
 import { ChevronLeft, Send, MapPin, Home, Wifi } from "lucide-react";
 import { useAuth } from "../contexts/auth-context";
 import { ImageWithFallback } from "../components/figma/ImageWithFallback";
@@ -286,38 +287,7 @@ export function TenantConversation() {
   return (
     <div className="min-h-screen bg-white flex flex-col">
       {/* Header */}
-      <header className="border-b border-[rgba(0,0,0,0.08)] bg-white sticky top-0 z-50">
-        <div className="max-w-[1440px] mx-auto px-[16px] sm:px-[24px] lg:px-[32px] py-[14px] flex items-center gap-[10px] sm:gap-[16px]">
-          <button
-            onClick={() => navigate("/tenant/inbox")}
-            className="flex items-center gap-[8px] text-[#1A1A1A] hover:text-brand-primary transition-colors"
-          >
-            <ChevronLeft className="w-[18px] h-[18px]" />
-            <span className="text-[14px] font-semibold">Inbox</span>
-          </button>
-
-          <div className="flex-1" />
-
-          <Link to="/" className="flex items-center gap-[8px]">
-            <BrandLogo className="h-[60px] sm:h-[68px]" />
-          </Link>
-
-          <div className="flex-1 flex justify-end">
-            <div
-              className={`flex items-center gap-[6px] text-[12px] font-medium px-[10px] py-[4px] rounded-full ${
-                !isConnected
-                  ? "bg-[#F7F7F9] text-[#6B6B6B]"
-                  : otherUserOnline
-                    ? "bg-green-50 text-green-700"
-                    : "bg-[#F7F7F9] text-[#6B6B6B]"
-              }`}
-            >
-              <Wifi className="w-[12px] h-[12px]" />
-              {!isConnected ? "Connecting" : otherUserOnline ? "Online" : "Offline"}
-            </div>
-          </div>
-        </div>
-      </header>
+      <Header variant="dashboard" dashboardButtonFilled={false} />
 
       {metaError && (
         <div className="max-w-[900px] mx-auto px-[16px] sm:px-[24px] lg:px-[32px] py-[40px] text-center">
@@ -332,9 +302,31 @@ export function TenantConversation() {
         <div className="flex-1 max-w-[1200px] mx-auto w-full px-[16px] sm:px-[24px] lg:px-[32px] py-[16px] lg:py-[28px] flex flex-col lg:flex-row gap-[16px] lg:gap-[28px]">
           {/*  Chat column  */}
           <div className="flex-[2] flex flex-col min-h-0">
+            {/* Back action & status row */}
+            <div className="flex items-center justify-between mb-[16px] bg-[#F8FAFC] rounded-[10px] p-[12px] border border-[#E2E8F0]">
+              <button
+                onClick={() => navigate("/tenant/inbox")}
+                className="flex items-center gap-[6px] text-[#1A1A1A] hover:text-[#0F2D36] transition-colors"
+              >
+                <ChevronLeft className="w-[18px] h-[18px]" />
+                <span className="text-[14px] font-bold">Back to Inbox</span>
+              </button>
+              <div
+                className={`flex items-center gap-[6px] text-[12px] font-bold px-[10px] py-[4px] rounded-full ${
+                  !isConnected
+                    ? "bg-[#F1F5F9] text-[#6B7280]"
+                    : otherUserOnline
+                      ? "bg-green-50 text-green-700"
+                      : "bg-[#F1F5F9] text-[#6B7280]"
+                }`}
+              >
+                <Wifi className="w-[12px] h-[12px]" />
+                {!isConnected ? "Connecting" : otherUserOnline ? "Online" : "Offline"}
+              </div>
+            </div>
             {/* Other user header */}
             {meta && (
-              <div className="flex items-center gap-[12px] mb-[16px] p-[16px] bg-[#F7F7F9] rounded-[16px] border border-[rgba(0,0,0,0.08)]">
+              <div className="flex items-center gap-[12px] mb-[16px] p-[16px] bg-[#F7F7F9] rounded-[10px] border border-[rgba(0,0,0,0.08)]">
                 <div
                   className="w-[40px] h-[40px] rounded-full flex-shrink-0 flex items-center justify-center text-white text-[15px] font-bold"
                   style={{ backgroundColor: avatarColor(meta.otherUser.initials) }}
@@ -375,7 +367,7 @@ export function TenantConversation() {
             {/* Messages area */}
             <div
               ref={messagesContainerRef}
-              className={`flex-1 overflow-y-auto bg-white rounded-[16px] border border-[rgba(0,0,0,0.08)] p-[20px] min-h-[400px] max-h-[560px] space-y-[4px] ${isLoadingHistory && messages.length === 0 ? 'hidden' : ''}`}
+              className={`flex-1 overflow-y-auto bg-white rounded-[10px] border border-[rgba(0,0,0,0.08)] p-[20px] min-h-[400px] max-h-[560px] space-y-[4px] ${isLoadingHistory && messages.length === 0 ? 'hidden' : ''}`}
             >
               {grouped.length === 0 && !isLoadingHistory && (
                 <div className="h-full flex items-center justify-center">
@@ -451,7 +443,7 @@ export function TenantConversation() {
             </div>
 
             {/* Input area */}
-            <div className="mt-[12px] rounded-[16px] overflow-hidden border border-[rgba(0,0,0,0.12)] bg-white">
+            <div className="mt-[12px] rounded-[10px] overflow-hidden border border-[rgba(0,0,0,0.12)] bg-white">
               <textarea
                 value={inputText}
                 onChange={handleInput}
@@ -485,7 +477,7 @@ export function TenantConversation() {
             {meta && (
               <>
                 {/* Listing card */}
-                <div className="border border-[rgba(0,0,0,0.08)] rounded-[16px] overflow-hidden">
+                <div className="border border-[rgba(0,0,0,0.08)] rounded-[10px] overflow-hidden">
                   <div className="h-[140px] overflow-hidden bg-[#F1F1F1]">
                     <ImageWithFallback
                       src={meta.listing.image}
@@ -517,7 +509,7 @@ export function TenantConversation() {
 
                 {/* Apply CTA */}
                 {applicationStatus?.hasApplied ? (
-                  <div className="bg-[#F0FDF4] border border-[#86EFAC] rounded-[16px] p-[14px]">
+                  <div className="bg-[#F0FDF4] border border-[#86EFAC] rounded-[10px] p-[14px]">
                     <p className="text-[13px] text-[#166534] font-bold mb-[4px]">
                       Application submitted
                     </p>

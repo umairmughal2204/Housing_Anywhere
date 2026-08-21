@@ -86,7 +86,7 @@ const OCCUPATION_LABELS: Record<Occupation, string> = {
 };
 
 export function Account() {
-  const { user, updateProfile, updateContactDetails, changePassword, uploadProfilePicture, deleteAccount } = useAuth();
+  const { user, isAuthenticated, updateProfile, updateContactDetails, changePassword, uploadProfilePicture, deleteAccount } = useAuth();
   const navigate = useNavigate();
   const profilePictureInputRef = useRef<HTMLInputElement>(null);
 
@@ -341,7 +341,7 @@ export function Account() {
 
   return (
     <div className="min-h-screen flex flex-col bg-[#F7F7F9]">
-      <Header />
+      <Header variant={isAuthenticated ? "dashboard" : "default"} dashboardButtonFilled={false} />
 
       <main className="flex-1 py-[24px] sm:py-[32px] md:py-[40px]">
         <div className="max-w-[1200px] mx-auto px-[16px] sm:px-[20px] md:px-[32px]">

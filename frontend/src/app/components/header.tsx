@@ -14,6 +14,35 @@ interface HeaderConversationItem {
   unread: number;
 }
 
+const getLanguageFlag = (label: string) => {
+  switch (label.toLowerCase()) {
+    case "english": return "🇺🇸";
+    case "español": return "🇪🇸";
+    case "français": return "🇫🇷";
+    case "deutsch": return "🇩🇪";
+    case "italiano": return "🇮🇹";
+    case "nederlands": return "🇳🇱";
+    case "português": return "🇵🇹";
+    case "polski": return "🇵🇱";
+    case "türkçe": return "🇹🇷";
+    case "العربية": return "🇸🇦";
+    case "हिन्दी": return "🇮🇳";
+    case "اردو": return "🇵🇰";
+    case "বাংলা": return "🇧🇩";
+    case "русский": return "🇷🇺";
+    case "bahasa indonesia": return "🇮🇩";
+    case "فارسی": return "🇮🇷";
+    case "українська": return "🇺🇦";
+    case "tiếng việt": return "🇻🇳";
+    case "ไทย": return "🇹🇭";
+    case "中文": return "🇨🇳";
+    case "繁體中文": return "🇹🇼";
+    case "日本語": return "🇯🇵";
+    case "한국어": return "🇰🇷";
+    default: return "🇺🇸";
+  }
+};
+
 interface HeaderProps {
   variant?: "default" | "dashboard";
   logoVariant?: "brand" | "favicon" | "mobile-favicon";
@@ -71,7 +100,7 @@ export function Header({
         setShowMobileNotifications(false);
       }
     }
-    
+
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
@@ -161,13 +190,13 @@ export function Header({
   const mobileBottomNavItems = [
     ...(user?.isLandlord
       ? [
-          {
-            label: "Dashboard",
-            href: "/landlord/dashboard",
-            icon: LayoutDashboard,
-            active: isPathActive(["/landlord/dashboard"]),
-          },
-        ]
+        {
+          label: "Dashboard",
+          href: "/landlord/dashboard",
+          icon: LayoutDashboard,
+          active: isPathActive(["/landlord/dashboard"]),
+        },
+      ]
       : []),
     {
       label: "Messages",
@@ -214,8 +243,8 @@ export function Header({
   };
 
   return (
-    <header className={isDashboardVariant ? "bg-white border-b border-[#E3E8EE] shadow-[0_1px_2px_rgba(15,23,42,0.04)] sticky top-0 z-[80]" : "sticky top-0 z-[80] bg-white/96 backdrop-blur-md shadow-[0_10px_30px_rgba(2,22,33,0.08)] rounded-b-[30px] border-b border-[rgba(11,165,199,0.14)]"}>
-      <div className={isDashboardVariant ? "max-w-[1440px] mx-auto px-[10px] sm:px-[20px] lg:px-[28px] py-[12px] sm:py-[16px] flex items-center justify-between gap-[10px] sm:gap-[20px]" : "relative max-w-[1440px] mx-auto px-[16px] sm:px-[32px] py-[14px] sm:py-[18px] flex items-center justify-between"}>
+    <header className={isDashboardVariant ? "bg-white border-b border-[#E3E8EE] shadow-[0_1px_2px_rgba(15,23,42,0.04)] sticky top-0 z-[80]" : "sticky top-0 z-[80] bg-white/96 backdrop-blur-md shadow-[0_10px_30px_rgba(2,22,33,0.08)] border-b border-[rgba(11,165,199,0.14)]"}>
+      <div className={isDashboardVariant ? "max-w-[1440px] mx-auto px-[10px] sm:px-[20px] lg:px-[28px] py-[8px] sm:py-[10px] flex items-center justify-between gap-[10px] sm:gap-[20px]" : "relative max-w-[1440px] mx-auto px-[16px] sm:px-[32px] py-[10px] sm:py-[12px] flex items-center justify-between"}>
         {!isDashboardVariant && (
           <div className="pointer-events-none absolute inset-x-[18px] bottom-[8px] h-[1px] bg-[linear-gradient(90deg,transparent,rgba(11,165,199,0.26),transparent)]" />
         )}
@@ -225,13 +254,13 @@ export function Header({
             <img
               src={faviconLogo}
               alt="ReserveHousing"
-              className={`${showDesktopBrandLogo ? "md:hidden" : ""} h-[34px] w-[34px] object-contain`}
+              className={`${showDesktopBrandLogo ? "md:hidden" : ""} h-[30px] w-[30px] object-contain`}
             />
           ) : (
-            <BrandLogo className={isDashboardVariant ? "h-[48px] sm:h-[62px] lg:h-[72px]" : isAuthenticated ? "h-[56px] sm:h-[72px] lg:h-[90px]" : "h-[48px] sm:h-[62px] lg:h-[72px]"} />
+            <BrandLogo className={isDashboardVariant ? "h-[48px] sm:h-[58px] lg:h-[66px]" : isAuthenticated ? "h-[54px] sm:h-[68px] lg:h-[84px]" : "h-[48px] sm:h-[58px] lg:h-[66px]"} />
           )}
           {showMobileFaviconLogo && showDesktopBrandLogo && (
-            <BrandLogo className="hidden md:block h-[48px] sm:h-[62px] lg:h-[72px]" />
+            <BrandLogo className="hidden md:block h-[48px] sm:h-[58px] lg:h-[66px]" />
           )}
         </Link>
 
@@ -349,7 +378,7 @@ export function Header({
         {/* Right Actions - Logged Out */}
         {!isAuthenticated && (
           <div className="hidden md:flex items-center gap-[12px] sm:gap-[16px]">
-            <Link 
+            <Link
               to="/login"
               className="text-neutral-black text-[14px] font-medium hover:text-brand-primary transition-colors"
             >
@@ -364,9 +393,11 @@ export function Header({
             <div className="relative" ref={languageDropdownRef}>
               <button
                 onClick={() => setShowLanguageDropdown(!showLanguageDropdown)}
-                className="rounded-full p-[10px] hover:bg-neutral-light-gray transition-colors"
+                className="flex items-center gap-[6px] rounded-full px-[12px] py-[6px] border border-neutral-hover hover:bg-neutral-light-gray transition-all text-[14px] font-semibold text-[#374151]"
               >
-                <Globe className="w-[20px] h-[20px] text-neutral-gray" />
+                <span>EUR</span>
+                <span>•</span>
+                <span className="text-[16px] leading-none">{getLanguageFlag(selectedLanguage)}</span>
               </button>
 
               {/* Language Dropdown Menu */}
@@ -379,9 +410,8 @@ export function Header({
                         setPendingLanguage({ code: language.code, label: language.label });
                         setShowLanguageDropdown(false);
                       }}
-                      className={`w-full flex items-center justify-between px-[16px] py-[12px] text-neutral-black text-[14px] hover:bg-neutral-light-gray transition-colors ${
-                        selectedLanguage === language.label ? "bg-neutral-light-gray" : ""
-                      }`}
+                      className={`w-full flex items-center justify-between px-[16px] py-[12px] text-neutral-black text-[14px] hover:bg-neutral-light-gray transition-colors ${selectedLanguage === language.label ? "bg-neutral-light-gray" : ""
+                        }`}
                     >
                       <span>{language.label}</span>
                     </button>
@@ -396,43 +426,74 @@ export function Header({
         {isAuthenticated && (
           <div className="hidden md:flex items-center gap-[16px]">
             {isSearchHeaderVariant && (
-              <form onSubmit={handleHeaderSearchSubmit} className="min-w-0 w-[320px] lg:w-[380px] xl:w-[440px] mr-[4px] lg:mr-[8px]">
-                <label className="flex h-[62px] items-center gap-[14px] rounded-[18px] border border-[#AFC1D3] bg-white px-[14px] shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
-                  <Search className="h-[20px] w-[20px] flex-shrink-0 text-[#0F2D36]" />
+              <form onSubmit={handleHeaderSearchSubmit} className="min-w-0 w-[260px] lg:w-[320px] xl:w-[380px] mr-[4px] lg:mr-[8px]">
+                <label className="flex h-[46px] items-center gap-[8px] rounded-[14px] border border-[#AFC1D3] bg-white px-[12px] shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
+                  <Search className="h-[16px] w-[16px] flex-shrink-0 text-[#0F2D36]" />
                   <input
                     type="text"
                     value={headerSearchValue}
                     onChange={(event) => setHeaderSearchValue(event.target.value)}
                     placeholder={searchPlaceholderText}
                     aria-label="Search city"
-                    className="min-w-0 w-full bg-transparent text-[20px] font-medium text-[#0F2D36] placeholder:text-[#0F2D36] outline-none"
+                    className="min-w-0 w-full bg-transparent text-[14px] font-medium text-[#0F2D36] placeholder:text-[#0F2D36] outline-none"
                   />
                 </label>
               </form>
             )}
             {/* Show appropriate landlord button based on status */}
             {user?.isLandlord ? (
-              <Link 
+              <Link
                 to={isOnLandlordDashboard ? "/landlord/add-listing" : "/landlord/dashboard"}
                 className={dashboardButtonFilled
                   ? "inline-flex items-center gap-[8px] rounded-[14px] px-[16px] py-[11px] bg-brand-primary text-white text-[14px] font-semibold shadow-[0_1px_2px_rgba(15,23,42,0.04)] hover:bg-brand-primary-dark transition-colors"
-                  : "inline-flex items-center gap-[8px] rounded-[14px] border border-[#8C99A8] px-[16px] py-[11px] bg-white text-[#1F2937] text-[14px] font-semibold shadow-[0_1px_2px_rgba(15,23,42,0.04)] hover:bg-[#F5F7FA] hover:border-[#7A8898] hover:text-[#1F2937] transition-colors"}
+                  : "inline-flex items-center gap-[8px] rounded-[14px] border border-[#CBD5E1] px-[16px] py-[11px] bg-white text-[#1F2937] text-[14px] font-semibold shadow-[0_1px_2px_rgba(15,23,42,0.04)] hover:bg-brand-primary hover:border-brand-primary hover:text-white transition-all"}
               >
                 {isOnLandlordDashboard ? <FileText className="w-[16px] h-[16px]" /> : <LayoutDashboard className="w-[16px] h-[16px]" />}
                 {isOnLandlordDashboard ? "Add Listing" : "Go to Dashboard"}
               </Link>
             ) : (
-              <Link 
-                to="/landlord" 
+              <Link
+                to="/landlord"
                 className="rounded-full px-[16px] py-[10px] border border-neutral-hover text-neutral-black text-[14px] font-semibold hover:bg-neutral-light-gray transition-colors"
               >
                 I'm a landlord
               </Link>
             )}
 
+            {/* Language Icon with Dropdown */}
+            <div className="relative" ref={languageDropdownRef}>
+              <button
+                onClick={() => setShowLanguageDropdown(!showLanguageDropdown)}
+                className="flex items-center gap-[6px] rounded-full px-[12px] py-[6px] border border-neutral-hover hover:bg-neutral-light-gray transition-all text-[14px] font-semibold text-[#374151]"
+              >
+                <span>EUR</span>
+                <span>•</span>
+                <span className="text-[16px] leading-none">{getLanguageFlag(selectedLanguage)}</span>
+              </button>
+
+              {/* Language Dropdown Menu */}
+              {showLanguageDropdown && (
+                <div className="absolute top-[calc(100%+8px)] right-0 w-[180px] max-h-[260px] overflow-y-auto bg-white border border-neutral rounded-[16px] shadow-lg">
+                  {SUPPORTED_LANGUAGES.map((language) => (
+                    <button
+                      key={language.code}
+                      onClick={() => {
+                        setPendingLanguage({ code: language.code, label: language.label });
+                        setShowLanguageDropdown(false);
+                      }}
+                      className={`w-full flex items-center justify-between px-[16px] py-[12px] text-neutral-black text-[14px] hover:bg-neutral-light-gray transition-colors ${selectedLanguage === language.label ? "bg-neutral-light-gray" : ""
+                        }`}
+                    >
+                      <span>{language.label}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
             {/* Messages Icon with Badge */}
             <Link to={inboxHref} className="relative p-[10px] hover:bg-neutral-light-gray transition-colors">
-              <MessageCircle className="w-[20px] h-[20px] text-neutral-gray" />
+              <MessageCircle className="w-[20px] h-[20px] text-[#374151]" />
               {unreadMessages > 0 && (
                 <span className="absolute top-[4px] right-[4px] min-w-[16px] h-[16px] px-[4px] bg-brand-primary text-white text-[10px] font-bold flex items-center justify-center rounded-full">
                   {unreadMessages > 99 ? "99+" : unreadMessages}
@@ -442,7 +503,7 @@ export function Header({
 
             {/* Favorites Icon */}
             <Link to="/favorites" className="p-[10px] hover:bg-neutral-light-gray transition-colors">
-              <Heart className="w-[20px] h-[20px] text-neutral-gray" />
+              <Heart className="w-[20px] h-[20px] text-[#374151]" />
             </Link>
 
             {/* User Avatar with Dropdown */}
@@ -593,36 +654,6 @@ export function Header({
                       Log out
                     </button>
                   </div>
-                </div>
-              )}
-            </div>
-
-            {/* Language Icon with Dropdown */}
-            <div className="relative" ref={languageDropdownRef}>
-              <button
-                onClick={() => setShowLanguageDropdown(!showLanguageDropdown)}
-                className="p-[10px] hover:bg-neutral-light-gray transition-colors"
-              >
-                <Globe className="w-[20px] h-[20px] text-neutral-gray" />
-              </button>
-
-              {/* Language Dropdown Menu */}
-              {showLanguageDropdown && (
-                <div className="absolute top-[calc(100%+8px)] right-0 w-[180px] max-h-[260px] overflow-y-auto bg-white border border-neutral rounded-[16px] shadow-lg">
-                  {SUPPORTED_LANGUAGES.map((language) => (
-                    <button
-                      key={language.code}
-                      onClick={() => {
-                        setPendingLanguage({ code: language.code, label: language.label });
-                        setShowLanguageDropdown(false);
-                      }}
-                      className={`w-full flex items-center justify-between px-[16px] py-[12px] text-neutral-black text-[14px] hover:bg-neutral-light-gray transition-colors ${
-                        selectedLanguage === language.label ? "bg-neutral-light-gray" : ""
-                      }`}
-                    >
-                      <span>{language.label}</span>
-                    </button>
-                  ))}
                 </div>
               )}
             </div>
@@ -919,9 +950,8 @@ export function Header({
                           setPendingLanguage({ code: language.code, label: language.label });
                           setShowMobileLanguageOptions(false);
                         }}
-                        className={`flex w-full items-center justify-between px-[14px] py-[11px] text-left text-[13px] text-[#173E53] hover:bg-[#F5F8FB] ${
-                          selectedLanguage === language.label ? "bg-[#F5F8FB]" : "bg-white"
-                        }`}
+                        className={`flex w-full items-center justify-between px-[14px] py-[11px] text-left text-[13px] text-[#173E53] hover:bg-[#F5F8FB] ${selectedLanguage === language.label ? "bg-[#F5F8FB]" : "bg-white"
+                          }`}
                       >
                         {language.label}
                       </button>
@@ -944,9 +974,8 @@ export function Header({
                 <Link
                   key={item.label}
                   to={item.href}
-                  className={`flex flex-col items-center justify-center gap-[6px] rounded-[8px] px-[4px] py-[6px] text-center transition-colors ${
-                    item.active ? "text-[#11354B] bg-[#ECF2F7]" : "text-[#3A5568]"
-                  }`}
+                  className={`flex flex-col items-center justify-center gap-[6px] rounded-[8px] px-[4px] py-[6px] text-center transition-colors ${item.active ? "text-[#11354B] bg-[#ECF2F7]" : "text-[#3A5568]"
+                    }`}
                 >
                   <Icon className="h-[20px] w-[20px]" />
                   <span className="text-[11px] font-medium leading-[1.1]">{item.label}</span>
@@ -959,22 +988,22 @@ export function Header({
       )}
 
       {pendingLanguage && (
-        <div className="fixed inset-0 z-[120] bg-black/40 flex items-center justify-center p-[24px]">
-          <div className="w-full max-w-[460px] bg-white border border-[rgba(0,0,0,0.12)] p-[24px]">
+        <div className="fixed inset-0 z-[120] bg-neutral-black/40 backdrop-blur-[1px] flex items-center justify-center p-[24px] transition-all">
+          <div className="w-full max-w-[440px] bg-white border border-[rgba(0,0,0,0.06)] rounded-[24px] p-[28px] shadow-[0_16px_48px_rgba(0,0,0,0.16)]">
             <h3 className="text-neutral-black text-[20px] font-bold mb-[8px]">Change Language</h3>
-            <p className="text-neutral-gray text-[14px] leading-[1.6] mb-[20px]">
+            <p className="text-neutral-gray text-[14.5px] leading-[1.6] mb-[24px]">
               Switch site language to <span className="font-semibold text-neutral-black">{pendingLanguage.label}</span>?
             </p>
-            <div className="flex items-center justify-end gap-[10px]">
+            <div className="flex items-center justify-end gap-[12px]">
               <button
                 onClick={() => setPendingLanguage(null)}
-                className="px-[16px] py-[10px] border border-[rgba(0,0,0,0.16)] text-neutral-black text-[13px] font-semibold hover:bg-neutral-light-gray transition-colors"
+                className="px-[20px] py-[9px] border border-[#E2E8F0] text-neutral-black text-[13.5px] font-semibold rounded-full hover:bg-neutral-light-gray transition-all duration-150"
               >
                 Cancel
               </button>
               <button
                 onClick={confirmLanguageChange}
-                className="px-[16px] py-[10px] bg-brand-primary text-white text-[13px] font-semibold hover:bg-brand-primary-dark transition-colors"
+                className="px-[24px] py-[10px] bg-[#0891B2] text-white text-[13.5px] font-bold rounded-full shadow-[0_4px_10px_rgba(8,145,178,0.16)] hover:bg-[#0E7490] hover:shadow-[0_6px_14px_rgba(8,145,178,0.24)] transition-all duration-150"
               >
                 Confirm
               </button>

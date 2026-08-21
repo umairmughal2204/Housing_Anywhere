@@ -1,4 +1,5 @@
 import { Header } from "../components/header";
+import { useAuth } from "../contexts/auth-context";
 import { Footer } from "../components/footer";
 import { ChevronRight, ChevronDown, Check } from "lucide-react";
 import { useState } from "react";
@@ -8,6 +9,7 @@ import rentItOutImage from "../../assets/rent_it_out.svg";
 import getPaidImage from "../../assets/get_paid.svg";
 
 export function Pricing() {
+  const { isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<"tenants" | "landlords">("tenants");
   const [openFaq, setOpenFaq] = useState<number | null>(null);
@@ -63,7 +65,7 @@ export function Pricing() {
 
   return (
     <div className="min-h-screen bg-white">
-      <Header />
+      <Header variant={isAuthenticated ? "dashboard" : "default"} dashboardButtonFilled={false} />
 
       {/* Hero Section */}
       <section className="relative overflow-hidden bg-[#D8DFE9] pt-[42px] pb-[92px] md:pt-[64px] md:pb-[124px]">
@@ -104,8 +106,6 @@ export function Pricing() {
             </button>
           </div>
         </div>
-
-        <div className="pointer-events-none absolute left-1/2 bottom-[-90px] h-[155px] w-[1800px] -translate-x-1/2 rounded-[50%] bg-white" />
       </section>
 
       {/* Main Content Section */}

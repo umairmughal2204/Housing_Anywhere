@@ -47,6 +47,7 @@ import { HowItWorks } from "./pages/how-it-works";
 import { Pricing } from "./pages/pricing";
 
 import { Help } from "./pages/help";
+import { About } from "./pages/about";
 
 import { Login } from "./pages/login";
 
@@ -400,6 +401,16 @@ export const router = createBrowserRouter([
     path: "/help",
 
     Component: Help,
+
+    ErrorBoundary,
+
+  },
+
+  {
+
+    path: "/about",
+
+    Component: About,
 
     ErrorBoundary,
 

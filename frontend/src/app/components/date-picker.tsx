@@ -149,7 +149,7 @@ export function DatePicker({
   const renderMonth = (monthOffset: number) => {
     const viewDate = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + monthOffset, 1);
     const daysInMonth = new Date(viewDate.getFullYear(), viewDate.getMonth() + 1, 0).getDate();
-    const firstDayIndex = (new Date(viewDate.getFullYear(), viewDate.getMonth(), 1).getDay() + 6) % 7;
+    const firstDayIndex = new Date(viewDate.getFullYear(), viewDate.getMonth(), 1).getDay();
 
     const days = [];
     for (let i = 0; i < firstDayIndex; i++) days.push(null);
@@ -157,12 +157,12 @@ export function DatePicker({
 
     return (
       <div className="flex-1 min-w-0">
-        <h3 className={`text-[#0F2D36] text-center font-bold tracking-[-0.01em] ${isCompactPopover ? "text-[12px] mb-2" : "text-[15px] mb-3"}`}>
+        <h3 className={`text-[#0F2D36] text-center font-bold tracking-[-0.01em] md:hidden ${isCompactPopover ? "text-[12px] mb-2" : "text-[15px] mb-3"}`}>
           {viewDate.toLocaleDateString("en-GB", { month: "long", year: "numeric" })}
         </h3>
         <div className={`grid grid-cols-7 text-center gap-x-0 ${isCompactPopover ? "gap-y-[1px]" : "gap-y-[3px]"}`}>
-          {["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"].map(d => (
-            <div key={d} className={`text-[#9CB1BD] font-bold uppercase tracking-[0.04em] ${isCompactPopover ? "text-[8px] pb-1" : "text-[10px] pb-2"}`}>{d}</div>
+          {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map(d => (
+            <div key={d} className={`text-[#1A1A1A] font-semibold tracking-wide ${isCompactPopover ? "text-[8px] pb-1" : "text-[12px] pb-2"}`}>{d}</div>
           ))}
           {days.map((day, i) => {
             if (!day) return <div key={`empty-${i}`} />;
@@ -175,7 +175,7 @@ export function DatePicker({
             // Disable logic
             let isDisabled = false;
             if (selectingStart) {
-                isDisabled = day < baseAvailableDate;
+              isDisabled = day < baseAvailableDate;
             } else {
               isDisabled = day < (minAllowedMoveOut ?? baseAvailableDate) || (maxAllowedMoveOut ? day > maxAllowedMoveOut : false);
             }
@@ -194,11 +194,10 @@ export function DatePicker({
                 key={day.toISOString()}
                 onClick={() => handleDateClick(day)}
                 disabled={isDisabled}
-                className={`w-full font-semibold transition-all ${shapeClass} ${isCompactPopover ? "h-6 text-[10px]" : "h-9 text-[13px]"} ${
-                  isEdge ? "bg-brand-primary text-white font-bold shadow-[0_4px_10px_rgba(8,145,178,0.35)]" :
+                className={`w-full font-semibold transition-all ${shapeClass} ${isCompactPopover ? "h-6 text-[10px]" : "h-9 text-[13px]"} ${isEdge ? "bg-brand-primary text-white font-bold shadow-[0_4px_10px_rgba(8,145,178,0.35)]" :
                   inRange ? "bg-brand-primary-light text-[#0E7490]" :
-                  "text-[#234652] hover:bg-[#EEF3F7] hover:rounded-full"
-                } ${isDisabled ? "opacity-20 cursor-not-allowed hover:bg-transparent" : ""}`}
+                    "text-[#234652] hover:bg-[#EEF3F7] hover:rounded-full"
+                  } ${isDisabled ? "opacity-20 cursor-not-allowed hover:bg-transparent" : ""}`}
               >
                 {day.getDate()}
               </button>
@@ -218,7 +217,7 @@ export function DatePicker({
       ? "w-full flex flex-col max-h-[88vh] bg-white rounded-t-[28px] shadow-[0_-24px_60px_rgba(15,45,54,0.16)] border border-[rgba(15,45,54,0.08)] border-b-0"
       : isModal
         ? "w-full max-w-[780px] bg-white rounded-[28px] shadow-[0_24px_60px_rgba(15,45,54,0.16)] p-5 border border-[rgba(15,45,54,0.08)]"
-        : "absolute z-50 top-[calc(100%+12px)] left-0 w-[calc(100vw-24px)] max-w-[520px] bg-white shadow-[0_24px_60px_rgba(15,45,54,0.16)] p-3.5 border border-[rgba(15,45,54,0.08)] rounded-[24px]";
+        : "absolute z-50 top-[calc(100%+14px)] left-1/2 -translate-x-1/2 w-[calc(100vw-24px)] md:w-[760px] bg-white shadow-[0_24px_60px_rgba(15,45,54,0.16)] p-5 border border-[rgba(15,45,54,0.08)] rounded-[24px]";
 
   return (
     <div
@@ -227,57 +226,71 @@ export function DatePicker({
     >
       {/* Scrollable body — only used in bottom-sheet; in other modes everything is in normal flow */}
       <div className={isBottomSheet ? "flex-1 overflow-y-auto p-4 sm:p-5 overscroll-contain" : ""}>
-      {/* Tabs */}
-      <div className={isCompactPopover ? "mb-2.5 flex gap-2" : "mb-4 flex gap-3"}>
-        <button
-          className={`min-w-0 flex-1 rounded-full font-semibold transition-colors ${isCompactPopover ? "px-3 py-1.5 text-[11px]" : "px-4 sm:px-5 py-3 text-[13px] sm:text-[14px]"} ${selectingStart ? 'bg-brand-primary text-white shadow-[0_8px_18px_rgba(8,145,178,0.28)]' : 'bg-[#F2F5F7] text-[#5F7480] hover:bg-[#E9EEF2]'}`}
-          onClick={() => {
-            setSelectingStart(true);
-            // Keep existing selection and focus on move-in month for easier editing.
-            if (tempStartDate) {
-              setCurrentMonth(monthStart(tempStartDate));
-            }
-          }}
-        >
-          Move-in
-        </button>
-        <button
-          disabled={!tempStartDate}
-          className={`min-w-0 flex-1 rounded-full font-semibold transition-colors ${isCompactPopover ? "px-3 py-1.5 text-[11px]" : "px-4 sm:px-5 py-3 text-[13px] sm:text-[14px]"} ${!selectingStart ? 'bg-brand-primary text-white shadow-[0_8px_18px_rgba(8,145,178,0.28)]' : 'bg-[#F2F5F7] text-[#5F7480] hover:bg-[#E9EEF2]'} disabled:opacity-30`}
-          onClick={() => {
-            setSelectingStart(false);
-            if (tempEndDate) {
-              setCurrentMonth(monthStart(tempEndDate));
-            } else if (minAllowedMoveOut) {
-              setCurrentMonth(monthStart(minAllowedMoveOut));
-            } else if (tempStartDate) {
-              setCurrentMonth(monthStart(tempStartDate));
-            }
-          }}
-        >
-          Move-out
-        </button>
-      </div>
+        {/* Tabs */}
+        <div className={isCompactPopover ? "mb-2.5 flex gap-2" : "mb-4 flex gap-3"}>
+          <button
+            className={`min-w-0 flex-1 rounded-full font-semibold transition-colors ${isCompactPopover ? "px-3 py-1.5 text-[11px]" : "px-4 sm:px-5 py-3 text-[13px] sm:text-[14px]"} ${selectingStart ? 'bg-brand-primary text-white shadow-[0_8px_18px_rgba(8,145,178,0.28)]' : 'bg-[#F2F5F7] text-[#5F7480] hover:bg-[#E9EEF2]'}`}
+            onClick={() => {
+              setSelectingStart(true);
+              // Keep existing selection and focus on move-in month for easier editing.
+              if (tempStartDate) {
+                setCurrentMonth(monthStart(tempStartDate));
+              }
+            }}
+          >
+            Move-in
+          </button>
+          <button
+            disabled={!tempStartDate}
+            className={`min-w-0 flex-1 rounded-full font-semibold transition-colors ${isCompactPopover ? "px-3 py-1.5 text-[11px]" : "px-4 sm:px-5 py-3 text-[13px] sm:text-[14px]"} ${!selectingStart ? 'bg-brand-primary text-white shadow-[0_8px_18px_rgba(8,145,178,0.28)]' : 'bg-[#F2F5F7] text-[#5F7480] hover:bg-[#E9EEF2]'} disabled:opacity-30`}
+            onClick={() => {
+              setSelectingStart(false);
+              if (tempEndDate) {
+                setCurrentMonth(monthStart(tempEndDate));
+              } else if (minAllowedMoveOut) {
+                setCurrentMonth(monthStart(minAllowedMoveOut));
+              } else if (tempStartDate) {
+                setCurrentMonth(monthStart(tempStartDate));
+              }
+            }}
+          >
+            Move-out
+          </button>
+        </div>
 
-      {/* Nav */}
-      <div className={isCompactPopover ? "mb-2.5 flex items-center justify-between" : "mb-4 flex items-center justify-between"}>
-        <button onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1))} className={`flex items-center justify-center rounded-full border border-[rgba(15,45,54,0.1)] transition-colors hover:bg-[#CFFAFE] hover:border-[rgba(8,145,178,0.35)] ${isCompactPopover ? "h-6 w-6" : "h-10 w-10"}`}>
-          <ChevronLeft size={isCompactPopover ? 13 : 18} className="text-[#0F2D36]" />
-        </button>
-        <span className={`font-bold uppercase tracking-[0.14em] text-[#0E7490] ${isCompactPopover ? "text-[9px]" : "text-sm"}`}>
-            {selectingStart ? "Select Move-in" : "Select Move-out"}
-        </span>
-        <button onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1))} className={`flex items-center justify-center rounded-full border border-[rgba(15,45,54,0.1)] transition-colors hover:bg-[#CFFAFE] hover:border-[rgba(8,145,178,0.35)] ${isCompactPopover ? "h-6 w-6" : "h-10 w-10"}`}>
-          <ChevronRight size={isCompactPopover ? 13 : 18} className="text-[#0F2D36]" />
-        </button>
-      </div>
+        {/* Nav */}
+        <div className="mb-4 flex items-center justify-between px-2 relative">
+          <button 
+            type="button"
+            onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1))} 
+            className="flex items-center justify-center rounded-full border border-[rgba(15,45,54,0.1)] transition-colors hover:bg-neutral-light-gray h-9 w-9"
+          >
+            <ChevronLeft size={16} className="text-[#0F2D36]" />
+          </button>
 
-      <div className={`flex flex-col md:flex-row ${isCompactPopover ? "gap-3 md:gap-2.5" : "gap-5 md:gap-6"}`}>
-        {renderMonth(0)}
-        {renderMonth(1)}
-      </div>
+          {/* Central Month Names for side-by-side desktop */}
+          <div className="flex flex-1 justify-around text-neutral-black font-bold text-[15px] select-none">
+            <span>{currentMonth.toLocaleDateString("en-GB", { month: "long", year: "numeric" })}</span>
+            <span className="hidden md:inline">
+              {new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1).toLocaleDateString("en-GB", { month: "long", year: "numeric" })}
+            </span>
+          </div>
 
-      {/* Close scrollable body for bottom-sheet — in other modes this div is empty so has no effect */}
+          <button 
+            type="button"
+            onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1))} 
+            className="flex items-center justify-center rounded-full border border-[rgba(15,45,54,0.1)] transition-colors hover:bg-neutral-light-gray h-9 w-9"
+          >
+            <ChevronRight size={16} className="text-[#0F2D36]" />
+          </button>
+        </div>
+
+        <div className={`flex flex-col md:flex-row ${isCompactPopover ? "gap-3 md:gap-2.5" : "gap-5 md:gap-6"}`}>
+          {renderMonth(0)}
+          {renderMonth(1)}
+        </div>
+
+        {/* Close scrollable body for bottom-sheet — in other modes this div is empty so has no effect */}
       </div>
 
       {/* Footer: always visible — sits outside the scroll area in bottom-sheet, inline otherwise */}
@@ -321,7 +334,7 @@ export function DatePicker({
             onClick={() => { onDateChange(tempStartDate, tempEndDate); onClose(); }}
             className={isCompactPopover ? "rounded-full bg-brand-primary px-4 py-1.5 text-[11px] font-bold text-white shadow-[0_10px_20px_rgba(8,145,178,0.3)] hover:bg-brand-primary-dark transition-colors disabled:opacity-40" : "rounded-full bg-brand-primary px-6 py-2.5 text-sm font-bold text-white shadow-[0_10px_20px_rgba(8,145,178,0.3)] hover:bg-brand-primary-dark transition-colors disabled:opacity-40"}
           >
-            Apply
+            Done
           </button>
         </div>
       </div>

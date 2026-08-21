@@ -80,7 +80,7 @@ export function Footer({ variant = "default" }: FooterProps) {
             <h3 className="text-[#052A3A] text-[16px] sm:text-[18px] font-bold mb-[20px]">ReserveHousing</h3>
             <ul className="space-y-[12px]">
               <li>
-                <Link to="/how-it-works" className="text-[#10394A] text-[14px] sm:text-[15px] hover:text-brand-primary transition-colors">
+                <Link to="/about" className="text-[#10394A] text-[14px] sm:text-[15px] hover:text-brand-primary transition-colors">
                   About
                 </Link>
               </li>

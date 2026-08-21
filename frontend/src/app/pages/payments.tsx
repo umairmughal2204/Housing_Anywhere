@@ -1,5 +1,6 @@
 import { Header } from "../components/header";
 import { Footer } from "../components/footer";
+import { useAuth } from "../contexts/auth-context";
 import { CreditCard, Calendar, Download, AlertCircle } from "lucide-react";
 import { useEffect, useState } from "react";
 import { API_BASE } from "../config";
@@ -152,6 +153,7 @@ function buildReceiptHtml(application: TenantApplicationWithPayment) {
 }
 
 export function Payments() {
+  const { isAuthenticated } = useAuth();
   const [applications, setApplications] = useState<TenantApplicationWithPayment[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
@@ -205,7 +207,7 @@ export function Payments() {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <Header />
+      <Header variant={isAuthenticated ? "dashboard" : "default"} dashboardButtonFilled={false} />
 
       <main className="flex-1 bg-[#F7F7F9] py-[64px]">
         <div className="max-w-[1200px] mx-auto px-[32px]">

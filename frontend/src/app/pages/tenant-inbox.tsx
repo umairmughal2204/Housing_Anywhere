@@ -1,5 +1,6 @@
-﻿import { Header } from "../components/header";
+import { Header } from "../components/header";
 import { Footer } from "../components/footer";
+import { useAuth } from "../contexts/auth-context";
 import { Skeleton } from "../components/ui/skeleton";
 import {
   Search,
@@ -75,6 +76,7 @@ function timeAgo(iso: string) {
 }
 
 export function TenantInbox() {
+  const { isAuthenticated } = useAuth();
   const [conversations, setConversations] = useState<ConversationItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
@@ -306,7 +308,7 @@ export function TenantInbox() {
 
   return (
     <div className="min-h-screen bg-white flex flex-col">
-      <Header />
+      <Header variant={isAuthenticated ? "dashboard" : "default"} dashboardButtonFilled={false} />
 
       <div className="flex-1 max-w-[1240px] mx-auto w-full px-[16px] sm:px-[24px] lg:px-[32px] py-[24px] sm:py-[40px]">
         {/* Header row */}

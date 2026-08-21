@@ -74,7 +74,7 @@ function ApplicationsSkeleton() {
 }
 
 export function TenantApplications() {
-  const { user, isLoading: isAuthLoading } = useAuth();
+  const { user, isAuthenticated, isLoading: isAuthLoading } = useAuth();
   const [applications, setApplications] = useState<TenantApplication[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
@@ -187,7 +187,7 @@ export function TenantApplications() {
   };
   return (
     <div className="min-h-screen flex flex-col bg-white">
-      <Header />
+      <Header variant={isAuthenticated ? "dashboard" : "default"} dashboardButtonFilled={false} />
 
       <main className="flex-1 bg-[#F7F7F9] py-[48px]">
         <div className="max-w-[1100px] mx-auto px-[32px]">

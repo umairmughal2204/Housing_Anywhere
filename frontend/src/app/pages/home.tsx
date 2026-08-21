@@ -10,6 +10,7 @@ import ups3Image from "../../assets/ups-3.avif";
 import mapImage from "../../assets/map.avif";
 import guaranteedImage from "../../assets/guaranteed.avif";
 import houseImage from "../../assets/house_image.svg";
+import heroBg from "../../assets/hero-bg.jpg";
 import { 
   MapPin, 
   Calendar, 
@@ -366,8 +367,8 @@ function getImageDotCount(images: string[] | undefined) {
 
 function HomeListingCardSkeleton() {
   return (
-    <div className="overflow-hidden rounded-[8px] border border-[rgba(15,45,54,0.16)] bg-white">
-      <div className="relative aspect-[16/10] overflow-hidden bg-[#E8EDF2]" />
+    <div className="overflow-hidden rounded-[24px] border border-[rgba(0,0,0,0.06)] bg-white shadow-[0_6px_20px_rgba(0,0,0,0.04)]">
+      <div className="relative aspect-[16/10] overflow-hidden bg-[#E8EDF2] rounded-t-[24px]" />
       <div className="px-[16px] pt-[14px] pb-[12px]">
         <div className="mb-[6px] h-[16px] w-[85%] rounded-[4px] bg-[#E8EDF2]" />
         <div className="mb-[10px] h-[16px] w-[55%] rounded-[4px] bg-[#E8EDF2]" />
@@ -684,9 +685,9 @@ export function Home() {
     let nextIndex = currentIndex;
 
     if (direction === "next") {
-      nextIndex = Math.min(currentIndex + 1, previewImages.length - 1);
+      nextIndex = currentIndex === previewImages.length - 1 ? 0 : currentIndex + 1;
     } else {
-      nextIndex = Math.max(currentIndex - 1, 0);
+      nextIndex = currentIndex === 0 ? previewImages.length - 1 : currentIndex - 1;
     }
 
     setCarouselImagesByListingId((prev) => ({
@@ -823,23 +824,30 @@ export function Home() {
     <div className="min-h-screen bg-white">
       <Header variant={isAuthenticated ? "dashboard" : "default"} dashboardButtonFilled={false} />
 
-      {/* Hero Section */}
-      <section className="relative overflow-x-clip bg-gradient-to-br from-brand-primary via-[#0BA5C7] to-brand-primary text-white pt-[72px] pb-[84px] md:pt-[104px] md:pb-[108px]">
-        <div className="max-w-[1440px] mx-auto px-[16px] sm:px-[24px] md:px-[32px]">
+      <section 
+        className="relative z-[20] overflow-x-clip text-white bg-cover bg-center bg-no-repeat flex items-center py-[64px] md:py-0 md:aspect-[3.6/1] min-h-[380px] md:min-h-[360px] w-full mb-[48px]"
+        style={{ backgroundImage: `url(${heroBg})` }}
+      >
+        {/* Dark overlay for contrast */}
+        <div className="absolute inset-0 bg-neutral-black/35 z-0" />
+        <div className="relative z-10 w-full max-w-[1440px] mx-auto px-[16px] sm:px-[24px] md:px-[32px]">
           <div className="relative z-10 max-w-[430px] md:max-w-[1000px] mx-auto">
-            <h1 className="text-[38px] md:text-[56px] font-bold leading-[1.05] md:leading-[1.1] tracking-[-0.02em] mb-[12px] md:mb-[16px] text-center">
-              Book Your Next Home.<br />
-              <span className="text-white">No Viewing Required.</span>
+            <h1 
+              className="text-[24px] md:text-[34px] font-semibold leading-[1.2] tracking-tight mb-[24px] md:mb-[32px] text-center"
+              style={{ fontFamily: "'Lora', Georgia, serif" }}
+            >
+              Entire place, just for you
             </h1>
-            <p className="text-[16px] md:text-[18px] text-white/90 mb-[26px] md:mb-[48px] leading-[1.6] text-center max-w-[640px] mx-auto">
-              Secure, verified mid-to-long-term rentals for digital nomads, expatriates, and international students.
-            </p>
 
             {/* Search Form */}
-            <form onSubmit={handleSearch} className="relative flex flex-col md:flex-row items-stretch gap-[10px] md:gap-[8px] rounded-[24px] md:rounded-[22px] border border-[rgba(255,255,255,0.7)] bg-white/95 p-[12px] md:p-[10px] shadow-[0_14px_36px_rgba(2,22,33,0.18)] backdrop-blur">
-              <div className="flex-1 relative">
-                <div className="flex h-[56px] md:h-full items-center gap-[12px] md:gap-[14px] rounded-[14px] border border-[#E3E8EE] bg-[#F7F9FC] px-[16px] md:px-[20px]">
-                  <MapPin className="w-[20px] h-[20px] text-[#6B6B6B]" />
+            <form 
+              onSubmit={handleSearch} 
+              className="relative flex flex-col md:flex-row items-stretch md:items-center gap-[10px] md:gap-0 rounded-[24px] md:rounded-full border border-[rgba(255,255,255,0.7)] bg-white/95 p-[12px] md:p-[8px] md:pl-[24px] md:pr-[8px] shadow-[0_14px_36px_rgba(2,22,33,0.18)] backdrop-blur text-neutral-black"
+            >
+              {/* Destination Input */}
+              <div className="flex-1 relative flex items-center">
+                <div className="flex h-[56px] md:h-auto flex-1 items-center gap-[12px] md:gap-[14px] rounded-[14px] md:rounded-none border border-[#E3E8EE] md:border-none bg-[#F7F9FC] md:bg-transparent px-[16px] md:px-0">
+                  <MapPin className="w-[20px] h-[20px] text-[#6B6B6B] flex-shrink-0" />
                   <input
                     type="text"
                     placeholder="Where will you go?"
@@ -849,21 +857,24 @@ export function Home() {
                       setIsCityDropdownOpen(true);
                     }}
                     onFocus={() => setIsCityDropdownOpen(true)}
-                    className="flex-1 bg-transparent py-[12px] md:py-[18px] text-[15px] md:text-[16px] text-[#1A1A1A] placeholder:text-[#6B6B6B] outline-none"
+                    className="flex-1 bg-transparent py-[12px] md:py-[10px] text-[15px] md:text-[16px] text-[#1A1A1A] placeholder:text-[#6B6B6B] outline-none font-medium"
                   />
                 </div>
 
                 {/* City Dropdown */}
                 {isCityDropdownOpen && filteredCities.length > 0 && (
-                  <div ref={cityDropdownRef} className="absolute top-full left-0 right-0 mt-[8px] bg-white border border-[rgba(0,0,0,0.08)] shadow-[0_8px_32px_rgba(0,0,0,0.12)] z-50 max-h-[400px] overflow-y-auto">
+                  <div 
+                    ref={cityDropdownRef} 
+                    className="absolute top-[calc(100%+14px)] left-[-16px] right-0 mt-[8px] bg-white border border-[rgba(0,0,0,0.08)] shadow-[0_8px_32px_rgba(0,0,0,0.12)] z-50 max-h-[300px] overflow-y-auto rounded-[16px]"
+                  >
                     {filteredCities.map((city) => (
                       <button
                         key={city.name}
                         type="button"
                         onClick={() => handleCitySelect(city.name)}
-                        className="w-full px-[24px] py-[16px] flex items-center gap-[16px] hover:bg-[#F7F7F9] transition-colors text-left border-b border-[rgba(0,0,0,0.04)] last:border-b-0"
+                        className="w-full px-[20px] py-[12px] flex items-center gap-[12px] hover:bg-[#F7F7F9] transition-colors text-left border-b border-[rgba(0,0,0,0.04)] last:border-b-0"
                       >
-                        <div className="w-[64px] h-[48px] flex-shrink-0 overflow-hidden">
+                        <div className="w-[48px] h-[36px] flex-shrink-0 overflow-hidden rounded-[4px]">
                           {city.image ? (
                             <img
                               src={city.image}
@@ -872,19 +883,19 @@ export function Home() {
                             />
                           ) : (
                             <div className="w-full h-full bg-[#E0F2FE] flex items-center justify-center">
-                              <MapPin className="w-[18px] h-[18px] text-[#0891B2]" />
+                              <MapPin className="w-[16px] h-[16px] text-[#0891B2]" />
                             </div>
                           )}
                         </div>
                         <div className="flex-1">
-                          <div className="text-[#1A1A1A] text-[16px] font-bold mb-[2px]">
+                          <div className="text-[#1A1A1A] text-[14px] font-bold">
                             {city.name}
                           </div>
-                          <div className="text-[#6B6B6B] text-[13px]">
+                          <div className="text-[#6B6B6B] text-[12px]">
                             {city.country}
                           </div>
                         </div>
-                        <div className="text-[#6B6B6B] text-[13px] font-semibold">
+                        <div className="text-[#6B6B6B] text-[12px] font-semibold">
                           {city.properties} properties
                         </div>
                       </button>
@@ -892,11 +903,15 @@ export function Home() {
                   </div>
                 )}
               </div>
+
+              {/* Vertical line divider */}
+              <div className="hidden md:block h-[32px] w-[1px] bg-[#E2E8F0] mx-[20px] flex-shrink-0" />
               
+              {/* Dates Picker Button */}
               <button
                 type="button"
                 onClick={() => setIsDatePickerOpen(!isDatePickerOpen)}
-                className="w-full md:w-auto flex items-center gap-[12px] rounded-[14px] border border-[#E3E8EE] bg-white px-[16px] md:px-[20px] py-[15px] md:py-0 hover:bg-[#F7F9FC] transition-colors"
+                className="w-full md:w-auto flex h-[56px] md:h-auto items-center gap-[12px] rounded-[14px] md:rounded-full border border-[#E3E8EE] md:border-none bg-white md:bg-transparent px-[16px] md:px-[16px] py-[15px] md:py-[10px] hover:bg-[#F7F9FC] md:hover:bg-[#F7F9FC]/80 transition-colors text-left"
               >
                 <Calendar className="w-[20px] h-[20px] text-[#1A1A1A]" />
                 <span className="text-[#1A1A1A] text-[15px] md:text-[16px] font-semibold whitespace-nowrap">
@@ -904,9 +919,10 @@ export function Home() {
                 </span>
               </button>
 
+              {/* Submit Search Button */}
               <button
                 type="submit"
-                className="w-full md:w-auto rounded-[14px] px-[34px] py-[16px] md:py-[18px] bg-brand-primary text-white font-bold shadow-[0_8px_18px_rgba(11,165,199,0.32)] hover:bg-brand-primary-dark transition-colors"
+                className="w-full md:w-auto rounded-[14px] md:rounded-full px-[34px] py-[16px] md:py-[14px] md:ml-[12px] bg-brand-primary text-white font-bold hover:bg-brand-primary-dark transition-colors whitespace-nowrap text-[15px]"
               >
                 Search
               </button>
@@ -923,17 +939,8 @@ export function Home() {
               />
             </form>
 
-            {/* Landlord Link */}
-            <div className="text-center mt-[14px] md:mt-[16px]">
-              <span className="text-white/80 text-[13px] md:text-[14px]">Looking for tenants? </span>
-              <Link to="/landlord" className="text-white text-[13px] md:text-[14px] font-bold underline hover:no-underline">
-                Rent out
-              </Link>
-            </div>
           </div>
         </div>
-
-        <div className="pointer-events-none absolute left-1/2 bottom-[-92px] md:bottom-[-136px] z-0 h-[140px] md:h-[220px] w-[1200px] md:w-[1800px] -translate-x-1/2 rounded-[50%] bg-white" />
       </section>
 
       {/* Personalized Recommendations - Only show when logged in */}
@@ -998,20 +1005,9 @@ export function Home() {
                       <Link
                         key={property.id}
                         to={`/listing/${property.id}`}
-                        className="group overflow-hidden rounded-[8px] border border-[rgba(15,45,54,0.16)] bg-white transition-shadow duration-200 hover:shadow-[0_10px_24px_rgba(15,45,54,0.10)]"
+                        className="group overflow-hidden rounded-[24px] border border-[rgba(0,0,0,0.06)] bg-white shadow-[0_6px_20px_rgba(0,0,0,0.04)] transition-all duration-200 hover:shadow-[0_10px_30px_rgba(0,0,0,0.08)] hover:-translate-y-[2px]"
                       >
-                        <div
-                      className="relative aspect-[16/10] overflow-hidden bg-[#F7F7F9] group/carousel"
-                    onWheel={(e) => {
-                      const previewImages = getListingCardImages(property.id, property.images);
-                      if (previewImages.length <= 1) return;
-                      
-                      e.preventDefault();
-                      e.stopPropagation();
-                      const isScrollingDown = e.deltaY > 0;
-                      moveListingImage(property.id, isScrollingDown ? "next" : "prev", property.images);
-                    }}
-                  >
+                        <div className="relative aspect-[16/10] overflow-hidden bg-[#F7F7F9] group/carousel rounded-t-[24px]">
                     {/* Carousel Image */}
                     <img
                       src={getListingCardImages(property.id, property.images)[carouselImagesByListingId[property.id] ?? 0] ?? "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800&q=80"}
@@ -1019,14 +1015,14 @@ export function Home() {
                       className="w-full h-full object-cover object-center bg-[#F3F4F6]"
                     />
                     {Date.now() - new Date(property.createdAt).getTime() < 1000 * 60 * 60 * 24 * 7 && (
-                      <div className="absolute top-[12px] left-[12px] bg-[#FFD93D] text-[#1A1A1A] px-[8px] py-[4px] text-[11px] font-bold uppercase tracking-[0.05em] flex items-center gap-[4px]">
-                        <Star className="w-[10px] h-[10px] fill-current" />
+                      <div className="absolute top-[12px] left-[12px] bg-[#F7EFE9] text-[#5C4533] px-[12px] py-[4.5px] rounded-[6px] text-[11px] font-semibold tracking-[0.02em] shadow-sm flex items-center gap-[4px]">
+                        <Star className="w-[10px] h-[10px] fill-current text-[#A78B71]" />
                         New
                       </div>
                     )}
 
                     {/* Left Arrow */}
-                    {getListingCardImages(property.id, property.images).length > 1 && (carouselImagesByListingId[property.id] ?? 0) > 0 && (
+                    {getListingCardImages(property.id, property.images).length > 1 && (
                       <button
                         onClick={(e) => {
                           e.preventDefault();
@@ -1040,7 +1036,7 @@ export function Home() {
                     )}
 
                     {/* Right Arrow */}
-                    {getListingCardImages(property.id, property.images).length > 1 && (carouselImagesByListingId[property.id] ?? 0) < getListingCardImages(property.id, property.images).length - 1 && (
+                    {getListingCardImages(property.id, property.images).length > 1 && (
                       <button
                         onClick={(e) => {
                           e.preventDefault();
@@ -1064,13 +1060,13 @@ export function Home() {
                       type="button"
                       disabled={favoriteBusyId === property.id}
                       aria-label={favoriteListingIds.has(property.id) ? "Remove from favorites" : "Add to favorites"}
-                      className="absolute top-[12px] right-[12px] w-[32px] h-[32px] bg-white/90 hover:bg-white flex items-center justify-center transition-colors rounded-full"
+                      className="absolute top-[12px] right-[12px] w-[36px] h-[36px] bg-white hover:bg-white/95 flex items-center justify-center transition-all rounded-full shadow-[0_4px_12px_rgba(0,0,0,0.08)] hover:scale-105 active:scale-95 z-10"
                     >
                       <Heart
-                        className={`w-[16px] h-[16px] ${
+                        className={`w-[18px] h-[18px] transition-colors ${
                           favoriteListingIds.has(property.id)
-                            ? "fill-[#0891B2] text-[#0891B2]"
-                            : "text-[#1A1A1A]"
+                            ? "fill-red-500 text-red-500"
+                            : "text-[#B91C1C] hover:text-red-500"
                         }`}
                       />
 
@@ -1082,16 +1078,6 @@ export function Home() {
                         </>
                       )}
                     </button>
-
-                    {/* View All Media Overlay - Show on last preview image when there are more images */}
-                    {getListingCardImages(property.id, property.images).length > 1 && (carouselImagesByListingId[property.id] ?? 0) === getListingCardImages(property.id, property.images).length - 1 && property.images.length > getListingCardImages(property.id, property.images).length && (
-                      <div className="absolute inset-0 bg-black/40 flex flex-col items-center justify-center">
-                        <div className="text-white text-center">
-                          <div className="text-[38px] font-bold mb-[4px]">View all media</div>
-                          <div className="text-[33px] text-white/90">{property.images.length} photos</div>
-                        </div>
-                      </div>
-                    )}
 
                     {/* Image Dots */}
                     {getListingCardImages(property.id, property.images).length > 1 && (
@@ -1147,19 +1133,19 @@ export function Home() {
                         </div>
                       </>
                     )}
-                    <div className="flex items-center justify-center gap-[12px] flex-wrap">
+                    <div className="flex items-center justify-center gap-[12px] flex-wrap mt-[16px]">
                       {recommendations.length > 0 && isRecentlyViewedTab && (
                         <button
                           type="button"
                           onClick={() => setActiveTab("recommendations")}
-                          className="inline-flex items-center gap-[8px] px-[16px] py-[10px] border border-[rgba(0,0,0,0.12)] text-[#1A1A1A] text-[14px] font-semibold hover:border-[rgba(0,0,0,0.24)] hover:bg-white transition-colors"
+                          className="inline-flex items-center gap-[8px] px-[20px] py-[10px] border border-[rgba(0,0,0,0.12)] text-[#1A1A1A] text-[14px] font-semibold rounded-full hover:border-[rgba(0,0,0,0.24)] hover:bg-white transition-colors"
                         >
                           See recommendations
                         </button>
                       )}
                       <Link
                         to="/listings"
-                        className="inline-flex items-center gap-[8px] px-[16px] py-[10px] bg-[#1A1A1A] text-white text-[14px] font-semibold hover:bg-[#0891B2] transition-colors"
+                        className="inline-flex items-center gap-[8px] px-[24px] py-[10px] bg-[#0891B2] text-white text-[14px] font-semibold rounded-full shadow-[0_4px_10px_rgba(8,145,178,0.16)] hover:bg-[#0E7490] hover:shadow-[0_6px_14px_rgba(8,145,178,0.24)] transition-all"
                       >
                         Browse listings
                         <ArrowRight className="w-[16px] h-[16px]" />
@@ -1167,10 +1153,10 @@ export function Home() {
                     </div>
                   </div>
                 )}
-                <div className="mt-[16px] md:mt-[24px] flex justify-center">
+                <div className="mt-[24px] md:mt-[32px] flex justify-center">
                   <Link
                     to="/listings"
-                    className="text-[14px] md:text-[16px] font-semibold text-brand-primary hover:text-brand-primary-dark transition-colors flex items-center gap-[6px] pb-[2px] border-b border-transparent hover:border-brand-primary"
+                    className="inline-flex items-center gap-[8px] px-[28px] py-[14px] bg-[#0891B2] text-white text-[15px] font-bold rounded-full hover:bg-[#0E7490] hover:-translate-y-[1px] active:translate-y-0 transition-all duration-150"
                   >
                     Browse all listings
                     <ArrowRight className="w-[16px] h-[16px]" />

@@ -84,7 +84,7 @@ const AUDIENCE_COPY: Record<
 };
 
 export function HowItWorks() {
-  const { user } = useAuth();
+  const { user, isAuthenticated } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -134,7 +134,7 @@ export function HowItWorks() {
 
   return (
     <div className="min-h-screen bg-white">
-      <Header />
+      <Header variant={isAuthenticated ? "dashboard" : "default"} dashboardButtonFilled={false} />
 
       <section className="relative overflow-hidden bg-[#D8DFE9] pt-[42px] pb-[120px] md:pt-[64px] md:pb-[182px]">
         <div className="mx-auto max-w-[1200px] px-[16px] sm:px-[24px] md:px-[32px] text-center">
@@ -170,8 +170,6 @@ export function HowItWorks() {
             </button>
           </div>
         </div>
-
-        <div className="pointer-events-none absolute left-1/2 bottom-[-170px] h-[275px] w-[1800px] -translate-x-1/2 rounded-[50%] bg-white" />
       </section>
 
       <section className="mt-[8px] md:mt-[14px] relative z-10 pb-[42px] md:pb-[64px]">

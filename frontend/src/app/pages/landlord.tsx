@@ -27,7 +27,7 @@ export function Landlord() {
 
   return (
     <div className="min-h-screen bg-white">
-      <Header />
+      <Header variant={isAuthenticated ? "dashboard" : "default"} dashboardButtonFilled={false} />
 
       {/* Hero Section */}
       <section className="relative bg-gradient-to-br from-[#1A1A1A] to-[#2D2D2D] text-white py-[72px] md:py-[120px]">

@@ -647,22 +647,22 @@ export function LandlordPortalLayout({
       )}
 
       {pendingLanguage && (
-        <div className="fixed inset-0 z-[70] bg-black/40 flex items-center justify-center p-[24px]">
-          <div className="w-full max-w-[460px] bg-white border border-[rgba(0,0,0,0.12)] p-[24px]">
+        <div className="fixed inset-0 z-[70] bg-neutral-black/40 backdrop-blur-[1px] flex items-center justify-center p-[24px] transition-all">
+          <div className="w-full max-w-[440px] bg-white border border-[rgba(0,0,0,0.06)] rounded-[24px] p-[28px] shadow-[0_16px_48px_rgba(0,0,0,0.16)]">
             <h3 className="text-neutral-black text-[20px] font-bold mb-[8px]">Change Language</h3>
-            <p className="text-neutral-gray text-[14px] leading-[1.6] mb-[20px]">
-              Switch site language to <span className="font-semibold text-neutral-black">{pendingLanguage.label}</span>?
+            <p className="text-neutral-gray text-[14.5px] leading-[1.6] mb-[24px]">
+               Switch site language to <span className="font-semibold text-neutral-black">{pendingLanguage.label}</span>?
             </p>
-            <div className="flex items-center justify-end gap-[10px]">
+            <div className="flex items-center justify-end gap-[12px]">
               <button
                 onClick={() => setPendingLanguage(null)}
-                className="px-[16px] py-[10px] border border-[rgba(0,0,0,0.16)] text-neutral-black text-[13px] font-semibold hover:bg-neutral-light-gray transition-colors"
+                className="px-[20px] py-[9px] border border-[#E2E8F0] text-neutral-black text-[13.5px] font-semibold rounded-full hover:bg-neutral-light-gray transition-all duration-150"
               >
                 Cancel
               </button>
               <button
                 onClick={confirmLanguageChange}
-                className="px-[16px] py-[10px] bg-brand-primary text-white text-[13px] font-semibold hover:bg-brand-primary-dark transition-colors"
+                className="px-[24px] py-[10px] bg-[#0891B2] text-white text-[13.5px] font-bold rounded-full shadow-[0_4px_10px_rgba(8,145,178,0.16)] hover:bg-[#0E7490] hover:shadow-[0_6px_14px_rgba(8,145,178,0.24)] transition-all duration-150"
               >
                 Confirm
               </button>

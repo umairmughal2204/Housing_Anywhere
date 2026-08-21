@@ -1,6 +1,7 @@
 import { useParams, Link, useNavigate, useSearchParams, useLocation } from "react-router";
 import { Header } from "../components/header";
 import { Footer } from "../components/footer";
+import { useAuth } from "../contexts/auth-context";
 import { DatePicker } from "../components/date-picker";
 import { MapContainer, Marker, Popup, TileLayer, useMap } from "react-leaflet";
 import L from "leaflet";
@@ -297,8 +298,8 @@ function InvalidateMapSize({ isExpanded }: { isExpanded: boolean }) {
 
 function SearchListingCardSkeleton() {
   return (
-    <div className="cursor-default overflow-hidden rounded-[12px] border border-[rgba(15,45,54,0.16)] bg-white">
-      <div className="w-full h-[192px] sm:h-[220px] bg-[#E8EDF2]" />
+    <div className="cursor-default overflow-hidden rounded-[24px] border border-[rgba(0,0,0,0.06)] bg-white shadow-[0_6px_20px_rgba(0,0,0,0.04)]">
+      <div className="w-full h-[192px] sm:h-[220px] bg-[#E8EDF2] rounded-t-[24px]" />
       <div className="px-[14px] sm:px-[16px] pt-[12px] sm:pt-[14px] pb-[12px]">
         <div className="h-[15px] sm:h-[16px] w-[85%] bg-[#E8EDF2] rounded-[4px] mb-[6px]" />
         <div className="h-[15px] sm:h-[16px] w-[55%] bg-[#E8EDF2] rounded-[4px] mb-[10px]" />
@@ -618,6 +619,7 @@ function NeighborhoodCheckboxList({
 }
 
 export function SearchResults() {
+  const { isAuthenticated } = useAuth();
   const { city } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
@@ -1269,9 +1271,9 @@ export function SearchResults() {
     let nextIndex = currentIndex;
 
     if (direction === "next") {
-      nextIndex = Math.min(currentIndex + 1, previewImages.length - 1);
+      nextIndex = currentIndex === previewImages.length - 1 ? 0 : currentIndex + 1;
     } else {
-      nextIndex = Math.max(currentIndex - 1, 0);
+      nextIndex = currentIndex === 0 ? previewImages.length - 1 : currentIndex - 1;
     }
 
     setCarouselImagesByListingId((prev) => ({
@@ -1377,7 +1379,7 @@ export function SearchResults() {
 
   return (
     <div className="min-h-screen bg-[#F4F7FA]">
-      <Header variant="dashboard" logoVariant="mobile-favicon" />
+      <Header variant={isAuthenticated ? "dashboard" : "default"} logoVariant="mobile-favicon" />
 
       {/* Filter Bar */}
       <div data-results-filter-bar="true" className="sticky top-[76px] z-40 border-b border-[#E3E8EE] bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
@@ -1872,21 +1874,10 @@ export function SearchResults() {
                 <div
                   key={property.id}
                   onClick={() => window.open(`/property/${property.id}`, "_blank", "noopener,noreferrer")}
-                  className="group cursor-pointer overflow-hidden rounded-[12px] border border-[rgba(15,45,54,0.16)] bg-white transition-shadow duration-200 hover:shadow-[0_10px_24px_rgba(15,45,54,0.10)]"
+                  className="group cursor-pointer overflow-hidden rounded-[24px] border border-[rgba(0,0,0,0.06)] bg-white shadow-[0_6px_20px_rgba(0,0,0,0.04)] transition-all duration-200 hover:shadow-[0_10px_30px_rgba(0,0,0,0.08)] hover:-translate-y-[2px]"
                 >
                   {/* Image Container */}
-                  <div 
-                    className="relative overflow-hidden group/carousel"
-                    onWheel={(e) => {
-                      const previewImages = getListingCardImages(property.id, property.images);
-                      if (previewImages.length <= 1) return;
-                      
-                      e.preventDefault();
-                      e.stopPropagation();
-                      const isScrollingDown = e.deltaY > 0;
-                      moveListingImage(property.id, isScrollingDown ? "next" : "prev", property.images);
-                    }}
-                  >
+                  <div className="relative overflow-hidden group/carousel rounded-t-[24px]">
                     {/* Carousel Image */}
                     <img
                       src={resolveListingImageUrl(
@@ -1899,13 +1890,14 @@ export function SearchResults() {
                     
                     {/* New Badge */}
                     {!property.images[1] && (
-                      <div className="absolute top-[12px] left-[12px] rounded-full bg-[#38BDF8] px-[12px] py-[5px] shadow-[0_8px_18px_rgba(56,189,248,0.32)]">
-                        <span className="text-[11px] font-bold tracking-[0.04em] text-white">NEW</span>
+                      <div className="absolute top-[12px] left-[12px] bg-[#F7EFE9] text-[#5C4533] px-[12px] py-[4.5px] rounded-[6px] text-[11px] font-semibold tracking-[0.02em] shadow-sm flex items-center gap-[4px]">
+                        <Star className="w-[10px] h-[10px] fill-current text-[#A78B71]" />
+                        New
                       </div>
                     )}
 
                     {/* Left Arrow */}
-                    {getListingCardImages(property.id, property.images).length > 1 && (carouselImagesByListingId[property.id] ?? 0) > 0 && (
+                    {getListingCardImages(property.id, property.images).length > 1 && (
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
@@ -1919,7 +1911,7 @@ export function SearchResults() {
                     )}
 
                     {/* Right Arrow */}
-                    {getListingCardImages(property.id, property.images).length > 1 && (carouselImagesByListingId[property.id] ?? 0) < getListingCardImages(property.id, property.images).length - 1 && (
+                    {getListingCardImages(property.id, property.images).length > 1 && (
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
@@ -1941,13 +1933,13 @@ export function SearchResults() {
                       type="button"
                       disabled={favoriteBusyId === property.id}
                       aria-label={favoriteListingIds.has(property.id) ? "Remove from favorites" : "Add to favorites"}
-                      className="absolute top-[12px] right-[12px] w-[32px] h-[32px] bg-white/90 hover:bg-white flex items-center justify-center transition-colors rounded-full"
+                      className="absolute top-[12px] right-[12px] w-[36px] h-[36px] bg-white hover:bg-white/95 flex items-center justify-center transition-all rounded-full shadow-[0_4px_12px_rgba(0,0,0,0.08)] hover:scale-105 active:scale-95 z-10"
                     >
                       <Heart
-                        className={`w-[16px] h-[16px] ${
+                        className={`w-[18px] h-[18px] transition-colors ${
                           favoriteListingIds.has(property.id)
-                            ? "fill-[#0891B2] text-[#0891B2]"
-                            : "text-[#1A1A1A]"
+                            ? "fill-red-500 text-red-500"
+                            : "text-[#B91C1C] hover:text-red-500"
                         }`}
                       />
                       
@@ -1959,16 +1951,6 @@ export function SearchResults() {
                         </>
                       )}
                     </button>
-
-                    {/* View All Media Overlay - Show on last preview image when there are more images */}
-                    {getListingCardImages(property.id, property.images).length > 1 && (carouselImagesByListingId[property.id] ?? 0) === getListingCardImages(property.id, property.images).length - 1 && property.images.length > getListingCardImages(property.id, property.images).length && (
-                      <div className="absolute inset-0 bg-black/40 flex flex-col items-center justify-center">
-                        <div className="text-white text-center">
-                          <div className="text-[38px] font-bold mb-[4px]">View all media</div>
-                          <div className="text-[33px] text-white/90">{property.images.length} photos</div>
-                        </div>
-                      </div>
-                    )}
 
                     {/* Image Dots */}
                     {getListingCardImages(property.id, property.images).length > 1 && (
