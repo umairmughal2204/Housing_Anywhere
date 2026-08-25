@@ -172,6 +172,9 @@ export function LandlordRegister() {
             <p className="text-[#6C7A89] text-[15px] lg:text-[16px]">
               We need some basic information before you can start listing properties
             </p>
+            <div className="mt-[16px] px-[16px] py-[12px] bg-[#EFF6FF] border border-[#BFDBFE] rounded-[10px] text-[#1E40AF] text-[14px] leading-[1.5] text-left">
+              <span className="font-bold">Booking Fee Notice:</span> EzzyStay charges a simple <span className="font-bold">5% commission fee</span> only when a tenant successfully books your property. Listing properties and chatting with potential tenants is 100% free.
+            </div>
           </div>
 
           <form

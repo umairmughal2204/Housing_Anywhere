@@ -800,8 +800,8 @@ export function Help() {
 
         {/* Full-width Search Bar Form */}
         <form onSubmit={handleSearch} className="flex flex-col sm:flex-row items-stretch sm:items-center gap-[12px] w-full mb-[48px]">
-          <label className="flex-1 flex h-[52px] items-center gap-[12px] rounded-[10px] border border-[#CBD5E1] bg-white px-[18px] shadow-sm relative">
-            <Search className="h-[20px] w-[20px] flex-shrink-0 text-[#1F2937]" />
+          <label className="flex-1 flex h-[52px] items-center gap-[12px] rounded-[10px] border border-[#CBD5E1] bg-white px-[18px] shadow-sm relative focus-within:border-[#0891B2] focus-within:ring-2 focus-within:ring-[#0891B2]/20 transition-all">
+            <Search className="h-[20px] w-[20px] flex-shrink-0 text-[#0F2D36]" />
             <input
               type="text"
               value={searchQuery}
@@ -823,7 +823,7 @@ export function Help() {
           </label>
           <button
             type="submit"
-            className="h-[52px] px-[36px] bg-[#1D4ED8] hover:bg-[#1E40AF] text-white font-bold rounded-full transition-colors whitespace-nowrap text-[15px] shadow-sm"
+            className="h-[52px] px-[36px] bg-[#0891B2] hover:bg-[#0E7490] text-white font-bold rounded-full transition-all whitespace-nowrap text-[15px] shadow-[0_4px_12px_rgba(8,145,178,0.2)] hover:shadow-[0_6px_16px_rgba(8,145,178,0.3)] active:scale-[0.98]"
           >
             Search
           </button>
@@ -901,10 +901,10 @@ export function Help() {
                       onClick={() => setSelectedTopic(topic)}
                       className="w-full text-left flex items-center justify-between border border-[#E2E8F0] bg-white rounded-[12px] px-[18px] py-[16px] hover:bg-[#F8FAFC] transition-colors group cursor-pointer"
                     >
-                      <span className="text-[#2563EB] text-[15px] font-semibold leading-[1.4] pr-[8px]">
+                      <span className="text-[#0891B2] text-[15px] font-semibold leading-[1.4] pr-[8px] group-hover:text-[#0E7490] transition-colors">
                         {topic.title}
                       </span>
-                      <ChevronRight className="w-[16px] h-[16px] text-[#2563EB] shrink-0 transition-transform group-hover:translate-x-[2px]" />
+                      <ChevronRight className="w-[16px] h-[16px] text-[#0891B2] shrink-0 transition-transform group-hover:translate-x-[2px]" />
                     </button>
                   ))}
                 </div>
@@ -912,7 +912,7 @@ export function Help() {
                 /* Topic Detail View */
                 <div>
                   {/* Breadcrumb path */}
-                  <div className="flex items-center gap-[6px] text-[12px] font-semibold text-[#2563EB] mb-[20px] select-none">
+                  <div className="flex items-center gap-[6px] text-[12px] font-semibold text-[#0891B2] mb-[20px] select-none">
                     <span className="cursor-pointer hover:underline" onClick={handleBackToTopics}>
                       {selectedCategory}
                     </span>
@@ -956,7 +956,7 @@ export function Help() {
                       </h5>
                       <p className="text-[#4B5563] text-[14px] leading-[1.6]">
                         {selectedTopic.extra.split("contact us")[0]}
-                        <a href="mailto:support@ezzystay.com" className="text-[#2563EB] hover:underline font-semibold">
+                        <a href="mailto:support@ezzystay.com" className="text-[#0891B2] hover:underline font-semibold">
                           contact us
                         </a>
                         {selectedTopic.extra.split("contact us")[1]}
@@ -973,7 +973,7 @@ export function Help() {
                       <button
                         onClick={() => setHelpfulFeedback("up")}
                         className={`w-[40px] h-[40px] border rounded-full flex items-center justify-center transition-all ${helpfulFeedback === "up"
-                            ? "bg-[#EFF6FF] border-[#2563EB] text-[#2563EB]"
+                            ? "bg-[#E0F2FE] border-[#0891B2] text-[#0891B2]"
                             : "border-[#E2E8F0] hover:bg-[#F8FAFC] text-[#4B5563]"
                           }`}
                         aria-label="Helpful"
@@ -1066,11 +1066,11 @@ export function Help() {
                       <span className="text-[11px] font-bold uppercase tracking-wider text-[#94A3B8]">
                         {result.category}
                       </span>
-                      <span className="text-[#2563EB] text-[15px] font-semibold leading-[1.4] pr-[8px]">
+                      <span className="text-[#0891B2] text-[15px] font-semibold leading-[1.4] pr-[8px] group-hover:text-[#0E7490] transition-colors">
                         {result.topic.title}
                       </span>
                     </div>
-                    <ChevronRight className="w-[16px] h-[16px] text-[#2563EB] shrink-0 transition-transform group-hover:translate-x-[2px]" />
+                    <ChevronRight className="w-[16px] h-[16px] text-[#0891B2] shrink-0 transition-transform group-hover:translate-x-[2px]" />
                   </button>
                 ))}
               </div>
@@ -1081,33 +1081,34 @@ export function Help() {
 
       {/* Auth Prompt Modal if not logged in */}
       {isAuthPromptOpen && (
-        <div className="fixed inset-0 bg-black/60 z-[200] flex items-center justify-center p-[16px] animate-fade-in">
+        <div className="fixed inset-0 bg-black/60 z-[200] flex items-center justify-center p-[16px] animate-fade-in backdrop-blur-xs">
           {/* Backdrop click close */}
           <div className="absolute inset-0" onClick={() => setIsAuthPromptOpen(false)} />
 
           {/* Modal Container */}
-          <div className="bg-white rounded-[24px] w-full max-w-[380px] p-[32px] text-center shadow-[0_20px_50px_rgba(0,0,0,0.15)] z-[210] flex flex-col items-center animate-in fade-in zoom-in-95 duration-200">
-            {/* Circular Lock icon with soft background */}
-            <div className="w-[72px] h-[72px] rounded-full bg-[#EFF6FF] flex items-center justify-center mb-[20px]">
-              <Lock className="w-[32px] h-[32px] text-[#2563EB]" />
+          <div className="bg-white rounded-[24px] w-full max-w-[380px] p-[32px] text-center shadow-[0_20px_50px_rgba(8,145,178,0.18)] z-[210] flex flex-col items-center animate-in fade-in zoom-in-95 duration-200 border border-[rgba(8,145,178,0.14)]">
+            {/* Circular Lock icon with soft teal background */}
+            <div className="w-[72px] h-[72px] rounded-full bg-[#E0F2FE] flex items-center justify-center mb-[20px] shadow-inner">
+              <Lock className="w-[32px] h-[32px] text-[#0891B2]" />
             </div>
 
-            <h3 className="text-[#1F2937] text-[20px] font-bold mb-[8px]">
+            <h3 className="text-[#0F2D36] text-[20px] font-bold mb-[8px]">
               Please sign in
             </h3>
-            <p className="text-[#6B7280] text-[14px] leading-[1.5] mb-[24px]">
-              You need to sign in to access support chat assistance.
+            <p className="text-[#64748B] text-[14px] leading-[1.5] mb-[24px]">
+              You need to sign in to your account to access support chat assistance.
             </p>
 
             <Link
-              to="/login"
-              className="w-full h-[46px] flex items-center justify-center bg-[#0F2D36] hover:bg-[#081B20] text-white font-bold rounded-full transition-colors mb-[12px] text-[15px]"
+              to="/login?returnTo=/help"
+              onClick={() => setIsAuthPromptOpen(false)}
+              className="w-full h-[46px] flex items-center justify-center bg-[#0891B2] hover:bg-[#0E7490] text-white font-bold rounded-full transition-all shadow-[0_4px_12px_rgba(8,145,178,0.2)] mb-[12px] text-[15px] active:scale-[0.98]"
             >
               Sign in
             </Link>
             <button
               onClick={() => setIsAuthPromptOpen(false)}
-              className="text-[#6B7280] hover:text-[#1F2937] font-semibold text-[14px] transition-colors"
+              className="text-[#64748B] hover:text-[#0F2D36] font-semibold text-[14px] transition-colors cursor-pointer"
             >
               Cancel
             </button>
@@ -1181,10 +1182,12 @@ export function Help() {
       {/* Floating help widget bottom right */}
       <button
         onClick={handleHelpFloatClick}
-        className="fixed bottom-[24px] right-[24px] bg-white border border-[#E2E8F0] shadow-[0_6px_20px_rgba(0,0,0,0.08)] rounded-full px-[20px] py-[10px] flex items-center gap-[8px] hover:bg-[#F8FAFC] transition-all z-[90] active:scale-95"
+        className="fixed bottom-[24px] right-[24px] bg-white border border-[#CBD5E1] shadow-[0_6px_22px_rgba(8,145,178,0.16)] hover:shadow-[0_8px_28px_rgba(8,145,178,0.26)] hover:border-[#0891B2] rounded-full px-[18px] py-[10px] flex items-center gap-[9px] transition-all z-[90] active:scale-95 cursor-pointer group"
       >
-        <MessageCircle className="w-[18px] h-[18px] text-[#2563EB]" />
-        <span className="text-[#1F2937] text-[14px] font-bold">Help</span>
+        <div className="w-[26px] h-[26px] rounded-full bg-[#E0F2FE] flex items-center justify-center text-[#0891B2] group-hover:bg-[#0891B2] group-hover:text-white transition-colors">
+          <MessageCircle className="w-[15px] h-[15px]" />
+        </div>
+        <span className="text-[#0F2D36] text-[14px] font-bold tracking-tight">Help</span>
       </button>
 
       <Footer variant={isAuthenticated ? "dashboard" : "default"} />

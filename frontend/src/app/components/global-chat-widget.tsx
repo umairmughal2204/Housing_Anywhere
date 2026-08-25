@@ -99,34 +99,34 @@ export function GlobalChatWidget() {
     <>
       {/* Auth Prompt Modal if not logged in */}
       {isAuthPromptOpen && (
-        <div className="fixed inset-0 bg-black/60 z-[200] flex items-center justify-center p-[16px] animate-fade-in">
+        <div className="fixed inset-0 bg-black/60 z-[200] flex items-center justify-center p-[16px] animate-fade-in backdrop-blur-xs">
           {/* Backdrop click close */}
           <div className="absolute inset-0" onClick={() => setIsAuthPromptOpen(false)} />
 
           {/* Modal Container */}
-          <div className="bg-white rounded-[24px] w-full max-w-[380px] p-[32px] text-center shadow-[0_20px_50px_rgba(0,0,0,0.15)] z-[210] flex flex-col items-center animate-in fade-in zoom-in-95 duration-200">
-            {/* Circular Lock icon with soft background */}
-            <div className="w-[72px] h-[72px] rounded-full bg-[#EFF6FF] flex items-center justify-center mb-[20px]">
-              <Lock className="w-[32px] h-[32px] text-[#2563EB]" />
+          <div className="bg-white rounded-[24px] w-full max-w-[380px] p-[32px] text-center shadow-[0_20px_50px_rgba(8,145,178,0.18)] z-[210] flex flex-col items-center animate-in fade-in zoom-in-95 duration-200 border border-[rgba(8,145,178,0.14)]">
+            {/* Circular Lock icon with soft teal background */}
+            <div className="w-[72px] h-[72px] rounded-full bg-[#E0F2FE] flex items-center justify-center mb-[20px] shadow-inner">
+              <Lock className="w-[32px] h-[32px] text-[#0891B2]" />
             </div>
 
-            <h3 className="text-[#1F2937] text-[20px] font-bold mb-[8px]">
+            <h3 className="text-[#0F2D36] text-[20px] font-bold mb-[8px]">
               Please sign in
             </h3>
-            <p className="text-[#6B7280] text-[14px] leading-[1.5] mb-[24px]">
-              You need to sign in to access support chat assistance.
+            <p className="text-[#64748B] text-[14px] leading-[1.5] mb-[24px]">
+              You need to sign in to your account to access support chat assistance.
             </p>
 
             <Link
-              to="/login"
+              to={`/login?returnTo=${encodeURIComponent(location.pathname + location.search)}`}
               onClick={() => setIsAuthPromptOpen(false)}
-              className="w-full h-[46px] flex items-center justify-center bg-[#0F2D36] hover:bg-[#081B20] text-white font-bold rounded-full transition-colors mb-[12px] text-[15px]"
+              className="w-full h-[46px] flex items-center justify-center bg-[#0891B2] hover:bg-[#0E7490] text-white font-bold rounded-full transition-all shadow-[0_4px_12px_rgba(8,145,178,0.2)] mb-[12px] text-[15px] active:scale-[0.98]"
             >
               Sign in
             </Link>
             <button
               onClick={() => setIsAuthPromptOpen(false)}
-              className="text-[#6B7280] hover:text-[#1F2937] font-semibold text-[14px] transition-colors"
+              className="text-[#64748B] hover:text-[#0F2D36] font-semibold text-[14px] transition-colors cursor-pointer"
             >
               Cancel
             </button>
@@ -200,10 +200,12 @@ export function GlobalChatWidget() {
       {/* Floating help widget bottom right */}
       <button
         onClick={handleHelpFloatClick}
-        className="fixed bottom-[24px] right-[24px] bg-white border border-[#E2E8F0] shadow-[0_6px_20px_rgba(0,0,0,0.08)] rounded-full px-[20px] py-[10px] flex items-center gap-[8px] hover:bg-[#F8FAFC] transition-all z-[90] active:scale-95 cursor-pointer"
+        className="fixed bottom-[24px] right-[24px] bg-white border border-[#CBD5E1] shadow-[0_6px_22px_rgba(8,145,178,0.16)] hover:shadow-[0_8px_28px_rgba(8,145,178,0.26)] hover:border-[#0891B2] rounded-full px-[18px] py-[10px] flex items-center gap-[9px] transition-all z-[90] active:scale-95 cursor-pointer group"
       >
-        <MessageCircle className="w-[18px] h-[18px] text-[#2563EB]" />
-        <span className="text-[#1F2937] text-[14px] font-bold">Help</span>
+        <div className="w-[26px] h-[26px] rounded-full bg-[#E0F2FE] flex items-center justify-center text-[#0891B2] group-hover:bg-[#0891B2] group-hover:text-white transition-colors">
+          <MessageCircle className="w-[15px] h-[15px]" />
+        </div>
+        <span className="text-[#0F2D36] text-[14px] font-bold tracking-tight">Help</span>
       </button>
     </>
   );

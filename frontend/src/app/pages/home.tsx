@@ -433,6 +433,8 @@ export function Home() {
   const [isLoadingListings, setIsLoadingListings] = useState(false);
   const [favorites, setFavorites] = useState<FavoriteListing[]>([]);
   const [isLoadingFavorites, setIsLoadingFavorites] = useState(false);
+  const [availableListings, setAvailableListings] = useState<HomeListing[]>([]);
+  const [isLoadingAvailableListings, setIsLoadingAvailableListings] = useState(true);
   const [carouselImagesByListingId, setCarouselImagesByListingId] = useState<Record<string, number>>({});
   const [favoriteSplashById, setFavoriteSplashById] = useState<Set<string>>(new Set());
   const [favoriteListingIds, setFavoriteListingIds] = useState<Set<string>>(new Set());
@@ -455,133 +457,155 @@ export function Home() {
     error instanceof DOMException && error.name === "AbortError";
 
   useEffect(() => {
-    const loadCitySuggestions = async () => {
+    let isCancelled = false;
+
+    const loadData = async () => {
+      setIsLoadingListings(true);
+      setIsLoadingRecommendations(true);
+
+      let fetchedListings: HomeListing[] = [];
+
       try {
         const response = await fetch(`${API_BASE}/api/listings`);
-        if (!response.ok) {
-          throw new Error("Failed to load listing cities");
+        if (response.ok) {
+          const payload = (await response.json()) as { listings: (ListingCitySuggestion & ApiHomeListing)[] };
+          if (!isCancelled) {
+            setCitySuggestions(buildCitySuggestions(payload.listings));
+            fetchedListings = (payload.listings ?? []).map(normalizeHomeListing);
+            setAvailableListings(fetchedListings);
+          }
         }
-
-        const payload = (await response.json()) as { listings: ListingCitySuggestion[] };
-        setCitySuggestions(buildCitySuggestions(payload.listings));
       } catch {
-        setCitySuggestions(cities);
+        if (!isCancelled) {
+          setCitySuggestions(cities);
+          setAvailableListings([]);
+        }
       }
-    };
 
-    void loadCitySuggestions();
-  }, []);
+      if (isCancelled) return;
 
-  useEffect(() => {
-    if (isAuthLoading) {
-      return;
-    }
+      const token = localStorage.getItem("authToken");
 
-    if (!isAuthenticated) {
-      setRecommendations([]);
-      setRecentlyViewed([]);
-      setFavorites([]);
-      setFavoriteListingIds(new Set());
-      setIsLoadingRecommendations(false);
-      setIsLoadingListings(false);
-      setIsLoadingFavorites(false);
-      return;
-    }
-
-    const token = localStorage.getItem("authToken");
-    if (!token) {
-      setRecommendations([]);
-      setRecentlyViewed([]);
-      setFavorites([]);
-      setFavoriteListingIds(new Set());
-      setIsLoadingRecommendations(false);
-      setIsLoadingListings(false);
-      setIsLoadingFavorites(false);
-      return;
-    }
-
-    const abortController = new AbortController();
-    const headers = { Authorization: `Bearer ${token}` };
-
-    setIsLoadingRecommendations(true);
-    setIsLoadingListings(true);
-    setIsLoadingFavorites(true);
-
-    const loadRecommendations = async () => {
-      try {
-        const response = await fetch(`${API_BASE}/api/auth/me/recommendations?limit=3`, {
-          headers,
-          signal: abortController.signal,
-        });
-        if (!response.ok) {
-          throw new Error("Failed to load recommendations");
+      // 1. Load Recommendations
+      if (token && isAuthenticated) {
+        try {
+          const recRes = await fetch(`${API_BASE}/api/auth/me/recommendations?limit=6`, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          if (recRes.ok) {
+            const recPayload = (await recRes.json()) as { recommendations: ApiHomeListing[] };
+            const normalizedRecs = (recPayload.recommendations ?? []).map(normalizeHomeListing);
+            if (!isCancelled) {
+              setRecommendations(normalizedRecs.length > 0 ? normalizedRecs : fetchedListings.slice(0, 6));
+            }
+          } else if (!isCancelled) {
+            setRecommendations(fetchedListings.slice(0, 6));
+          }
+        } catch {
+          if (!isCancelled) {
+            setRecommendations(fetchedListings.slice(0, 6));
+          }
+        } finally {
+          if (!isCancelled) setIsLoadingRecommendations(false);
         }
-
-        const payload = (await response.json()) as { recommendations: ApiHomeListing[] };
-        setRecommendations((payload.recommendations ?? []).map(normalizeHomeListing));
-      } catch (error) {
-        if (!isAbortError(error)) {
-          setRecommendations([]);
-        }
-      } finally {
-        if (!abortController.signal.aborted) {
+      } else {
+        if (!isCancelled) {
+          setRecommendations(fetchedListings.slice(0, 6));
           setIsLoadingRecommendations(false);
         }
       }
-    };
 
-    const loadHomeListings = async () => {
-      try {
-        const response = await fetch(`${API_BASE}/api/auth/me/recently-viewed?limit=3`, {
-          headers,
-          signal: abortController.signal,
-        });
-        if (!response.ok) {
-          throw new Error("Failed to load home listings");
+      // 2. Load Recently Viewed
+      if (token && isAuthenticated) {
+        try {
+          const rvRes = await fetch(`${API_BASE}/api/auth/me/recently-viewed?limit=6`, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          if (rvRes.ok) {
+            const rvPayload = (await rvRes.json()) as { listings: ApiHomeListing[] };
+            const normalizedRv = (rvPayload.listings ?? []).map(normalizeHomeListing);
+            if (!isCancelled) {
+              if (normalizedRv.length > 0) {
+                setRecentlyViewed(normalizedRv);
+              } else {
+                const stored = localStorage.getItem("guest_recently_viewed_ids");
+                const ids: string[] = stored ? JSON.parse(stored) : [];
+                const localViewed = ids
+                  .map((viewedId) => fetchedListings.find((l) => l.id === viewedId))
+                  .filter((l): l is HomeListing => Boolean(l));
+                setRecentlyViewed(localViewed);
+              }
+            }
+          } else if (!isCancelled) {
+            const stored = localStorage.getItem("guest_recently_viewed_ids");
+            const ids: string[] = stored ? JSON.parse(stored) : [];
+            const localViewed = ids
+              .map((viewedId) => fetchedListings.find((l) => l.id === viewedId))
+              .filter((l): l is HomeListing => Boolean(l));
+            setRecentlyViewed(localViewed);
+          }
+        } catch {
+          if (!isCancelled) {
+            setRecentlyViewed([]);
+          }
+        } finally {
+          if (!isCancelled) setIsLoadingListings(false);
         }
-
-        const payload = (await response.json()) as { listings: ApiHomeListing[] };
-        setRecentlyViewed((payload.listings ?? []).map(normalizeHomeListing));
-      } catch (error) {
-        if (!isAbortError(error)) {
-          setRecentlyViewed([]);
-        }
-      } finally {
-        if (!abortController.signal.aborted) {
-          setIsLoadingListings(false);
+      } else {
+        // Guest user: Load recently viewed from localStorage
+        try {
+          const stored = localStorage.getItem("guest_recently_viewed_ids");
+          const ids: string[] = stored ? JSON.parse(stored) : [];
+          const localViewed = ids
+            .map((viewedId) => fetchedListings.find((l) => l.id === viewedId))
+            .filter((l): l is HomeListing => Boolean(l));
+          if (!isCancelled) {
+            setRecentlyViewed(localViewed);
+          }
+        } catch {
+          if (!isCancelled) {
+            setRecentlyViewed([]);
+          }
+        } finally {
+          if (!isCancelled) setIsLoadingListings(false);
         }
       }
-    };
 
-    const loadFavorites = async () => {
-      try {
-        const response = await fetch(`${API_BASE}/api/auth/me/favorites`, {
-          headers,
-          signal: abortController.signal,
-        });
-        if (!response.ok) {
-          throw new Error("Failed to load favorites");
+      // 3. Load Favorites (Only if authenticated)
+      if (token && isAuthenticated) {
+        setIsLoadingFavorites(true);
+        try {
+          const favRes = await fetch(`${API_BASE}/api/auth/me/favorites`, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          if (favRes.ok) {
+            const favPayload = (await favRes.json()) as FavoritesPayload;
+            if (!isCancelled) {
+              setFavorites((favPayload.favorites ?? []).map(normalizeFavoriteListing));
+              setFavoriteListingIds(new Set(extractFavoriteListingIds(favPayload)));
+            }
+          }
+        } catch {
+          if (!isCancelled) {
+            setFavorites([]);
+            setFavoriteListingIds(new Set());
+          }
+        } finally {
+          if (!isCancelled) setIsLoadingFavorites(false);
         }
-
-        const payload = (await response.json()) as FavoritesPayload;
-        setFavorites((payload.favorites ?? []).map(normalizeFavoriteListing));
-        setFavoriteListingIds(new Set(extractFavoriteListingIds(payload)));
-      } catch (error) {
-        if (!isAbortError(error)) {
+      } else {
+        if (!isCancelled) {
           setFavorites([]);
           setFavoriteListingIds(new Set());
-        }
-      } finally {
-        if (!abortController.signal.aborted) {
           setIsLoadingFavorites(false);
         }
       }
     };
 
-    void Promise.allSettled([loadRecommendations(), loadHomeListings(), loadFavorites()]);
+    void loadData();
 
     return () => {
-      abortController.abort();
+      isCancelled = true;
     };
   }, [isAuthenticated, isAuthLoading]);
 
@@ -640,8 +664,9 @@ export function Home() {
 
   const handleToggleFavorite = async (listingId: string, isAdd: boolean) => {
     const token = localStorage.getItem("authToken");
-    if (!token) {
-      navigate("/login");
+    if (!token || !isAuthenticated) {
+      toast.info("Please log in to save favorites");
+      navigate(`/login?returnTo=${encodeURIComponent("/")}`);
       return;
     }
 
@@ -890,429 +915,448 @@ export function Home() {
         </div>
       </section>
 
-      {/* Personalized Recommendations - Only show when logged in */}
-      {isAuthenticated && (
-        <section className="bg-white pt-[12px] pb-[64px] border-b border-[rgba(0,0,0,0.08)]">
-          <div className="max-w-[1200px] mx-auto px-[32px]">
-            {/* Section 1: Recently viewed */}
-            <div className="mb-[56px] relative group/list">
-              <div className="mb-[24px]">
-                <h2 className="text-[26px] md:text-[32px] font-bold text-[#1A1A1A] mb-[4px]">Recently viewed</h2>
-                <p className="text-[14px] text-[#6B6B6B]">Based on your recent viewing history</p>
-              </div>
-              {isLoadingListings ? (
-                <HomeListingsSkeletonGrid />
-              ) : recentlyViewed.length > 0 ? (
-                <div className="relative">
-                  <div
-                    ref={recentlyViewedScrollRef}
-                    className="flex overflow-x-auto gap-[24px] pb-[16px] scroll-smooth [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-                  >
-                    {recentlyViewed.map((property) => (
-                      <Link
-                        key={property.id}
-                        to={`/listing/${property.id}`}
-                        className="flex-shrink-0 w-[280px] md:w-[320px] group flex flex-col gap-[12px]"
-                      >
-                        <div className="relative aspect-[16/10] overflow-hidden bg-[#F7F7F9] group/carousel rounded-[16px]">
-                          <img
-                            src={getListingCardImages(property.id, property.images)[carouselImagesByListingId[property.id] ?? 0] ?? "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800&q=80"}
-                            alt={property.title}
-                            className="w-full h-full object-cover object-center bg-[#F3F4F6]"
-                          />
-                          {Date.now() - new Date(property.createdAt).getTime() < 1000 * 60 * 60 * 24 * 7 && (
-                            <div className="absolute top-[12px] left-[12px] bg-[#F7EFE9] text-[#5C4533] px-[12px] py-[4.5px] rounded-[6px] text-[11px] font-semibold tracking-[0.02em] shadow-sm flex items-center gap-[4px]">
-                              <Star className="w-[10px] h-[10px] fill-current text-[#A78B71]" />
-                              New
-                            </div>
-                          )}
+      {/* Properties section: Recently viewed & Recommendations for all users */}
+      <section className="bg-white pt-[12px] pb-[64px] border-b border-[rgba(0,0,0,0.08)]">
+        <div className="max-w-[1200px] mx-auto px-[16px] sm:px-[24px] md:px-[32px]">
+          {/* Section 1: Recently viewed */}
+          <div className="mb-[56px] relative group/list">
+            <div className="mb-[24px]">
+              <h2 className="text-[26px] md:text-[32px] font-bold text-[#1A1A1A] mb-[4px]">Recently viewed</h2>
+              <p className="text-[14px] text-[#6B6B6B]">Based on your recent viewing history</p>
+            </div>
+            {isLoadingListings ? (
+              <HomeListingsSkeletonGrid />
+            ) : recentlyViewed.length > 0 ? (
+              <div className="relative">
+                <div
+                  ref={recentlyViewedScrollRef}
+                  className="flex overflow-x-auto gap-[24px] pb-[16px] scroll-smooth [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+                >
+                  {recentlyViewed.map((property) => (
+                    <Link
+                      key={property.id}
+                      to={`/property/${property.id}`}
+                      className="flex-shrink-0 w-[280px] md:w-[320px] group flex flex-col gap-[12px]"
+                    >
+                      <div className="relative aspect-[16/10] overflow-hidden bg-[#F7F7F9] group/carousel rounded-[16px]">
+                        <img
+                          src={getListingCardImages(property.id, property.images)[carouselImagesByListingId[property.id] ?? 0] ?? "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800&q=80"}
+                          alt={property.title}
+                          className="w-full h-full object-cover object-center bg-[#F3F4F6]"
+                        />
+                        {Date.now() - new Date(property.createdAt).getTime() < 1000 * 60 * 60 * 24 * 7 && (
+                          <div className="absolute top-[12px] left-[12px] bg-[#F7EFE9] text-[#5C4533] px-[12px] py-[4.5px] rounded-[6px] text-[11px] font-semibold tracking-[0.02em] shadow-sm flex items-center gap-[4px]">
+                            <Star className="w-[10px] h-[10px] fill-current text-[#A78B71]" />
+                            New
+                          </div>
+                        )}
 
-                          {getListingCardImages(property.id, property.images).length > 1 && (
-                            <button
-                              onClick={(e) => {
-                                e.preventDefault();
-                                moveListingImage(property.id, "prev", property.images);
-                              }}
-                              className="absolute left-[8px] top-1/2 -translate-y-1/2 w-[28px] h-[28px] bg-white/80 hover:bg-white flex items-center justify-center transition-colors opacity-0 group-hover/carousel:opacity-100 rounded-full z-10"
-                              aria-label="Previous image"
-                            >
-                              <ChevronLeft className="w-[16px] h-[16px] text-[#1A1A1A]" />
-                            </button>
-                          )}
-
-                          {getListingCardImages(property.id, property.images).length > 1 && (
-                            <button
-                              onClick={(e) => {
-                                e.preventDefault();
-                                moveListingImage(property.id, "next", property.images);
-                              }}
-                              className="absolute right-[8px] top-1/2 -translate-y-1/2 w-[28px] h-[28px] bg-white/80 hover:bg-white flex items-center justify-center transition-colors opacity-0 group-hover/carousel:opacity-100 rounded-full z-10"
-                              aria-label="Next image"
-                            >
-                              <ChevronRight className="w-[16px] h-[16px] text-[#1A1A1A]" />
-                            </button>
-                          )}
-
+                        {getListingCardImages(property.id, property.images).length > 1 && (
                           <button
                             onClick={(e) => {
                               e.preventDefault();
-                              const isAdd = !favoriteListingIds.has(property.id);
-                              triggerFavoriteSplash(property.id);
-                              void handleToggleFavorite(property.id, isAdd);
+                              moveListingImage(property.id, "prev", property.images);
                             }}
-                            type="button"
-                            disabled={favoriteBusyId === property.id}
-                            aria-label={favoriteListingIds.has(property.id) ? "Remove from favorites" : "Add to favorites"}
-                            className="absolute top-[12px] right-[12px] w-[36px] h-[36px] bg-white hover:bg-white/95 flex items-center justify-center transition-all rounded-full shadow-[0_4px_12px_rgba(0,0,0,0.08)] hover:scale-105 active:scale-95 z-10"
+                            className="absolute left-[8px] top-1/2 -translate-y-1/2 w-[28px] h-[28px] bg-white/80 hover:bg-white flex items-center justify-center transition-colors opacity-0 group-hover/carousel:opacity-100 rounded-full z-10"
+                            aria-label="Previous image"
                           >
-                            <Heart
-                              className={`w-[18px] h-[18px] transition-colors ${favoriteListingIds.has(property.id)
-                                ? "fill-red-500 text-red-500"
-                                : "text-[#B91C1C] hover:text-red-500"
-                                }`}
-                            />
-
-                            {favoriteSplashById.has(property.id) && (
-                              <>
-                                <div className="absolute inset-0 border-2 border-[#0891B2] rounded-full animate-ping" style={{ animationDuration: "480ms" }} />
-                                <div className="absolute inset-0 border-2 border-[#0891B2] rounded-full opacity-30" style={{ animation: "ring-pulse 480ms ease-out forwards" }} />
-                              </>
-                            )}
+                            <ChevronLeft className="w-[16px] h-[16px] text-[#1A1A1A]" />
                           </button>
+                        )}
 
-                          {getListingCardImages(property.id, property.images).length > 1 && (
-                            <div className="absolute bottom-[12px] left-1/2 -translate-x-1/2 flex items-center gap-[4px]">
-                              {Array.from({ length: getListingCardImages(property.id, property.images).length }, (_, index) => (
-                                <div
-                                  key={index}
-                                  className={`w-[6px] h-[6px] rounded-full ${index === (carouselImagesByListingId[property.id] ?? 0) ? "bg-white" : "bg-white/40"
-                                    }`}
-                                />
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                        <div className="flex flex-col gap-[4px] pt-[2px]">
-                          <h3 className="line-clamp-1 text-[16px] font-bold leading-[1.3] text-[#1A1A1A]">{property.title}</h3>
-                          <span className="text-[14px] text-[#6B6B6B]">{property.bedrooms} bedrooms · {property.area} m²</span>
-                          <span className="text-[14px] text-[#6B6B6B]">
-                            {new Date(property.availableFrom) <= new Date()
-                              ? "Available now"
-                              : `Available from ${new Date(property.availableFrom).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}`}
-                          </span>
-
-                          <div className="mt-[10px] pt-[10px] border-t border-[#F3F4F6]">
-                            <span className="text-[22px] font-bold text-[#1A1A1A]">€{property.monthlyRent}</span>
-                            <span className="text-[14px] text-[#6B6B6B] ml-[4px]">/month</span>
-                          </div>
-
-                          <div className="flex items-center gap-[6px] mt-[4px]">
-                            {property.utilitiesIncluded ? (
-                              <>
-                                <svg className="w-[16px] h-[16px] text-[#16A34A] flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
-                                <span className="text-[13px] text-[#16A34A] font-semibold">All fees included</span>
-                              </>
-                            ) : (
-                              <>
-                                <svg className="w-[16px] h-[16px] text-[#9CA3AF] flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-                                <span className="text-[13px] text-[#6B6B6B] font-semibold">Utilities excluded</span>
-                              </>
-                            )}
-                          </div>
-                        </div>
-                      </Link>
-                    ))}
-                  </div>
-                </div>
-              ) : (
-                <div className="rounded-[20px] border border-[rgba(0,0,0,0.08)] bg-[#F7F7F9] p-[40px] text-center">
-                  <div className="flex justify-center mb-[24px]">
-                    <img src={houseImage} alt="No listings" className="w-[120px] h-[120px] object-contain" />
-                  </div>
-                  <div className="text-[#1A1A1A] text-[18px] font-semibold mb-[8px]">No recently viewed listings yet</div>
-                  <div className="text-[#6B6B6B] text-[14px] max-w-[560px] mx-auto mb-[16px]">
-                    Once you open a property, it will appear here so you can jump back to it quickly.
-                  </div>
-                  <div className="flex items-center justify-center gap-[12px] flex-wrap mt-[16px]">
-                    <Link
-                      to="/listings"
-                      className="inline-flex items-center gap-[8px] px-[24px] py-[10px] bg-[#0891B2] text-white text-[14px] font-semibold rounded-full shadow-[0_4px_10px_rgba(8,145,178,0.16)] hover:bg-[#0E7490] hover:shadow-[0_6px_14px_rgba(8,145,178,0.24)] transition-all"
-                    >
-                      Browse listings
-                      <ArrowRight className="w-[16px] h-[16px]" />
-                    </Link>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Section 2: Recommendations */}
-            <div className="mb-[56px] relative group/list">
-              <div className="mb-[24px]">
-                <h2 className="text-[26px] md:text-[32px] font-bold text-[#1A1A1A] mb-[4px]">Recommendations</h2>
-                <p className="text-[14px] text-[#6B6B6B]">Personalized suggestions for your next stay</p>
-              </div>
-              {isLoadingRecommendations ? (
-                <HomeListingsSkeletonGrid />
-              ) : recommendations.length > 0 ? (
-                <div className="relative">
-                  <div
-                    ref={recommendationsScrollRef}
-                    className="flex overflow-x-auto gap-[24px] pb-[16px] scroll-smooth [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-                  >
-                    {recommendations.map((property) => (
-                      <Link
-                        key={property.id}
-                        to={`/listing/${property.id}`}
-                        className="flex-shrink-0 w-[280px] md:w-[320px] group flex flex-col gap-[12px]"
-                      >
-                        <div className="relative aspect-[16/10] overflow-hidden bg-[#F7F7F9] group/carousel rounded-[16px]">
-                          <img
-                            src={getListingCardImages(property.id, property.images)[carouselImagesByListingId[property.id] ?? 0] ?? "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800&q=80"}
-                            alt={property.title}
-                            className="w-full h-full object-cover object-center bg-[#F3F4F6]"
-                          />
-                          {Date.now() - new Date(property.createdAt).getTime() < 1000 * 60 * 60 * 24 * 7 && (
-                            <div className="absolute top-[12px] left-[12px] bg-[#F7EFE9] text-[#5C4533] px-[12px] py-[4.5px] rounded-[6px] text-[11px] font-semibold tracking-[0.02em] shadow-sm flex items-center gap-[4px]">
-                              <Star className="w-[10px] h-[10px] fill-current text-[#A78B71]" />
-                              New
-                            </div>
-                          )}
-
-                          {getListingCardImages(property.id, property.images).length > 1 && (
-                            <button
-                              onClick={(e) => {
-                                e.preventDefault();
-                                moveListingImage(property.id, "prev", property.images);
-                              }}
-                              className="absolute left-[8px] top-1/2 -translate-y-1/2 w-[28px] h-[28px] bg-white/80 hover:bg-white flex items-center justify-center transition-colors opacity-0 group-hover/carousel:opacity-100 rounded-full z-10"
-                              aria-label="Previous image"
-                            >
-                              <ChevronLeft className="w-[16px] h-[16px] text-[#1A1A1A]" />
-                            </button>
-                          )}
-
-                          {getListingCardImages(property.id, property.images).length > 1 && (
-                            <button
-                              onClick={(e) => {
-                                e.preventDefault();
-                                moveListingImage(property.id, "next", property.images);
-                              }}
-                              className="absolute right-[8px] top-1/2 -translate-y-1/2 w-[28px] h-[28px] bg-white/80 hover:bg-white flex items-center justify-center transition-colors opacity-0 group-hover/carousel:opacity-100 rounded-full z-10"
-                              aria-label="Next image"
-                            >
-                              <ChevronRight className="w-[16px] h-[16px] text-[#1A1A1A]" />
-                            </button>
-                          )}
-
+                        {getListingCardImages(property.id, property.images).length > 1 && (
                           <button
                             onClick={(e) => {
                               e.preventDefault();
-                              const isAdd = !favoriteListingIds.has(property.id);
-                              triggerFavoriteSplash(property.id);
-                              void handleToggleFavorite(property.id, isAdd);
+                              moveListingImage(property.id, "next", property.images);
                             }}
-                            type="button"
-                            disabled={favoriteBusyId === property.id}
-                            aria-label={favoriteListingIds.has(property.id) ? "Remove from favorites" : "Add to favorites"}
-                            className="absolute top-[12px] right-[12px] w-[36px] h-[36px] bg-white hover:bg-white/95 flex items-center justify-center transition-all rounded-full shadow-[0_4px_12px_rgba(0,0,0,0.08)] hover:scale-105 active:scale-95 z-10"
+                            className="absolute right-[8px] top-1/2 -translate-y-1/2 w-[28px] h-[28px] bg-white/80 hover:bg-white flex items-center justify-center transition-colors opacity-0 group-hover/carousel:opacity-100 rounded-full z-10"
+                            aria-label="Next image"
                           >
-                            <Heart
-                              className={`w-[18px] h-[18px] transition-colors ${favoriteListingIds.has(property.id)
-                                ? "fill-red-500 text-red-500"
-                                : "text-[#B91C1C] hover:text-red-500"
-                                }`}
-                            />
-
-                            {favoriteSplashById.has(property.id) && (
-                              <>
-                                <div className="absolute inset-0 border-2 border-[#0891B2] rounded-full animate-ping" style={{ animationDuration: "480ms" }} />
-                                <div className="absolute inset-0 border-2 border-[#0891B2] rounded-full opacity-30" style={{ animation: "ring-pulse 480ms ease-out forwards" }} />
-                              </>
-                            )}
+                            <ChevronRight className="w-[16px] h-[16px] text-[#1A1A1A]" />
                           </button>
+                        )}
 
-                          {getListingCardImages(property.id, property.images).length > 1 && (
-                            <div className="absolute bottom-[12px] left-1/2 -translate-x-1/2 flex items-center gap-[4px]">
-                              {Array.from({ length: getListingCardImages(property.id, property.images).length }, (_, index) => (
-                                <div
-                                  key={index}
-                                  className={`w-[6px] h-[6px] rounded-full ${index === (carouselImagesByListingId[property.id] ?? 0) ? "bg-white" : "bg-white/40"
-                                    }`}
-                                />
-                              ))}
-                            </div>
+                        <button
+                          onClick={(e) => {
+                            e.preventDefault();
+                            const isAdd = !favoriteListingIds.has(property.id);
+                            triggerFavoriteSplash(property.id);
+                            void handleToggleFavorite(property.id, isAdd);
+                          }}
+                          type="button"
+                          disabled={favoriteBusyId === property.id}
+                          aria-label={favoriteListingIds.has(property.id) ? "Remove from favorites" : "Add to favorites"}
+                          className="absolute top-[12px] right-[12px] w-[36px] h-[36px] bg-white hover:bg-white/95 flex items-center justify-center transition-all rounded-full shadow-[0_4px_12px_rgba(0,0,0,0.08)] hover:scale-105 active:scale-95 z-10"
+                        >
+                          <Heart
+                            className={`w-[18px] h-[18px] transition-colors ${favoriteListingIds.has(property.id)
+                              ? "fill-red-500 text-red-500"
+                              : "text-[#B91C1C] hover:text-red-500"
+                              }`}
+                          />
+
+                          {favoriteSplashById.has(property.id) && (
+                            <>
+                              <div className="absolute inset-0 border-2 border-[#0891B2] rounded-full animate-ping" style={{ animationDuration: "480ms" }} />
+                              <div className="absolute inset-0 border-2 border-[#0891B2] rounded-full opacity-30" style={{ animation: "ring-pulse 480ms ease-out forwards" }} />
+                            </>
+                          )}
+                        </button>
+
+                        {getListingCardImages(property.id, property.images).length > 1 && (
+                          <div className="absolute bottom-[12px] left-1/2 -translate-x-1/2 flex items-center gap-[4px]">
+                            {Array.from({ length: getListingCardImages(property.id, property.images).length }, (_, index) => (
+                              <div
+                                key={index}
+                                className={`w-[6px] h-[6px] rounded-full ${index === (carouselImagesByListingId[property.id] ?? 0) ? "bg-white" : "bg-white/40"
+                                  }`}
+                              />
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex flex-col gap-[4px] pt-[2px]">
+                        <h3 className="line-clamp-1 text-[16px] font-bold leading-[1.3] text-[#1A1A1A]">{property.title}</h3>
+                        <span className="text-[14px] text-[#6B6B6B]">{property.bedrooms} bedrooms · {property.area} m²</span>
+                        <span className="text-[14px]">
+                          {new Date(property.availableFrom) <= new Date() ? (
+                            <span className="text-[#16A34A] font-semibold flex items-center gap-[6px]">
+                              <span className="w-[6px] h-[6px] rounded-full bg-[#16A34A]" />
+                              Available now
+                            </span>
+                          ) : (
+                            <span className="text-[#6B6B6B]">
+                              Available from {new Date(property.availableFrom).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}
+                            </span>
+                          )}
+                        </span>
+
+                        <div className="mt-[10px] pt-[10px] border-t border-[#F3F4F6]">
+                          <span className="text-[22px] font-bold text-[#1A1A1A]">€{property.monthlyRent}</span>
+                          <span className="text-[14px] text-[#6B6B6B] ml-[4px]">/month</span>
+                        </div>
+
+                        <div className="flex items-center gap-[6px] mt-[4px]">
+                          {property.utilitiesIncluded ? (
+                            <>
+                              <svg className="w-[16px] h-[16px] text-[#16A34A] flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+                              <span className="text-[13px] text-[#16A34A] font-semibold">All fees included</span>
+                            </>
+                          ) : (
+                            <>
+                              <svg className="w-[16px] h-[16px] text-[#9CA3AF] flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                              <span className="text-[13px] text-[#6B6B6B] font-semibold">Utilities excluded</span>
+                            </>
                           )}
                         </div>
-                        <div className="flex flex-col gap-[4px] pt-[2px]">
-                          <h3 className="line-clamp-1 text-[16px] font-bold leading-[1.3] text-[#1A1A1A]">{property.title}</h3>
-                          <span className="text-[14px] text-[#6B6B6B]">{property.bedrooms} bedrooms · {property.area} m²</span>
-                          <span className="text-[14px] text-[#6B6B6B]">
-                            {new Date(property.availableFrom) <= new Date()
-                              ? "Available now"
-                              : `Available from ${new Date(property.availableFrom).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}`}
-                          </span>
-
-                          <div className="mt-[10px] pt-[10px] border-t border-[#F3F4F6]">
-                            <span className="text-[22px] font-bold text-[#1A1A1A]">€{property.monthlyRent}</span>
-                            <span className="text-[14px] text-[#6B6B6B] ml-[4px]">/month</span>
-                          </div>
-
-                          <div className="flex items-center gap-[6px] mt-[4px]">
-                            {property.utilitiesIncluded ? (
-                              <>
-                                <svg className="w-[16px] h-[16px] text-[#16A34A] flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
-                                <span className="text-[13px] text-[#16A34A] font-semibold">All fees included</span>
-                              </>
-                            ) : (
-                              <>
-                                <svg className="w-[16px] h-[16px] text-[#9CA3AF] flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-                                <span className="text-[13px] text-[#6B6B6B] font-semibold">Utilities excluded</span>
-                              </>
-                            )}
-                          </div>
-                        </div>
-                      </Link>
-                    ))}
-                  </div>
-                </div>
-              ) : (
-                <div className="rounded-[20px] border border-[rgba(0,0,0,0.08)] bg-[#F7F7F9] p-[40px] text-center">
-                  <div className="flex justify-center mb-[24px]">
-                    <img src={houseImage} alt="No listings" className="w-[120px] h-[120px] object-contain" />
-                  </div>
-                  <div className="text-[#1A1A1A] text-[18px] font-semibold mb-[8px]">No recommendations yet</div>
-                  <div className="text-[#6B6B6B] text-[14px] max-w-[560px] mx-auto mb-[16px]">
-                    Start exploring listings, save a few favorites, or message landlords to help us personalize your recommendations.
-                  </div>
-                  <div className="flex items-center justify-center gap-[12px] flex-wrap mt-[16px]">
-                    <Link
-                      to="/listings"
-                      className="inline-flex items-center gap-[8px] px-[24px] py-[10px] bg-[#0891B2] text-white text-[14px] font-semibold rounded-full shadow-[0_4px_10px_rgba(8,145,178,0.16)] hover:bg-[#0E7490] hover:shadow-[0_6px_14px_rgba(8,145,178,0.24)] transition-all"
-                    >
-                      Browse listings
-                      <ArrowRight className="w-[16px] h-[16px]" />
+                      </div>
                     </Link>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Section 3: Your favorites */}
-            {(isLoadingFavorites || favorites.length > 0) && (
-              <div className="mb-[24px]">
-                <div className="mb-[8px]">
-                  <h2 className="text-[26px] md:text-[32px] font-bold text-[#1A1A1A] mb-[4px]">Your favorites</h2>
-                  <p className="text-[14px] text-[#6B6B6B]">Properties you've saved for later</p>
-                </div>
-
-                {/* Category Filter Tabs */}
-                <div className="flex items-center gap-[32px] mb-[24px] border-b border-[#E5E7EB] overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-                  {[
-                    { key: "all", label: "All", icon: Star },
-                    { key: "house", label: "House", icon: HomeIcon },
-                    { key: "apartment", label: "Apartment", icon: Building2 },
-                    { key: "building", label: "Building", icon: Building },
-                  ].map((tab) => (
-                    <button
-                      key={tab.key}
-                      type="button"
-                      onClick={() => setFavoritesTypeFilter(tab.key)}
-                      className={`flex flex-col items-center gap-[6px] pb-[12px] pt-[4px] px-[4px] text-[13px] font-semibold transition-all whitespace-nowrap border-b-[2px] ${favoritesTypeFilter === tab.key
-                          ? "border-[#1A1A1A] text-[#1A1A1A]"
-                          : "border-transparent text-[#9CA3AF] hover:text-[#6B6B6B]"
-                        }`}
-                    >
-                      <tab.icon className="w-[24px] h-[24px]" />
-                      {tab.label}
-                    </button>
                   ))}
                 </div>
-
-                {isLoadingFavorites ? (
-                  <HomeListingsSkeletonGrid variant="favorites" />
-                ) : (() => {
-                  const filteredFavorites = favoritesTypeFilter === "all"
-                    ? favorites
-                    : favorites.filter((p) => p.propertyType === favoritesTypeFilter);
-
-                  return filteredFavorites.length > 0 ? (
-                    <div className="flex overflow-x-auto gap-[24px] pb-[16px] scroll-smooth [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-                      {filteredFavorites.map((property) => (
-                        <Link
-                          key={property.id}
-                          to={`/listing/${property.id}`}
-                          className="flex-shrink-0 w-[280px] md:w-[320px] group flex flex-col border border-[rgba(0,0,0,0.08)] bg-white rounded-[24px] p-[12px] hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)] transition-all duration-200"
-                        >
-                          <div className="relative aspect-[4/3] overflow-hidden bg-[#F7F7F9] group/carousel rounded-[16px]">
-                            <img
-                              src={property.image || "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800&q=80"}
-                              alt={property.title}
-                              className="w-full h-full object-cover object-center bg-[#F3F4F6] transition-transform duration-300 group-hover:scale-[1.03]"
-                            />
-
-                            {/* Property Type Badge */}
-                            <div className="absolute top-[12px] left-[12px] bg-white/90 backdrop-blur-sm text-[#1A1A1A] px-[10px] py-[4px] rounded-[6px] text-[11px] font-semibold capitalize shadow-sm">
-                              {property.propertyType}
-                            </div>
-
-                            {/* Heart Button */}
-                            <div className="absolute top-[12px] right-[12px] w-[36px] h-[36px] bg-white/90 backdrop-blur-sm hover:bg-white flex items-center justify-center rounded-full shadow-[0_2px_8px_rgba(0,0,0,0.1)] hover:scale-105 active:scale-95 transition-all z-10">
-                              <Heart className="w-[18px] h-[18px] fill-red-500 text-red-500" />
-                            </div>
-                          </div>
-
-                          <div className="flex flex-col gap-[2px] pt-[14px] px-[4px]">
-                            <h3 className="line-clamp-1 text-[16px] font-bold leading-[1.3] text-[#1A1A1A]">{property.title}</h3>
-                            <span className="text-[14px] text-[#6B6B6B]">{property.bedrooms} bedrooms · {property.area} m²</span>
-
-                            <div className="mt-[10px]">
-                              <span className="text-[22px] font-bold text-[#1A1A1A]">€{property.monthlyRent}</span>
-                              <span className="text-[14px] text-[#6B6B6B] ml-[2px]">/month</span>
-                            </div>
-                            <div className="flex items-center gap-[6px] mt-[4px]">
-                              {property.utilitiesIncluded ? (
-                                <>
-                                  <svg className="w-[16px] h-[16px] text-[#16A34A] flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
-                                  <span className="text-[13px] text-[#16A34A] font-semibold">All fees included</span>
-                                </>
-                              ) : (
-                                <>
-                                  <svg className="w-[16px] h-[16px] text-[#9CA3AF] flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-                                  <span className="text-[13px] text-[#6B6B6B] font-semibold">Utilities excluded</span>
-                                </>
-                              )}
-                            </div>
-                            <span className="text-[13px] text-[#6B6B6B] mt-[2px]">
-                              {new Date(property.availableFrom) <= new Date()
-                                ? "Available now"
-                                : `${new Date(property.availableFrom).toLocaleDateString("en-GB", { month: "short", day: "numeric" })} - onwards`}
-                            </span>
-                          </div>
-                        </Link>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="text-center py-[40px] text-[#6B6B6B] text-[15px]">
-                      No {favoritesTypeFilter !== "all" ? favoritesTypeFilter : ""} favorites found.
-                    </div>
-                  );
-                })()}
+              </div>
+            ) : (
+              <div className="rounded-[20px] border border-[rgba(0,0,0,0.08)] bg-[#F7F7F9] p-[40px] text-center">
+                <div className="flex justify-center mb-[24px]">
+                  <img src={houseImage} alt="No listings" className="w-[120px] h-[120px] object-contain" />
+                </div>
+                <div className="text-[#1A1A1A] text-[18px] font-semibold mb-[8px]">No recently viewed listings yet</div>
+                <div className="text-[#6B6B6B] text-[14px] max-w-[560px] mx-auto mb-[16px]">
+                  Once you open a property, it will appear here so you can jump back to it quickly.
+                </div>
+                <div className="flex items-center justify-center gap-[12px] flex-wrap mt-[16px]">
+                  <Link
+                    to="/listings"
+                    className="inline-flex items-center gap-[8px] px-[24px] py-[10px] bg-[#0891B2] text-white text-[14px] font-semibold rounded-full shadow-[0_4px_10px_rgba(8,145,178,0.16)] hover:bg-[#0E7490] hover:shadow-[0_6px_14px_rgba(8,145,178,0.24)] transition-all"
+                  >
+                    Browse listings
+                    <ArrowRight className="w-[16px] h-[16px]" />
+                  </Link>
+                </div>
               </div>
             )}
-
-            <div className="mt-[32px] md:mt-[40px]">
-              <Link
-                to="/listings"
-                className="inline-flex items-center gap-[6px] text-[#0891B2] text-[15px] font-semibold hover:text-[#0E7490] transition-colors"
-              >
-                View more properties
-                <span className="text-[18px]">→</span>
-              </Link>
-            </div>
           </div>
-        </section>
-      )}
+
+          {/* Section 2: Recommendations */}
+          <div className="mb-[56px] relative group/list">
+            <div className="mb-[24px]">
+              <h2 className="text-[26px] md:text-[32px] font-bold text-[#1A1A1A] mb-[4px]">Recommendations</h2>
+              <p className="text-[14px] text-[#6B6B6B]">Personalized suggestions for your next stay</p>
+            </div>
+            {isLoadingRecommendations ? (
+              <HomeListingsSkeletonGrid />
+            ) : recommendations.length > 0 ? (
+              <div className="relative">
+                <div
+                  ref={recommendationsScrollRef}
+                  className="flex overflow-x-auto gap-[24px] pb-[16px] scroll-smooth [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+                >
+                  {recommendations.map((property) => (
+                    <Link
+                      key={property.id}
+                      to={`/property/${property.id}`}
+                      className="flex-shrink-0 w-[280px] md:w-[320px] group flex flex-col gap-[12px]"
+                    >
+                      <div className="relative aspect-[16/10] overflow-hidden bg-[#F7F7F9] group/carousel rounded-[16px]">
+                        <img
+                          src={getListingCardImages(property.id, property.images)[carouselImagesByListingId[property.id] ?? 0] ?? "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800&q=80"}
+                          alt={property.title}
+                          className="w-full h-full object-cover object-center bg-[#F3F4F6]"
+                        />
+                        {Date.now() - new Date(property.createdAt).getTime() < 1000 * 60 * 60 * 24 * 7 && (
+                          <div className="absolute top-[12px] left-[12px] bg-[#F7EFE9] text-[#5C4533] px-[12px] py-[4.5px] rounded-[6px] text-[11px] font-semibold tracking-[0.02em] shadow-sm flex items-center gap-[4px]">
+                            <Star className="w-[10px] h-[10px] fill-current text-[#A78B71]" />
+                            New
+                          </div>
+                        )}
+
+                        {getListingCardImages(property.id, property.images).length > 1 && (
+                          <button
+                            onClick={(e) => {
+                              e.preventDefault();
+                              moveListingImage(property.id, "prev", property.images);
+                            }}
+                            className="absolute left-[8px] top-1/2 -translate-y-1/2 w-[28px] h-[28px] bg-white/80 hover:bg-white flex items-center justify-center transition-colors opacity-0 group-hover/carousel:opacity-100 rounded-full z-10"
+                            aria-label="Previous image"
+                          >
+                            <ChevronLeft className="w-[16px] h-[16px] text-[#1A1A1A]" />
+                          </button>
+                        )}
+
+                        {getListingCardImages(property.id, property.images).length > 1 && (
+                          <button
+                            onClick={(e) => {
+                              e.preventDefault();
+                              moveListingImage(property.id, "next", property.images);
+                            }}
+                            className="absolute right-[8px] top-1/2 -translate-y-1/2 w-[28px] h-[28px] bg-white/80 hover:bg-white flex items-center justify-center transition-colors opacity-0 group-hover/carousel:opacity-100 rounded-full z-10"
+                            aria-label="Next image"
+                          >
+                            <ChevronRight className="w-[16px] h-[16px] text-[#1A1A1A]" />
+                          </button>
+                        )}
+
+                        <button
+                          onClick={(e) => {
+                            e.preventDefault();
+                            const isAdd = !favoriteListingIds.has(property.id);
+                            triggerFavoriteSplash(property.id);
+                            void handleToggleFavorite(property.id, isAdd);
+                          }}
+                          type="button"
+                          disabled={favoriteBusyId === property.id}
+                          aria-label={favoriteListingIds.has(property.id) ? "Remove from favorites" : "Add to favorites"}
+                          className="absolute top-[12px] right-[12px] w-[36px] h-[36px] bg-white hover:bg-white/95 flex items-center justify-center transition-all rounded-full shadow-[0_4px_12px_rgba(0,0,0,0.08)] hover:scale-105 active:scale-95 z-10"
+                        >
+                          <Heart
+                            className={`w-[18px] h-[18px] transition-colors ${favoriteListingIds.has(property.id)
+                              ? "fill-red-500 text-red-500"
+                              : "text-[#B91C1C] hover:text-red-500"
+                              }`}
+                          />
+
+                          {favoriteSplashById.has(property.id) && (
+                            <>
+                              <div className="absolute inset-0 border-2 border-[#0891B2] rounded-full animate-ping" style={{ animationDuration: "480ms" }} />
+                              <div className="absolute inset-0 border-2 border-[#0891B2] rounded-full opacity-30" style={{ animation: "ring-pulse 480ms ease-out forwards" }} />
+                            </>
+                          )}
+                        </button>
+
+                        {getListingCardImages(property.id, property.images).length > 1 && (
+                          <div className="absolute bottom-[12px] left-1/2 -translate-x-1/2 flex items-center gap-[4px]">
+                            {Array.from({ length: getListingCardImages(property.id, property.images).length }, (_, index) => (
+                              <div
+                                key={index}
+                                className={`w-[6px] h-[6px] rounded-full ${index === (carouselImagesByListingId[property.id] ?? 0) ? "bg-white" : "bg-white/40"
+                                  }`}
+                              />
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex flex-col gap-[4px] pt-[2px]">
+                        <h3 className="line-clamp-1 text-[16px] font-bold leading-[1.3] text-[#1A1A1A]">{property.title}</h3>
+                        <span className="text-[14px] text-[#6B6B6B]">{property.bedrooms} bedrooms · {property.area} m²</span>
+                        <span className="text-[14px]">
+                          {new Date(property.availableFrom) <= new Date() ? (
+                            <span className="text-[#16A34A] font-semibold flex items-center gap-[6px]">
+                              <span className="w-[6px] h-[6px] rounded-full bg-[#16A34A]" />
+                              Available now
+                            </span>
+                          ) : (
+                            <span className="text-[#6B6B6B]">
+                              Available from {new Date(property.availableFrom).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}
+                            </span>
+                          )}
+                        </span>
+
+                        <div className="mt-[10px] pt-[10px] border-t border-[#F3F4F6]">
+                          <span className="text-[22px] font-bold text-[#1A1A1A]">€{property.monthlyRent}</span>
+                          <span className="text-[14px] text-[#6B6B6B] ml-[4px]">/month</span>
+                        </div>
+
+                        <div className="flex items-center gap-[6px] mt-[4px]">
+                          {property.utilitiesIncluded ? (
+                            <>
+                              <svg className="w-[16px] h-[16px] text-[#16A34A] flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+                              <span className="text-[13px] text-[#16A34A] font-semibold">All fees included</span>
+                            </>
+                          ) : (
+                            <>
+                              <svg className="w-[16px] h-[16px] text-[#9CA3AF] flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                              <span className="text-[13px] text-[#6B6B6B] font-semibold">Utilities excluded</span>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <div className="rounded-[20px] border border-[rgba(0,0,0,0.08)] bg-[#F7F7F9] p-[40px] text-center">
+                <div className="flex justify-center mb-[24px]">
+                  <img src={houseImage} alt="No listings" className="w-[120px] h-[120px] object-contain" />
+                </div>
+                <div className="text-[#1A1A1A] text-[18px] font-semibold mb-[8px]">No recommendations yet</div>
+                <div className="text-[#6B6B6B] text-[14px] max-w-[560px] mx-auto mb-[16px]">
+                  Start exploring listings, save a few favorites, or message landlords to help us personalize your recommendations.
+                </div>
+                <div className="flex items-center justify-center gap-[12px] flex-wrap mt-[16px]">
+                  <Link
+                    to="/listings"
+                    className="inline-flex items-center gap-[8px] px-[24px] py-[10px] bg-[#0891B2] text-white text-[14px] font-semibold rounded-full shadow-[0_4px_10px_rgba(8,145,178,0.16)] hover:bg-[#0E7490] hover:shadow-[0_6px_14px_rgba(8,145,178,0.24)] transition-all"
+                  >
+                    Browse listings
+                    <ArrowRight className="w-[16px] h-[16px]" />
+                  </Link>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Section 3: Your favorites (only when authenticated) */}
+          {isAuthenticated && (isLoadingFavorites || favorites.length > 0) && (
+            <div className="mb-[24px]">
+              <div className="mb-[8px]">
+                <h2 className="text-[26px] md:text-[32px] font-bold text-[#1A1A1A] mb-[4px]">Your favorites</h2>
+                <p className="text-[14px] text-[#6B6B6B]">Properties you've saved for later</p>
+              </div>
+
+              {/* Category Filter Tabs */}
+              <div className="flex items-center gap-[32px] mb-[24px] border-b border-[#E5E7EB] overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                {[
+                  { key: "all", label: "All", icon: Star },
+                  { key: "house", label: "House", icon: HomeIcon },
+                  { key: "apartment", label: "Apartment", icon: Building2 },
+                  { key: "building", label: "Building", icon: Building },
+                ].map((tab) => (
+                  <button
+                    key={tab.key}
+                    type="button"
+                    onClick={() => setFavoritesTypeFilter(tab.key)}
+                    className={`flex flex-col items-center gap-[6px] pb-[12px] pt-[4px] px-[4px] text-[13px] font-semibold transition-all whitespace-nowrap border-b-[2px] ${favoritesTypeFilter === tab.key
+                      ? "border-[#1A1A1A] text-[#1A1A1A]"
+                      : "border-transparent text-[#9CA3AF] hover:text-[#6B6B6B]"
+                      }`}
+                  >
+                    <tab.icon className="w-[24px] h-[24px]" />
+                    {tab.label}
+                  </button>
+                ))}
+              </div>
+
+              {isLoadingFavorites ? (
+                <HomeListingsSkeletonGrid variant="favorites" />
+              ) : (() => {
+                const filteredFavorites = favoritesTypeFilter === "all"
+                  ? favorites
+                  : favorites.filter((p) => p.propertyType === favoritesTypeFilter);
+
+                return filteredFavorites.length > 0 ? (
+                  <div className="flex overflow-x-auto gap-[24px] pb-[16px] scroll-smooth [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                    {filteredFavorites.map((property) => (
+                      <Link
+                        key={property.id}
+                        to={`/property/${property.id}`}
+                        className="flex-shrink-0 w-[280px] md:w-[320px] group flex flex-col border border-[rgba(0,0,0,0.08)] bg-white rounded-[24px] p-[12px] hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)] transition-all duration-200"
+                      >
+                        <div className="relative aspect-[4/3] overflow-hidden bg-[#F7F7F9] group/carousel rounded-[16px]">
+                          <img
+                            src={property.image || "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800&q=80"}
+                            alt={property.title}
+                            className="w-full h-full object-cover object-center bg-[#F3F4F6] transition-transform duration-300 group-hover:scale-[1.03]"
+                          />
+
+                          {/* Property Type Badge */}
+                          <div className="absolute top-[12px] left-[12px] bg-white/90 backdrop-blur-sm text-[#1A1A1A] px-[10px] py-[4px] rounded-[6px] text-[11px] font-semibold capitalize shadow-sm">
+                            {property.propertyType}
+                          </div>
+
+                          {/* Heart Button */}
+                          <div className="absolute top-[12px] right-[12px] w-[36px] h-[36px] bg-white/90 backdrop-blur-sm hover:bg-white flex items-center justify-center rounded-full shadow-[0_2px_8px_rgba(0,0,0,0.1)] hover:scale-105 active:scale-95 transition-all z-10">
+                            <Heart className="w-[18px] h-[18px] fill-red-500 text-red-500" />
+                          </div>
+                        </div>
+
+                        <div className="flex flex-col gap-[2px] pt-[14px] px-[4px]">
+                          <h3 className="line-clamp-1 text-[16px] font-bold leading-[1.3] text-[#1A1A1A]">{property.title}</h3>
+                          <span className="text-[14px] text-[#6B6B6B]">{property.bedrooms} bedrooms · {property.area} m²</span>
+
+                          <div className="mt-[10px]">
+                            <span className="text-[22px] font-bold text-[#1A1A1A]">€{property.monthlyRent}</span>
+                            <span className="text-[14px] text-[#6B6B6B] ml-[2px]">/month</span>
+                          </div>
+                          <div className="flex items-center gap-[6px] mt-[4px]">
+                            {property.utilitiesIncluded ? (
+                              <>
+                                <svg className="w-[16px] h-[16px] text-[#16A34A] flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+                                <span className="text-[13px] text-[#16A34A] font-semibold">All fees included</span>
+                              </>
+                            ) : (
+                              <>
+                                <svg className="w-[16px] h-[16px] text-[#9CA3AF] flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                                <span className="text-[13px] text-[#6B6B6B] font-semibold">Utilities excluded</span>
+                              </>
+                            )}
+                          </div>
+                          <span className="text-[13px] mt-[2px]">
+                            {new Date(property.availableFrom) <= new Date() ? (
+                              <span className="text-[#16A34A] font-semibold flex items-center gap-[6px]">
+                                <span className="w-[6px] h-[6px] rounded-full bg-[#16A34A]" />
+                                Available now
+                              </span>
+                            ) : (
+                              <span className="text-[#6B6B6B]">
+                                {new Date(property.availableFrom).toLocaleDateString("en-GB", { month: "short", day: "numeric" })} - onwards
+                              </span>
+                            )}
+                          </span>
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-[40px] text-[#6B6B6B] text-[15px]">
+                    No {favoritesTypeFilter !== "all" ? favoritesTypeFilter : ""} favorites found.
+                  </div>
+                );
+              })()}
+            </div>
+          )}
+
+          <div className="mt-[32px] md:mt-[40px]">
+            <Link
+              to="/listings"
+              className="inline-flex items-center gap-[6px] text-[#0891B2] text-[15px] font-semibold hover:text-[#0E7490] transition-colors"
+            >
+              View more properties
+              <span className="text-[18px]">→</span>
+            </Link>
+          </div>
+        </div>
+      </section>
 
 
 

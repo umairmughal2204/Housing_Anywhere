@@ -39,6 +39,7 @@ interface ListingItem {
   propertyType: "apartment" | "studio" | "house" | "room";
   images: string[];
   preferredTenantType: "any" | "students" | "working";
+  utilitiesIncluded: boolean;
 }
 
 type ApiListingItem = Partial<ListingItem> & {
@@ -48,6 +49,7 @@ type ApiListingItem = Partial<ListingItem> & {
   minimumRentalPeriod?: number;
   propertyType?: string;
   preferredTenantType?: string;
+  utilitiesIncluded?: boolean;
 };
 
 function normalizeListingItem(raw: ApiListingItem): ListingItem {
@@ -81,6 +83,7 @@ function normalizeListingItem(raw: ApiListingItem): ListingItem {
       raw.preferredTenantType === "students" || raw.preferredTenantType === "working"
         ? raw.preferredTenantType
         : "any",
+    utilitiesIncluded: Boolean(raw.utilitiesIncluded),
   };
 }
 
@@ -1197,7 +1200,8 @@ export function SearchResults() {
 
   const handleToggleFavorite = async (listingId: string) => {
     const token = localStorage.getItem("authToken");
-    if (!token) {
+    if (!token || !isAuthenticated) {
+      toast.info("Please log in to save favorites");
       const returnTo = `${location.pathname}${location.search}`;
       navigate(`/login?returnTo=${encodeURIComponent(returnTo)}`);
       return;
@@ -1974,15 +1978,15 @@ export function SearchResults() {
                       {property.title}, {property.city}
                     </h3>
 
-                    {/* Rating */}
-                    <div className="mb-[8px] flex items-center gap-[4px]">
-                      <Star className="w-[14px] h-[14px] text-[#0891B2] fill-[#0891B2]" />
-                      <span className="text-[#1A1A1A] text-[14px] font-semibold">Live</span>
-                      <span className="text-[#6B6B6B] text-[14px]">listing</span>
+                    {/* Live status */}
+                    <div className="mb-[8px] flex items-center gap-[6px]">
+                      <div className="w-[8px] h-[8px] rounded-full bg-[#16A34A] animate-pulse" />
+                      <span className="text-[#16A34A] text-[13px] font-semibold">Live listing</span>
+                      <span className="text-[#6B6B6B] text-[13px]">· Verified</span>
                     </div>
 
                     {/* Size and Housemates */}
-                    <div className="mb-[12px] flex items-center gap-[12px] text-[12px] sm:text-[13px] text-[#3E5963]">
+                    <div className="mb-[10px] flex items-center gap-[12px] text-[12px] sm:text-[13px] text-[#3E5963]">
                       <div className="flex items-center gap-[4px]">
                         <HomeIcon className="w-[14px] h-[14px]" />
                         <span>{property.area} m²</span>
@@ -1994,15 +1998,34 @@ export function SearchResults() {
                     </div>
 
                     {/* Price */}
-                    <div className="mb-[10px] flex items-baseline gap-[4px]">
-                      <span className="text-[17px] sm:text-[18px] font-bold text-[#12303B]">€{property.monthlyRent}</span>
-                      <span className="text-[13px] sm:text-[14px] text-[#4F6771]">/month, excl. utilities</span>
+                    <div className="mb-[6px] flex items-baseline gap-[4px]">
+                      <span className="text-[18px] sm:text-[20px] font-bold text-[#12303B]">€{property.monthlyRent}</span>
+                      <span className="text-[13px] sm:text-[14px] text-[#4F6771]">/month</span>
+                    </div>
+
+                    {/* Utilities in green */}
+                    <div className="flex items-center gap-[6px] mb-[10px]">
+                      {property.utilitiesIncluded ? (
+                        <>
+                          <svg className="w-[15px] h-[15px] text-[#16A34A] flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+                          <span className="text-[13px] text-[#16A34A] font-semibold">All fees included</span>
+                        </>
+                      ) : (
+                        <>
+                          <svg className="w-[15px] h-[15px] text-[#9CA3AF] flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                          <span className="text-[13px] text-[#6B6B6B] font-semibold">Utilities excluded</span>
+                        </>
+                      )}
                     </div>
 
                     {/* Availability */}
-                    <div className="mt-[8px] flex items-center gap-[8px] border-t border-[rgba(15,45,54,0.12)] pt-[12px] text-[13px] sm:text-[14px] font-semibold text-[#12303B]">
-                      <div className="h-[10px] w-[10px] rounded-full bg-[#17A45A]" />
-                      <span>Available from {new Date(property.availableFrom).toLocaleDateString("en-GB")}</span>
+                    <div className="mt-[8px] flex items-center gap-[8px] border-t border-[rgba(15,45,54,0.12)] pt-[10px] text-[13px] sm:text-[14px] font-semibold">
+                      <div className="h-[8px] w-[8px] rounded-full bg-[#16A34A]" />
+                      <span className={new Date(property.availableFrom) <= new Date() ? "text-[#16A34A] font-semibold" : "text-[#12303B]"}>
+                        {new Date(property.availableFrom) <= new Date()
+                          ? "Available now"
+                          : `Available from ${new Date(property.availableFrom).toLocaleDateString("en-GB")}`}
+                      </span>
                     </div>
                   </div>
                 </div>

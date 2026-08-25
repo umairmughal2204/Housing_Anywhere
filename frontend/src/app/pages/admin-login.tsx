@@ -80,7 +80,7 @@ export function AdminLogin() {
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 autoComplete="email"
-                placeholder="admin@example.com"
+                placeholder="admin@ezzystay.com"
                 className="w-full px-[14px] py-[12px] border border-[rgba(0,0,0,0.12)] rounded-[10px] text-[14px] text-neutral-black outline-none focus:border-brand-primary transition-colors"
               />
             </div>

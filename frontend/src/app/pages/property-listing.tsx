@@ -485,7 +485,20 @@ export function PropertyListing() {
   }, [apiBase, id]);
 
   useEffect(() => {
-    if (!id || !isAuthenticated || !listing || isListingUnavailable) {
+    if (!id || !listing || isListingUnavailable) {
+      return;
+    }
+
+    try {
+      const stored = localStorage.getItem("guest_recently_viewed_ids");
+      const ids: string[] = stored ? JSON.parse(stored) : [];
+      const updated = [id, ...ids.filter((item) => item !== id)].slice(0, 10);
+      localStorage.setItem("guest_recently_viewed_ids", JSON.stringify(updated));
+    } catch {
+      // ignore
+    }
+
+    if (!isAuthenticated) {
       return;
     }
 
@@ -994,17 +1007,18 @@ export function PropertyListing() {
     const applyPath = `/property/${id}/apply?${applySearchParams.toString()}`;
 
     if (!isAuthenticated) {
-      // Redirect to login with return URL
+      toast.info("Please log in to apply for this property");
       navigate(`/login?returnTo=${encodeURIComponent(applyPath)}`);
-    } else {
-      navigate(applyPath, {
-        state: {
-          selectedStartDate: selectedStartDate?.toISOString() ?? null,
-          selectedEndDate: selectedEndDate?.toISOString() ?? null,
-          isMoveInAvailabilityChecked,
-        },
-      });
+      return;
     }
+
+    navigate(applyPath, {
+      state: {
+        selectedStartDate: selectedStartDate?.toISOString() ?? null,
+        selectedEndDate: selectedEndDate?.toISOString() ?? null,
+        isMoveInAvailabilityChecked,
+      },
+    });
   };
 
   const handleMessageLandlord = async () => {
@@ -1018,40 +1032,41 @@ export function PropertyListing() {
     }
 
     if (!isAuthenticated) {
-      // Redirect to login with return URL
-      navigate(`/login?returnTo=/property/${id}`);
-    } else {
-      if (!id) {
+      toast.info("Please log in to message the landlord");
+      navigate(`/login?returnTo=${encodeURIComponent(`/property/${id}`)}`);
+      return;
+    }
+
+    if (!id) {
+      navigate("/tenant/inbox");
+      return;
+    }
+
+    const token = localStorage.getItem("authToken");
+    if (!token) {
+      navigate(`/login?returnTo=${encodeURIComponent(`/property/${id}`)}`);
+      return;
+    }
+
+    try {
+      const response = await fetch(`${apiBase}/api/conversations`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ listingId: id }),
+      });
+
+      if (!response.ok) {
         navigate("/tenant/inbox");
         return;
       }
 
-      const token = localStorage.getItem("authToken");
-      if (!token) {
-        navigate(`/login?returnTo=/property/${id}`);
-        return;
-      }
-
-      try {
-        const response = await fetch(`${apiBase}/api/conversations`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({ listingId: id }),
-        });
-
-        if (!response.ok) {
-          navigate("/tenant/inbox");
-          return;
-        }
-
-        const payload = (await response.json()) as { conversationId: string };
-        navigate(`/tenant/inbox/conversation/${payload.conversationId}`);
-      } catch {
-        navigate("/tenant/inbox");
-      }
+      const payload = (await response.json()) as { conversationId: string };
+      navigate(`/tenant/inbox/conversation/${payload.conversationId}`);
+    } catch {
+      navigate("/tenant/inbox");
     }
   };
 
@@ -1062,46 +1077,47 @@ export function PropertyListing() {
     }
 
     if (!isAuthenticated) {
-      // Redirect to login with return URL
-      navigate(`/login?returnTo=/property/${id}`);
-    } else {
-      if (!id || isFavoriteBusy) return;
+      toast.info("Please log in to save favorites");
+      navigate(`/login?returnTo=${encodeURIComponent(`/property/${id}`)}`);
+      return;
+    }
 
-      const token = localStorage.getItem("authToken");
-      if (!token) {
-        navigate(`/login?returnTo=/property/${id}`);
-        return;
-      }
+    if (!id || isFavoriteBusy) return;
 
-      const next = !isFavorited;
-      setIsFavorited(next);
-      setIsFavoriteBusy(true);
-      setIsFavoriteSplashActive(true);
+    const token = localStorage.getItem("authToken");
+    if (!token) {
+      navigate(`/login?returnTo=${encodeURIComponent(`/property/${id}`)}`);
+      return;
+    }
 
-      try {
-        const response = await fetch(
-          next ? `${apiBase}/api/auth/me/favorites` : `${apiBase}/api/auth/me/favorites/${id}`,
-          {
-            method: next ? "POST" : "DELETE",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
-            },
-            body: next ? JSON.stringify({ listingId: id }) : undefined,
-          }
-        );
+    const next = !isFavorited;
+    setIsFavorited(next);
+    setIsFavoriteBusy(true);
+    setIsFavoriteSplashActive(true);
 
-        if (!response.ok) {
-          throw new Error("Failed to update favorites");
+    try {
+      const response = await fetch(
+        next ? `${apiBase}/api/auth/me/favorites` : `${apiBase}/api/auth/me/favorites/${id}`,
+        {
+          method: next ? "POST" : "DELETE",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: next ? JSON.stringify({ listingId: id }) : undefined,
         }
+      );
 
-        toast.success(next ? "Added to favorites" : "Removed from favorites");
-      } catch {
-        setIsFavorited(!next);
-        toast.error("Could not update favorites. Please try again.");
-      } finally {
-        setIsFavoriteBusy(false);
+      if (!response.ok) {
+        throw new Error("Failed to update favorites");
       }
+
+      toast.success(next ? "Added to favorites" : "Removed from favorites");
+    } catch {
+      setIsFavorited(!next);
+      toast.error("Could not update favorites. Please try again.");
+    } finally {
+      setIsFavoriteBusy(false);
     }
   };
 
@@ -1558,12 +1574,24 @@ export function PropertyListing() {
                   {isLoading ? "Loading..." : listing?.title ?? "Listing unavailable"}
                 </h1>
 
-                <div className="flex items-center flex-wrap gap-[6px] sm:gap-[8px] mb-[10px]">
+                <div className="flex items-center flex-wrap gap-[8px] sm:gap-[12px] mb-[12px]">
                   <span className="text-[#0F2D36] text-[32px] sm:text-[44px] leading-[1] font-bold">{formatCurrency(listing?.monthlyRent ?? 0, listing?.currency).replace(".00", "")}</span>
-                  <span className="text-[#0F2D36] text-[15px] font-semibold">per month,</span>
-                  <span className="text-[#0F2D36] text-[13px] underline decoration-dotted underline-offset-[5px]">
-                    {listing?.utilitiesIncluded ? "includes bills" : "excludes bills"}, {listing?.deposit === 0 ? "no deposit" : "deposit required"}
-                  </span>
+                  <span className="text-[#0F2D36] text-[15px] font-semibold">per month</span>
+                  {listing?.utilitiesIncluded ? (
+                    <span className="inline-flex items-center gap-[4px] bg-[#DCFCE7] text-[#16A34A] px-[10px] py-[3px] rounded-full text-[13px] font-semibold">
+                      <Check className="w-[14px] h-[14px] stroke-[2.5]" />
+                      All bills included
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-[4px] bg-[#F3F4F6] text-[#6B7280] px-[10px] py-[3px] rounded-full text-[13px] font-medium">
+                      Excludes bills
+                    </span>
+                  )}
+                  {listing?.deposit === 0 && (
+                    <span className="inline-flex items-center gap-[4px] bg-[#DCFCE7] text-[#16A34A] px-[10px] py-[3px] rounded-full text-[13px] font-semibold">
+                      No deposit
+                    </span>
+                  )}
                 </div>
 
                 <div className="flex flex-wrap gap-[8px]">
@@ -2019,7 +2047,14 @@ export function PropertyListing() {
                       <div className="flex items-center justify-between mb-[14px]">
                         <p className="text-[#2F4653] text-[14px] leading-[1.2]">1st available move-in date:</p>
                         <p className="text-[#2F4653] text-[14px] leading-[1.2] font-bold">
-                          {new Date(listing.availableFrom).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })}
+                          {new Date(listing.availableFrom) <= new Date() ? (
+                            <span className="text-[#16A34A] font-semibold flex items-center gap-[6px]">
+                              <span className="w-[7px] h-[7px] rounded-full bg-[#16A34A]" />
+                              Available now
+                            </span>
+                          ) : (
+                            new Date(listing.availableFrom).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })
+                          )}
                         </p>
                       </div>
 

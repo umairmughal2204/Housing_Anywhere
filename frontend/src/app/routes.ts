@@ -172,9 +172,7 @@ const ProtectedFavorites = withProtectedRoute(Favorites);
 
 const ProtectedPropertyPayment = withProtectedRoute(Payment);
 
-const ProtectedSearchResults = withProtectedRoute(SearchResults);
-
-const ProtectedPropertyListing = withProtectedRoute(PropertyListing);
+const ProtectedRentalApplication = withProtectedRoute(RentalApplication);
 
 
 
@@ -198,513 +196,513 @@ export const router = createBrowserRouter([
 
     children: [
 
-  {
+      {
 
-    path: "/",
+        path: "/",
 
-    Component: Home,
+        Component: Home,
 
-    ErrorBoundary,
+        ErrorBoundary,
 
-  },
+      },
 
-  {
+      {
 
-    path: "/login",
+        path: "/login",
 
-    Component: Login,
+        Component: Login,
 
-    ErrorBoundary,
+        ErrorBoundary,
 
-  },
+      },
 
-  {
+      {
 
-    path: "/signup",
+        path: "/signup",
 
-    Component: Signup,
+        Component: Signup,
 
-    ErrorBoundary,
+        ErrorBoundary,
 
-  },
+      },
 
-  {
+      {
 
-    path: "/forgot-password",
+        path: "/forgot-password",
 
-    Component: ForgotPassword,
+        Component: ForgotPassword,
 
-    ErrorBoundary,
+        ErrorBoundary,
 
-  },
+      },
 
-  {
+      {
 
-    path: "/reset-password",
+        path: "/reset-password",
 
-    Component: ResetPassword,
+        Component: ResetPassword,
 
-    ErrorBoundary,
+        ErrorBoundary,
 
-  },
+      },
 
-  {
+      {
 
-    path: "/landlord",
+        path: "/landlord",
 
-    Component: Landlord,
+        Component: Landlord,
 
-    ErrorBoundary,
+        ErrorBoundary,
 
-  },
+      },
 
-  {
+      {
 
-    path: "/landlord/register",
+        path: "/landlord/register",
 
-    Component: LandlordRegister,
+        Component: LandlordRegister,
 
-    ErrorBoundary,
+        ErrorBoundary,
 
-  },
+      },
 
-  {
+      {
 
-    path: "/landlord/dashboard",
+        path: "/landlord/dashboard",
 
-    Component: ProtectedLandlordDashboard,
+        Component: ProtectedLandlordDashboard,
 
-    ErrorBoundary,
+        ErrorBoundary,
 
-  },
+      },
 
-  {
+      {
 
-    path: "/landlord/analytics",
+        path: "/landlord/analytics",
 
-    loader: () => redirect("/landlord/dashboard"),
+        loader: () => redirect("/landlord/dashboard"),
 
-    ErrorBoundary,
+        ErrorBoundary,
 
-  },
+      },
 
-  {
+      {
 
-    path: "/landlord/listings",
+        path: "/landlord/listings",
 
-    Component: ProtectedLandlordListings,
+        Component: ProtectedLandlordListings,
 
-    ErrorBoundary,
+        ErrorBoundary,
 
-  },
+      },
 
-  {
+      {
 
-    path: "/landlord/add-listing",
+        path: "/landlord/add-listing",
 
-    Component: ProtectedLandlordListingOptions,
+        Component: ProtectedLandlordListingOptions,
 
-    ErrorBoundary,
+        ErrorBoundary,
 
-  },
+      },
 
-  {
+      {
 
-    path: "/landlord/add-listing/:mode",
+        path: "/landlord/add-listing/:mode",
 
-    Component: ProtectedLandlordAddListing,
+        Component: ProtectedLandlordAddListing,
 
-    ErrorBoundary,
+        ErrorBoundary,
 
-  },
+      },
 
-  {
+      {
 
-    path: "/landlord/listings/add",
+        path: "/landlord/listings/add",
 
-    Component: ProtectedLandlordAddListing,
+        Component: ProtectedLandlordAddListing,
 
-    ErrorBoundary,
+        ErrorBoundary,
 
-  },
+      },
 
-  {
+      {
 
-    path: "/landlord/listings/:id/edit",
+        path: "/landlord/listings/:id/edit",
 
-    Component: ProtectedLandlordAddListing,
+        Component: ProtectedLandlordAddListing,
 
-    ErrorBoundary,
+        ErrorBoundary,
 
-  },
+      },
 
-  {
+      {
 
-    path: "/landlord/rentals",
+        path: "/landlord/rentals",
 
-    Component: ProtectedLandlordRentals,
+        Component: ProtectedLandlordRentals,
 
-    ErrorBoundary,
+        ErrorBoundary,
 
-  },
+      },
 
-  {
+      {
 
-    path: "/landlord/calendar",
+        path: "/landlord/calendar",
 
-    Component: ProtectedLandlordCalendar,
+        Component: ProtectedLandlordCalendar,
 
-    ErrorBoundary,
+        ErrorBoundary,
 
-  },
+      },
 
-  {
+      {
 
-    path: "/landlord/signup",
+        path: "/landlord/signup",
 
-    loader: () => redirect("/signup"),
+        loader: () => redirect("/signup"),
 
-    ErrorBoundary,
+        ErrorBoundary,
 
-  },
+      },
 
-  {
+      {
 
-    path: "/landlord/inbox",
+        path: "/landlord/inbox",
 
-    Component: ProtectedLandlordInbox,
+        Component: ProtectedLandlordInbox,
 
-    ErrorBoundary,
+        ErrorBoundary,
 
-  },
+      },
 
-  {
+      {
 
-    path: "/how-it-works",
+        path: "/how-it-works",
 
-    Component: HowItWorks,
+        Component: HowItWorks,
 
-    ErrorBoundary,
+        ErrorBoundary,
 
-  },
+      },
 
-  {
+      {
 
-    path: "/pricing",
+        path: "/pricing",
 
-    Component: Pricing,
+        Component: Pricing,
 
-    ErrorBoundary,
+        ErrorBoundary,
 
-  },
+      },
 
-  {
+      {
 
-    path: "/help",
+        path: "/help",
 
-    Component: Help,
+        Component: Help,
 
-    ErrorBoundary,
+        ErrorBoundary,
 
-  },
+      },
 
-  {
+      {
 
-    path: "/about",
+        path: "/about",
 
-    Component: About,
+        Component: About,
 
-    ErrorBoundary,
+        ErrorBoundary,
 
-  },
+      },
 
-  {
+      {
 
-    path: "/listings",
+        path: "/listings",
 
-    Component: ProtectedSearchResults,
+        Component: SearchResults,
 
-    ErrorBoundary,
+        ErrorBoundary,
 
-  },
+      },
 
-  {
+      {
 
-    path: "/listings/:city",
+        path: "/listings/:city",
 
-    Component: ProtectedSearchResults,
+        Component: SearchResults,
 
-    ErrorBoundary,
+        ErrorBoundary,
 
-  },
+      },
 
-  {
+      {
 
-    path: "/s",
+        path: "/s",
 
-    loader: ({ request }) => {
+        loader: ({ request }) => {
 
-      const url = new URL(request.url);
+          const url = new URL(request.url);
 
-      return redirect(`/listings${url.search}`);
+          return redirect(`/listings${url.search}`);
 
-    },
+        },
 
-    ErrorBoundary,
+        ErrorBoundary,
 
-  },
+      },
 
-  {
+      {
 
-    path: "/s/:city",
+        path: "/s/:city",
 
-    loader: ({ params, request }) => {
+        loader: ({ params, request }) => {
 
-      const url = new URL(request.url);
+          const url = new URL(request.url);
 
-      const city = params.city ? `/${params.city}` : "";
+          const city = params.city ? `/${params.city}` : "";
 
-      return redirect(`/listings${city}${url.search}`);
+          return redirect(`/listings${city}${url.search}`);
 
-    },
+        },
 
-    ErrorBoundary,
+        ErrorBoundary,
 
-  },
+      },
 
-  {
+      {
 
-    path: "/listing/:id",
+        path: "/listing/:id",
 
-    loader: ({ params }) => redirect(`/property/${params.id}`),
+        loader: ({ params }) => redirect(`/property/${params.id}`),
 
-    ErrorBoundary,
+        ErrorBoundary,
 
-  },
+      },
 
-  {
+      {
 
-    path: "/property/:id",
+        path: "/property/:id",
 
-    Component: ProtectedPropertyListing,
+        Component: PropertyListing,
 
-    ErrorBoundary,
+        ErrorBoundary,
 
-  },
+      },
 
-  {
+      {
 
-    path: "/property/:id/apply",
+        path: "/property/:id/apply",
 
-    Component: RentalApplication,
+        Component: ProtectedRentalApplication,
 
-    ErrorBoundary,
+        ErrorBoundary,
 
-  },
+      },
 
-  {
+      {
 
-    path: "/property/:id/success",
+        path: "/property/:id/success",
 
-    Component: ApplicationSuccess,
+        Component: ApplicationSuccess,
 
-    ErrorBoundary,
+        ErrorBoundary,
 
-  },
+      },
 
-  {
+      {
 
-    path: "/property/:id/payment",
+        path: "/property/:id/payment",
 
-    Component: ProtectedPropertyPayment,
+        Component: ProtectedPropertyPayment,
 
-    ErrorBoundary,
+        ErrorBoundary,
 
-  },
+      },
 
-  {
+      {
 
-    path: "/property/:id/payment/return",
+        path: "/property/:id/payment/return",
 
-    Component: PaymentReturn,
+        Component: PaymentReturn,
 
-    ErrorBoundary,
+        ErrorBoundary,
 
-  },
+      },
 
-  {
+      {
 
-    path: "/property/:id/payment/success",
+        path: "/property/:id/payment/success",
 
-    Component: PaymentSuccess,
+        Component: PaymentSuccess,
 
-    ErrorBoundary,
+        ErrorBoundary,
 
-  },
+      },
 
-  {
+      {
 
-    path: "/property/:id/payment/failed",
+        path: "/property/:id/payment/failed",
 
-    Component: PaymentFailed,
+        Component: PaymentFailed,
 
-    ErrorBoundary,
+        ErrorBoundary,
 
-  },
+      },
 
-  {
+      {
 
-    path: "/tenant/inbox",
+        path: "/tenant/inbox",
 
-    Component: ProtectedTenantInbox,
+        Component: ProtectedTenantInbox,
 
-    ErrorBoundary,
+        ErrorBoundary,
 
-  },
+      },
 
-  {
+      {
 
-    path: "/tenant/applications",
+        path: "/tenant/applications",
 
-    Component: ProtectedTenantApplications,
+        Component: ProtectedTenantApplications,
 
-    ErrorBoundary,
+        ErrorBoundary,
 
-  },
+      },
 
-  {
+      {
 
-    path: "/tenant/inbox/conversation/:id",
+        path: "/tenant/inbox/conversation/:id",
 
-    Component: ProtectedTenantConversation,
+        Component: ProtectedTenantConversation,
 
-    ErrorBoundary,
+        ErrorBoundary,
 
-  },
+      },
 
-  {
+      {
 
-    path: "/payments",
+        path: "/payments",
 
-    Component: ProtectedPayments,
+        Component: ProtectedPayments,
 
-    ErrorBoundary,
+        ErrorBoundary,
 
-  },
+      },
 
-  {
+      {
 
-    path: "/account",
+        path: "/account",
 
-    Component: ProtectedAccount,
+        Component: ProtectedAccount,
 
-    ErrorBoundary,
+        ErrorBoundary,
 
-  },
+      },
 
-  {
+      {
 
-    path: "/favorites",
+        path: "/favorites",
 
-    Component: ProtectedFavorites,
+        Component: ProtectedFavorites,
 
-    ErrorBoundary,
+        ErrorBoundary,
 
-  },
+      },
 
-  {
+      {
 
-    path: "/admin/login",
+        path: "/admin/login",
 
-    Component: AdminLogin,
+        Component: AdminLogin,
 
-    ErrorBoundary,
+        ErrorBoundary,
 
-  },
+      },
 
-  {
+      {
 
-    path: "/admin",
+        path: "/admin",
 
-    Component: ProtectedAdminDashboard,
+        Component: ProtectedAdminDashboard,
 
-    ErrorBoundary,
+        ErrorBoundary,
 
-  },
+      },
 
-  {
+      {
 
-    path: "/admin/analytics",
+        path: "/admin/analytics",
 
-    Component: ProtectedAdminAnalytics,
+        Component: ProtectedAdminAnalytics,
 
-    ErrorBoundary,
+        ErrorBoundary,
 
-  },
+      },
 
-  {
+      {
 
-    path: "/admin/users",
+        path: "/admin/users",
 
-    Component: ProtectedAdminUsers,
+        Component: ProtectedAdminUsers,
 
-    ErrorBoundary,
+        ErrorBoundary,
 
-  },
+      },
 
-  {
+      {
 
-    path: "/admin/listings",
+        path: "/admin/listings",
 
-    Component: ProtectedAdminListings,
+        Component: ProtectedAdminListings,
 
-    ErrorBoundary,
+        ErrorBoundary,
 
-  },
+      },
 
-  {
+      {
 
-    path: "/admin/applications",
+        path: "/admin/applications",
 
-    Component: ProtectedAdminApplications,
+        Component: ProtectedAdminApplications,
 
-    ErrorBoundary,
+        ErrorBoundary,
 
-  },
+      },
 
-  {
+      {
 
-    path: "/admin/payments",
+        path: "/admin/payments",
 
-    Component: ProtectedAdminPayments,
+        Component: ProtectedAdminPayments,
 
-    ErrorBoundary,
+        ErrorBoundary,
 
-  },
+      },
 
-  {
+      {
 
-    path: "/admin/settings",
+        path: "/admin/settings",
 
-    Component: ProtectedAdminSettings,
+        Component: ProtectedAdminSettings,
 
-    ErrorBoundary,
+        ErrorBoundary,
 
-  },
+      },
 
-  {
+      {
 
-    path: "*",
+        path: "*",
 
-    loader: () => {
+        loader: () => {
 
-      throw new Response("Not Found", { status: 404 });
+          throw new Response("Not Found", { status: 404 });
 
-    },
+        },
 
-    ErrorBoundary,
+        ErrorBoundary,
 
-  },
+      },
 
     ],
 
