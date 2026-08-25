@@ -1785,7 +1785,7 @@ export function SearchResults() {
         <div className="max-w-[1440px] mx-auto px-[16px] sm:px-[24px] lg:px-[32px] py-[14px] sm:py-[16px]">
           <div className="flex items-center gap-[8px] text-[13px]">
             <Link to="/" className="text-[#0891B2] hover:underline font-semibold">
-              ReserveHousing
+              EzzyStay
             </Link>
             <span className="text-[#6B6B6B]">&gt;</span>
             <span className="text-[#1A1A1A] font-semibold">

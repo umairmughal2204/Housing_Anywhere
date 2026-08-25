@@ -5,14 +5,14 @@
 
   <!-- Main Pages -->
   <url>
-    <loc>https://reservehousing.com/</loc>
+    <loc>https://ezzystay.com/</loc>
     <lastmod>2026-04-27T00:00:00Z</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
 
   <url>
-    <loc>https://reservehousing.com/listings</loc>
+    <loc>https://ezzystay.com/listings</loc>
     <lastmod>2026-04-27T00:00:00Z</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.9</priority>
@@ -20,56 +20,56 @@
   </url>
 
   <url>
-    <loc>https://reservehousing.com/how-it-works</loc>
+    <loc>https://ezzystay.com/how-it-works</loc>
     <lastmod>2026-04-27T00:00:00Z</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
 
   <url>
-    <loc>https://reservehousing.com/pricing</loc>
+    <loc>https://ezzystay.com/pricing</loc>
     <lastmod>2026-04-27T00:00:00Z</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
 
   <url>
-    <loc>https://reservehousing.com/help</loc>
+    <loc>https://ezzystay.com/help</loc>
     <lastmod>2026-04-27T00:00:00Z</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
 
   <url>
-    <loc>https://reservehousing.com/login</loc>
+    <loc>https://ezzystay.com/login</loc>
     <lastmod>2026-04-27T00:00:00Z</lastmod>
     <changefreq>never</changefreq>
     <priority>0.6</priority>
   </url>
 
   <url>
-    <loc>https://reservehousing.com/signup</loc>
+    <loc>https://ezzystay.com/signup</loc>
     <lastmod>2026-04-27T00:00:00Z</lastmod>
     <changefreq>never</changefreq>
     <priority>0.6</priority>
   </url>
 
   <url>
-    <loc>https://reservehousing.com/landlord/register</loc>
+    <loc>https://ezzystay.com/landlord/register</loc>
     <lastmod>2026-04-27T00:00:00Z</lastmod>
     <changefreq>never</changefreq>
     <priority>0.7</priority>
   </url>
 
   <url>
-    <loc>https://reservehousing.com/favorites</loc>
+    <loc>https://ezzystay.com/favorites</loc>
     <lastmod>2026-04-27T00:00:00Z</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
 
   <url>
-    <loc>https://reservehousing.com/account</loc>
+    <loc>https://ezzystay.com/account</loc>
     <lastmod>2026-04-27T00:00:00Z</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>

@@ -22,7 +22,7 @@ export function About() {
         <div className="relative z-20 max-w-[800px] px-[16px] text-white flex flex-col items-center">
           {/* Logo Branding */}
           <div className="text-[34px] md:text-[40px] font-black tracking-wider uppercase mb-[2px] font-serif select-none">
-            ReserveHousing
+            EzzyStay
           </div>
           <span className="text-[12px] uppercase tracking-[0.25em] font-bold text-white/90 mb-[24px]">
             Travel better together
@@ -30,7 +30,7 @@ export function About() {
 
           {/* Headings */}
           <h1 className="text-[32px] md:text-[54px] font-bold tracking-tight mb-[12px] leading-[1.2]">
-            Get to know ReserveHousing
+            Get to know EzzyStay
           </h1>
           <p className="text-[18px] md:text-[22px] font-medium text-white/95">
             Where families travel better together
@@ -65,9 +65,9 @@ export function About() {
             We have a place for everyone
           </h2>
           <p className="text-[#4B5563] text-[16px] leading-[1.7] font-medium font-sans">
-            We started pairing homeowners with families looking for places to stay in 2018, and ReserveHousing was born. 
+            We started pairing homeowners with families looking for places to stay in 2018, and EzzyStay was born. 
             Since then, we've grown into a trusted global vacation brand with a unique selection of whole homes all over the world. 
-            In other words, there's room for everyone. ReserveHousing takes diversity and inclusion seriously, because we believe that family is everything. 
+            In other words, there's room for everyone. EzzyStay takes diversity and inclusion seriously, because we believe that family is everything. 
             No matter how it takes shape.
           </p>
         </section>
@@ -87,7 +87,7 @@ export function About() {
       {/* Call to Action Group Banner */}
       <section className="bg-[#EA580C] text-white py-[20px] px-[16px] text-center">
         <p className="text-[14px] md:text-[16px] font-bold">
-          ReserveHousing is part of the Travel Escapes Group. Want to join our vacation rental marketplace? 
+          EzzyStay is part of the Travel Escapes Group. Want to join our vacation rental marketplace? 
           <a href="/landlord" className="underline hover:text-white/90 ml-[6px]">
             Learn More
           </a>

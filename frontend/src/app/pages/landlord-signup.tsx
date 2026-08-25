@@ -243,7 +243,7 @@ export function LandlordSignup() {
               Start Earning Today
             </h2>
             <p className="text-[18px] text-white/90 leading-[1.6] mb-[32px]">
-              Join 75,000+ landlords who trust ReserveHousing to find reliable tenants.
+              Join 75,000+ landlords who trust EzzyStay to find reliable tenants.
             </p>
             <div className="space-y-[16px]">
               <div className="flex items-center gap-[12px]">

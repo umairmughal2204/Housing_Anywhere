@@ -1,4 +1,4 @@
-# Reserve Housing - robots.txt
+# Ezzy Stay - robots.txt
 # This file tells search engines how to crawl the site
 
 # Default rules for all bots
@@ -34,6 +34,6 @@ User-agent: MJ12Bot
 Disallow: /
 
 # Sitemap
-Sitemap: https://reservehousing.com/sitemap.xml
-Sitemap: https://reservehousing.com/sitemap-listings.xml
-Sitemap: https://reservehousing.com/sitemap-pages.xml
+Sitemap: https://ezzystay.com/sitemap.xml
+Sitemap: https://ezzystay.com/sitemap-listings.xml
+Sitemap: https://ezzystay.com/sitemap-pages.xml

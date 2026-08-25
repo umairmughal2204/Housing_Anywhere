@@ -14,6 +14,10 @@ async function bootstrap() {
   const allowedOrigins = [
     env.CLIENT_ORIGIN,
     env.CLIENT_ORIGIN.replace("://", "://www."),
+    "https://ezzystay.nl",
+    "https://www.ezzystay.nl",
+    "https://ezzystay.com",
+    "https://www.ezzystay.com",
     "http://localhost:5173",
     "http://localhost:4173",
   ];

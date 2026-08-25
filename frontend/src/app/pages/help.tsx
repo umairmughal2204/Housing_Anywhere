@@ -165,7 +165,7 @@ const HELP_DATA: Record<string, {
         ]
       },
       {
-        title: "Report a concern about a ReserveHousing property",
+        title: "Report a concern about a EzzyStay property",
         description: "If you notice health hazards, unsafe conditions, or listing mismatches at a property, let our support team know.",
         steps: [
           "Navigate to the property listing page.",
@@ -192,7 +192,7 @@ const HELP_DATA: Record<string, {
         extra: "If you notice an undisclosed camera in a property, please report it to our trust and safety team immediately."
       },
       {
-        title: "ReserveHousing's approach to reviews and review manipulation",
+        title: "EzzyStay's approach to reviews and review manipulation",
         description: "Reviews are critical to maintaining trust. We enforce strict policies against fake reviews, extortion, and manipulation.",
         steps: [
           "Only tenants who have booked and stayed at a property can write reviews.",
@@ -202,7 +202,7 @@ const HELP_DATA: Record<string, {
       },
       {
         title: "About two-factor authentication",
-        description: "Add an extra layer of protection to your ReserveHousing account to prevent unauthorized access.",
+        description: "Add an extra layer of protection to your EzzyStay account to prevent unauthorized access.",
         steps: [
           "Go to Account settings > Security.",
           "Click 'Enable Two-Factor Authentication'.",
@@ -211,9 +211,9 @@ const HELP_DATA: Record<string, {
       },
       {
         title: "Beware of email scams (phishing)",
-        description: "Phishing emails try to mimic official ReserveHousing emails to steal your password or credit card details.",
+        description: "Phishing emails try to mimic official EzzyStay emails to steal your password or credit card details.",
         steps: [
-          "Always check the sender email address. Official emails only come from @reservehousing.com domains.",
+          "Always check the sender email address. Official emails only come from @ezzystay.com domains.",
           "Never click links that prompt you to enter passwords or credit cards on unofficial domains."
         ]
       },
@@ -221,7 +221,7 @@ const HELP_DATA: Record<string, {
         title: "Beware of phone call scams",
         description: "Scammers may call posing as support agents or hosts asking for payment details or immediate transfers.",
         steps: [
-          "ReserveHousing support agents will never ask for your password or full credit card numbers over the phone.",
+          "EzzyStay support agents will never ask for your password or full credit card numbers over the phone.",
           "Never authorize bank transfers based on a phone call. All transactions should be handled in the online portal."
         ]
       },
@@ -239,7 +239,7 @@ const HELP_DATA: Record<string, {
         description: "Recognize common red flags of fraudulent landlords and stay protected.",
         steps: [
           "Be skeptical of listings with prices far below market value.",
-          "Never agree to landlord demands to chat or transfer money outside of the ReserveHousing platform.",
+          "Never agree to landlord demands to chat or transfer money outside of the EzzyStay platform.",
           "Report any requests to pay via gift cards, wire transfers, or cryptocurrency."
         ]
       }
@@ -266,7 +266,7 @@ const HELP_DATA: Record<string, {
       },
       {
         title: "Download the service fee invoice",
-        description: "You can download your official ReserveHousing service fee invoice directly from your profile portal.",
+        description: "You can download your official EzzyStay service fee invoice directly from your profile portal.",
         steps: [
           "Go to Account settings > Bookings.",
           "Select the booking you need the invoice for.",
@@ -333,7 +333,7 @@ const HELP_DATA: Record<string, {
         ]
       },
       {
-        title: "Redeem your ReserveHousing gift card",
+        title: "Redeem your EzzyStay gift card",
         description: "Apply your gift card balance to reduce the total amount due during your next checkout booking.",
         steps: [
           "Go to Checkout > Payment details.",
@@ -350,10 +350,10 @@ const HELP_DATA: Record<string, {
         ]
       },
       {
-        title: "How ReserveHousing shows up on a bank statement",
+        title: "How EzzyStay shows up on a bank statement",
         description: "When reviewing your bank statement, transactions processed by us are clearly labeled.",
         steps: [
-          "Most card transactions will show as 'RESERVEHOUSING* [City Name]'.",
+          "Most card transactions will show as 'EZZYSTAY* [City Name]'.",
           "Bank transfer receipts will list our legal payment beneficiary name."
         ]
       }
@@ -642,7 +642,7 @@ export function Help() {
   const [messages, setMessages] = useState<Array<{ sender: "bot" | "user"; text: string; timestamp: Date }>>([
     {
       sender: "bot",
-      text: "Hello! I am your ReserveHousing virtual assistant. How can I help you today?",
+      text: "Hello! I am your EzzyStay virtual assistant. How can I help you today?",
       timestamp: new Date()
     }
   ]);
@@ -713,7 +713,7 @@ export function Help() {
 
     setTimeout(() => {
       let botResponse = "I'm sorry, I couldn't find a direct answer to that. Try asking about things like 'payment security', 'refunds', 'two-factor authentication', 'surveillance cameras', or contact our human support team.";
-      
+
       let bestMatch: { title: string; description: string; steps?: string[]; extra?: string; } | null = null;
       let highestMatchCount = 0;
 
@@ -859,21 +859,20 @@ export function Help() {
 
       {/* Drawer Overlay Backdrop */}
       {isDrawerOpen && (
-        <div 
+        <div
           className="fixed inset-0 bg-black/40 z-[140] transition-opacity duration-300"
           onClick={handleCloseDrawer}
         />
       )}
 
       {/* Drawer Container Panel */}
-      <div 
-        className={`fixed top-0 right-0 h-screen w-full max-w-[480px] bg-white shadow-[-10px_0_40px_rgba(0,0,0,0.12)] z-[150] transition-transform duration-300 ease-in-out transform ${
-          isDrawerOpen ? "translate-x-0" : "translate-x-full"
-        } flex flex-col`}
+      <div
+        className={`fixed top-0 right-0 h-screen w-full max-w-[480px] bg-white shadow-[-10px_0_40px_rgba(0,0,0,0.12)] z-[150] transition-transform duration-300 ease-in-out transform ${isDrawerOpen ? "translate-x-0" : "translate-x-full"
+          } flex flex-col`}
       >
         {/* Drawer Header */}
         <div className="flex items-center gap-[12px] border-b border-[#F1F5F9] px-[24px] py-[20px] shrink-0">
-          <button 
+          <button
             onClick={selectedTopic ? handleBackToTopics : handleCloseDrawer}
             className="w-[36px] h-[36px] border border-[#E2E8F0] rounded-full flex items-center justify-center hover:bg-[#F8FAFC] transition-colors active:scale-95 text-[#1F2937]"
             aria-label={selectedTopic ? "Back to topics" : "Close drawer"}
@@ -957,7 +956,7 @@ export function Help() {
                       </h5>
                       <p className="text-[#4B5563] text-[14px] leading-[1.6]">
                         {selectedTopic.extra.split("contact us")[0]}
-                        <a href="mailto:support@reservehousing.com" className="text-[#2563EB] hover:underline font-semibold">
+                        <a href="mailto:support@ezzystay.com" className="text-[#2563EB] hover:underline font-semibold">
                           contact us
                         </a>
                         {selectedTopic.extra.split("contact us")[1]}
@@ -973,22 +972,20 @@ export function Help() {
                     <div className="flex gap-[12px] mb-[12px]">
                       <button
                         onClick={() => setHelpfulFeedback("up")}
-                        className={`w-[40px] h-[40px] border rounded-full flex items-center justify-center transition-all ${
-                          helpfulFeedback === "up" 
-                            ? "bg-[#EFF6FF] border-[#2563EB] text-[#2563EB]" 
+                        className={`w-[40px] h-[40px] border rounded-full flex items-center justify-center transition-all ${helpfulFeedback === "up"
+                            ? "bg-[#EFF6FF] border-[#2563EB] text-[#2563EB]"
                             : "border-[#E2E8F0] hover:bg-[#F8FAFC] text-[#4B5563]"
-                        }`}
+                          }`}
                         aria-label="Helpful"
                       >
                         <ThumbsUp className="w-[18px] h-[18px]" />
                       </button>
                       <button
                         onClick={() => setHelpfulFeedback("down")}
-                        className={`w-[40px] h-[40px] border rounded-full flex items-center justify-center transition-all ${
-                          helpfulFeedback === "down" 
-                            ? "bg-[#FEF2F2] border-[#EF4444] text-[#EF4444]" 
+                        className={`w-[40px] h-[40px] border rounded-full flex items-center justify-center transition-all ${helpfulFeedback === "down"
+                            ? "bg-[#FEF2F2] border-[#EF4444] text-[#EF4444]"
                             : "border-[#E2E8F0] hover:bg-[#F8FAFC] text-[#4B5563]"
-                        }`}
+                          }`}
                         aria-label="Not helpful"
                       >
                         <ThumbsDown className="w-[18px] h-[18px]" />
@@ -1125,7 +1122,7 @@ export function Help() {
           <div className="bg-[#0F2D36] px-[20px] py-[16px] text-white flex items-center justify-between shrink-0">
             <div className="flex items-center gap-[8px]">
               <div className="w-[10px] h-[10px] rounded-full bg-[#10B981] animate-pulse" />
-              <span className="text-[16px] font-bold">ReserveHousing Bot</span>
+              <span className="text-[16px] font-bold">EzzyStay Bot</span>
             </div>
             <button
               onClick={() => setIsChatBotOpen(false)}
@@ -1141,16 +1138,14 @@ export function Help() {
             {messages.map((msg, idx) => (
               <div
                 key={idx}
-                className={`flex flex-col max-w-[80%] ${
-                  msg.sender === "user" ? "ml-auto items-end" : "mr-auto items-start"
-                }`}
+                className={`flex flex-col max-w-[80%] ${msg.sender === "user" ? "ml-auto items-end" : "mr-auto items-start"
+                  }`}
               >
                 <div
-                  className={`px-[14px] py-[10px] rounded-[16px] text-[14px] leading-[1.4] whitespace-pre-line text-left ${
-                    msg.sender === "user"
+                  className={`px-[14px] py-[10px] rounded-[16px] text-[14px] leading-[1.4] whitespace-pre-line text-left ${msg.sender === "user"
                       ? "bg-[#0F2D36] text-white rounded-tr-none"
                       : "bg-[#E2E8F0] text-[#1F2937] rounded-tl-none"
-                  }`}
+                    }`}
                 >
                   {msg.text}
                 </div>

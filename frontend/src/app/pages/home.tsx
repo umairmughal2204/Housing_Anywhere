@@ -198,13 +198,13 @@ const cities: CitySuggestion[] = [
 const faqs: FaqItem[] = [
   {
     id: "agency",
-    question: "Is ReserveHousing a rental agency?",
+    question: "Is EzzyStay a rental agency?",
     answer:
-      "No, we’re not a real estate agency. ReserveHousing is an online platform connecting people looking for their next home with landlords looking for tenants.",
+      "No, we’re not a real estate agency. EzzyStay is an online platform connecting people looking for their next home with landlords looking for tenants.",
   },
   {
     id: "how",
-    question: "How does ReserveHousing work?",
+    question: "How does EzzyStay work?",
     answer:
       "You can find and rent your next home safely and entirely online. Watch the short video below to see how the process works, from searching for a place to moving in with our Tenant Protection. For more details, you can also read our step-by-step guide to renting.",
   },

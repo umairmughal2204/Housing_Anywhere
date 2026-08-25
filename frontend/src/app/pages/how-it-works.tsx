@@ -34,7 +34,7 @@ const AUDIENCE_COPY: Record<
   tenant: {
     title: "How it works",
     description:
-      "Looking for a place? Or renting one out? Here's how ReserveHousing brings landlords and tenants together",
+      "Looking for a place? Or renting one out? Here's how EzzyStay brings landlords and tenants together",
     cards: [
       {
         title: "Search verified homes",
@@ -59,7 +59,7 @@ const AUDIENCE_COPY: Record<
   landlord: {
     title: "How it works",
     description:
-      "Looking for a place? Or renting one out? Here's how ReserveHousing brings landlords and tenants together",
+      "Looking for a place? Or renting one out? Here's how EzzyStay brings landlords and tenants together",
     cards: [
       {
         title: "Manage your listings",
@@ -119,16 +119,16 @@ export function HowItWorks() {
 
   const faqs = [
     {
-      question: "What is ReserveHousing?",
-      answer: "ReserveHousing is a platform that connects landlords with tenants, making it easy to find verified matches, communicate securely, and manage rentals from anywhere in the world.",
+      question: "What is EzzyStay?",
+      answer: "EzzyStay is a platform that connects landlords with tenants, making it easy to find verified matches, communicate securely, and manage rentals from anywhere in the world.",
     },
     {
-      question: "Why should I list my place on ReserveHousing?",
-      answer: "By listing on ReserveHousing, you gain access to millions of potential tenants worldwide, supported by partnerships with over 300+ international universities. Our platform handles payments securely and provides tools to manage your properties efficiently.",
+      question: "Why should I list my place on EzzyStay?",
+      answer: "By listing on EzzyStay, you gain access to millions of potential tenants worldwide, supported by partnerships with over 300+ international universities. Our platform handles payments securely and provides tools to manage your properties efficiently.",
     },
     {
-      question: "Can I use ReserveHousing for free?",
-      answer: "ReserveHousing offers free listing creation. Some premium features and services may have associated fees, but you can start listing your property without any upfront costs.",
+      question: "Can I use EzzyStay for free?",
+      answer: "EzzyStay offers free listing creation. Some premium features and services may have associated fees, but you can start listing your property without any upfront costs.",
     },
   ];
 
@@ -195,7 +195,7 @@ export function HowItWorks() {
           <div className="grid grid-cols-1 items-center gap-[24px] lg:grid-cols-[1.02fr_0.98fr] lg:gap-[36px]">
             <div className="overflow-hidden rounded-[8px] border border-[rgba(3,46,61,0.16)] bg-black">
               <iframe
-                title="How it works | ReserveHousing"
+                title="How it works | EzzyStay"
                 src="https://www.youtube.com/embed/dQw4w9WgXcQ"
                 className="h-[220px] sm:h-[280px] w-full"
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
@@ -208,7 +208,7 @@ export function HowItWorks() {
                 Join over 100,000 people who&apos;ve found their home with us.
               </h2>
               <p className="mt-[12px] text-[#4E6470] text-[14px] md:text-[15px] leading-[1.5]">
-                Whether you&apos;re a student, a professional, or someone looking for temporary accommodation, ReserveHousing securely connects you with landlords and property managers.
+                Whether you&apos;re a student, a professional, or someone looking for temporary accommodation, EzzyStay securely connects you with landlords and property managers.
               </p>
               <button
                 type="button"
@@ -226,7 +226,7 @@ export function HowItWorks() {
                 Tenant Protection
               </h2>
               <p className="mt-[12px] text-[#4E6470] text-[14px] md:text-[15px] leading-[1.5]">
-                All rentals on ReserveHousing come with Tenant Protection, which ensures a secure and stress-free rental experience from start to finish. For example, if a landlord cancels or delays your move-in, we will help you find alternative accommodations or a temporary stay. We also protect your payment by holding your first month's rent for 48 hours after you move in. This allows you to confirm that everything is as promised.
+                All rentals on EzzyStay come with Tenant Protection, which ensures a secure and stress-free rental experience from start to finish. For example, if a landlord cancels or delays your move-in, we will help you find alternative accommodations or a temporary stay. We also protect your payment by holding your first month's rent for 48 hours after you move in. This allows you to confirm that everything is as promised.
               </p>
               <button
                 type="button"
@@ -535,7 +535,7 @@ export function HowItWorks() {
                 Get support from our international team
               </h2>
               <p className="mt-[12px] text-[#4E6470] text-[14px] md:text-[15px] leading-[1.5]">
-                Benefit from our dedicated customer support team, available to assist you with any questions or issues. Get the most out of ReserveHousing with our library of resources. Maximize your rental income by reading other landlord's success stories.
+                Benefit from our dedicated customer support team, available to assist you with any questions or issues. Get the most out of EzzyStay with our library of resources. Maximize your rental income by reading other landlord's success stories.
               </p>
               <button
                 type="button"
@@ -585,7 +585,7 @@ export function HowItWorks() {
             List my property
           </h2>
           <p className="mx-auto mt-[12px] max-w-[700px] text-[#4E6470] text-[14px] leading-[1.5]">
-            Experience the ease of managing your mid-term rentals with ReserveHousing. Start attracting the right tenants today.
+            Experience the ease of managing your mid-term rentals with EzzyStay. Start attracting the right tenants today.
           </p>
           <button
             type="button"

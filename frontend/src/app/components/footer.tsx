@@ -34,7 +34,7 @@ export function Footer({ variant = "default" }: FooterProps) {
           <div>
             {/* Logo */}
             <Link to="/" className="inline-flex items-center mb-[28px] pb-[8px]">
-              <img src={footerLogo} alt="ReserveHousing" className="h-[80px] sm:h-[92px] w-auto object-contain" />
+              <img src={footerLogo} alt="EzzyStay" className="h-[80px] sm:h-[92px] w-auto object-contain" />
             </Link>
 
             {/* Language Selector */}
@@ -75,9 +75,9 @@ export function Footer({ variant = "default" }: FooterProps) {
             </div>
           </div>
 
-          {/* ReserveHousing Column */}
+          {/* EzzyStay Column */}
           <div>
-            <h3 className="text-[#052A3A] text-[16px] sm:text-[18px] font-bold mb-[20px]">ReserveHousing</h3>
+            <h3 className="text-[#052A3A] text-[16px] sm:text-[18px] font-bold mb-[20px]">EzzyStay</h3>
             <ul className="space-y-[12px]">
               <li>
                 <Link to="/about" className="text-[#10394A] text-[14px] sm:text-[15px] hover:text-brand-primary transition-colors">
@@ -184,7 +184,7 @@ export function Footer({ variant = "default" }: FooterProps) {
               </li>
               <li>
                 <Link to="/landlord" className="text-[#10394A] text-[14px] sm:text-[15px] hover:text-brand-primary transition-colors">
-                  ReserveHousing Rent Guarantee
+                  EzzyStay Rent Guarantee
                 </Link>
               </li>
               <li>
@@ -271,7 +271,7 @@ export function Footer({ variant = "default" }: FooterProps) {
       {/* Copyright Section */}
       <div className={isDashboardVariant ? "max-w-[1440px] mx-auto px-[20px] lg:px-[28px] mt-[44px] pt-[24px] border-t border-[rgba(5,42,58,0.15)]" : "max-w-[1440px] mx-auto px-[16px] sm:px-[32px] lg:px-[44px] mt-[44px] pt-[24px] border-t border-[rgba(5,42,58,0.15)]"}>
         <p className="text-[#10394A] text-[14px] sm:text-[15px] text-center">
-          © 2026 ReserveHousing. All rights reserved.
+          © 2026 EzzyStay. All rights reserved.
         </p>
       </div>
     </footer>

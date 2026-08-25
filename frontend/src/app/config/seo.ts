@@ -1,21 +1,21 @@
-// SEO Configuration for Reserve Housing
+// SEO Configuration for Ezzy Stay
 // Use this file to maintain consistent meta tags across all pages
 
 export const SEO_CONFIG = {
   // Base site configuration
   site: {
-    name: 'Reserve Housing',
-    domain: 'https://reservehousing.com',
-    description: 'Discover verified rental properties, connect with trusted landlords, and secure your next home with Reserve Housing.',
+    name: 'Ezzy Stay',
+    domain: 'https://ezzystay.com',
+    description: 'Discover verified rental properties, connect with trusted landlords, and secure your next home with Ezzy Stay.',
     locale: 'en_US',
-    twitterHandle: '@ReserveHousing',
+    twitterHandle: '@EzzyStay',
   },
 
   // Default meta tags for all pages
   defaults: {
-    title: 'Reserve Housing - Find Your Perfect Rental Home | Trusted Rental Marketplace',
-    description: 'Discover verified rental properties, connect with trusted landlords, and secure your next home with Reserve Housing. Browse thousands of apartments and houses with transparent pricing and guaranteed peace of mind.',
-    image: 'https://reservehousing.com/og-image.png',
+    title: 'Ezzy Stay - Find Your Perfect Rental Home | Trusted Rental Marketplace',
+    description: 'Discover verified rental properties, connect with trusted landlords, and secure your next home with Ezzy Stay. Browse thousands of apartments and houses with transparent pricing and guaranteed peace of mind.',
+    image: 'https://ezzystay.com/og-image.png',
     imageWidth: 1200,
     imageHeight: 630,
     type: 'website',
@@ -24,81 +24,81 @@ export const SEO_CONFIG = {
   // Page-specific configurations
   pages: {
     home: {
-      title: 'Reserve Housing - Find Your Perfect Rental Home | Trusted Rental Marketplace',
-      description: 'Discover verified rental properties, connect with trusted landlords, and secure your next home with Reserve Housing. Browse thousands of apartments and houses with transparent pricing.',
+      title: 'Ezzy Stay - Find Your Perfect Rental Home | Trusted Rental Marketplace',
+      description: 'Discover verified rental properties, connect with trusted landlords, and secure your next home with Ezzy Stay. Browse thousands of apartments and houses with transparent pricing.',
       path: '/',
       priority: 1.0,
       changefreq: 'weekly',
     },
     listings: {
-      title: 'Browse Rental Listings | Reserve Housing',
+      title: 'Browse Rental Listings | Ezzy Stay',
       description: 'Browse verified rental properties across major cities. Find apartments, houses, and studios with transparent pricing and guaranteed landlord verification.',
       path: '/listings',
       priority: 0.9,
       changefreq: 'daily',
     },
     howItWorks: {
-      title: 'How Reserve Housing Works | Simple Rental Process',
-      description: 'Learn how Reserve Housing simplifies the rental process for tenants and landlords. Discover our transparent, secure booking steps.',
+      title: 'How Ezzy Stay Works | Simple Rental Process',
+      description: 'Learn how Ezzy Stay simplifies the rental process for tenants and landlords. Discover our transparent, secure booking steps.',
       path: '/how-it-works',
       priority: 0.8,
       changefreq: 'monthly',
     },
     pricing: {
-      title: 'Reserve Housing Pricing | Transparent Rental Fees',
-      description: 'Understand our transparent pricing for both tenants and landlords. No hidden fees, guaranteed peace of mind with Reserve Housing.',
+      title: 'Ezzy Stay Pricing | Transparent Rental Fees',
+      description: 'Understand our transparent pricing for both tenants and landlords. No hidden fees, guaranteed peace of mind with Ezzy Stay.',
       path: '/pricing',
       priority: 0.8,
       changefreq: 'monthly',
     },
     help: {
-      title: 'Help & Support | Reserve Housing',
-      description: 'Get answers to common questions about renting, landlord management, payments, and more on Reserve Housing support center.',
+      title: 'Help & Support | Ezzy Stay',
+      description: 'Get answers to common questions about renting, landlord management, payments, and more on Ezzy Stay support center.',
       path: '/help',
       priority: 0.7,
       changefreq: 'weekly',
     },
     login: {
-      title: 'Login to Reserve Housing',
-      description: 'Sign in to your Reserve Housing account to access your rental applications, messages, and property listings.',
+      title: 'Login to Ezzy Stay',
+      description: 'Sign in to your Ezzy Stay account to access your rental applications, messages, and property listings.',
       path: '/login',
       priority: 0.6,
       changefreq: 'never',
       noindex: true, // Don't index login page
     },
     signup: {
-      title: 'Create Your Reserve Housing Account',
-      description: 'Join thousands of happy tenants on Reserve Housing. Create your free account in minutes and start finding your perfect home.',
+      title: 'Create Your Ezzy Stay Account',
+      description: 'Join thousands of happy tenants on Ezzy Stay. Create your free account in minutes and start finding your perfect home.',
       path: '/signup',
       priority: 0.6,
       changefreq: 'never',
       noindex: true, // Don't index signup page
     },
     landlordRegister: {
-      title: 'List Your Property | Reserve Housing for Landlords',
-      description: 'Are you a landlord? List your property on Reserve Housing and connect with verified tenants. Simple, transparent, and secure.',
+      title: 'List Your Property | Ezzy Stay for Landlords',
+      description: 'Are you a landlord? List your property on Ezzy Stay and connect with verified tenants. Simple, transparent, and secure.',
       path: '/landlord/register',
       priority: 0.7,
       changefreq: 'never',
     },
     favorites: {
-      title: 'My Favorite Listings | Reserve Housing',
-      description: 'View and manage your favorite rental listings on Reserve Housing. Save properties and organize your rental search.',
+      title: 'My Favorite Listings | Ezzy Stay',
+      description: 'View and manage your favorite rental listings on Ezzy Stay. Save properties and organize your rental search.',
       path: '/favorites',
       priority: 0.6,
       changefreq: 'daily',
       noindex: true, // Don't index user-specific pages
     },
     account: {
-      title: 'My Account | Reserve Housing',
-      description: 'Manage your Reserve Housing account, applications, messages, and rental history.',
+      title: 'My Account | Ezzy Stay',
+      description: 'Manage your Ezzy Stay account, applications, messages, and rental history.',
       path: '/account',
       priority: 0.5,
       changefreq: 'monthly',
       noindex: true, // Don't index user-specific pages
     },
     propertyListing: {
-      title: 'View Property Details | Reserve Housing',
+      title: 'View Property Details | Ezzy Stay',
       description: 'View detailed property information, amenities, and rental terms. Apply now or message the landlord.',
       path: '/listing/:id',
       priority: 0.8,
@@ -109,10 +109,10 @@ export const SEO_CONFIG = {
 
   // Social Media Tags
   social: {
-    facebook: 'https://www.facebook.com/reservehousing',
-    twitter: 'https://www.twitter.com/reservehousing',
-    instagram: 'https://www.instagram.com/reservehousing',
-    linkedin: 'https://www.linkedin.com/company/reserve-housing',
+    facebook: 'https://www.facebook.com/ezzystay',
+    twitter: 'https://www.twitter.com/ezzystay',
+    instagram: 'https://www.instagram.com/ezzystay',
+    linkedin: 'https://www.linkedin.com/company/ezzystay',
   },
 
   // Keywords by category
@@ -128,32 +128,32 @@ export const SEO_CONFIG = {
     organization: {
       '@context': 'https://schema.org',
       '@type': 'Organization',
-      'name': 'Reserve Housing',
-      'url': 'https://reservehousing.com',
-      'logo': 'https://reservehousing.com/logo.png',
+      'name': 'Ezzy Stay',
+      'url': 'https://ezzystay.com',
+      'logo': 'https://ezzystay.com/logo.png',
       'description': 'Trusted rental marketplace connecting tenants with verified landlords',
       'sameAs': [
-        'https://www.facebook.com/reservehousing',
-        'https://www.twitter.com/reservehousing',
-        'https://www.instagram.com/reservehousing',
+        'https://www.facebook.com/ezzystay',
+        'https://www.twitter.com/ezzystay',
+        'https://www.instagram.com/ezzystay',
       ],
       'contactPoint': {
         '@type': 'ContactPoint',
         'contactType': 'Customer Support',
-        'email': 'support@reservehousing.com',
-        'url': 'https://reservehousing.com/help',
+        'email': 'support@ezzystay.com',
+        'url': 'https://ezzystay.com/help',
       },
     },
     searchAction: {
       '@context': 'https://schema.org',
       '@type': 'WebSite',
-      'name': 'Reserve Housing',
-      'url': 'https://reservehousing.com',
+      'name': 'Ezzy Stay',
+      'url': 'https://ezzystay.com',
       'potentialAction': {
         '@type': 'SearchAction',
         'target': {
           '@type': 'EntryPoint',
-          'urlTemplate': 'https://reservehousing.com/search?q={search_term_string}',
+          'urlTemplate': 'https://ezzystay.com/search?q={search_term_string}',
         },
         'query-input': 'required name=search_term_string',
       },

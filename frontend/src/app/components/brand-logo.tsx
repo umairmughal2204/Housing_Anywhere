@@ -5,6 +5,6 @@ interface BrandLogoProps {
   alt?: string;
 }
 
-export function BrandLogo({ className = "h-[72px] sm:h-[84px]", alt = "ReserveHousing" }: BrandLogoProps) {
+export function BrandLogo({ className = "h-[72px] sm:h-[84px]", alt = "EzzyStay" }: BrandLogoProps) {
   return <img src={brandLogo} alt={alt} className={`${className} w-auto object-contain`} />;
 }

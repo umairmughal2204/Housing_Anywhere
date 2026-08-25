@@ -1,7 +1,7 @@
 {
-  "name": "Reserve Housing - Trusted Rental Marketplace",
-  "short_name": "Reserve Housing",
-  "description": "Discover verified rental properties and connect with trusted landlords on Reserve Housing - Your trusted rental marketplace.",
+  "name": "Ezzy Stay - Trusted Rental Marketplace",
+  "short_name": "Ezzy Stay",
+  "description": "Discover verified rental properties and connect with trusted landlords on Ezzy Stay - Your trusted rental marketplace.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

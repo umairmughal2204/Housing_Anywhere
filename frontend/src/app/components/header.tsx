@@ -253,7 +253,7 @@ export function Header({
           {showMobileFaviconLogo ? (
             <img
               src={faviconLogo}
-              alt="ReserveHousing"
+              alt="EzzyStay"
               className={`${showDesktopBrandLogo ? "md:hidden" : ""} h-[30px] w-[30px] object-contain`}
             />
           ) : (

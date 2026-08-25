@@ -97,12 +97,12 @@ function buildReceiptHtml(application: TenantApplicationWithPayment) {
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<title>ReserveHousing Receipt ${application.id}</title>
+<title>EzzyStay Receipt ${application.id}</title>
 </head>
 <body style="margin:0;padding:40px 16px;background:#F7F7F9;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
   <div style="max-width:560px;margin:0 auto;background:#FFFFFF;border-radius:24px;overflow:hidden;border:1px solid rgba(0,0,0,0.08);box-shadow:0 18px 44px rgba(0,0,0,0.08);">
     <div style="background:linear-gradient(135deg,#0891B2,#0E7490);padding:32px;">
-      <div style="color:#FFFFFF;font-size:22px;font-weight:800;letter-spacing:-0.02em;">ReserveHousing</div>
+      <div style="color:#FFFFFF;font-size:22px;font-weight:800;letter-spacing:-0.02em;">EzzyStay</div>
       <div style="color:rgba(255,255,255,0.85);font-size:13px;margin-top:4px;">Payment Receipt</div>
     </div>
 
@@ -145,7 +145,7 @@ function buildReceiptHtml(application: TenantApplicationWithPayment) {
     </div>
 
     <div style="background:#F7F7F9;padding:20px 32px;text-align:center;color:#6B6B6B;font-size:12px;">
-      Questions about this payment? Contact support@reservehousing.com
+      Questions about this payment? Contact support@ezzystay.com
     </div>
   </div>
 </body>
@@ -198,7 +198,7 @@ export function Payments() {
     const url = URL.createObjectURL(blob);
     const anchor = document.createElement("a");
     anchor.href = url;
-    anchor.download = `reservehousing-receipt-${application.id}.html`;
+    anchor.download = `ezzystay-receipt-${application.id}.html`;
     document.body.appendChild(anchor);
     anchor.click();
     document.body.removeChild(anchor);
@@ -272,9 +272,8 @@ export function Payments() {
                               {formatCurrency(payment.totalAmount, payment.currency)}
                             </div>
                             <div
-                              className={`inline-block text-[12px] font-semibold rounded-full px-[10px] py-[2px] ${
-                                payment.isPaid ? "bg-brand-primary-light text-brand-primary-dark" : "bg-[#FEF0C7] text-[#B54708]"
-                              }`}
+                              className={`inline-block text-[12px] font-semibold rounded-full px-[10px] py-[2px] ${payment.isPaid ? "bg-brand-primary-light text-brand-primary-dark" : "bg-[#FEF0C7] text-[#B54708]"
+                                }`}
                             >
                               {payment.isPaid ? "Paid" : "Pending"}
                             </div>

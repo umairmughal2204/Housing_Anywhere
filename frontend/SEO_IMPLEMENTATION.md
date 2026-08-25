@@ -1,7 +1,7 @@
-# Reserve Housing - SEO & Meta Tags Documentation
+# Ezzy Stay - SEO & Meta Tags Documentation
 
 ## Overview
-This document outlines the comprehensive SEO and meta tag implementation for Reserve Housing, following industry best practices and modern web standards.
+This document outlines the comprehensive SEO and meta tag implementation for Ezzy Stay, following industry best practices and modern web standards.
 
 ## Files Updated/Created
 
@@ -19,11 +19,11 @@ Location: `frontend/index.html`
 
 **Key Tags:**
 ```html
-- title: Reserve Housing - Find Your Perfect Rental Home | Trusted Rental Marketplace
+- title: Ezzy Stay - Find Your Perfect Rental Home | Trusted Rental Marketplace
 - description: Discover verified rental properties, connect with trusted landlords...
 - keywords: rental housing, apartment rentals, house rentals, etc.
 - robots: index, follow, max-snippet:-1, max-image-preview:large
-- canonical: https://reservehousing.com/
+- canonical: https://ezzystay.com/
 - og:type, og:title, og:description, og:image
 - twitter:card, twitter:title, twitter:description, twitter:image
 ```
@@ -40,7 +40,7 @@ Location: `frontend/public/manifest.json`
 
 **Key Properties:**
 ```json
-- name: "Reserve Housing - Trusted Rental Marketplace"
+- name: "Ezzy Stay - Trusted Rental Marketplace"
 - theme_color: "#0B3A45"
 - display: "standalone"
 - shortcuts: Browse, Account, Messages
@@ -229,7 +229,7 @@ Example:
 ```typescript
 // In listing detail component
 useEffect(() => {
-  document.title = `${listing.title} | Reserve Housing`;
+  document.title = `${listing.title} | Ezzy Stay`;
   document.querySelector('meta[name="description"]')?.setAttribute(
     'content',
     listing.description
