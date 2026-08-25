@@ -72,6 +72,7 @@ import { ProtectedRoute } from "./components/protected-route";
 import { AdminRoute } from "./components/admin-route";
 
 import { LandlordRoute } from "./components/landlord-route";
+import { GlobalChatWidget } from "./components/global-chat-widget";
 
 import { AdminLogin } from "./pages/admin-login";
 
@@ -182,7 +183,8 @@ function RootLayout() {
     Fragment,
     null,
     createElement(ScrollRestoration),
-    createElement(Outlet)
+    createElement(Outlet),
+    createElement(GlobalChatWidget)
   );
 }
 

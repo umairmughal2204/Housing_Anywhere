@@ -20,7 +20,7 @@ const HELP_CATEGORIES: HelpCategory[] = [
   { label: "Travel Alerts", icon: AlertTriangle },
 ];
 
-const HELP_DATA: Record<string, {
+export const HELP_DATA: Record<string, {
   topics: Array<{
     title: string;
     description: string;

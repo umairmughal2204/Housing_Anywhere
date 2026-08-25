@@ -243,9 +243,9 @@ export function Header({
   };
 
   return (
-    <header className={isDashboardVariant ? "bg-white border-b border-[#E3E8EE] shadow-[0_1px_2px_rgba(15,23,42,0.04)] sticky top-0 z-[80]" : "sticky top-0 z-[80] bg-white/96 backdrop-blur-md shadow-[0_10px_30px_rgba(2,22,33,0.08)] border-b border-[rgba(11,165,199,0.14)]"}>
+    <header className={isDashboardVariant ? "bg-white border-b border-[#E3E8EE] shadow-[0_1px_2px_rgba(15,23,42,0.04)] sticky top-0 z-[80]" : `sticky top-0 z-[80] bg-white/96 backdrop-blur-md shadow-[0_10px_30px_rgba(2,22,33,0.08)] ${isAuthenticated ? "border-b border-[rgba(11,165,199,0.14)]" : ""}`}>
       <div className={isDashboardVariant ? "max-w-[1440px] mx-auto px-[10px] sm:px-[20px] lg:px-[28px] py-[8px] sm:py-[10px] flex items-center justify-between gap-[10px] sm:gap-[20px]" : "relative max-w-[1440px] mx-auto px-[16px] sm:px-[32px] py-[10px] sm:py-[12px] flex items-center justify-between"}>
-        {!isDashboardVariant && (
+        {!isDashboardVariant && isAuthenticated && (
           <div className="pointer-events-none absolute inset-x-[18px] bottom-[8px] h-[1px] bg-[linear-gradient(90deg,transparent,rgba(11,165,199,0.26),transparent)]" />
         )}
         {/* Logo */}
@@ -356,19 +356,19 @@ export function Header({
           <nav className="hidden md:flex items-center gap-[28px] rounded-full border border-[rgba(11,165,199,0.14)] bg-white px-[22px] py-[10px] shadow-[0_8px_20px_rgba(2,22,33,0.04)]">
             <Link
               to="/how-it-works"
-              className="text-neutral-black text-[12px] sm:text-[14px] font-medium hover:text-brand-primary transition-colors"
+              className="text-[#1A1A1A] text-[12px] sm:text-[14px] font-semibold hover:text-brand-primary transition-colors"
             >
               How it works
             </Link>
             <Link
               to="/pricing"
-              className="text-neutral-black text-[12px] sm:text-[14px] font-medium hover:text-brand-primary transition-colors"
+              className="text-[#1A1A1A] text-[12px] sm:text-[14px] font-semibold hover:text-brand-primary transition-colors"
             >
               Pricing
             </Link>
             <Link
               to="/help"
-              className="text-neutral-black text-[12px] sm:text-[14px] font-medium hover:text-brand-primary transition-colors"
+              className="text-[#1A1A1A] text-[12px] sm:text-[14px] font-semibold hover:text-brand-primary transition-colors"
             >
               Help
             </Link>
@@ -380,20 +380,20 @@ export function Header({
           <div className="hidden md:flex items-center gap-[12px] sm:gap-[16px]">
             <Link
               to="/login"
-              className="text-neutral-black text-[14px] font-medium hover:text-brand-primary transition-colors"
+              className="text-[#1A1A1A] text-[14px] font-semibold hover:text-brand-primary transition-colors"
             >
               Log in
             </Link>
-            <Link to="/signup" className="text-neutral-black text-[14px] font-medium hover:text-brand-primary transition-colors">
+            <Link to="/signup" className="text-[#1A1A1A] text-[14px] font-semibold hover:text-brand-primary transition-colors">
               Sign up
             </Link>
-            <Link to="/landlord" className="rounded-full px-[16px] py-[9px] border border-neutral-hover text-neutral-black text-[14px] font-semibold hover:bg-neutral-light-gray transition-colors">
+            <Link to="/landlord" className="rounded-full px-[16px] py-[9px] border border-neutral-hover text-[#1A1A1A] text-[14px] font-semibold hover:bg-neutral-light-gray transition-colors">
               I'm a landlord
             </Link>
             <div className="relative" ref={languageDropdownRef}>
               <button
                 onClick={() => setShowLanguageDropdown(!showLanguageDropdown)}
-                className="flex items-center gap-[6px] rounded-full px-[12px] py-[6px] border border-neutral-hover hover:bg-neutral-light-gray transition-all text-[14px] font-semibold text-[#374151]"
+                className="flex items-center gap-[6px] rounded-full px-[12px] py-[6px] border border-neutral-hover hover:bg-neutral-light-gray transition-all text-[14px] font-semibold text-[#1A1A1A]"
               >
                 <span>EUR</span>
                 <span>•</span>
@@ -464,7 +464,7 @@ export function Header({
             <div className="relative" ref={languageDropdownRef}>
               <button
                 onClick={() => setShowLanguageDropdown(!showLanguageDropdown)}
-                className="flex items-center gap-[6px] rounded-full px-[12px] py-[6px] border border-neutral-hover hover:bg-neutral-light-gray transition-all text-[14px] font-semibold text-[#374151]"
+                className="flex items-center gap-[6px] rounded-full px-[12px] py-[6px] border border-neutral-hover hover:bg-neutral-light-gray transition-all text-[14px] font-semibold text-[#1A1A1A]"
               >
                 <span>EUR</span>
                 <span>•</span>
@@ -492,8 +492,8 @@ export function Header({
             </div>
 
             {/* Messages Icon with Badge */}
-            <Link to={inboxHref} className="relative p-[10px] hover:bg-neutral-light-gray transition-colors">
-              <MessageCircle className="w-[20px] h-[20px] text-[#374151]" />
+            <Link to={inboxHref} className="relative p-[10px] hover:bg-neutral-light-gray transition-colors text-[#1A1A1A]">
+              <MessageCircle className="w-[20px] h-[20px] text-[#1A1A1A]" />
               {unreadMessages > 0 && (
                 <span className="absolute top-[4px] right-[4px] min-w-[16px] h-[16px] px-[4px] bg-brand-primary text-white text-[10px] font-bold flex items-center justify-center rounded-full">
                   {unreadMessages > 99 ? "99+" : unreadMessages}
@@ -502,8 +502,8 @@ export function Header({
             </Link>
 
             {/* Favorites Icon */}
-            <Link to="/favorites" className="p-[10px] hover:bg-neutral-light-gray transition-colors">
-              <Heart className="w-[20px] h-[20px] text-[#374151]" />
+            <Link to="/favorites" className="p-[10px] hover:bg-neutral-light-gray transition-colors text-[#1A1A1A]">
+              <Heart className="w-[20px] h-[20px] text-[#1A1A1A]" />
             </Link>
 
             {/* User Avatar with Dropdown */}

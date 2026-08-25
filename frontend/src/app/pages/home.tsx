@@ -4,23 +4,23 @@ import { Header } from "../components/header";
 import { Footer } from "../components/footer";
 import { DatePicker } from "../components/date-picker";
 import { motion, useScroll, useTransform } from "motion/react";
-import ups1Image from "../../assets/ups-1.avif";
-import ups2Image from "../../assets/ups-2.avif";
-import ups3Image from "../../assets/ups-3.avif";
 import mapImage from "../../assets/map.avif";
 import guaranteedImage from "../../assets/guaranteed.avif";
 import houseImage from "../../assets/house_image.svg";
 import heroBg from "../../assets/hero-bg.jpg";
-import { 
-  MapPin, 
-  Calendar, 
-  ArrowRight, 
+import {
+  MapPin,
+  Calendar,
+  ArrowRight,
   Star,
   Heart,
   ChevronLeft,
   ChevronRight,
   ChevronDown,
-  User as UserIcon
+  User as UserIcon,
+  Home as HomeIcon,
+  Building2,
+  Building
 } from "lucide-react";
 import { useAuth } from "../contexts/auth-context";
 import { toast } from "sonner";
@@ -53,11 +53,15 @@ interface FavoriteListing {
   monthlyRent: number;
   image: string;
   availableFrom: string;
+  propertyType: string;
+  utilitiesIncluded: boolean;
 }
 
 type ApiFavoriteListing = Partial<FavoriteListing> & {
   media?: Array<{ url?: string }>;
   images?: string[];
+  propertyType?: string;
+  utilitiesIncluded?: boolean;
 };
 
 type FavoritesPayload = {
@@ -126,6 +130,8 @@ function normalizeFavoriteListing(raw: ApiFavoriteListing): FavoriteListing {
     monthlyRent: raw.monthlyRent ?? 0,
     image: raw.image ?? mediaImages[0] ?? raw.images?.[0] ?? "",
     availableFrom: raw.availableFrom ?? new Date().toISOString(),
+    propertyType: raw.propertyType ?? "apartment",
+    utilitiesIncluded: raw.utilitiesIncluded ?? false,
   };
 }
 
@@ -367,87 +373,49 @@ function getImageDotCount(images: string[] | undefined) {
 
 function HomeListingCardSkeleton() {
   return (
-    <div className="overflow-hidden rounded-[24px] border border-[rgba(0,0,0,0.06)] bg-white shadow-[0_6px_20px_rgba(0,0,0,0.04)]">
-      <div className="relative aspect-[16/10] overflow-hidden bg-[#E8EDF2] rounded-t-[24px]" />
-      <div className="px-[16px] pt-[14px] pb-[12px]">
-        <div className="mb-[6px] h-[16px] w-[85%] rounded-[4px] bg-[#E8EDF2]" />
-        <div className="mb-[10px] h-[16px] w-[55%] rounded-[4px] bg-[#E8EDF2]" />
-        <div className="mb-[12px] flex items-center gap-[12px]">
-          <div className="h-[13px] w-[60px] rounded-[4px] bg-[#E8EDF2]" />
-          <div className="h-[13px] w-[80px] rounded-[4px] bg-[#E8EDF2]" />
-        </div>
-        <div className="mb-[10px] h-[18px] w-[70%] rounded-[4px] bg-[#E8EDF2]" />
-        <div className="mt-[8px] flex items-center gap-[8px] border-t border-[rgba(15,45,54,0.12)] pt-[12px]">
-          <div className="h-[10px] w-[10px] rounded-full bg-[#E8EDF2]" />
-          <div className="h-[13px] w-[65%] rounded-[4px] bg-[#E8EDF2]" />
-        </div>
+    <div className="flex-shrink-0 w-[280px] md:w-[320px] flex flex-col gap-[12px]">
+      <div className="relative aspect-[16/10] overflow-hidden bg-[#E8EDF2] rounded-[16px]" />
+      <div className="flex flex-col gap-[8px]">
+        <div className="h-[16px] w-[90%] rounded-[4px] bg-[#E8EDF2]" />
+        <div className="h-[14px] w-[60%] rounded-[4px] bg-[#E8EDF2]" />
+        <div className="mt-[4px] h-[14px] w-[50%] rounded-[4px] bg-[#E8EDF2]" />
+        <div className="mt-[8px] h-[22px] w-[40%] rounded-[4px] bg-[#E8EDF2]" />
+        <div className="mt-[4px] h-[14px] w-[55%] rounded-[4px] bg-[#E8EDF2]" />
       </div>
     </div>
   );
 }
 
-function HomeListingsSkeletonGrid() {
+function HomeFavoriteListingCardSkeleton() {
   return (
-    <div className="grid grid-cols-1 gap-[24px] md:grid-cols-2 xl:grid-cols-4 animate-pulse" aria-label="Loading listings">
-      {Array.from({ length: 8 }, (_, index) => (
-        <HomeListingCardSkeleton key={index} />
+    <div className="flex-shrink-0 w-[280px] md:w-[320px] flex flex-col border border-[rgba(0,0,0,0.08)] bg-white rounded-[24px] p-[12px]">
+      <div className="relative aspect-[4/3] overflow-hidden bg-[#E8EDF2] rounded-[16px]" />
+      <div className="flex flex-col gap-[8px] pt-[14px] px-[4px]">
+        <div className="h-[16px] w-[90%] rounded-[4px] bg-[#E8EDF2]" />
+        <div className="h-[14px] w-[60%] rounded-[4px] bg-[#E8EDF2]" />
+        <div className="mt-[12px] h-[22px] w-[40%] rounded-[4px] bg-[#E8EDF2]" />
+        <div className="mt-[4px] h-[14px] w-[50%] rounded-[4px] bg-[#E8EDF2]" />
+        <div className="mt-[4px] h-[14px] w-[55%] rounded-[4px] bg-[#E8EDF2]" />
+      </div>
+    </div>
+  );
+}
+
+function HomeListingsSkeletonGrid({ variant = "default" }: { variant?: "default" | "favorites" }) {
+  return (
+    <div className="flex overflow-x-auto gap-[24px] pb-[16px] [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden animate-pulse">
+      {Array.from({ length: 4 }, (_, index) => (
+        variant === "favorites" ? (
+          <HomeFavoriteListingCardSkeleton key={index} />
+        ) : (
+          <HomeListingCardSkeleton key={index} />
+        )
       ))}
     </div>
   );
 }
 
-type ParallaxFeatureSectionProps = {
-  dark?: boolean;
-  imageSrc: string;
-  imageAlt: string;
-  title: string;
-  body: string;
-  footer: string;
-};
 
-function ParallaxFeatureSection({ dark = false, imageSrc, imageAlt, title, body, footer }: ParallaxFeatureSectionProps) {
-  const sectionRef = useRef<HTMLElement | null>(null);
-  const { scrollYProgress } = useScroll({
-    target: sectionRef,
-    offset: ["start end", "end start"],
-  });
-
-  const imageY = useTransform(scrollYProgress, [0, 1], [46, -46]);
-  const imageScale = useTransform(scrollYProgress, [0, 0.5, 1], [0.96, 1, 0.96]);
-  const contentY = useTransform(scrollYProgress, [0, 1], [22, -22]);
-  const contentOpacity = useTransform(scrollYProgress, [0, 0.25, 0.5, 0.75, 1], [0.58, 0.82, 1, 0.82, 0.58]);
-  const contentFilter = useTransform(
-    scrollYProgress,
-    [0, 0.5, 1],
-    ["brightness(0.76)", "brightness(1)", "brightness(0.76)"],
-  );
-  const glowOpacity = useTransform(scrollYProgress, [0, 0.5, 1], [0.1, 0.35, 0.1]);
-
-  return (
-    <section ref={sectionRef} className="relative overflow-hidden py-[36px] md:py-[44px]">
-      <motion.div
-        className={`pointer-events-none absolute inset-0 ${dark ? "bg-[radial-gradient(circle_at_68%_45%,rgba(56,189,248,0.18),transparent_56%)]" : "bg-[radial-gradient(circle_at_68%_45%,rgba(56,189,248,0.16),transparent_56%)]"}`}
-        style={{ opacity: glowOpacity }}
-      />
-      <div className="relative z-10 mx-auto grid max-w-[1440px] grid-cols-1 items-center gap-[48px] px-[32px] lg:grid-cols-[1fr_1.1fr]">
-        <motion.div className="flex justify-center lg:justify-start" style={{ y: imageY, scale: imageScale }}>
-          <img src={imageSrc} alt={imageAlt} className="w-full max-w-[440px] lg:max-w-[500px] object-contain" />
-        </motion.div>
-        <motion.div style={{ y: contentY, opacity: contentOpacity, filter: contentFilter }}>
-          <h2 className={`${dark ? "text-white" : "text-[#042B38]"} mb-[24px] text-[40px] font-bold leading-[1.15] tracking-[-0.02em]`}>
-            {title}
-          </h2>
-          <p className={`${dark ? "text-white/92" : "text-[#0B3341]"} mb-[20px] text-[16px] leading-[1.65]`}>
-            {body}
-          </p>
-          <p className={`${dark ? "text-white/92" : "text-[#0B3341]"} text-[16px] leading-[1.65]`}>
-            {footer}
-          </p>
-        </motion.div>
-      </div>
-    </section>
-  );
-}
 
 export function Home() {
   const [searchCity, setSearchCity] = useState("");
@@ -455,8 +423,6 @@ export function Home() {
   const [endDate, setEndDate] = useState<Date | null>(new Date(2026, 5, 1)); // June 1, 2026
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
   const [isCityDropdownOpen, setIsCityDropdownOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<"recommendations" | "recently" | "favorites">("recently");
-  const [hasAutoShiftedEmptyRecent, setHasAutoShiftedEmptyRecent] = useState(false);
   const cityDropdownRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
   const { isAuthenticated, isLoading: isAuthLoading } = useAuth();
@@ -473,19 +439,10 @@ export function Home() {
   const [favoriteBusyId, setFavoriteBusyId] = useState<string | null>(null);
   const [activeTestimonial, setActiveTestimonial] = useState(1);
   const [activeFaqId, setActiveFaqId] = useState<string | null>(null);
-  const scrollRhythmRef = useRef<HTMLDivElement | null>(null);
+  const [favoritesTypeFilter, setFavoritesTypeFilter] = useState<string>("all");
   const tenantProtectionRef = useRef<HTMLElement | null>(null);
-
-  const { scrollYProgress: rhythmProgress } = useScroll({
-    target: scrollRhythmRef,
-    offset: ["start end", "end start"],
-  });
-
-  const rhythmBackground = useTransform(
-    rhythmProgress,
-    [0, 0.24, 0.38, 0.62, 0.76, 1],
-    ["#FFFFFF", "#FFFFFF", "#022C38", "#022C38", "#FFFFFF", "#FFFFFF"],
-  );
+  const recommendationsScrollRef = useRef<HTMLDivElement>(null);
+  const recentlyViewedScrollRef = useRef<HTMLDivElement>(null);
 
   const { scrollYProgress: tenantProtectionProgress } = useScroll({
     target: tenantProtectionRef,
@@ -628,32 +585,6 @@ export function Home() {
     };
   }, [isAuthenticated, isAuthLoading]);
 
-  useEffect(() => {
-    if (!isAuthenticated) {
-      setHasAutoShiftedEmptyRecent(false);
-      return;
-    }
-
-    if (
-      !hasAutoShiftedEmptyRecent &&
-      activeTab === "recently" &&
-      !isLoadingListings &&
-      !isLoadingRecommendations &&
-      recentlyViewed.length === 0 &&
-      recommendations.length > 0
-    ) {
-      setActiveTab("recommendations");
-      setHasAutoShiftedEmptyRecent(true);
-    }
-  }, [
-    activeTab,
-    hasAutoShiftedEmptyRecent,
-    isAuthenticated,
-    isLoadingListings,
-    isLoadingRecommendations,
-    recommendations.length,
-    recentlyViewed.length,
-  ]);
 
   // Close city dropdown when clicking outside
   useEffect(() => {
@@ -732,19 +663,19 @@ export function Home() {
     try {
       const response = isAdd
         ? await fetch(`${API_BASE}/api/auth/me/favorites`, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
-            },
-            body: JSON.stringify({ listingId }),
-          })
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ listingId }),
+        })
         : await fetch(`${API_BASE}/api/auth/me/favorites/${listingId}`, {
-            method: "DELETE",
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          });
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
 
       if (!response.ok) {
         throw new Error("Failed to update favorites");
@@ -803,13 +734,7 @@ export function Home() {
   };
 
   const filteredCities = getFilteredCities(citySuggestions, searchCity);
-  const displayedListings = activeTab === "recommendations" ? recommendations : recentlyViewed;
-  const isRecommendationsTab = activeTab === "recommendations";
-  const isRecentlyViewedTab = activeTab === "recently";
-  const isListingsTabLoading =
-    (isRecommendationsTab && isLoadingRecommendations) ||
-    (isRecentlyViewedTab && isLoadingListings);
-  const isListingsTabEmpty = displayedListings.length === 0;
+
   const currentTestimonial = homeTestimonials[activeTestimonial];
 
   const showPreviousTestimonial = () => {
@@ -820,28 +745,50 @@ export function Home() {
     setActiveTestimonial((prev) => (prev + 1) % homeTestimonials.length);
   };
 
+  const scrollRecommendations = (direction: "left" | "right") => {
+    if (recommendationsScrollRef.current) {
+      const { scrollLeft, clientWidth } = recommendationsScrollRef.current;
+      const scrollAmount = clientWidth * 0.75;
+      recommendationsScrollRef.current.scrollTo({
+        left: direction === "left" ? scrollLeft - scrollAmount : scrollLeft + scrollAmount,
+        behavior: "smooth",
+      });
+    }
+  };
+
+  const scrollRecentlyViewed = (direction: "left" | "right") => {
+    if (recentlyViewedScrollRef.current) {
+      const { scrollLeft, clientWidth } = recentlyViewedScrollRef.current;
+      const scrollAmount = clientWidth * 0.75;
+      recentlyViewedScrollRef.current.scrollTo({
+        left: direction === "left" ? scrollLeft - scrollAmount : scrollLeft + scrollAmount,
+        behavior: "smooth",
+      });
+    }
+  };
+
   return (
     <div className="min-h-screen bg-white">
       <Header variant={isAuthenticated ? "dashboard" : "default"} dashboardButtonFilled={false} />
 
-      <section 
-        className="relative z-[20] overflow-x-clip text-white bg-cover bg-center bg-no-repeat flex items-center py-[64px] md:py-0 md:aspect-[3.6/1] min-h-[380px] md:min-h-[360px] w-full mb-[48px]"
+      <section
+        className="relative z-[20] overflow-x-clip text-white bg-cover bg-center bg-no-repeat flex items-center py-[64px] md:py-0 md:aspect-[3.6/1] min-h-[380px] md:min-h-[360px] w-full mb-[24px]"
         style={{ backgroundImage: `url(${heroBg})` }}
       >
         {/* Dark overlay for contrast */}
         <div className="absolute inset-0 bg-neutral-black/35 z-0" />
         <div className="relative z-10 w-full max-w-[1440px] mx-auto px-[16px] sm:px-[24px] md:px-[32px]">
           <div className="relative z-10 max-w-[430px] md:max-w-[1000px] mx-auto">
-            <h1 
+            <h1
               className="text-[24px] md:text-[34px] font-semibold leading-[1.2] tracking-tight mb-[24px] md:mb-[32px] text-center"
               style={{ fontFamily: "'Lora', Georgia, serif" }}
             >
-              Entire place, just for you
+              All the space you need, just for you
             </h1>
 
             {/* Search Form */}
-            <form 
-              onSubmit={handleSearch} 
+            <form
+              onSubmit={handleSearch}
               className="relative flex flex-col md:flex-row items-stretch md:items-center gap-[10px] md:gap-0 rounded-[24px] md:rounded-full border border-[rgba(255,255,255,0.7)] bg-white/95 p-[12px] md:p-[8px] md:pl-[24px] md:pr-[8px] shadow-[0_14px_36px_rgba(2,22,33,0.18)] backdrop-blur text-neutral-black"
             >
               {/* Destination Input */}
@@ -863,8 +810,8 @@ export function Home() {
 
                 {/* City Dropdown */}
                 {isCityDropdownOpen && filteredCities.length > 0 && (
-                  <div 
-                    ref={cityDropdownRef} 
+                  <div
+                    ref={cityDropdownRef}
                     className="absolute top-[calc(100%+14px)] left-[-16px] right-0 mt-[8px] bg-white border border-[rgba(0,0,0,0.08)] shadow-[0_8px_32px_rgba(0,0,0,0.12)] z-50 max-h-[300px] overflow-y-auto rounded-[16px]"
                   >
                     {filteredCities.map((city) => (
@@ -906,7 +853,7 @@ export function Home() {
 
               {/* Vertical line divider */}
               <div className="hidden md:block h-[32px] w-[1px] bg-[#E2E8F0] mx-[20px] flex-shrink-0" />
-              
+
               {/* Dates Picker Button */}
               <button
                 type="button"
@@ -945,321 +892,429 @@ export function Home() {
 
       {/* Personalized Recommendations - Only show when logged in */}
       {isAuthenticated && (
-        <section className="bg-white pt-[8px] md:pt-[14px] pb-[64px] border-b border-[rgba(0,0,0,0.08)]">
+        <section className="bg-white pt-[12px] pb-[64px] border-b border-[rgba(0,0,0,0.08)]">
           <div className="max-w-[1200px] mx-auto px-[32px]">
-            {/* Tabs */}
-            <div className="mx-auto mb-[36px] w-full max-w-[760px] border-b border-[rgba(0,0,0,0.16)]">
-              <div className="flex items-center gap-[10px] md:gap-[56px] overflow-x-auto md:overflow-visible md:justify-center px-[2px] [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-                <button
-                  onClick={() => setActiveTab("recommendations")}
-                  className={`relative min-w-[108px] md:min-w-0 max-w-[108px] md:max-w-none truncate px-[6px] pb-[12px] md:pb-[14px] text-[14px] md:text-[22px] font-semibold leading-[1.2] transition-colors ${
-                    activeTab === "recommendations"
-                      ? "text-[#1A1A1A]"
-                      : "text-[#6B6B6B] hover:text-[#1A1A1A]"
-                  }`}
-                >
-                  Recommendations
-                  {activeTab === "recommendations" && (
-                    <div className="absolute bottom-0 left-0 right-0 h-[3px] bg-[#1A1A1A]" />
-                  )}
-                </button>
-                <button
-                  onClick={() => setActiveTab("recently")}
-                  className={`relative min-w-[108px] md:min-w-0 max-w-[108px] md:max-w-none truncate px-[6px] pb-[12px] md:pb-[14px] text-[14px] md:text-[22px] font-semibold leading-[1.2] transition-colors ${
-                    activeTab === "recently"
-                      ? "text-[#1A1A1A]"
-                      : "text-[#6B6B6B] hover:text-[#1A1A1A]"
-                  }`}
-                >
-                  Recently viewed
-                  {activeTab === "recently" && (
-                    <div className="absolute bottom-0 left-0 right-0 h-[3px] bg-[#1A1A1A]" />
-                  )}
-                </button>
-                <button
-                  onClick={() => setActiveTab("favorites")}
-                  className={`relative min-w-[108px] md:min-w-0 max-w-[108px] md:max-w-none truncate px-[6px] pb-[12px] md:pb-[14px] text-[14px] md:text-[22px] font-semibold leading-[1.2] transition-colors ${
-                    activeTab === "favorites"
-                      ? "text-[#1A1A1A]"
-                      : "text-[#6B6B6B] hover:text-[#1A1A1A]"
-                  }`}
-                >
-                  Your favorites
-                  {activeTab === "favorites" && (
-                    <div className="absolute bottom-0 left-0 right-0 h-[3px] bg-[#1A1A1A]" />
-                  )}
-                </button>
+            {/* Section 1: Recently viewed */}
+            <div className="mb-[56px] relative group/list">
+              <div className="mb-[24px]">
+                <h2 className="text-[26px] md:text-[32px] font-bold text-[#1A1A1A] mb-[4px]">Recently viewed</h2>
+                <p className="text-[14px] text-[#6B6B6B]">Based on your recent viewing history</p>
               </div>
-            </div>
-
-            {/* Property Cards */}
-            {(activeTab === "recently" || activeTab === "recommendations") && (
-              <>
-                {isListingsTabLoading && (
-
-<HomeListingsSkeletonGrid />
-                )}
-                {!isListingsTabEmpty && (
-                  <div className="grid grid-cols-1 gap-[24px] md:grid-cols-2 xl:grid-cols-4">
-                    {displayedListings.map((property) => (
-                      <Link
-                        key={property.id}
-                        to={`/listing/${property.id}`}
-                        className="group overflow-hidden rounded-[24px] border border-[rgba(0,0,0,0.06)] bg-white shadow-[0_6px_20px_rgba(0,0,0,0.04)] transition-all duration-200 hover:shadow-[0_10px_30px_rgba(0,0,0,0.08)] hover:-translate-y-[2px]"
-                      >
-                        <div className="relative aspect-[16/10] overflow-hidden bg-[#F7F7F9] group/carousel rounded-t-[24px]">
-                    {/* Carousel Image */}
-                    <img
-                      src={getListingCardImages(property.id, property.images)[carouselImagesByListingId[property.id] ?? 0] ?? "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800&q=80"}
-                      alt={property.title}
-                      className="w-full h-full object-cover object-center bg-[#F3F4F6]"
-                    />
-                    {Date.now() - new Date(property.createdAt).getTime() < 1000 * 60 * 60 * 24 * 7 && (
-                      <div className="absolute top-[12px] left-[12px] bg-[#F7EFE9] text-[#5C4533] px-[12px] py-[4.5px] rounded-[6px] text-[11px] font-semibold tracking-[0.02em] shadow-sm flex items-center gap-[4px]">
-                        <Star className="w-[10px] h-[10px] fill-current text-[#A78B71]" />
-                        New
-                      </div>
-                    )}
-
-                    {/* Left Arrow */}
-                    {getListingCardImages(property.id, property.images).length > 1 && (
-                      <button
-                        onClick={(e) => {
-                          e.preventDefault();
-                          moveListingImage(property.id, "prev", property.images);
-                        }}
-                        className="absolute left-[8px] top-1/2 -translate-y-1/2 w-[28px] h-[28px] bg-white/80 hover:bg-white flex items-center justify-center transition-colors opacity-0 group-hover/carousel:opacity-100 rounded-full z-10"
-                        aria-label="Previous image"
-                      >
-                        <ChevronLeft className="w-[16px] h-[16px] text-[#1A1A1A]" />
-                      </button>
-                    )}
-
-                    {/* Right Arrow */}
-                    {getListingCardImages(property.id, property.images).length > 1 && (
-                      <button
-                        onClick={(e) => {
-                          e.preventDefault();
-                          moveListingImage(property.id, "next", property.images);
-                        }}
-                        className="absolute right-[8px] top-1/2 -translate-y-1/2 w-[28px] h-[28px] bg-white/80 hover:bg-white flex items-center justify-center transition-colors opacity-0 group-hover/carousel:opacity-100 rounded-full z-10"
-                        aria-label="Next image"
-                      >
-                        <ChevronRight className="w-[16px] h-[16px] text-[#1A1A1A]" />
-                      </button>
-                    )}
-
-                    {/* Favorite Icon with Splash */}
-                    <button
-                      onClick={(e) => {
-                        e.preventDefault();
-                        const isAdd = !favoriteListingIds.has(property.id);
-                        triggerFavoriteSplash(property.id);
-                        void handleToggleFavorite(property.id, isAdd);
-                      }}
-                      type="button"
-                      disabled={favoriteBusyId === property.id}
-                      aria-label={favoriteListingIds.has(property.id) ? "Remove from favorites" : "Add to favorites"}
-                      className="absolute top-[12px] right-[12px] w-[36px] h-[36px] bg-white hover:bg-white/95 flex items-center justify-center transition-all rounded-full shadow-[0_4px_12px_rgba(0,0,0,0.08)] hover:scale-105 active:scale-95 z-10"
-                    >
-                      <Heart
-                        className={`w-[18px] h-[18px] transition-colors ${
-                          favoriteListingIds.has(property.id)
-                            ? "fill-red-500 text-red-500"
-                            : "text-[#B91C1C] hover:text-red-500"
-                        }`}
-                      />
-
-                      {/* Splash Animation */}
-                      {favoriteSplashById.has(property.id) && (
-                        <>
-                          <div className="absolute inset-0 border-2 border-[#0891B2] rounded-full animate-ping" style={{ animationDuration: "480ms" }} />
-                          <div className="absolute inset-0 border-2 border-[#0891B2] rounded-full opacity-30" style={{ animation: "ring-pulse 480ms ease-out forwards" }} />
-                        </>
-                      )}
-                    </button>
-
-                    {/* Image Dots */}
-                    {getListingCardImages(property.id, property.images).length > 1 && (
-                      <div className="absolute bottom-[12px] left-1/2 -translate-x-1/2 flex items-center gap-[4px]">
-                        {Array.from({ length: getListingCardImages(property.id, property.images).length }, (_, index) => (
-                          <div
-                            key={index}
-                            className={`w-[6px] h-[6px] rounded-full ${
-                              index === (carouselImagesByListingId[property.id] ?? 0) ? "bg-white" : "bg-white/40"
-                            }`}
-                          />
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                        <div className="px-[16px] pt-[14px] pb-[12px]">
-                          <h3 className="mb-[10px] line-clamp-2 text-[16px] font-semibold leading-[1.25] text-[#12303B]">{property.title}</h3>
-                          <div className="mb-[12px] flex items-center gap-[12px] text-[13px] text-[#3E5963]">
-                            <div className="flex items-center gap-[4px]"><MapPin className="h-[12px] w-[12px]" /><span>{property.area} m²</span></div>
-                            <div className="flex items-center gap-[4px]"><UserIcon className="h-[12px] w-[12px]" /><span>{property.bedrooms} bedrooms</span></div>
-                          </div>
-                          <div className="mb-[10px] flex items-baseline gap-[4px]">
-                            <span className="text-[18px] font-bold text-[#12303B]">€{property.monthlyRent}</span>
-                            <span className="text-[14px] text-[#4F6771]">/month, {property.utilitiesIncluded ? "incl. utilities" : "excl. utilities"}</span>
-                          </div>
-                          <div className="mt-[8px] flex items-center gap-[8px] border-t border-[rgba(15,45,54,0.12)] pt-[12px] text-[14px] font-semibold text-[#12303B]">
-                            <div className="h-[10px] w-[10px] rounded-full bg-[#17A45A]" />
-                            Available from {new Date(property.availableFrom).toLocaleDateString("en-GB")}
-                          </div>
-                        </div>
-                      </Link>
-                    ))}
-                  </div>
-                )}
-                {!isListingsTabLoading && isListingsTabEmpty && (
-                  <div className="rounded-[20px] border border-[rgba(0,0,0,0.08)] bg-[#F7F7F9] p-[40px] text-center">
-                    <div className="flex justify-center mb-[24px]">
-                      <img src={houseImage} alt="No listings" className="w-[120px] h-[120px] object-contain" />
-                    </div>
-                    {isRecommendationsTab && (
-                      <>
-                        <div className="text-[#1A1A1A] text-[18px] font-semibold mb-[8px]">No recommendations yet</div>
-                        <div className="text-[#6B6B6B] text-[14px] max-w-[560px] mx-auto mb-[16px]">
-                          Start exploring listings, save a few favorites, or message landlords to help us personalize your recommendations.
-                        </div>
-                      </>
-                    )}
-                    {isRecentlyViewedTab && (
-                      <>
-                        <div className="text-[#1A1A1A] text-[18px] font-semibold mb-[8px]">No recently viewed listings yet</div>
-                        <div className="text-[#6B6B6B] text-[14px] max-w-[560px] mx-auto mb-[16px]">
-                          Once you open a property, it will appear here so you can jump back to it quickly.
-                        </div>
-                      </>
-                    )}
-                    <div className="flex items-center justify-center gap-[12px] flex-wrap mt-[16px]">
-                      {recommendations.length > 0 && isRecentlyViewedTab && (
-                        <button
-                          type="button"
-                          onClick={() => setActiveTab("recommendations")}
-                          className="inline-flex items-center gap-[8px] px-[20px] py-[10px] border border-[rgba(0,0,0,0.12)] text-[#1A1A1A] text-[14px] font-semibold rounded-full hover:border-[rgba(0,0,0,0.24)] hover:bg-white transition-colors"
-                        >
-                          See recommendations
-                        </button>
-                      )}
-                      <Link
-                        to="/listings"
-                        className="inline-flex items-center gap-[8px] px-[24px] py-[10px] bg-[#0891B2] text-white text-[14px] font-semibold rounded-full shadow-[0_4px_10px_rgba(8,145,178,0.16)] hover:bg-[#0E7490] hover:shadow-[0_6px_14px_rgba(8,145,178,0.24)] transition-all"
-                      >
-                        Browse listings
-                        <ArrowRight className="w-[16px] h-[16px]" />
-                      </Link>
-                    </div>
-                  </div>
-                )}
-                <div className="mt-[24px] md:mt-[32px] flex justify-center">
-                  <Link
-                    to="/listings"
-                    className="inline-flex items-center gap-[8px] px-[28px] py-[14px] bg-[#0891B2] text-white text-[15px] font-bold rounded-full hover:bg-[#0E7490] hover:-translate-y-[1px] active:translate-y-0 transition-all duration-150"
+              {isLoadingListings ? (
+                <HomeListingsSkeletonGrid />
+              ) : recentlyViewed.length > 0 ? (
+                <div className="relative">
+                  <div
+                    ref={recentlyViewedScrollRef}
+                    className="flex overflow-x-auto gap-[24px] pb-[16px] scroll-smooth [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
                   >
-                    Browse all listings
-                    <ArrowRight className="w-[16px] h-[16px]" />
-                  </Link>
-                </div>
-              </>
-            )}
-
-            {activeTab === "favorites" && (
-              <>
-                {isLoadingFavorites && (
-                  <HomeListingsSkeletonGrid />
-                )}
-                {!isLoadingFavorites && (
-                  <div className="grid grid-cols-1 gap-[24px] md:grid-cols-2 xl:grid-cols-4">
-                    {favorites.map((property) => (
+                    {recentlyViewed.map((property) => (
                       <Link
                         key={property.id}
                         to={`/listing/${property.id}`}
-                        className="group overflow-hidden rounded-[8px] border border-[rgba(15,45,54,0.16)] bg-white transition-shadow duration-200 hover:shadow-[0_10px_24px_rgba(15,45,54,0.10)]"
+                        className="flex-shrink-0 w-[280px] md:w-[320px] group flex flex-col gap-[12px]"
                       >
-                        <div className="relative aspect-[16/10] overflow-hidden bg-[#F7F7F9]">
+                        <div className="relative aspect-[16/10] overflow-hidden bg-[#F7F7F9] group/carousel rounded-[16px]">
                           <img
-                            src={property.image || "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800&q=80"}
+                            src={getListingCardImages(property.id, property.images)[carouselImagesByListingId[property.id] ?? 0] ?? "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800&q=80"}
                             alt={property.title}
                             className="w-full h-full object-cover object-center bg-[#F3F4F6]"
                           />
-                          <div className="absolute bottom-[12px] left-0 right-0 flex items-center justify-center gap-[4px]">
-                            {Array.from({ length: getImageDotCount(property.image ? [property.image] : []) }, (_, index) => (
-                              <div key={index} className={`w-[6px] h-[6px] rounded-full ${index === 0 ? "bg-white" : "bg-white/40"}`} />
-                            ))}
-                          </div>
+                          {Date.now() - new Date(property.createdAt).getTime() < 1000 * 60 * 60 * 24 * 7 && (
+                            <div className="absolute top-[12px] left-[12px] bg-[#F7EFE9] text-[#5C4533] px-[12px] py-[4.5px] rounded-[6px] text-[11px] font-semibold tracking-[0.02em] shadow-sm flex items-center gap-[4px]">
+                              <Star className="w-[10px] h-[10px] fill-current text-[#A78B71]" />
+                              New
+                            </div>
+                          )}
+
+                          {getListingCardImages(property.id, property.images).length > 1 && (
+                            <button
+                              onClick={(e) => {
+                                e.preventDefault();
+                                moveListingImage(property.id, "prev", property.images);
+                              }}
+                              className="absolute left-[8px] top-1/2 -translate-y-1/2 w-[28px] h-[28px] bg-white/80 hover:bg-white flex items-center justify-center transition-colors opacity-0 group-hover/carousel:opacity-100 rounded-full z-10"
+                              aria-label="Previous image"
+                            >
+                              <ChevronLeft className="w-[16px] h-[16px] text-[#1A1A1A]" />
+                            </button>
+                          )}
+
+                          {getListingCardImages(property.id, property.images).length > 1 && (
+                            <button
+                              onClick={(e) => {
+                                e.preventDefault();
+                                moveListingImage(property.id, "next", property.images);
+                              }}
+                              className="absolute right-[8px] top-1/2 -translate-y-1/2 w-[28px] h-[28px] bg-white/80 hover:bg-white flex items-center justify-center transition-colors opacity-0 group-hover/carousel:opacity-100 rounded-full z-10"
+                              aria-label="Next image"
+                            >
+                              <ChevronRight className="w-[16px] h-[16px] text-[#1A1A1A]" />
+                            </button>
+                          )}
+
+                          <button
+                            onClick={(e) => {
+                              e.preventDefault();
+                              const isAdd = !favoriteListingIds.has(property.id);
+                              triggerFavoriteSplash(property.id);
+                              void handleToggleFavorite(property.id, isAdd);
+                            }}
+                            type="button"
+                            disabled={favoriteBusyId === property.id}
+                            aria-label={favoriteListingIds.has(property.id) ? "Remove from favorites" : "Add to favorites"}
+                            className="absolute top-[12px] right-[12px] w-[36px] h-[36px] bg-white hover:bg-white/95 flex items-center justify-center transition-all rounded-full shadow-[0_4px_12px_rgba(0,0,0,0.08)] hover:scale-105 active:scale-95 z-10"
+                          >
+                            <Heart
+                              className={`w-[18px] h-[18px] transition-colors ${favoriteListingIds.has(property.id)
+                                ? "fill-red-500 text-red-500"
+                                : "text-[#B91C1C] hover:text-red-500"
+                                }`}
+                            />
+
+                            {favoriteSplashById.has(property.id) && (
+                              <>
+                                <div className="absolute inset-0 border-2 border-[#0891B2] rounded-full animate-ping" style={{ animationDuration: "480ms" }} />
+                                <div className="absolute inset-0 border-2 border-[#0891B2] rounded-full opacity-30" style={{ animation: "ring-pulse 480ms ease-out forwards" }} />
+                              </>
+                            )}
+                          </button>
+
+                          {getListingCardImages(property.id, property.images).length > 1 && (
+                            <div className="absolute bottom-[12px] left-1/2 -translate-x-1/2 flex items-center gap-[4px]">
+                              {Array.from({ length: getListingCardImages(property.id, property.images).length }, (_, index) => (
+                                <div
+                                  key={index}
+                                  className={`w-[6px] h-[6px] rounded-full ${index === (carouselImagesByListingId[property.id] ?? 0) ? "bg-white" : "bg-white/40"
+                                    }`}
+                                />
+                              ))}
+                            </div>
+                          )}
                         </div>
-                        <div className="px-[16px] pt-[14px] pb-[12px]">
-                          <h3 className="mb-[10px] line-clamp-2 text-[16px] font-semibold leading-[1.25] text-[#12303B]">{property.title}</h3>
-                          <div className="mb-[12px] flex items-center gap-[12px] text-[13px] text-[#3E5963]">
-                            <div className="flex items-center gap-[4px]"><MapPin className="h-[12px] w-[12px]" /><span>{property.area} m²</span></div>
-                            <div className="flex items-center gap-[4px]"><UserIcon className="h-[12px] w-[12px]" /><span>{property.bedrooms} bedrooms</span></div>
+                        <div className="flex flex-col gap-[4px] pt-[2px]">
+                          <h3 className="line-clamp-1 text-[16px] font-bold leading-[1.3] text-[#1A1A1A]">{property.title}</h3>
+                          <span className="text-[14px] text-[#6B6B6B]">{property.bedrooms} bedrooms · {property.area} m²</span>
+                          <span className="text-[14px] text-[#6B6B6B]">
+                            {new Date(property.availableFrom) <= new Date()
+                              ? "Available now"
+                              : `Available from ${new Date(property.availableFrom).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}`}
+                          </span>
+
+                          <div className="mt-[10px] pt-[10px] border-t border-[#F3F4F6]">
+                            <span className="text-[22px] font-bold text-[#1A1A1A]">€{property.monthlyRent}</span>
+                            <span className="text-[14px] text-[#6B6B6B] ml-[4px]">/month</span>
                           </div>
-                          <div className="mb-[10px] flex items-baseline gap-[4px]">
-                            <span className="text-[18px] font-bold text-[#12303B]">€{property.monthlyRent}</span>
-                            <span className="text-[14px] text-[#4F6771]">/month</span>
-                          </div>
-                          <div className="mt-[8px] flex items-center gap-[8px] border-t border-[rgba(15,45,54,0.12)] pt-[12px] text-[14px] font-semibold text-[#12303B]">
-                            <div className="h-[10px] w-[10px] rounded-full bg-[#17A45A]" />
-                            Available from {new Date(property.availableFrom).toLocaleDateString("en-GB")}
+
+                          <div className="flex items-center gap-[6px] mt-[4px]">
+                            {property.utilitiesIncluded ? (
+                              <>
+                                <svg className="w-[16px] h-[16px] text-[#16A34A] flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+                                <span className="text-[13px] text-[#16A34A] font-semibold">All fees included</span>
+                              </>
+                            ) : (
+                              <>
+                                <svg className="w-[16px] h-[16px] text-[#9CA3AF] flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                                <span className="text-[13px] text-[#6B6B6B] font-semibold">Utilities excluded</span>
+                              </>
+                            )}
                           </div>
                         </div>
                       </Link>
                     ))}
                   </div>
-                )}
-                {!isLoadingFavorites && favorites.length === 0 && (
-                  <div className="rounded-[20px] border border-[rgba(0,0,0,0.08)] bg-[#F7F7F9] p-[40px] text-center">
-                    <div className="flex justify-center mb-[24px]">
-                      <img src={houseImage} alt="No favorites" className="w-[120px] h-[120px] object-contain" />
-                    </div>
-                    <div className="text-[#1A1A1A] text-[18px] font-semibold mb-[8px]">You haven't saved any favorites yet</div>
-                    <div className="text-[#6B6B6B] text-[14px] max-w-[560px] mx-auto mb-[16px]">
-                      Heart a listing to save it here. Start exploring and build your collection of dream homes.
-                    </div>
+                </div>
+              ) : (
+                <div className="rounded-[20px] border border-[rgba(0,0,0,0.08)] bg-[#F7F7F9] p-[40px] text-center">
+                  <div className="flex justify-center mb-[24px]">
+                    <img src={houseImage} alt="No listings" className="w-[120px] h-[120px] object-contain" />
+                  </div>
+                  <div className="text-[#1A1A1A] text-[18px] font-semibold mb-[8px]">No recently viewed listings yet</div>
+                  <div className="text-[#6B6B6B] text-[14px] max-w-[560px] mx-auto mb-[16px]">
+                    Once you open a property, it will appear here so you can jump back to it quickly.
+                  </div>
+                  <div className="flex items-center justify-center gap-[12px] flex-wrap mt-[16px]">
                     <Link
                       to="/listings"
-                      className="inline-flex items-center gap-[8px] px-[24px] py-[13px] bg-brand-primary text-white text-[15px] font-bold rounded-[14px] hover:bg-brand-primary-dark transition-colors shadow-[0_4px_14px_rgba(11,165,199,0.28)]"
+                      className="inline-flex items-center gap-[8px] px-[24px] py-[10px] bg-[#0891B2] text-white text-[14px] font-semibold rounded-full shadow-[0_4px_10px_rgba(8,145,178,0.16)] hover:bg-[#0E7490] hover:shadow-[0_6px_14px_rgba(8,145,178,0.24)] transition-all"
                     >
-                      Explore properties
+                      Browse listings
                       <ArrowRight className="w-[16px] h-[16px]" />
                     </Link>
                   </div>
-                )}
-              </>
+                </div>
+              )}
+            </div>
+
+            {/* Section 2: Recommendations */}
+            <div className="mb-[56px] relative group/list">
+              <div className="mb-[24px]">
+                <h2 className="text-[26px] md:text-[32px] font-bold text-[#1A1A1A] mb-[4px]">Recommendations</h2>
+                <p className="text-[14px] text-[#6B6B6B]">Personalized suggestions for your next stay</p>
+              </div>
+              {isLoadingRecommendations ? (
+                <HomeListingsSkeletonGrid />
+              ) : recommendations.length > 0 ? (
+                <div className="relative">
+                  <div
+                    ref={recommendationsScrollRef}
+                    className="flex overflow-x-auto gap-[24px] pb-[16px] scroll-smooth [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+                  >
+                    {recommendations.map((property) => (
+                      <Link
+                        key={property.id}
+                        to={`/listing/${property.id}`}
+                        className="flex-shrink-0 w-[280px] md:w-[320px] group flex flex-col gap-[12px]"
+                      >
+                        <div className="relative aspect-[16/10] overflow-hidden bg-[#F7F7F9] group/carousel rounded-[16px]">
+                          <img
+                            src={getListingCardImages(property.id, property.images)[carouselImagesByListingId[property.id] ?? 0] ?? "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800&q=80"}
+                            alt={property.title}
+                            className="w-full h-full object-cover object-center bg-[#F3F4F6]"
+                          />
+                          {Date.now() - new Date(property.createdAt).getTime() < 1000 * 60 * 60 * 24 * 7 && (
+                            <div className="absolute top-[12px] left-[12px] bg-[#F7EFE9] text-[#5C4533] px-[12px] py-[4.5px] rounded-[6px] text-[11px] font-semibold tracking-[0.02em] shadow-sm flex items-center gap-[4px]">
+                              <Star className="w-[10px] h-[10px] fill-current text-[#A78B71]" />
+                              New
+                            </div>
+                          )}
+
+                          {getListingCardImages(property.id, property.images).length > 1 && (
+                            <button
+                              onClick={(e) => {
+                                e.preventDefault();
+                                moveListingImage(property.id, "prev", property.images);
+                              }}
+                              className="absolute left-[8px] top-1/2 -translate-y-1/2 w-[28px] h-[28px] bg-white/80 hover:bg-white flex items-center justify-center transition-colors opacity-0 group-hover/carousel:opacity-100 rounded-full z-10"
+                              aria-label="Previous image"
+                            >
+                              <ChevronLeft className="w-[16px] h-[16px] text-[#1A1A1A]" />
+                            </button>
+                          )}
+
+                          {getListingCardImages(property.id, property.images).length > 1 && (
+                            <button
+                              onClick={(e) => {
+                                e.preventDefault();
+                                moveListingImage(property.id, "next", property.images);
+                              }}
+                              className="absolute right-[8px] top-1/2 -translate-y-1/2 w-[28px] h-[28px] bg-white/80 hover:bg-white flex items-center justify-center transition-colors opacity-0 group-hover/carousel:opacity-100 rounded-full z-10"
+                              aria-label="Next image"
+                            >
+                              <ChevronRight className="w-[16px] h-[16px] text-[#1A1A1A]" />
+                            </button>
+                          )}
+
+                          <button
+                            onClick={(e) => {
+                              e.preventDefault();
+                              const isAdd = !favoriteListingIds.has(property.id);
+                              triggerFavoriteSplash(property.id);
+                              void handleToggleFavorite(property.id, isAdd);
+                            }}
+                            type="button"
+                            disabled={favoriteBusyId === property.id}
+                            aria-label={favoriteListingIds.has(property.id) ? "Remove from favorites" : "Add to favorites"}
+                            className="absolute top-[12px] right-[12px] w-[36px] h-[36px] bg-white hover:bg-white/95 flex items-center justify-center transition-all rounded-full shadow-[0_4px_12px_rgba(0,0,0,0.08)] hover:scale-105 active:scale-95 z-10"
+                          >
+                            <Heart
+                              className={`w-[18px] h-[18px] transition-colors ${favoriteListingIds.has(property.id)
+                                ? "fill-red-500 text-red-500"
+                                : "text-[#B91C1C] hover:text-red-500"
+                                }`}
+                            />
+
+                            {favoriteSplashById.has(property.id) && (
+                              <>
+                                <div className="absolute inset-0 border-2 border-[#0891B2] rounded-full animate-ping" style={{ animationDuration: "480ms" }} />
+                                <div className="absolute inset-0 border-2 border-[#0891B2] rounded-full opacity-30" style={{ animation: "ring-pulse 480ms ease-out forwards" }} />
+                              </>
+                            )}
+                          </button>
+
+                          {getListingCardImages(property.id, property.images).length > 1 && (
+                            <div className="absolute bottom-[12px] left-1/2 -translate-x-1/2 flex items-center gap-[4px]">
+                              {Array.from({ length: getListingCardImages(property.id, property.images).length }, (_, index) => (
+                                <div
+                                  key={index}
+                                  className={`w-[6px] h-[6px] rounded-full ${index === (carouselImagesByListingId[property.id] ?? 0) ? "bg-white" : "bg-white/40"
+                                    }`}
+                                />
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex flex-col gap-[4px] pt-[2px]">
+                          <h3 className="line-clamp-1 text-[16px] font-bold leading-[1.3] text-[#1A1A1A]">{property.title}</h3>
+                          <span className="text-[14px] text-[#6B6B6B]">{property.bedrooms} bedrooms · {property.area} m²</span>
+                          <span className="text-[14px] text-[#6B6B6B]">
+                            {new Date(property.availableFrom) <= new Date()
+                              ? "Available now"
+                              : `Available from ${new Date(property.availableFrom).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}`}
+                          </span>
+
+                          <div className="mt-[10px] pt-[10px] border-t border-[#F3F4F6]">
+                            <span className="text-[22px] font-bold text-[#1A1A1A]">€{property.monthlyRent}</span>
+                            <span className="text-[14px] text-[#6B6B6B] ml-[4px]">/month</span>
+                          </div>
+
+                          <div className="flex items-center gap-[6px] mt-[4px]">
+                            {property.utilitiesIncluded ? (
+                              <>
+                                <svg className="w-[16px] h-[16px] text-[#16A34A] flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+                                <span className="text-[13px] text-[#16A34A] font-semibold">All fees included</span>
+                              </>
+                            ) : (
+                              <>
+                                <svg className="w-[16px] h-[16px] text-[#9CA3AF] flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                                <span className="text-[13px] text-[#6B6B6B] font-semibold">Utilities excluded</span>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <div className="rounded-[20px] border border-[rgba(0,0,0,0.08)] bg-[#F7F7F9] p-[40px] text-center">
+                  <div className="flex justify-center mb-[24px]">
+                    <img src={houseImage} alt="No listings" className="w-[120px] h-[120px] object-contain" />
+                  </div>
+                  <div className="text-[#1A1A1A] text-[18px] font-semibold mb-[8px]">No recommendations yet</div>
+                  <div className="text-[#6B6B6B] text-[14px] max-w-[560px] mx-auto mb-[16px]">
+                    Start exploring listings, save a few favorites, or message landlords to help us personalize your recommendations.
+                  </div>
+                  <div className="flex items-center justify-center gap-[12px] flex-wrap mt-[16px]">
+                    <Link
+                      to="/listings"
+                      className="inline-flex items-center gap-[8px] px-[24px] py-[10px] bg-[#0891B2] text-white text-[14px] font-semibold rounded-full shadow-[0_4px_10px_rgba(8,145,178,0.16)] hover:bg-[#0E7490] hover:shadow-[0_6px_14px_rgba(8,145,178,0.24)] transition-all"
+                    >
+                      Browse listings
+                      <ArrowRight className="w-[16px] h-[16px]" />
+                    </Link>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Section 3: Your favorites */}
+            {(isLoadingFavorites || favorites.length > 0) && (
+              <div className="mb-[24px]">
+                <div className="mb-[8px]">
+                  <h2 className="text-[26px] md:text-[32px] font-bold text-[#1A1A1A] mb-[4px]">Your favorites</h2>
+                  <p className="text-[14px] text-[#6B6B6B]">Properties you've saved for later</p>
+                </div>
+
+                {/* Category Filter Tabs */}
+                <div className="flex items-center gap-[32px] mb-[24px] border-b border-[#E5E7EB] overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                  {[
+                    { key: "all", label: "All", icon: Star },
+                    { key: "house", label: "House", icon: HomeIcon },
+                    { key: "apartment", label: "Apartment", icon: Building2 },
+                    { key: "building", label: "Building", icon: Building },
+                  ].map((tab) => (
+                    <button
+                      key={tab.key}
+                      type="button"
+                      onClick={() => setFavoritesTypeFilter(tab.key)}
+                      className={`flex flex-col items-center gap-[6px] pb-[12px] pt-[4px] px-[4px] text-[13px] font-semibold transition-all whitespace-nowrap border-b-[2px] ${favoritesTypeFilter === tab.key
+                          ? "border-[#1A1A1A] text-[#1A1A1A]"
+                          : "border-transparent text-[#9CA3AF] hover:text-[#6B6B6B]"
+                        }`}
+                    >
+                      <tab.icon className="w-[24px] h-[24px]" />
+                      {tab.label}
+                    </button>
+                  ))}
+                </div>
+
+                {isLoadingFavorites ? (
+                  <HomeListingsSkeletonGrid variant="favorites" />
+                ) : (() => {
+                  const filteredFavorites = favoritesTypeFilter === "all"
+                    ? favorites
+                    : favorites.filter((p) => p.propertyType === favoritesTypeFilter);
+
+                  return filteredFavorites.length > 0 ? (
+                    <div className="flex overflow-x-auto gap-[24px] pb-[16px] scroll-smooth [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                      {filteredFavorites.map((property) => (
+                        <Link
+                          key={property.id}
+                          to={`/listing/${property.id}`}
+                          className="flex-shrink-0 w-[280px] md:w-[320px] group flex flex-col border border-[rgba(0,0,0,0.08)] bg-white rounded-[24px] p-[12px] hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)] transition-all duration-200"
+                        >
+                          <div className="relative aspect-[4/3] overflow-hidden bg-[#F7F7F9] group/carousel rounded-[16px]">
+                            <img
+                              src={property.image || "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800&q=80"}
+                              alt={property.title}
+                              className="w-full h-full object-cover object-center bg-[#F3F4F6] transition-transform duration-300 group-hover:scale-[1.03]"
+                            />
+
+                            {/* Property Type Badge */}
+                            <div className="absolute top-[12px] left-[12px] bg-white/90 backdrop-blur-sm text-[#1A1A1A] px-[10px] py-[4px] rounded-[6px] text-[11px] font-semibold capitalize shadow-sm">
+                              {property.propertyType}
+                            </div>
+
+                            {/* Heart Button */}
+                            <div className="absolute top-[12px] right-[12px] w-[36px] h-[36px] bg-white/90 backdrop-blur-sm hover:bg-white flex items-center justify-center rounded-full shadow-[0_2px_8px_rgba(0,0,0,0.1)] hover:scale-105 active:scale-95 transition-all z-10">
+                              <Heart className="w-[18px] h-[18px] fill-red-500 text-red-500" />
+                            </div>
+                          </div>
+
+                          <div className="flex flex-col gap-[2px] pt-[14px] px-[4px]">
+                            <h3 className="line-clamp-1 text-[16px] font-bold leading-[1.3] text-[#1A1A1A]">{property.title}</h3>
+                            <span className="text-[14px] text-[#6B6B6B]">{property.bedrooms} bedrooms · {property.area} m²</span>
+
+                            <div className="mt-[10px]">
+                              <span className="text-[22px] font-bold text-[#1A1A1A]">€{property.monthlyRent}</span>
+                              <span className="text-[14px] text-[#6B6B6B] ml-[2px]">/month</span>
+                            </div>
+                            <div className="flex items-center gap-[6px] mt-[4px]">
+                              {property.utilitiesIncluded ? (
+                                <>
+                                  <svg className="w-[16px] h-[16px] text-[#16A34A] flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+                                  <span className="text-[13px] text-[#16A34A] font-semibold">All fees included</span>
+                                </>
+                              ) : (
+                                <>
+                                  <svg className="w-[16px] h-[16px] text-[#9CA3AF] flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                                  <span className="text-[13px] text-[#6B6B6B] font-semibold">Utilities excluded</span>
+                                </>
+                              )}
+                            </div>
+                            <span className="text-[13px] text-[#6B6B6B] mt-[2px]">
+                              {new Date(property.availableFrom) <= new Date()
+                                ? "Available now"
+                                : `${new Date(property.availableFrom).toLocaleDateString("en-GB", { month: "short", day: "numeric" })} - onwards`}
+                            </span>
+                          </div>
+                        </Link>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-[40px] text-[#6B6B6B] text-[15px]">
+                      No {favoritesTypeFilter !== "all" ? favoritesTypeFilter : ""} favorites found.
+                    </div>
+                  );
+                })()}
+              </div>
             )}
+
+            <div className="mt-[32px] md:mt-[40px]">
+              <Link
+                to="/listings"
+                className="inline-flex items-center gap-[6px] text-[#0891B2] text-[15px] font-semibold hover:text-[#0E7490] transition-colors"
+              >
+                View more properties
+                <span className="text-[18px]">→</span>
+              </Link>
+            </div>
           </div>
         </section>
       )}
 
-      {/* Scroll Rhythm Sections: white -> dark -> white */}
-      <motion.div ref={scrollRhythmRef} style={{ backgroundColor: rhythmBackground }}>
-        <ParallaxFeatureSection
-          imageSrc={ups1Image}
-          imageAlt="Protected payments"
-          title="Stay safe with protected payments"
-          body="When you pay to confirm your stay, your money is safe with us. We send it to the landlord only 48 hours after you move in unless you tell us the place is not as promised. If you contact us, we will help you."
-          footer="Protecting you against risks. Making your move safer."
-        />
 
-        <ParallaxFeatureSection
-          dark
-          imageSrc={ups2Image}
-          imageAlt="Explore homes remotely"
-          title="Get a feel of the place from anywhere"
-          body="Tired of trying to fit in viewings around your life? Explore several places at your own pace from the comfort of your couch. Enjoy high-quality photos, videos, floor plans, detailed descriptions, and more."
-          footer="Say goodbye to in-person viewings; say hello to more free time."
-        />
-
-        <ParallaxFeatureSection
-          imageSrc={ups3Image}
-          imageAlt="Chat directly with landlords"
-          title="Chat and share directly with landlords"
-          body="No more calling, texting, emailing, and discussing things with landlords in different places. Get a private page to message the landlord directly. Ask questions, share information, and see it all in the same place."
-          footer="No chance for misunderstandings. Everyone is always on the same page."
-        />
-      </motion.div>
 
       <section className="bg-white py-[62px] md:py-[72px]">
         <div className="mx-auto max-w-[980px] px-[32px] text-center">
@@ -1573,9 +1628,8 @@ export function Home() {
                       {item.question}
                     </span>
                     <ChevronDown
-                      className={`h-[20px] w-[20px] shrink-0 text-neutral-gray transition-transform ${
-                        isOpen ? "rotate-180" : ""
-                      }`}
+                      className={`h-[20px] w-[20px] shrink-0 text-neutral-gray transition-transform ${isOpen ? "rotate-180" : ""
+                        }`}
                     />
                   </button>
 
