@@ -1,5 +1,6 @@
 import { Header } from "../components/header";
 import { Footer } from "../components/footer";
+import { SEO } from "../components/seo";
 import { useAuth } from "../contexts/auth-context";
 import { useState, useEffect } from "react";
 import { Link } from "react-router";
@@ -24,6 +25,11 @@ export function Guides() {
 
   return (
     <div className="min-h-screen bg-white">
+      <SEO
+        title="How-To Guides & Rental Tutorials"
+        description="Comprehensive step-by-step guides for renting, listing properties, tenant safety, and housing contracts."
+        canonicalUrl="https://ezzystay.com/guides"
+      />
       <Header
         variant={isAuthenticated ? "dashboard" : "default"}
         dashboardButtonFilled={false}

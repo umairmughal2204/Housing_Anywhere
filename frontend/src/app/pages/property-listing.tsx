@@ -2,6 +2,7 @@ import { Link, useParams, useNavigate } from "react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Header } from "../components/header";
 import { Footer } from "../components/footer";
+import { SEO } from "../components/seo";
 import { UserAvatar } from "../components/user-avatar";
 import { usePlatformSettings } from "../hooks/use-platform-settings";
 import { DatePicker } from "../components/date-picker";
@@ -1224,6 +1225,33 @@ export function PropertyListing() {
 
   return (
     <div className="min-h-screen bg-white">
+      {listing && (
+        <SEO
+          title={`${listing.title} - ${listing.city || "Rental Home"}`}
+          description={listing.description ? listing.description.slice(0, 160) : `Rent this property in ${listing.city} for €${listing.monthlyRent}/month on EzzyStay.`}
+          ogImage={listing.images?.[0]}
+          ogType="product"
+          canonicalUrl={`https://ezzystay.com/property/${listing.id}`}
+          jsonLd={{
+            "@context": "https://schema.org",
+            "@type": "SingleFamilyResidence",
+            "name": listing.title,
+            "description": listing.description,
+            "image": listing.images || [],
+            "address": {
+              "@type": "PostalAddress",
+              "addressLocality": listing.city,
+              "addressCountry": (listing as any).country || "Netherlands"
+            },
+            "offers": {
+              "@type": "Offer",
+              "price": listing.monthlyRent,
+              "priceCurrency": "EUR",
+              "availability": "https://schema.org/InStock"
+            }
+          }}
+        />
+      )}
       <Header
         variant="dashboard"
         logoVariant="mobile-favicon"

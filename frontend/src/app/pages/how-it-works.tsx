@@ -1,5 +1,6 @@
 import { Header } from "../components/header";
 import { Footer } from "../components/footer";
+import { SEO } from "../components/seo";
 import { HandCoins, HandMetal, MessageCircle, MousePointer2, PencilLine, Send, ShieldCheck } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router";
@@ -135,6 +136,11 @@ export function HowItWorks() {
 
   return (
     <div className="min-h-screen bg-white">
+      <SEO
+        title="How It Works | Simple & Secure Housing Search"
+        description="Learn how EzzyStay connects verified tenants and landlords with 24/7 support and secure payment protection."
+        canonicalUrl="https://ezzystay.com/how-it-works"
+      />
       <Header variant={isAuthenticated ? "dashboard" : "default"} dashboardButtonFilled={false} />
 
       {/* Hero Section */}

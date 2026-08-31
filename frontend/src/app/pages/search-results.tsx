@@ -1,6 +1,7 @@
 import { useParams, Link, useNavigate, useSearchParams, useLocation } from "react-router";
 import { Header } from "../components/header";
 import { Footer } from "../components/footer";
+import { SEO } from "../components/seo";
 import { useAuth } from "../contexts/auth-context";
 import { DatePicker } from "../components/date-picker";
 import { MapContainer, Marker, Popup, TileLayer, useMap } from "react-leaflet";
@@ -1383,6 +1384,11 @@ export function SearchResults() {
 
   return (
     <div className="min-h-screen bg-[#F4F7FA]">
+      <SEO
+        title={cityLabel !== "All cities" ? `Furnished Apartments & Rooms for Rent in ${cityLabel}` : "Search Verified Housing Listings | Rent Apartments & Rooms"}
+        description={cityLabel !== "All cities" ? `Browse verified rooms, apartments, and studios for rent in ${cityLabel}. Secure booking with 24/7 EzzyStay Tenant Protection.` : "Browse verified rooms, apartments, and studios. Filter by price, location, bedrooms, and amenities with 24/7 tenant protection."}
+        canonicalUrl={`https://ezzystay.com/listings${city ? `/${city}` : ""}`}
+      />
       <Header variant={isAuthenticated ? "dashboard" : "default"} logoVariant="mobile-favicon" />
 
       {/* Filter Bar */}

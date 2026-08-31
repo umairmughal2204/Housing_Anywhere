@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { Link, useNavigate } from "react-router";
 import { Header } from "../components/header";
 import { Footer } from "../components/footer";
+import { SEO } from "../components/seo";
 import { DatePicker } from "../components/date-picker";
 import { motion, useScroll, useTransform } from "motion/react";
 import mapImage from "../../assets/map.avif";
@@ -794,6 +795,22 @@ export function Home() {
 
   return (
     <div className="min-h-screen bg-white">
+      <SEO
+        title="Rent Verified Apartments & Rooms Online"
+        description="Find and rent verified rooms, apartments, and studios worldwide with 24/7 support and EzzyStay Tenant Protection."
+        canonicalUrl="https://ezzystay.com/"
+        jsonLd={{
+          "@context": "https://schema.org",
+          "@type": "WebSite",
+          "name": "EzzyStay",
+          "url": "https://ezzystay.com/",
+          "potentialAction": {
+            "@type": "SearchAction",
+            "target": "https://ezzystay.com/listings?search={search_term_string}",
+            "query-input": "required name=search_term_string"
+          }
+        }}
+      />
       <Header variant={isAuthenticated ? "dashboard" : "default"} dashboardButtonFilled={false} />
 
       <section

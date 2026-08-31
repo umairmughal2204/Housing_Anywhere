@@ -1,6 +1,7 @@
 import { Header } from "../components/header";
 import { useAuth } from "../contexts/auth-context";
 import { Footer } from "../components/footer";
+import { SEO } from "../components/seo";
 import { ChevronRight, ChevronDown, Check } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router";
@@ -66,6 +67,11 @@ export function Pricing() {
 
   return (
     <div className="min-h-screen bg-white">
+      <SEO
+        title="Pricing & Fees | Transparent Pricing for Landlords & Tenants"
+        description="Discover EzzyStay's transparent pricing structure. Free property listings for landlords, zero hidden fees, and transparent service fees."
+        canonicalUrl="https://ezzystay.com/pricing"
+      />
       <Header variant={isAuthenticated ? "dashboard" : "default"} dashboardButtonFilled={false} />
 
       {/* Premium Hero Section */}

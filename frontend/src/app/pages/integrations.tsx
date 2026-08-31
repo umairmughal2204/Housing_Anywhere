@@ -1,5 +1,6 @@
 import { Header } from "../components/header";
 import { Footer } from "../components/footer";
+import { SEO } from "../components/seo";
 import { useAuth } from "../contexts/auth-context";
 import { Link } from "react-router";
 import heroBg from "../../assets/hero-bg.jpg";
@@ -55,6 +56,11 @@ export function Integrations() {
 
   return (
     <div className="min-h-screen bg-white">
+      <SEO
+        title="Software Integrations & Channel Manager API"
+        description="Connect EzzyStay with PMS property software, iCal calendar sync, Stripe payments, and smart lock hardware."
+        canonicalUrl="https://ezzystay.com/integrations"
+      />
       <Header
         variant={isAuthenticated ? "dashboard" : "default"}
         dashboardButtonFilled={false}

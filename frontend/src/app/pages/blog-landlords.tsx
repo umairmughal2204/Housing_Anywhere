@@ -1,5 +1,6 @@
 import { Header } from "../components/header";
 import { Footer } from "../components/footer";
+import { SEO } from "../components/seo";
 import { useAuth } from "../contexts/auth-context";
 import { useState, useEffect } from "react";
 import { Link } from "react-router";
@@ -27,6 +28,11 @@ export function BlogLandlords() {
 
   return (
     <div className="min-h-screen bg-white">
+      <SEO
+        title="Landlord Blog & Property Management Guide"
+        description="Insights, property management advice, tenant screening best practices, and rental laws for landlords."
+        canonicalUrl="https://ezzystay.com/blog/landlords"
+      />
       <Header
         variant={isAuthenticated ? "dashboard" : "default"}
         dashboardButtonFilled={false}

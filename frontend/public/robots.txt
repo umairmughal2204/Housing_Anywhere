@@ -1,39 +1,40 @@
-# Ezzy Stay - robots.txt
-# This file tells search engines how to crawl the site
+# EzzyStay - robots.txt
+# Search engine crawler instructions
 
-# Default rules for all bots
 User-agent: *
 Allow: /
+Allow: /listings
+Allow: /how-it-works
+Allow: /pricing
+Allow: /help
+Allow: /contact
+Allow: /rent-guarantee
+Allow: /integrations
+Allow: /sample-contracts
+Allow: /blog/
+Allow: /guide/
+Allow: /guides
+Allow: /about
+Allow: /careers
+Allow: /press
+Allow: /partners
+Allow: /terms
+Allow: /privacy
+Allow: /cookies
+
+# Disallow private user & system routes
 Disallow: /admin/
+Disallow: /account/
+Disallow: /tenant/
+Disallow: /landlord/dashboard
 Disallow: /api/
-Disallow: /*.json$
 Disallow: /private/
-Disallow: /uploads/
-Allow: /uploads/*.png$
-Allow: /uploads/*.jpg$
-Allow: /uploads/*.webp$
-Allow: /uploads/*.avif$
-Crawl-delay: 1
-Request-rate: 30/60
+Disallow: /login
+Disallow: /signup
+Disallow: /favorites
 
-# Google Bot
-User-agent: Googlebot
-Allow: /
-Crawl-delay: 0
-
-# Bing Bot
-User-agent: Bingbot
-Allow: /
+# Crawl Delay
 Crawl-delay: 1
 
-# Prevent bad bots
-User-agent: AhrefsBot
-User-agent: SemrushBot
-User-agent: DotBot
-User-agent: MJ12Bot
-Disallow: /
-
-# Sitemap
+# Sitemap Location
 Sitemap: https://ezzystay.com/sitemap.xml
-Sitemap: https://ezzystay.com/sitemap-listings.xml
-Sitemap: https://ezzystay.com/sitemap-pages.xml

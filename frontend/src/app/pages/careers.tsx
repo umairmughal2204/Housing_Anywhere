@@ -1,5 +1,6 @@
 import { Header } from "../components/header";
 import { Footer } from "../components/footer";
+import { SEO } from "../components/seo";
 import { useAuth } from "../contexts/auth-context";
 import { Link } from "react-router";
 import heroBg from "../../assets/hero-bg.jpg";
@@ -57,6 +58,11 @@ export function Careers() {
 
   return (
     <div className="min-h-screen bg-white">
+      <SEO
+        title="Careers | Join the EzzyStay Team"
+        description="Explore career opportunities, company culture, and team values at EzzyStay."
+        canonicalUrl="https://ezzystay.com/careers"
+      />
       <Header
         variant={isAuthenticated ? "dashboard" : "default"}
         dashboardButtonFilled={false}

@@ -1,5 +1,6 @@
 import { Header } from "../components/header";
 import { Footer } from "../components/footer";
+import { SEO } from "../components/seo";
 import { useAuth } from "../contexts/auth-context";
 import { Link } from "react-router";
 import {
@@ -93,6 +94,11 @@ export function Sitemap() {
 
   return (
     <div className="min-h-screen bg-white">
+      <SEO
+        title="HTML Sitemap & Navigation Directory"
+        description="Browse all public pages, rental listings, guides, and corporate resources on EzzyStay."
+        canonicalUrl="https://ezzystay.com/sitemap"
+      />
       <Header
         variant={isAuthenticated ? "dashboard" : "default"}
         dashboardButtonFilled={false}

@@ -1,5 +1,6 @@
 import { Header } from "../components/header";
 import { Footer } from "../components/footer";
+import { SEO } from "../components/seo";
 import { useAuth } from "../contexts/auth-context";
 
 export function Terms() {
@@ -79,6 +80,11 @@ export function Terms() {
 
   return (
     <div className="min-h-screen bg-white">
+      <SEO
+        title="Terms & Conditions"
+        description="Review the terms and conditions governing the use of EzzyStay housing platform services."
+        canonicalUrl="https://ezzystay.com/terms"
+      />
       <Header
         variant={isAuthenticated ? "dashboard" : "default"}
         dashboardButtonFilled={false}

@@ -1,5 +1,6 @@
 import { Header } from "../components/header";
 import { Footer } from "../components/footer";
+import { SEO } from "../components/seo";
 import { useAuth } from "../contexts/auth-context";
 import { Cookie, Shield, BarChart3, Target, Settings } from "lucide-react";
 
@@ -80,6 +81,11 @@ export function Cookies() {
 
   return (
     <div className="min-h-screen bg-white">
+      <SEO
+        title="Cookie Policy | Cookie Preferences & Choices"
+        description="Learn how EzzyStay uses cookies to enhance platform browsing, performance, and user preferences."
+        canonicalUrl="https://ezzystay.com/cookies"
+      />
       <Header
         variant={isAuthenticated ? "dashboard" : "default"}
         dashboardButtonFilled={false}

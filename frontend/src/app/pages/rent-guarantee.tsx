@@ -1,5 +1,6 @@
 import { Header } from "../components/header";
 import { Footer } from "../components/footer";
+import { SEO } from "../components/seo";
 import { useAuth } from "../contexts/auth-context";
 import { Link } from "react-router";
 import heroBg from "../../assets/hero-bg.jpg";
@@ -64,6 +65,11 @@ export function RentGuarantee() {
 
   return (
     <div className="min-h-screen bg-white">
+      <SEO
+        title="Rent Guarantee Protection | Guaranteed Payouts for Landlords"
+        description="EzzyStay Rent Guarantee ensures 100% on-time rent payouts for landlords and financial protection against tenant defaults."
+        canonicalUrl="https://ezzystay.com/rent-guarantee"
+      />
       <Header
         variant={isAuthenticated ? "dashboard" : "default"}
         dashboardButtonFilled={false}

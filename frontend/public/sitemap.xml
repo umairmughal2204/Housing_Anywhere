@@ -1,78 +1,143 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
-        xmlns:image="http://www.google.com/schemas/sitemap-image/1.1"
-        xmlns:mobile="http://www.google.com/schemas/sitemap-mobile/1.0">
+        xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
 
-  <!-- Main Pages -->
+  <!-- Core Landing Pages -->
   <url>
     <loc>https://ezzystay.com/</loc>
-    <lastmod>2026-04-27T00:00:00Z</lastmod>
-    <changefreq>weekly</changefreq>
+    <lastmod>2026-08-31T00:00:00Z</lastmod>
+    <changefreq>daily</changefreq>
     <priority>1.0</priority>
   </url>
 
   <url>
     <loc>https://ezzystay.com/listings</loc>
-    <lastmod>2026-04-27T00:00:00Z</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.9</priority>
-    <mobile:mobile/>
+    <lastmod>2026-08-31T00:00:00Z</lastmod>
+    <changefreq>hourly</changefreq>
+    <priority>0.95</priority>
   </url>
 
   <url>
     <loc>https://ezzystay.com/how-it-works</loc>
-    <lastmod>2026-04-27T00:00:00Z</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
+    <lastmod>2026-08-31T00:00:00Z</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.85</priority>
   </url>
 
   <url>
     <loc>https://ezzystay.com/pricing</loc>
-    <lastmod>2026-04-27T00:00:00Z</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
+    <lastmod>2026-08-31T00:00:00Z</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.85</priority>
   </url>
 
+  <url>
+    <loc>https://ezzystay.com/rent-guarantee</loc>
+    <lastmod>2026-08-31T00:00:00Z</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.80</priority>
+  </url>
+
+  <!-- Support & Contact -->
   <url>
     <loc>https://ezzystay.com/help</loc>
-    <lastmod>2026-04-27T00:00:00Z</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-
-  <url>
-    <loc>https://ezzystay.com/login</loc>
-    <lastmod>2026-04-27T00:00:00Z</lastmod>
-    <changefreq>never</changefreq>
-    <priority>0.6</priority>
-  </url>
-
-  <url>
-    <loc>https://ezzystay.com/signup</loc>
-    <lastmod>2026-04-27T00:00:00Z</lastmod>
-    <changefreq>never</changefreq>
-    <priority>0.6</priority>
-  </url>
-
-  <url>
-    <loc>https://ezzystay.com/landlord/register</loc>
-    <lastmod>2026-04-27T00:00:00Z</lastmod>
-    <changefreq>never</changefreq>
-    <priority>0.7</priority>
-  </url>
-
-  <url>
-    <loc>https://ezzystay.com/favorites</loc>
-    <lastmod>2026-04-27T00:00:00Z</lastmod>
+    <lastmod>2026-08-31T00:00:00Z</lastmod>
     <changefreq>daily</changefreq>
-    <priority>0.6</priority>
+    <priority>0.80</priority>
   </url>
 
   <url>
-    <loc>https://ezzystay.com/account</loc>
-    <lastmod>2026-04-27T00:00:00Z</lastmod>
+    <loc>https://ezzystay.com/contact</loc>
+    <lastmod>2026-08-31T00:00:00Z</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.5</priority>
+    <priority>0.75</priority>
+  </url>
+
+  <url>
+    <loc>https://ezzystay.com/integrations</loc>
+    <lastmod>2026-08-31T00:00:00Z</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.70</priority>
+  </url>
+
+  <url>
+    <loc>https://ezzystay.com/sample-contracts</loc>
+    <lastmod>2026-08-31T00:00:00Z</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.70</priority>
+  </url>
+
+  <!-- Content & Resources -->
+  <url>
+    <loc>https://ezzystay.com/blog/tenants</loc>
+    <lastmod>2026-08-31T00:00:00Z</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.80</priority>
+  </url>
+
+  <url>
+    <loc>https://ezzystay.com/blog/landlords</loc>
+    <lastmod>2026-08-31T00:00:00Z</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.80</priority>
+  </url>
+
+  <url>
+    <loc>https://ezzystay.com/guides</loc>
+    <lastmod>2026-08-31T00:00:00Z</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.80</priority>
+  </url>
+
+  <!-- Corporate Pages -->
+  <url>
+    <loc>https://ezzystay.com/about</loc>
+    <lastmod>2026-08-31T00:00:00Z</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.65</priority>
+  </url>
+
+  <url>
+    <loc>https://ezzystay.com/careers</loc>
+    <lastmod>2026-08-31T00:00:00Z</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.65</priority>
+  </url>
+
+  <url>
+    <loc>https://ezzystay.com/press</loc>
+    <lastmod>2026-08-31T00:00:00Z</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.65</priority>
+  </url>
+
+  <url>
+    <loc>https://ezzystay.com/partners</loc>
+    <lastmod>2026-08-31T00:00:00Z</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.65</priority>
+  </url>
+
+  <!-- Legal Policies -->
+  <url>
+    <loc>https://ezzystay.com/terms</loc>
+    <lastmod>2026-08-31T00:00:00Z</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.50</priority>
+  </url>
+
+  <url>
+    <loc>https://ezzystay.com/privacy</loc>
+    <lastmod>2026-08-31T00:00:00Z</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.50</priority>
+  </url>
+
+  <url>
+    <loc>https://ezzystay.com/cookies</loc>
+    <lastmod>2026-08-31T00:00:00Z</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.50</priority>
   </url>
 
 </urlset>

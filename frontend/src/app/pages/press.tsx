@@ -1,5 +1,6 @@
 import { Header } from "../components/header";
 import { Footer } from "../components/footer";
+import { SEO } from "../components/seo";
 import { useAuth } from "../contexts/auth-context";
 import heroBg from "../../assets/hero-bg.jpg";
 import { Newspaper, Mail, Download, Info } from "lucide-react";
@@ -9,6 +10,11 @@ export function Press() {
 
   return (
     <div className="min-h-screen bg-white">
+      <SEO
+        title="Press & Media | Newsroom & Resources"
+        description="Official EzzyStay press announcements, brand assets, newsroom updates, and media contact info."
+        canonicalUrl="https://ezzystay.com/press"
+      />
       <Header
         variant={isAuthenticated ? "dashboard" : "default"}
         dashboardButtonFilled={false}

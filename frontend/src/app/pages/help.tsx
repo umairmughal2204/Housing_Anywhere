@@ -1,6 +1,7 @@
 import { Header } from "../components/header";
 import { useAuth } from "../contexts/auth-context";
 import { Footer } from "../components/footer";
+import { SEO } from "../components/seo";
 import { Search, MessageCircle, UserRound, ShieldCheck, Lock, CreditCard, House, Gift, AlertTriangle, ChevronRight, ChevronLeft, X, ThumbsUp, ThumbsDown, Send } from "lucide-react";
 import { useEffect, useState, useRef } from "react";
 import { useLocation, useNavigate, Link } from "react-router";
@@ -818,6 +819,11 @@ export function Help() {
 
   return (
     <div className="min-h-screen bg-white relative pb-[120px]">
+      <SEO
+        title="Help Center & Customer Support"
+        description="Search support topics, tenant protection guidelines, booking assistance, and payment safety."
+        canonicalUrl="https://ezzystay.com/help"
+      />
       <Header variant={isAuthenticated ? "dashboard" : "default"} dashboardButtonFilled={false} />
 
       <main className="max-w-[1440px] mx-auto px-[16px] sm:px-[32px] md:px-[64px] pt-[48px] pb-[80px]">

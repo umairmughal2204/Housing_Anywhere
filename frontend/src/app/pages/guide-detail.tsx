@@ -1,5 +1,6 @@
 import { Header } from "../components/header";
 import { Footer } from "../components/footer";
+import { SEO } from "../components/seo";
 import { useAuth } from "../contexts/auth-context";
 import { useParams, Link } from "react-router";
 import { useState, useEffect } from "react";
@@ -71,6 +72,27 @@ export function GuideDetail() {
 
   return (
     <div className="min-h-screen bg-white">
+      <SEO
+        title={guide.title}
+        description={guide.summary || guide.content.slice(0, 160)}
+        ogType="article"
+        canonicalUrl={`https://ezzystay.com/guide/${guide.id}`}
+        jsonLd={{
+          "@context": "https://schema.org",
+          "@type": "HowTo",
+          "name": guide.title,
+          "description": guide.summary || guide.content.slice(0, 160),
+          "publisher": {
+            "@type": "Organization",
+            "name": "EzzyStay",
+            "logo": {
+              "@type": "ImageObject",
+              "url": "https://ezzystay.com/favicon.png"
+            }
+          },
+          "datePublished": guide.createdAt
+        }}
+      />
       <Header variant={isAuthenticated ? "dashboard" : "default"} dashboardButtonFilled={false} />
 
       {/* Hero Header */}

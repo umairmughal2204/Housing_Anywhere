@@ -1,6 +1,7 @@
 import { Header } from "../components/header";
 import { useAuth } from "../contexts/auth-context";
 import { Footer } from "../components/footer";
+import { SEO } from "../components/seo";
 import heroBg from "../../assets/hero-bg.jpg";
 
 export function About() {
@@ -8,6 +9,11 @@ export function About() {
 
   return (
     <div className="min-h-screen bg-white">
+      <SEO
+        title="About Us | Trusted Housing Marketplace"
+        description="Learn about EzzyStay's mission to connect international students, professionals, and landlords with secure 24/7 housing rentals."
+        canonicalUrl="https://ezzystay.com/about"
+      />
       <Header variant={isAuthenticated ? "dashboard" : "default"} dashboardButtonFilled={false} />
 
       {/* Hero Banner Section */}

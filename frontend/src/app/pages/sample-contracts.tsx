@@ -1,5 +1,6 @@
 import { Header } from "../components/header";
 import { Footer } from "../components/footer";
+import { SEO } from "../components/seo";
 import { useAuth } from "../contexts/auth-context";
 import { Link } from "react-router";
 import heroBg from "../../assets/hero-bg.jpg";
@@ -10,6 +11,11 @@ export function SampleContracts() {
 
   return (
     <div className="min-h-screen bg-white">
+      <SEO
+        title="Sample Contracts & Lease Legal Support"
+        description="Learn about legally compliant tenancy agreement templates and customized contract support."
+        canonicalUrl="https://ezzystay.com/sample-contracts"
+      />
       <Header
         variant={isAuthenticated ? "dashboard" : "default"}
         dashboardButtonFilled={false}

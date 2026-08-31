@@ -1,5 +1,6 @@
 import { Header } from "../components/header";
 import { Footer } from "../components/footer";
+import { SEO } from "../components/seo";
 import { useAuth } from "../contexts/auth-context";
 import { Link } from "react-router";
 import heroBg from "../../assets/hero-bg.jpg";
@@ -50,6 +51,11 @@ export function Partners() {
 
   return (
     <div className="min-h-screen bg-white">
+      <SEO
+        title="Partner With Us | Universities, Mobility & Corporate Housing"
+        description="Partner with EzzyStay to streamline housing for international students, mobility clients, and corporate relocations."
+        canonicalUrl="https://ezzystay.com/partners"
+      />
       <Header
         variant={isAuthenticated ? "dashboard" : "default"}
         dashboardButtonFilled={false}

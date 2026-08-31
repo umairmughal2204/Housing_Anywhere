@@ -1,5 +1,6 @@
 import { Header } from "../components/header";
 import { Footer } from "../components/footer";
+import { SEO } from "../components/seo";
 import { useAuth } from "../contexts/auth-context";
 import { useParams, Link, useNavigate } from "react-router";
 import { useState, useEffect } from "react";
@@ -76,6 +77,32 @@ export function BlogDetail() {
 
   return (
     <div className="min-h-screen bg-white">
+      <SEO
+        title={blog.title}
+        description={blog.excerpt || blog.content.slice(0, 160)}
+        ogType="article"
+        canonicalUrl={`https://ezzystay.com/blog/${blog.id}`}
+        jsonLd={{
+          "@context": "https://schema.org",
+          "@type": "BlogPosting",
+          "headline": blog.title,
+          "description": blog.excerpt || blog.content.slice(0, 160),
+          "author": {
+            "@type": "Organization",
+            "name": blog.author || "EzzyStay Team"
+          },
+          "publisher": {
+            "@type": "Organization",
+            "name": "EzzyStay",
+            "logo": {
+              "@type": "ImageObject",
+              "url": "https://ezzystay.com/favicon.png"
+            }
+          },
+          "datePublished": blog.createdAt,
+          "mainEntityOfPage": `https://ezzystay.com/blog/${blog.id}`
+        }}
+      />
       <Header variant={isAuthenticated ? "dashboard" : "default"} dashboardButtonFilled={false} />
 
       {/* Hero / Header Section */}
