@@ -355,9 +355,9 @@ export function AdminApplications() {
               {action.type === "payout" && action.status === "ready" && <Banknote className="w-[26px] h-[26px] text-blue-600" />}
             </div>
 
-            <h3 className="text-[18px] font-bold text-neutral-black mb-[8px] text-center">
+            <h2 className="text-[18px] font-bold text-neutral-black mb-[8px] text-center">
               {action.type === "approval" ? "Update Booking Approval" : "Update Landlord Payout"}
-            </h3>
+            </h2>
 
             <p className="text-neutral-gray text-[14px] leading-[1.65] mb-[16px] text-center">
               Set booking for <strong>{action.application.listing?.title ?? "this listing"}</strong> ({action.application.tenant?.name ?? "tenant"}) to <strong className={action.status === "rejected" || action.status === "blocked" ? "text-red-600" : action.status === "released" ? "text-green-700" : ""}>{action.status.replace("_", " ")}</strong>.

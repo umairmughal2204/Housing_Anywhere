@@ -4,6 +4,7 @@ import { HandCoins, HandMetal, MessageCircle, MousePointer2, PencilLine, Send, S
 import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router";
 import { useAuth } from "../contexts/auth-context";
+import heroBg from "../../assets/hero-bg.jpg";
 
 const effortlessListingImage = new URL("../../assets/Effortless-Listing.webp", import.meta.url).href;
 const remoteTenantMatchingImage = new URL("../../assets/Remote-tenant-matching.webp", import.meta.url).href;
@@ -136,7 +137,8 @@ export function HowItWorks() {
     <div className="min-h-screen bg-white">
       <Header variant={isAuthenticated ? "dashboard" : "default"} dashboardButtonFilled={false} />
 
-      <section className="relative overflow-hidden bg-[#D8DFE9] pt-[42px] pb-[120px] md:pt-[64px] md:pb-[182px]">
+      {/* Hero Section */}
+      <section className="relative overflow-hidden bg-[#D8DFE9] pt-[48px] pb-[110px] md:pt-[68px] md:pb-[160px] px-[16px] text-center rounded-b-[44px] md:rounded-b-[64px] shadow-[0_12px_32px_rgba(15,23,42,0.08)] mb-[48px] md:mb-[72px]">
         <div className="mx-auto max-w-[1200px] px-[16px] sm:px-[24px] md:px-[32px] text-center">
           <h1 className="text-[#032E3D] text-[34px] sm:text-[42px] md:text-[58px] font-bold tracking-[-0.04em] leading-[1]">
             {content.title}
@@ -148,10 +150,10 @@ export function HowItWorks() {
           <div className="mx-auto mt-[30px] md:mt-[42px] flex w-full max-w-[620px] rounded-full border border-[rgba(255,255,255,0.9)] bg-[rgba(255,255,255,0.52)] p-[4px] shadow-[0_14px_28px_rgba(15,23,42,0.06)]">
             <button
               type="button"
-              className={`h-[38px] sm:h-[40px] md:h-[44px] flex-1 rounded-full text-[13px] sm:text-[14px] md:text-[16px] font-medium transition-colors ${
+              className={`h-[40px] sm:h-[42px] md:h-[46px] flex-1 rounded-full text-[14px] sm:text-[15px] md:text-[16px] font-bold transition-all duration-300 ${
                 activeAudience === "tenant"
-                  ? "bg-brand-primary text-white hover:bg-brand-primary-dark"
-                  : "bg-transparent text-neutral-black hover:bg-brand-primary-light"
+                  ? "bg-[#0891B2] text-white shadow-md"
+                  : "bg-transparent text-[#032E3D] hover:bg-white/40"
               }`}
               onClick={() => setActiveAudience("tenant")}
             >
@@ -159,10 +161,10 @@ export function HowItWorks() {
             </button>
             <button
               type="button"
-              className={`h-[38px] sm:h-[40px] md:h-[44px] flex-1 rounded-full text-[13px] sm:text-[14px] md:text-[16px] font-semibold transition-colors ${
+              className={`h-[40px] sm:h-[42px] md:h-[46px] flex-1 rounded-full text-[14px] sm:text-[15px] md:text-[16px] font-bold transition-all duration-300 ${
                 activeAudience === "landlord"
-                  ? "bg-brand-primary text-white hover:bg-brand-primary-dark"
-                  : "bg-transparent text-neutral-black hover:bg-brand-primary-light"
+                  ? "bg-[#0891B2] text-white shadow-md"
+                  : "bg-transparent text-[#032E3D] hover:bg-white/40"
               }`}
               onClick={() => setActiveAudience("landlord")}
             >

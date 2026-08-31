@@ -425,7 +425,7 @@ export function TenantInbox() {
 
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between gap-[10px] mb-[4px]">
-                        <span className="text-[#111827] text-[15px] font-bold truncate">{c.otherUser.name}</span>
+                        <h2 className="text-[#111827] text-[15px] font-bold truncate">{c.otherUser.name}</h2>
 
                         <div className="flex items-center gap-[6px] flex-shrink-0">
                           <span className="text-[12px] text-[#6B7280]">{timeAgo(c.lastMessageAt)}</span>
@@ -481,7 +481,7 @@ export function TenantInbox() {
               {filtered.length === 0 && !searchQuery && activeFilter === "unread" && (
                 <div className="text-center py-[60px] bg-[#F7F7F8] rounded-[16px] border border-[rgba(0,0,0,0.06)]">
                   <Mail className="w-[48px] h-[48px] text-[#C5C5CC] mx-auto mb-[12px]" />
-                  <h3 className="text-[#1A1A1A] text-[18px] font-bold mb-[6px]">No unread messages</h3>
+                  <h2 className="text-[#1A1A1A] text-[18px] font-bold mb-[6px]">No unread messages</h2>
                   <p className="text-[#6B6B6B] text-[14px]">You are all caught up.</p>
                 </div>
               )}
@@ -489,7 +489,7 @@ export function TenantInbox() {
               {filtered.length === 0 && !searchQuery && activeFilter === "read" && (
                 <div className="text-center py-[60px] bg-[#F7F7F8] rounded-[16px] border border-[rgba(0,0,0,0.06)]">
                   <CheckSquare className="w-[48px] h-[48px] text-[#C5C5CC] mx-auto mb-[12px]" />
-                  <h3 className="text-[#1A1A1A] text-[18px] font-bold mb-[6px]">No read conversations</h3>
+                  <h2 className="text-[#1A1A1A] text-[18px] font-bold mb-[6px]">No read conversations</h2>
                   <p className="text-[#6B6B6B] text-[14px]">Read conversations will appear here.</p>
                 </div>
               )}
@@ -497,7 +497,7 @@ export function TenantInbox() {
               {filtered.length === 0 && !searchQuery && !["unread", "read"].includes(activeFilter) && conversations.length > 0 && (
                 <div className="text-center py-[60px] bg-[#F7F7F8] rounded-[16px] border border-[rgba(0,0,0,0.06)]">
                   <MessageSquare className="w-[48px] h-[48px] text-[#C5C5CC] mx-auto mb-[12px]" />
-                  <h3 className="text-[#1A1A1A] text-[18px] font-bold mb-[6px]">No messages in this section</h3>
+                  <h2 className="text-[#1A1A1A] text-[18px] font-bold mb-[6px]">No messages in this section</h2>
                   <p className="text-[#6B6B6B] text-[14px]">Try another filter from the left menu.</p>
                 </div>
               )}
@@ -505,7 +505,7 @@ export function TenantInbox() {
               {filtered.length === 0 && !searchQuery && conversations.length === 0 && (
                 <div className="text-center py-[80px]">
                   <Mail className="w-[56px] h-[56px] text-[#D0D0D0] mx-auto mb-[14px]" />
-                  <h3 className="text-[#1A1A1A] text-[18px] font-bold mb-[8px]">No messages yet</h3>
+                  <h2 className="text-[#1A1A1A] text-[18px] font-bold mb-[8px]">No messages yet</h2>
                   <p className="text-[#6B6B6B] text-[14px] mb-[24px]">
                     Apply for a property and start chatting with landlords.
                   </p>

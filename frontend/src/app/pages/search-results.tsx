@@ -1704,7 +1704,7 @@ export function SearchResults() {
               </section>
 
               <section>
-                <h4 className="mb-[8px] text-[18px] font-bold text-[#12303B]">Property type</h4>
+                <h3 className="mb-[8px] text-[18px] font-bold text-[#12303B]">Property type</h3>
                 <PropertyTypeCheckboxList
                   variant="panel"
                   selectedPropertyTypes={selectedPropertyTypes}
@@ -1723,7 +1723,7 @@ export function SearchResults() {
               </section>
 
               <section>
-                <h4 className="mb-[8px] text-[18px] font-bold text-[#12303B]">Neighborhoods</h4>
+                <h3 className="mb-[8px] text-[18px] font-bold text-[#12303B]">Neighborhoods</h3>
                 <NeighborhoodCheckboxList
                   variant="panel"
                   neighborhoodOptions={neighborhoodOptions}
@@ -1974,9 +1974,9 @@ export function SearchResults() {
                   {/* Property Info */}
                   <div className="px-[14px] sm:px-[16px] pt-[12px] sm:pt-[14px] pb-[12px]">
                     {/* Title */}
-                    <h3 className="mb-[8px] text-[15px] sm:text-[16px] font-semibold leading-[1.25] text-[#12303B] line-clamp-2">
+                    <h2 className="mb-[8px] text-[15px] sm:text-[16px] font-semibold leading-[1.25] text-[#12303B] line-clamp-2">
                       {property.title}, {property.city}
-                    </h3>
+                    </h2>
 
                     {/* Live status */}
                     <div className="mb-[8px] flex items-center gap-[6px]">

@@ -2133,7 +2133,7 @@ export function PropertyListing() {
                   </div>
 
                   <div className="hidden lg:block border border-[rgba(15,45,54,0.1)] rounded-[20px] p-[24px] bg-[#F8FAFC]">
-                    <h4 className="text-[#0F2D36] text-[16px] leading-[1.2] font-bold mb-[14px]">Not ready to apply?</h4>
+                    <h3 className="text-[#0F2D36] text-[16px] leading-[1.2] font-bold mb-[14px]">Not ready to apply?</h3>
                     <p className="text-[#173743] text-[14px] leading-[1.55] mb-[18px] max-w-[420px]">
                       Ask the landlord questions, share info, and see if there's a match. Get the answers you need to rent with peace of mind.
                     </p>
@@ -2148,10 +2148,10 @@ export function PropertyListing() {
                   </div>
 
                   <div className="hidden lg:block border border-[rgba(15,45,54,0.08)] rounded-[20px] p-[24px] bg-[#EDF2F8]">
-                    <h4 className="text-[#264991] text-[16px] leading-[1.25] font-bold mb-[12px] flex items-center gap-[10px]">
+                    <h3 className="text-[#264991] text-[16px] leading-[1.25] font-bold mb-[12px] flex items-center gap-[10px]">
                       <Heart className="w-[22px] h-[22px]" />
                       Covered by Tenant Protection
-                    </h4>
+                    </h3>
                     <p className="text-[#274A93] text-[14px] leading-[1.6] mb-[16px] max-w-[420px]">
                       You're guaranteed a stress-free move-in or your money back.
                     </p>
@@ -2201,10 +2201,10 @@ export function PropertyListing() {
                   </div>
 
                   <div className="hidden lg:block border border-[rgba(15,45,54,0.1)] rounded-[20px] p-[24px] bg-[#F8FAFC]">
-                    <h4 className="text-[#0F2D36] text-[16px] leading-[1.2] font-bold mb-[12px] flex items-center gap-[10px]">
+                    <h3 className="text-[#0F2D36] text-[16px] leading-[1.2] font-bold mb-[12px] flex items-center gap-[10px]">
                       <FileText className="w-[22px] h-[22px]" />
                       Digital Contract
-                    </h4>
+                    </h3>
                     <p className="text-[#173743] text-[14px] leading-[1.55] mb-[16px] max-w-[420px]">
                       Easily review and sign your rental agreement online. Secure, fast, and hassle-free.
                     </p>

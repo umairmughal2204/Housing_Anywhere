@@ -665,7 +665,7 @@ export function LandlordRentals() {
                 <div className="flex-1 min-w-0">
                   <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-[10px] mb-[8px]">
                     <div className="flex-1 min-w-0">
-                      <h3 className="text-neutral-black text-[15px] font-bold">{application.listing.title}</h3>
+                      <h2 className="text-neutral-black text-[15px] font-bold">{application.listing.title}</h2>
                       <div className="flex items-center gap-[4px] text-neutral-gray text-[12px] mt-[2px]">
                         <MapPin className="w-[12px] h-[12px] flex-shrink-0" />
                         <span className="truncate">{application.listing.city}</span>
@@ -750,9 +750,9 @@ export function LandlordRentals() {
         {confirmTarget && (
           <div className="fixed inset-0 z-[70] bg-black/40 flex items-center justify-center p-[12px] sm:p-[24px]">
             <div className="w-full max-w-[520px] bg-white border border-[rgba(0,0,0,0.12)] p-[16px] sm:p-[24px]">
-              <h3 className="text-neutral-black text-[20px] font-bold mb-[8px]">
+              <h2 className="text-neutral-black text-[20px] font-bold mb-[8px]">
                 Confirm {confirmTarget.status === "approved" ? "Approval" : "Rejection"}
-              </h3>
+              </h2>
               <p className="text-neutral-gray text-[14px] leading-[1.6] mb-[20px]">
                 Are you sure you want to mark this rental request as
                 <span className="font-semibold text-neutral-black"> {confirmTarget.status === "approved" ? "Approved" : "Rejected"}</span>?

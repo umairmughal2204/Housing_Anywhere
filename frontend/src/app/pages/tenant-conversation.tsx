@@ -334,7 +334,7 @@ export function TenantConversation() {
                   {meta.otherUser.initials}
                 </div>
                 <div>
-                  <p className="text-[#1A1A1A] text-[15px] font-bold">{meta.otherUser.name}</p>
+                  <h1 className="text-[#1A1A1A] text-[16px] font-bold leading-tight">{meta.otherUser.name}</h1>
                   <p className="text-[#6B6B6B] text-[12px]">Landlord</p>
                 </div>
               </div>
@@ -486,9 +486,9 @@ export function TenantConversation() {
                     />
                   </div>
                   <div className="p-[14px]">
-                    <h3 className="text-[#1A1A1A] text-[14px] font-bold mb-[6px] leading-[1.4]">
+                    <h2 className="text-[#1A1A1A] text-[14px] font-bold mb-[6px] leading-[1.4]">
                       {meta.listing.title}
-                    </h3>
+                    </h2>
                     <div className="flex items-center gap-[4px] text-[#6B6B6B] text-[12px] mb-[4px]">
                       <MapPin className="w-[11px] h-[11px]" />
                       <span>{meta.listing.address}, {meta.listing.city}</span>

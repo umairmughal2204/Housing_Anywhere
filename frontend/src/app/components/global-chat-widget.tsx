@@ -53,38 +53,71 @@ export function GlobalChatWidget() {
     setChatInput("");
 
     setTimeout(() => {
-      let botResponse = "I'm sorry, I couldn't find a direct answer to that. Try asking about things like 'payment security', 'refunds', 'two-factor authentication', 'surveillance cameras', or contact our human support team.";
+      let botResponse = "";
 
-      let bestMatch: { title: string; description: string; steps?: string[]; extra?: string; } | null = null;
-      let highestMatchCount = 0;
+      // Greetings
+      if (/^(hello|hi|hey|heyy|greetings|hola|good morning|good afternoon|good evening|hello there|hi there)\b/i.test(normalizedInput)) {
+        botResponse = "Hello! 👋 Welcome to EzzyStay Support. How can I help you today? You can ask me about searching for homes, booking process, tenant protection, listing your property, pricing, or contracts!";
+      }
+      // Gratitude
+      else if (/^(thank|thanks|thank you|thx|awesome|great|perfect|cool)\b/i.test(normalizedInput)) {
+        botResponse = "You're very welcome! 😊 Feel free to ask if you have any more questions about EzzyStay.";
+      }
+      // Farewells
+      else if (/^(bye|goodbye|cya|see ya|take care)\b/i.test(normalizedInput)) {
+        botResponse = "Goodbye! Have a great day and good luck finding or renting your ideal stay! 🏠";
+      }
+      // Identity
+      else if (/\b(who are you|what is ezzystay|what are you)\b/i.test(normalizedInput)) {
+        botResponse = "I am the EzzyStay Virtual Support Assistant! EzzyStay is a premier online platform connecting verified landlords and tenants worldwide with secure payments and 24/7 support.";
+      }
+      // Contact / Human Agent
+      else if (/\b(human|agent|person|contact|email|phone|call|talk to someone|support team)\b/i.test(normalizedInput)) {
+        botResponse = "Our support team is available 24/7! You can send us a direct message on our Contact page (/contact) or email us anytime at support@ezzystay.com.";
+      }
+      // Pricing & Fees
+      else if (/\b(pricing|price|cost|fee|fees|commission)\b/i.test(normalizedInput)) {
+        botResponse = "Creating property listings on EzzyStay is completely free for landlords! Service fees for tenants vary by country. Visit our Pricing page (/pricing) for a detailed breakdown.";
+      }
+      // Contracts & Agreements
+      else if (/\b(contract|contracts|lease|agreement|agreements|document|documents)\b/i.test(normalizedInput)) {
+        botResponse = "We provide support for legally compliant rental agreements and digital contracts. Check our Legal Agreements section at /sample-contracts or contact support@ezzystay.com for legal guidance.";
+      }
+      else {
+        // Fuzzy search in HELP_DATA topics
+        let bestMatch: { title: string; description: string; steps?: string[]; extra?: string; } | null = null;
+        let highestMatchCount = 0;
 
-      Object.values(HELP_DATA).forEach((categoryData) => {
-        categoryData.topics.forEach((topic) => {
-          const keywords = `${topic.title} ${topic.description} ${(topic.steps || []).join(" ")}`.toLowerCase();
-          const words = normalizedInput.split(/\s+/);
-          let matchCount = 0;
-          words.forEach((word) => {
-            if (word.length > 2 && keywords.includes(word)) {
-              matchCount++;
+        Object.values(HELP_DATA).forEach((categoryData) => {
+          categoryData.topics.forEach((topic) => {
+            const keywords = `${topic.title} ${topic.description} ${(topic.steps || []).join(" ")}`.toLowerCase();
+            const words = normalizedInput.split(/\s+/);
+            let matchCount = 0;
+            words.forEach((word) => {
+              if (word.length > 2 && keywords.includes(word)) {
+                matchCount++;
+              }
+            });
+            if (matchCount > highestMatchCount) {
+              highestMatchCount = matchCount;
+              bestMatch = topic;
             }
           });
-          if (matchCount > highestMatchCount) {
-            highestMatchCount = matchCount;
-            bestMatch = topic;
-          }
         });
-      });
 
-      if (bestMatch && highestMatchCount > 0) {
-        const matchTopic = bestMatch as { title: string; description: string; steps?: string[]; extra?: string; };
-        let textResponse = `${matchTopic.description}`;
-        if (matchTopic.steps && matchTopic.steps.length > 0) {
-          textResponse += `\n\nHow it works:\n` + matchTopic.steps.map((s, i) => `${i + 1}. ${s}`).join("\n");
+        if (bestMatch && highestMatchCount > 0) {
+          const matchTopic = bestMatch as { title: string; description: string; steps?: string[]; extra?: string; };
+          let textResponse = `${matchTopic.description}`;
+          if (matchTopic.steps && matchTopic.steps.length > 0) {
+            textResponse += `\n\nHow it works:\n` + matchTopic.steps.map((s, i) => `${i + 1}. ${s}`).join("\n");
+          }
+          if (matchTopic.extra) {
+            textResponse += `\n\nNote: ${matchTopic.extra}`;
+          }
+          botResponse = textResponse;
+        } else {
+          botResponse = "I'm here to help! While I didn't find an exact match for that specific phrase, you can ask about topics like 'tenant protection', 'refunds', 'how to list a property', 'pricing', 'contracts', or reach our 24/7 support team directly at support@ezzystay.com.";
         }
-        if (matchTopic.extra) {
-          textResponse += `\n\nNote: ${matchTopic.extra}`;
-        }
-        botResponse = textResponse;
       }
 
       setMessages((prev) => [...prev, {
@@ -92,7 +125,7 @@ export function GlobalChatWidget() {
         text: botResponse,
         timestamp: new Date()
       }]);
-    }, 600);
+    }, 500);
   };
 
   return (
@@ -197,15 +230,18 @@ export function GlobalChatWidget() {
         </div>
       )}
 
-      {/* Floating help widget bottom right */}
+      {/* Clean & Compact Floating Help Icon */}
       <button
         onClick={handleHelpFloatClick}
-        className="fixed bottom-[24px] right-[24px] bg-white border border-[#CBD5E1] shadow-[0_6px_22px_rgba(8,145,178,0.16)] hover:shadow-[0_8px_28px_rgba(8,145,178,0.26)] hover:border-[#0891B2] rounded-full px-[18px] py-[10px] flex items-center gap-[9px] transition-all z-[90] active:scale-95 cursor-pointer group"
+        aria-label="Need Help?"
+        title="Need Help?"
+        className="fixed bottom-[24px] right-[24px] w-[48px] h-[48px] rounded-full bg-[#0891B2] hover:bg-[#0E7490] text-white shadow-md hover:shadow-lg transition-all duration-200 flex items-center justify-center z-[90] cursor-pointer active:scale-95"
       >
-        <div className="w-[26px] h-[26px] rounded-full bg-[#E0F2FE] flex items-center justify-center text-[#0891B2] group-hover:bg-[#0891B2] group-hover:text-white transition-colors">
-          <MessageCircle className="w-[15px] h-[15px]" />
-        </div>
-        <span className="text-[#0F2D36] text-[14px] font-bold tracking-tight">Help</span>
+        {isChatBotOpen ? (
+          <X className="w-[22px] h-[22px] text-white" />
+        ) : (
+          <MessageCircle className="w-[22px] h-[22px] text-white" />
+        )}
       </button>
     </>
   );

@@ -18,6 +18,7 @@ const envSchema = z.object({
   SMTP_USER: z.string().min(1).optional(),
   SMTP_PASS: z.string().min(1).optional(),
   SMTP_FROM: z.string().min(1).optional(),
+  ADMIN_EMAIL: z.string().min(1).optional(),
 });
 
 const parsed = envSchema.safeParse(process.env);
@@ -29,6 +30,7 @@ if (!parsed.success) {
 
 export const env = {
   ...parsed.data,
+  ADMIN_EMAIL: parsed.data.ADMIN_EMAIL ?? "admin@ezzystay.com",
   PASSWORD_RESET_URL_BASE: parsed.data.PASSWORD_RESET_URL_BASE ?? parsed.data.CLIENT_ORIGIN,
   SMTP_PORT: parsed.data.SMTP_PORT ?? 587,
   SMTP_SECURE: parsed.data.SMTP_SECURE === "true",

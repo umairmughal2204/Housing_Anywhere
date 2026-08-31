@@ -85,37 +85,37 @@ export function Footer({ variant = "default" }: FooterProps) {
                 </Link>
               </li>
               <li>
-                <Link to="/help" className="text-[#10394A] text-[14px] sm:text-[15px] hover:text-brand-primary transition-colors">
+                <Link to="/careers" className="text-[#10394A] text-[14px] sm:text-[15px] hover:text-brand-primary transition-colors">
                   Careers
                 </Link>
               </li>
               <li>
-                <Link to="/help" className="text-[#10394A] text-[14px] sm:text-[15px] hover:text-brand-primary transition-colors">
+                <Link to="/press" className="text-[#10394A] text-[14px] sm:text-[15px] hover:text-brand-primary transition-colors">
                   Press
                 </Link>
               </li>
               <li>
-                <Link to="/help" className="text-[#10394A] text-[14px] sm:text-[15px] hover:text-brand-primary transition-colors">
+                <Link to="/partners" className="text-[#10394A] text-[14px] sm:text-[15px] hover:text-brand-primary transition-colors">
                   Partners
                 </Link>
               </li>
               <li>
-                <Link to="/help" className="text-[#10394A] text-[14px] sm:text-[15px] hover:text-brand-primary transition-colors">
+                <Link to="/terms" className="text-[#10394A] text-[14px] sm:text-[15px] hover:text-brand-primary transition-colors">
                   Terms & Conditions
                 </Link>
               </li>
               <li>
-                <Link to="/help" className="text-[#10394A] text-[14px] sm:text-[15px] hover:text-brand-primary transition-colors">
+                <Link to="/privacy" className="text-[#10394A] text-[14px] sm:text-[15px] hover:text-brand-primary transition-colors">
                   Privacy policy
                 </Link>
               </li>
               <li>
-                <Link to="/help" className="text-[#10394A] text-[14px] sm:text-[15px] hover:text-brand-primary transition-colors">
+                <Link to="/cookies" className="text-[#10394A] text-[14px] sm:text-[15px] hover:text-brand-primary transition-colors">
                   Cookie policy
                 </Link>
               </li>
               <li>
-                <Link to="/listings" className="text-[#10394A] text-[14px] sm:text-[15px] hover:text-brand-primary transition-colors">
+                <Link to="/sitemap" className="text-[#10394A] text-[14px] sm:text-[15px] hover:text-brand-primary transition-colors">
                   Sitemap
                 </Link>
               </li>
@@ -142,13 +142,13 @@ export function Footer({ variant = "default" }: FooterProps) {
                 </Link>
               </li>
               <li>
-                <Link to="/help" className="text-[#10394A] text-[14px] sm:text-[15px] hover:text-brand-primary transition-colors">
+                <Link to="/blog/tenants" className="text-[#10394A] text-[14px] sm:text-[15px] hover:text-brand-primary transition-colors">
                   Blog for tenants
                 </Link>
               </li>
             </ul>
             
-            <h4 className="text-[#052A3A] text-[16px] sm:text-[18px] font-bold mt-[28px] mb-[20px]">Support</h4>
+            <h3 className="text-[#052A3A] text-[16px] sm:text-[18px] font-bold mt-[28px] mb-[20px]">Support</h3>
             <ul className="space-y-[12px]">
               <li>
                 <Link to="/help" className="text-[#10394A] text-[14px] sm:text-[15px] hover:text-brand-primary transition-colors">
@@ -156,7 +156,7 @@ export function Footer({ variant = "default" }: FooterProps) {
                 </Link>
               </li>
               <li>
-                <Link to="/help" className="text-[#10394A] text-[14px] sm:text-[15px] hover:text-brand-primary transition-colors">
+                <Link to="/contact" className="text-[#10394A] text-[14px] sm:text-[15px] hover:text-brand-primary transition-colors">
                   Contact us
                 </Link>
               </li>
@@ -183,7 +183,7 @@ export function Footer({ variant = "default" }: FooterProps) {
                 </Link>
               </li>
               <li>
-                <Link to="/landlord" className="text-[#10394A] text-[14px] sm:text-[15px] hover:text-brand-primary transition-colors">
+                <Link to="/rent-guarantee" className="text-[#10394A] text-[14px] sm:text-[15px] hover:text-brand-primary transition-colors">
                   EzzyStay Rent Guarantee
                 </Link>
               </li>
@@ -193,27 +193,27 @@ export function Footer({ variant = "default" }: FooterProps) {
                 </Link>
               </li>
               <li>
-                <Link to="/help" className="text-[#10394A] text-[14px] sm:text-[15px] hover:text-brand-primary transition-colors">
+                <Link to="/guides" className="text-[#10394A] text-[14px] sm:text-[15px] hover:text-brand-primary transition-colors">
                   How-to guides
                 </Link>
               </li>
               <li>
-                <Link to="/help" className="text-[#10394A] text-[14px] sm:text-[15px] hover:text-brand-primary transition-colors">
+                <Link to="/success-stories" className="text-[#10394A] text-[14px] sm:text-[15px] hover:text-brand-primary transition-colors">
                   Success stories
                 </Link>
               </li>
               <li>
-                <Link to="/help" className="text-[#10394A] text-[14px] sm:text-[15px] hover:text-brand-primary transition-colors">
+                <Link to="/blog/landlords" className="text-[#10394A] text-[14px] sm:text-[15px] hover:text-brand-primary transition-colors">
                   Blog for landlords
                 </Link>
               </li>
               <li>
-                <Link to="/help" className="text-[#10394A] text-[14px] sm:text-[15px] hover:text-brand-primary transition-colors">
+                <Link to="/integrations" className="text-[#10394A] text-[14px] sm:text-[15px] hover:text-brand-primary transition-colors">
                   Integrations
                 </Link>
               </li>
               <li>
-                <Link to="/help" className="text-[#10394A] text-[14px] sm:text-[15px] hover:text-brand-primary transition-colors">
+                <Link to="/sample-contracts" className="text-[#10394A] text-[14px] sm:text-[15px] hover:text-brand-primary transition-colors">
                   Sample rental contracts
                 </Link>
               </li>

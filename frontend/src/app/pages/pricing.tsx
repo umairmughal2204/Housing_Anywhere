@@ -4,6 +4,7 @@ import { Footer } from "../components/footer";
 import { ChevronRight, ChevronDown, Check } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router";
+import heroBg from "../../assets/hero-bg.jpg";
 import listYourPlaceImage from "../../assets/list_your_place.svg";
 import rentItOutImage from "../../assets/rent_it_out.svg";
 import getPaidImage from "../../assets/get_paid.svg";
@@ -67,8 +68,8 @@ export function Pricing() {
     <div className="min-h-screen bg-white">
       <Header variant={isAuthenticated ? "dashboard" : "default"} dashboardButtonFilled={false} />
 
-      {/* Hero Section */}
-      <section className="relative overflow-hidden bg-[#D8DFE9] pt-[42px] pb-[92px] md:pt-[64px] md:pb-[124px]">
+      {/* Premium Hero Section */}
+      <section className="relative overflow-hidden bg-[#D8DFE9] pt-[48px] pb-[110px] md:pt-[68px] md:pb-[160px] px-[16px] text-center rounded-b-[44px] md:rounded-b-[64px] shadow-[0_12px_32px_rgba(15,23,42,0.08)] mb-[48px] md:mb-[72px]">
         <div className="max-w-[1200px] mx-auto px-[16px] sm:px-[24px] md:px-[32px] text-center">
           <h1 className="text-[#032E3D] text-[34px] sm:text-[42px] md:text-[58px] font-bold tracking-[-0.04em] leading-[1]">
             Pricing
@@ -83,10 +84,11 @@ export function Pricing() {
                 setActiveTab("tenants");
                 setOpenFaq(null);
               }}
-              className={`h-[38px] sm:h-[40px] md:h-[44px] flex-1 rounded-full text-[13px] sm:text-[14px] md:text-[16px] font-medium transition-colors ${activeTab === "tenants"
-                  ? "bg-brand-primary text-white hover:bg-brand-primary-dark"
-                  : "bg-transparent text-neutral-black hover:bg-brand-primary-light"
-                }`}
+              className={`h-[40px] sm:h-[42px] md:h-[46px] flex-1 rounded-full text-[14px] sm:text-[15px] md:text-[16px] font-bold transition-all duration-300 ${
+                activeTab === "tenants"
+                  ? "bg-[#0891B2] text-white shadow-md"
+                  : "bg-transparent text-[#032E3D] hover:bg-white/40"
+              }`}
             >
               For tenants
             </button>
@@ -95,10 +97,11 @@ export function Pricing() {
                 setActiveTab("landlords");
                 setOpenFaq(null);
               }}
-              className={`h-[38px] sm:h-[40px] md:h-[44px] flex-1 rounded-full text-[13px] sm:text-[14px] md:text-[16px] font-semibold transition-colors ${activeTab === "landlords"
-                  ? "bg-brand-primary text-white hover:bg-brand-primary-dark"
-                  : "bg-transparent text-neutral-black hover:bg-brand-primary-light"
-                }`}
+              className={`h-[40px] sm:h-[42px] md:h-[46px] flex-1 rounded-full text-[14px] sm:text-[15px] md:text-[16px] font-bold transition-all duration-300 ${
+                activeTab === "landlords"
+                  ? "bg-[#0891B2] text-white shadow-md"
+                  : "bg-transparent text-[#032E3D] hover:bg-white/40"
+              }`}
             >
               For landlords
             </button>

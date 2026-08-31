@@ -84,10 +84,10 @@ export function About() {
         </section>
       </main>
 
-      {/* Call to Action Group Banner */}
-      <section className="bg-[#EA580C] text-white py-[20px] px-[16px] text-center">
+      {/* Call to Action Banner */}
+      <section className="bg-[#0891B2] text-white py-[20px] px-[16px] text-center">
         <p className="text-[14px] md:text-[16px] font-bold">
-          EzzyStay is part of the Travel Escapes Group. Want to join our vacation rental marketplace? 
+          Want to join our rental housing marketplace as a property owner? 
           <a href="/landlord" className="underline hover:text-white/90 ml-[6px]">
             Learn More
           </a>

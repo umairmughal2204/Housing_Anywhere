@@ -930,15 +930,15 @@ export function Home() {
               <div className="relative">
                 <div
                   ref={recentlyViewedScrollRef}
-                  className="flex overflow-x-auto gap-[24px] pb-[16px] scroll-smooth [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+                  className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-[16px] md:gap-[20px]"
                 >
                   {recentlyViewed.map((property) => (
                     <Link
                       key={property.id}
                       to={`/property/${property.id}`}
-                      className="flex-shrink-0 w-[280px] md:w-[320px] group flex flex-col gap-[12px]"
+                      className="w-full group flex flex-col gap-[10px]"
                     >
-                      <div className="relative aspect-[16/10] overflow-hidden bg-[#F7F7F9] group/carousel rounded-[16px]">
+                      <div className="relative aspect-[16/10] overflow-hidden bg-[#F7F7F9] group/carousel rounded-[14px]">
                         <img
                           src={getListingCardImages(property.id, property.images)[carouselImagesByListingId[property.id] ?? 0] ?? "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800&q=80"}
                           alt={property.title}
@@ -1089,15 +1089,15 @@ export function Home() {
               <div className="relative">
                 <div
                   ref={recommendationsScrollRef}
-                  className="flex overflow-x-auto gap-[24px] pb-[16px] scroll-smooth [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+                  className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-[16px] md:gap-[20px]"
                 >
                   {recommendations.map((property) => (
                     <Link
                       key={property.id}
                       to={`/property/${property.id}`}
-                      className="flex-shrink-0 w-[280px] md:w-[320px] group flex flex-col gap-[12px]"
+                      className="w-full group flex flex-col gap-[10px]"
                     >
-                      <div className="relative aspect-[16/10] overflow-hidden bg-[#F7F7F9] group/carousel rounded-[16px]">
+                      <div className="relative aspect-[16/10] overflow-hidden bg-[#F7F7F9] group/carousel rounded-[14px]">
                         <img
                           src={getListingCardImages(property.id, property.images)[carouselImagesByListingId[property.id] ?? 0] ?? "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800&q=80"}
                           alt={property.title}
@@ -1275,14 +1275,14 @@ export function Home() {
                   : favorites.filter((p) => p.propertyType === favoritesTypeFilter);
 
                 return filteredFavorites.length > 0 ? (
-                  <div className="flex overflow-x-auto gap-[24px] pb-[16px] scroll-smooth [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-[16px] md:gap-[20px]">
                     {filteredFavorites.map((property) => (
                       <Link
                         key={property.id}
                         to={`/property/${property.id}`}
-                        className="flex-shrink-0 w-[280px] md:w-[320px] group flex flex-col border border-[rgba(0,0,0,0.08)] bg-white rounded-[24px] p-[12px] hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)] transition-all duration-200"
+                        className="w-full group flex flex-col border border-[rgba(0,0,0,0.08)] bg-white rounded-[20px] p-[10px] hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)] transition-all duration-200"
                       >
-                        <div className="relative aspect-[4/3] overflow-hidden bg-[#F7F7F9] group/carousel rounded-[16px]">
+                        <div className="relative aspect-[16/10] overflow-hidden bg-[#F7F7F9] group/carousel rounded-[14px]">
                           <img
                             src={property.image || "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800&q=80"}
                             alt={property.title}

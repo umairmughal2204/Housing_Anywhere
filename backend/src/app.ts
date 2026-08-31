@@ -76,6 +76,29 @@ export function createApp() {
   app.use("/api/settings", settingsRoutes);
   app.use("/api/admin", adminRoutes);
 
+  app.post("/api/contact", async (req, res) => {
+    try {
+      const { name, email, subject, message, phone, userType } = req.body;
+
+      if (!name || !email || !subject || !message) {
+        return res.status(400).json({ message: "Name, email, subject, and message are required." });
+      }
+
+      const { sendContactFormEmail, canSendEmails } = await import("./utils/mailer.js");
+
+      if (canSendEmails()) {
+        await sendContactFormEmail({ name, email, subject, message, phone, userType });
+      } else {
+        console.log("SMTP not configured. Logged contact inquiry:", { name, email, subject, message, phone, userType });
+      }
+
+      return res.json({ ok: true, message: "Thank you for reaching out! Your message has been sent successfully." });
+    } catch (error: any) {
+      console.error("Error sending contact email:", error);
+      return res.status(500).json({ message: error?.message || "Failed to send message. Please try again later." });
+    }
+  });
+
   app.use((err: unknown, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
     console.error(err);
     res.status(500).json({ message: "Internal server error" });

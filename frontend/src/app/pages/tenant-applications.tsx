@@ -193,9 +193,9 @@ export function TenantApplications() {
         <div className="max-w-[1100px] mx-auto px-[32px]">
           {!isAuthLoading && user?.isLandlord && (
             <div className="bg-white border border-[rgba(0,0,0,0.08)] rounded-[16px] p-[32px] mb-[24px]">
-              <h1 className="text-[#1A1A1A] text-[30px] font-bold tracking-[-0.02em] mb-[10px]">
+              <h2 className="text-[#1A1A1A] text-[30px] font-bold tracking-[-0.02em] mb-[10px]">
                 Tenant applications are not available for landlord accounts
-              </h1>
+              </h2>
               <p className="text-[#6B6B6B] text-[15px] mb-[20px]">
                 Landlords cannot submit rental applications. You can review tenant requests in your rentals section.
               </p>
@@ -362,7 +362,7 @@ export function TenantApplications() {
             {!isLoading && !error && applications.length === 0 && (
               <div className="bg-white border border-[rgba(0,0,0,0.08)] rounded-[16px] p-[56px] text-center">
                 <FileText className="w-[48px] h-[48px] text-[#B5B5B5] mx-auto mb-[14px]" />
-                <h3 className="text-[#1A1A1A] text-[20px] font-bold mb-[8px]">No applications yet</h3>
+                <h2 className="text-[#1A1A1A] text-[20px] font-bold mb-[8px]">No applications yet</h2>
                 <p className="text-[#6B6B6B] text-[14px] mb-[20px]">When you apply for a property, it will show up here.</p>
                 <Link
                   to="/"

@@ -190,9 +190,9 @@ export function Favorites() {
                   {/* Content */}
                   <div className="px-[16px] pt-[14px] pb-[12px]">
                     <Link to={`/listing/${property.id}`}>
-                      <h3 className="mb-[10px] line-clamp-2 text-[16px] font-semibold leading-[1.25] text-[#12303B] hover:text-[#0D263B] transition-colors">
+                      <h2 className="mb-[10px] line-clamp-2 text-[16px] font-semibold leading-[1.25] text-[#12303B] hover:text-[#0D263B] transition-colors">
                         {property.title}
-                      </h3>
+                      </h2>
                     </Link>
                     <div className="mb-[12px] flex items-center gap-[12px] text-[13px] text-[#3E5963]">
                       <div className="flex items-center gap-[4px]"><MapPin className="h-[12px] w-[12px]" /><span>{property.area} m²</span></div>

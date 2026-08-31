@@ -276,7 +276,7 @@ export function AdminPayments() {
               {action.status === "ready" && <Banknote className="w-[26px] h-[26px] text-blue-600" />}
             </div>
 
-            <h3 className="text-[18px] font-bold text-neutral-black mb-[8px] text-center">Update Landlord Payout</h3>
+            <h2 className="text-[18px] font-bold text-neutral-black mb-[8px] text-center">Update Landlord Payout</h2>
             <p className="text-neutral-gray text-[14px] leading-[1.65] mb-[16px] text-center">
               Set payout for <strong>{action.payment.listing?.title ?? "this booking"}</strong> ({action.payment.landlord?.name ?? "landlord"}) to{" "}
               <strong className={action.status === "blocked" ? "text-red-600" : action.status === "released" ? "text-green-700" : ""}>

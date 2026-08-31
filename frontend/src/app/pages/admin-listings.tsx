@@ -257,9 +257,9 @@ export function AdminListings() {
       {confirm && (
         <div className="fixed inset-0 z-[80] bg-black/40 flex items-center justify-center p-[24px]">
           <div className="w-full max-w-[420px] bg-white border border-[rgba(0,0,0,0.12)] rounded-[16px] p-[28px] shadow-xl">
-            <h3 className="text-[18px] font-bold text-neutral-black mb-[8px]">
+            <h2 className="text-[18px] font-bold text-neutral-black mb-[8px]">
               {confirm.type === "delete" ? "Delete Listing" : "Change Status"}
-            </h3>
+            </h2>
             <p className="text-neutral-gray text-[14px] leading-[1.6] mb-[24px]">
               {confirm.type === "delete"
                 ? <>Permanently delete <strong>{confirm.title}</strong>? This cannot be undone.</>

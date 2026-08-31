@@ -1,4 +1,4 @@
-﻿import { LandlordPortalLayout } from "../components/landlord-portal-layout";
+import { LandlordPortalLayout } from "../components/landlord-portal-layout";
 import { Send, Search, MapPin, Wifi, X as XIcon } from "lucide-react";
 import { useState, useEffect, useRef, useCallback } from "react";
 import { Link } from "react-router";
@@ -419,7 +419,7 @@ export function LandlordInbox() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between mb-[2px]">
-                      <span className="text-[14px] font-bold text-[#1A1A1A] truncate">{c.otherUser.name}</span>
+                      <h2 className="text-[14px] font-bold text-[#1A1A1A] truncate">{c.otherUser.name}</h2>
                       <div className="flex items-center gap-[6px] flex-shrink-0 ml-[6px]">
                         {c.unread > 0 && (
                           <span className="px-[6px] py-[1px] text-[10px] font-bold bg-brand-primary text-white rounded-full">{c.unread}</span>
@@ -449,7 +449,7 @@ export function LandlordInbox() {
                 <div className="w-[80px] h-[80px] rounded-full bg-white mx-auto mb-[16px] flex items-center justify-center border border-[rgba(0,0,0,0.08)]">
                   <Send className="w-[36px] h-[36px] text-[#D0D0D0]" />
                 </div>
-                <h3 className="text-[20px] font-bold text-[#1A1A1A] mb-[8px]">Select a conversation</h3>
+                <h2 className="text-[20px] font-bold text-[#1A1A1A] mb-[8px]">Select a conversation</h2>
                 <p className="text-[14px] text-[#6B6B6B] leading-[1.6]">
                   Choose a tenant message from the list to start chatting.
                 </p>

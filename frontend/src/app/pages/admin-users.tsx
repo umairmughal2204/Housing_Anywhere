@@ -334,12 +334,12 @@ export function AdminUsers() {
               {confirm.type === "verification" && confirm.verificationStatus !== "verified" && confirm.verificationStatus !== "flagged" && <XCircle className="w-[26px] h-[26px] text-red-500" />}
             </div>
 
-            <h3 className="text-[18px] font-bold text-neutral-black mb-[8px] text-center">
+            <h2 className="text-[18px] font-bold text-neutral-black mb-[8px] text-center">
               {confirm.type === "ban" && "Ban User"}
               {confirm.type === "unban" && "Unban User"}
               {confirm.type === "role" && "Change Role"}
               {confirm.type === "verification" && "Update Verification"}
-            </h3>
+            </h2>
 
             <p className="text-neutral-gray text-[14px] leading-[1.65] mb-[20px] text-center">
               {confirm.type === "ban" && <><strong className="text-red-600">This will block {confirm.userName}</strong> from accessing the platform. You can unban them later.</>}

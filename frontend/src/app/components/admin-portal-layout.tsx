@@ -12,6 +12,8 @@ import {
   BarChart3,
   Settings,
   Wallet,
+  BookOpen,
+  Newspaper,
 } from "lucide-react";
 import { useAuth } from "../contexts/auth-context";
 import { useState, useEffect } from "react";
@@ -29,6 +31,8 @@ const navigation = [
   { name: "Listings", href: "/admin/listings", icon: Home },
   { name: "Bookings", href: "/admin/applications", icon: FileText },
   { name: "Payments", href: "/admin/payments", icon: Wallet },
+  { name: "Blogs", href: "/admin/blogs", icon: BookOpen },
+  { name: "Articles & Guides", href: "/admin/articles", icon: Newspaper },
   { name: "Settings", href: "/admin/settings", icon: Settings },
 ];
 

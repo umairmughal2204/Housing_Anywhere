@@ -1,6 +1,6 @@
 import { Link, useRouteError, isRouteErrorResponse } from "react-router";
 import { BrandLogo } from "./brand-logo";
-import { Home, ArrowLeft, RefreshCw } from "lucide-react";
+import { Home, ArrowLeft, RefreshCw, HelpCircle } from "lucide-react";
 
 export function ErrorBoundary() {
   const error = useRouteError();
@@ -49,18 +49,25 @@ export function ErrorBoundary() {
           </p>
 
           {/* Actions */}
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-[12px]">
+          <div className="flex flex-col sm:flex-row flex-wrap items-center justify-center gap-[12px]">
             <Link
               to="/"
-              className="inline-flex items-center gap-[8px] bg-brand-primary text-white px-[28px] py-[13px] rounded-[12px] font-semibold text-[15px] hover:bg-brand-primary-dark transition-colors"
+              className="inline-flex items-center justify-center gap-[8px] bg-[#0891B2] text-white px-[24px] py-[13px] rounded-[12px] font-bold text-[15px] hover:bg-[#0E7490] transition-colors"
             >
               <Home className="w-[16px] h-[16px]" />
               Go to Homepage
             </Link>
+            <Link
+              to="/help"
+              className="inline-flex items-center justify-center gap-[8px] bg-[#E0F2FE] border border-[#0891B2]/30 text-[#0891B2] px-[24px] py-[13px] rounded-[12px] font-bold text-[15px] hover:bg-[#0891B2] hover:text-white transition-all duration-300"
+            >
+              <HelpCircle className="w-[16px] h-[16px]" />
+              Visit Help Center
+            </Link>
             <button
               type="button"
               onClick={() => window.history.back()}
-              className="inline-flex items-center gap-[8px] bg-white border border-[rgba(0,0,0,0.12)] text-neutral-black px-[28px] py-[13px] rounded-[12px] font-semibold text-[15px] hover:bg-neutral-light-gray transition-colors"
+              className="inline-flex items-center justify-center gap-[8px] bg-white border border-[#D1D5DB] text-[#0F2D36] px-[24px] py-[13px] rounded-[12px] font-semibold text-[15px] hover:bg-[#F8FAFB] transition-colors"
             >
               <ArrowLeft className="w-[16px] h-[16px]" />
               Go Back
@@ -71,11 +78,12 @@ export function ErrorBoundary() {
       </div>
 
       {/* Footer strip */}
-      <footer className="bg-white border-t border-[rgba(0,0,0,0.06)] px-[24px] py-[16px] text-center">
-        <p className="text-neutral-gray text-[13px]">
-          Need help?{" "}
-          <Link to="/help" className="text-brand-primary font-medium hover:underline">
-            Visit our Help Centre
+      <footer className="bg-white border-t border-[#E5E7EB] px-[24px] py-[18px] text-center">
+        <p className="text-[#6B7280] text-[14px]">
+          Need immediate assistance?{" "}
+          <Link to="/help" className="text-[#0891B2] font-bold hover:underline inline-flex items-center gap-[4px] ml-[4px]">
+            <HelpCircle className="w-[14px] h-[14px]" />
+            Visit our Help Center
           </Link>
         </p>
       </footer>

@@ -96,3 +96,61 @@ export async function sendSignupVerificationEmail(toEmail: string, firstName: st
     html,
   });
 }
+
+export async function sendContactFormEmail({
+  name,
+  email,
+  subject,
+  message,
+  phone,
+  userType,
+}: {
+  name: string;
+  email: string;
+  subject: string;
+  message: string;
+  phone?: string;
+  userType?: string;
+}) {
+  const activeTransporter = getTransporter();
+  if (!activeTransporter || !env.SMTP_FROM) {
+    throw new Error("Email service is not configured");
+  }
+
+  const recipient = env.ADMIN_EMAIL || env.SMTP_USER || "admin@ezzystay.com";
+
+  const text = [
+    `New Contact Form Submission from EzzyStay`,
+    `----------------------------------------`,
+    `Name: ${name}`,
+    `Email: ${email}`,
+    `Phone: ${phone || "Not provided"}`,
+    `User Type: ${userType || "Visitor"}`,
+    `Subject: ${subject}`,
+    ``,
+    `Message:`,
+    message,
+  ].join("\n");
+
+  const html = `
+    <h2>New Contact Inquiry from EzzyStay</h2>
+    <p><strong>Name:</strong> ${name}</p>
+    <p><strong>Email:</strong> <a href="mailto:${email}">${email}</a></p>
+    <p><strong>Phone:</strong> ${phone || "Not provided"}</p>
+    <p><strong>User Type:</strong> ${userType || "Visitor"}</p>
+    <p><strong>Subject:</strong> ${subject}</p>
+    <hr/>
+    <p><strong>Message:</strong></p>
+    <p style="white-space: pre-wrap; background: #f8fafb; padding: 16px; border-radius: 8px;">${message}</p>
+  `;
+
+  await activeTransporter.sendMail({
+    from: env.SMTP_FROM,
+    to: recipient,
+    replyTo: email,
+    subject: `EzzyStay Contact: ${subject}`,
+    text,
+    html,
+  });
+}
+

@@ -48,6 +48,23 @@ import { Pricing } from "./pages/pricing";
 
 import { Help } from "./pages/help";
 import { About } from "./pages/about";
+import { Careers } from "./pages/careers";
+import { Press } from "./pages/press";
+import { Partners } from "./pages/partners";
+import { Terms } from "./pages/terms";
+import { Privacy } from "./pages/privacy";
+import { Cookies } from "./pages/cookies";
+import { Sitemap } from "./pages/sitemap";
+import { BlogTenants } from "./pages/blog-tenants";
+import { Contact } from "./pages/contact";
+import { RentGuarantee } from "./pages/rent-guarantee";
+import { Guides } from "./pages/guides";
+import { SuccessStories } from "./pages/success-stories";
+import { BlogLandlords } from "./pages/blog-landlords";
+import { BlogDetail } from "./pages/blog-detail";
+import { Integrations } from "./pages/integrations";
+import { SampleContracts } from "./pages/sample-contracts";
+import { GuideDetail } from "./pages/guide-detail";
 
 import { Login } from "./pages/login";
 
@@ -89,57 +106,35 @@ import { AdminApplications } from "./pages/admin-applications";
 import { AdminPayments } from "./pages/admin-payments";
 
 import { AdminSettings } from "./pages/admin-settings";
-
-
+import { AdminBlogs } from "./pages/admin-blogs";
+import { AdminArticles } from "./pages/admin-articles";
 
 function withProtectedRoute(Page: ComponentType) {
-
   return function ProtectedPage() {
-
     return createElement(ProtectedRoute, null, createElement(Page));
-
   };
-
 }
-
-
 
 function withAdminRoute(Page: ComponentType) {
-
   return function AdminPage() {
-
     return createElement(AdminRoute, null, createElement(Page));
-
   };
-
 }
-
-
 
 function withLandlordRoute(Page: ComponentType) {
-
   return function LandlordPage() {
-
     return createElement(LandlordRoute, null, createElement(Page));
-
   };
-
 }
 
-
-
 const ProtectedAdminDashboard = withAdminRoute(AdminDashboard);
-
 const ProtectedAdminAnalytics = withAdminRoute(AdminAnalytics);
-
 const ProtectedAdminUsers = withAdminRoute(AdminUsers);
-
 const ProtectedAdminListings = withAdminRoute(AdminListings);
-
 const ProtectedAdminApplications = withAdminRoute(AdminApplications);
-
 const ProtectedAdminPayments = withAdminRoute(AdminPayments);
-
+const ProtectedAdminBlogs = withAdminRoute(AdminBlogs);
+const ProtectedAdminArticles = withAdminRoute(AdminArticles);
 const ProtectedAdminSettings = withAdminRoute(AdminSettings);
 
 
@@ -407,13 +402,99 @@ export const router = createBrowserRouter([
       },
 
       {
-
         path: "/about",
-
         Component: About,
-
         ErrorBoundary,
-
+      },
+      {
+        path: "/careers",
+        Component: Careers,
+        ErrorBoundary,
+      },
+      {
+        path: "/press",
+        Component: Press,
+        ErrorBoundary,
+      },
+      {
+        path: "/partners",
+        Component: Partners,
+        ErrorBoundary,
+      },
+      {
+        path: "/terms",
+        Component: Terms,
+        ErrorBoundary,
+      },
+      {
+        path: "/privacy",
+        Component: Privacy,
+        ErrorBoundary,
+      },
+      {
+        path: "/cookies",
+        Component: Cookies,
+        ErrorBoundary,
+      },
+      {
+        path: "/sitemap",
+        Component: Sitemap,
+        ErrorBoundary,
+      },
+      {
+        path: "/blog/tenants",
+        Component: BlogTenants,
+        ErrorBoundary,
+      },
+      {
+        path: "/blog/landlords",
+        Component: BlogLandlords,
+        ErrorBoundary,
+      },
+      {
+        path: "/blog/:id",
+        Component: BlogDetail,
+        ErrorBoundary,
+      },
+      {
+        path: "/contact",
+        Component: Contact,
+        ErrorBoundary,
+      },
+      {
+        path: "/rent-guarantee",
+        Component: RentGuarantee,
+        ErrorBoundary,
+      },
+      {
+        path: "/guides",
+        Component: Guides,
+        ErrorBoundary,
+      },
+      {
+        path: "/guide/:id",
+        Component: GuideDetail,
+        ErrorBoundary,
+      },
+      {
+        path: "/success-stories",
+        Component: SuccessStories,
+        ErrorBoundary,
+      },
+      {
+        path: "/blog/landlords",
+        Component: BlogLandlords,
+        ErrorBoundary,
+      },
+      {
+        path: "/integrations",
+        Component: Integrations,
+        ErrorBoundary,
+      },
+      {
+        path: "/sample-contracts",
+        Component: SampleContracts,
+        ErrorBoundary,
       },
 
       {
@@ -671,23 +752,24 @@ export const router = createBrowserRouter([
       },
 
       {
-
         path: "/admin/payments",
-
         Component: ProtectedAdminPayments,
-
         ErrorBoundary,
-
       },
-
       {
-
-        path: "/admin/settings",
-
-        Component: ProtectedAdminSettings,
-
+        path: "/admin/blogs",
+        Component: ProtectedAdminBlogs,
         ErrorBoundary,
-
+      },
+      {
+        path: "/admin/articles",
+        Component: ProtectedAdminArticles,
+        ErrorBoundary,
+      },
+      {
+        path: "/admin/settings",
+        Component: ProtectedAdminSettings,
+        ErrorBoundary,
       },
 
       {
