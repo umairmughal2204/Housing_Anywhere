@@ -97,7 +97,7 @@ export function GuideDetail() {
 
       {/* Hero Header */}
       <section
-        className="relative min-h-[340px] md:min-h-[400px] flex items-center justify-center text-center bg-cover bg-center py-[56px] rounded-b-[40px] md:rounded-b-[56px] shadow-[0_12px_32px_rgba(15,45,54,0.12)]"
+        className="relative min-h-[340px] md:min-h-[400px] flex items-center justify-center text-center bg-cover bg-center py-[56px]"
         style={{ backgroundImage: `url(${heroBg})` }}
       >
         <div className="absolute inset-0 bg-black/60 z-10" />

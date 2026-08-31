@@ -67,7 +67,7 @@ export function Contact() {
       />
 
       {/* Header Banner */}
-      <section className="bg-[#0F2D36] text-white py-[56px] md:py-[72px] px-[16px] text-center rounded-b-[40px] md:rounded-b-[56px] shadow-[0_12px_32px_rgba(15,45,54,0.12)]">
+      <section className="bg-[#0F2D36] text-white py-[56px] md:py-[72px] px-[16px] text-center">
         <h1 className="text-[32px] md:text-[48px] font-bold tracking-tight mb-[12px]">
           Contact Us
         </h1>
